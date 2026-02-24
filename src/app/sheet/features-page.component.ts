@@ -1,12 +1,13 @@
 import { Component, inject, computed, signal, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
+import { FeatureUsesComponent } from './feature-uses.component';
 import { CharacterHelpersService } from './character-helpers.service';
 import { ExportedCharacter } from '../models/character.model';
 
 @Component({
   selector: 'app-features-page',
-  imports: [CommonModule, EntryRendererComponent],
+  imports: [CommonModule, EntryRendererComponent, FeatureUsesComponent],
   template: `
     <div class="bg-white p-8 rounded-lg border-2 border-gray-300 shadow-lg">
       <h2 class="text-3xl font-bold mb-6">Features & Traits</h2>
@@ -66,6 +67,16 @@ import { ExportedCharacter } from '../models/character.model';
               <div class="mt-3" [attr.id]="feature.featureSourceName ? 'source-' + helpers.sourceId(feature.featureSourceName) : null">
                 <app-entry-renderer [entries]="helpers.featureEntries(feature)"></app-entry-renderer>
               </div>
+              @if (feature.uses?.length) {
+                <div class="mt-4 border-t border-gray-200 pt-4">
+                  @for (use of feature.uses; track use.tag) {
+                    <app-feature-uses 
+                      [uses]="use"
+                      (usesUpdated)="updateFeatureUses(feature, $event)"
+                    />
+                  }
+                </div>
+              }
             </div>
           }
         } @else {
@@ -113,4 +124,14 @@ export class FeaturesPageComponent {
       return a.name.localeCompare(b.name);
     });
   });
+
+  updateFeatureUses(feature: any, event: { usedFreeUses: number; tag?: string }) {
+    // Find the matching use entry and update it
+    if (feature.uses) {
+      const useEntry = feature.uses.find((u: any) => u.tag === event.tag);
+      if (useEntry) {
+        useEntry.usedFreeUses = event.usedFreeUses;
+      }
+    }
+  }
 }

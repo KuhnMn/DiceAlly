@@ -244,6 +244,7 @@ export interface SimpleRequisiteSpell {
 export interface FeatureUses {
   tag?: string;
   totalFreeUses?: number;
+  usedFreeUses?: number | 0;
   freeUsesRegainCondition?: string;
   userAdded?: boolean;
 }
