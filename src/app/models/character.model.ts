@@ -474,6 +474,7 @@ export interface FeatureSource {
   usesCharisma?: boolean;
   isGeneralFeatureSource?: boolean;
   isSpellcastingSource?: boolean;
+  useSpellbook?: boolean;
   userAdded?: boolean;
 }
 

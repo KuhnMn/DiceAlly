@@ -1,0 +1,904 @@
+import { Component, inject, computed, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { CharacterStore } from '../stores/character.store';
+import { EntryRendererComponent } from '../entries/entry-renderer.component';
+import {
+  Entry,
+  FeatureEntryFull,
+  Prerequisite,
+  SpellComponents,
+  SpellDuration,
+  SpellEntryFull,
+  SpellRange,
+  SpellTime,
+} from '../models/character.model';
+
+enum ProficiencyLevel {
+  NONE = 0,
+  HALF = 0.5,
+  PROFICIENT = 1,
+  EXPERTISE = 2,
+}
+
+@Component({
+  selector: 'app-character-sheet',
+  imports: [CommonModule, RouterModule, EntryRendererComponent],
+  template: `
+    <main class="max-w-[1200px] mx-auto my-6 p-4">
+      @if (character()) {
+        <!-- Page Navigation -->
+        <nav class="flex gap-2 mb-6 border-b-2 border-gray-300">
+          <button 
+            (click)="currentPage.set(1)"
+            class="px-6 py-3 font-semibold transition-colors"
+            [class.border-b-4]="currentPage() === 1"
+            [class.border-sky-600]="currentPage() === 1"
+            [class.text-sky-600]="currentPage() === 1"
+            [class.text-gray-600]="currentPage() !== 1"
+          >
+            Character
+          </button>
+          <button 
+            (click)="currentPage.set(2)"
+            class="px-6 py-3 font-semibold transition-colors"
+            [class.border-b-4]="currentPage() === 2"
+            [class.border-sky-600]="currentPage() === 2"
+            [class.text-sky-600]="currentPage() === 2"
+            [class.text-gray-600]="currentPage() !== 2"
+          >
+            Features & Traits
+          </button>
+          <button 
+            (click)="currentPage.set(3)"
+            class="px-6 py-3 font-semibold transition-colors"
+            [class.border-b-4]="currentPage() === 3"
+            [class.border-sky-600]="currentPage() === 3"
+            [class.text-sky-600]="currentPage() === 3"
+            [class.text-gray-600]="currentPage() !== 3"
+          >
+            Spells
+          </button>
+          <button 
+            (click)="currentPage.set(4)"
+            class="px-6 py-3 font-semibold transition-colors"
+            [class.border-b-4]="currentPage() === 4"
+            [class.border-sky-600]="currentPage() === 4"
+            [class.text-sky-600]="currentPage() === 4"
+            [class.text-gray-600]="currentPage() !== 4"
+          >
+            Equipment
+          </button>
+          <a [routerLink]="['/']" class="ml-auto px-6 py-3 text-sm text-gray-600 hover:text-sky-600">
+            ← Import another
+          </a>
+        </nav>
+
+        <!-- Page 1: Character Sheet -->
+        @if (currentPage() === 1) {
+          <div class="character-sheet bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-lg border-4 border-gray-800">
+            
+            <!-- Header Banner -->
+            <header class="grid grid-cols-5 gap-2 mb-6">
+              <div class="col-span-1 border-2 border-gray-700 rounded-lg p-2 bg-white text-center">
+                <div class="text-xs text-gray-600 uppercase font-semibold">Level / XP</div>
+                <div class="text-2xl font-bold">{{ character()?.level ?? 1 }}</div>
+              </div>
+              <div class="col-span-1 border-2 border-gray-700 rounded-lg p-2 bg-white text-center">
+                <div class="text-xs text-gray-600 uppercase font-semibold">Description</div>
+                <div class="text-sm font-medium">{{ character()?.description || '—' }}</div>
+              </div>
+              <div class="col-span-1 border-2 border-gray-700 rounded-lg p-2 bg-white text-center">
+                <div class="text-xs text-gray-600 uppercase font-semibold">Character Name</div>
+                <div class="text-lg font-bold">{{ character()?.name }}</div>
+              </div>
+              <div class="col-span-1 border-2 border-gray-700 rounded-lg p-2 bg-white text-center">
+                <div class="text-xs text-gray-600 uppercase font-semibold">Species</div>
+                <div class="text-sm font-medium">{{ characterData()?.species?.name || '—' }}</div>
+              </div>
+              <div class="col-span-1 border-2 border-gray-700 rounded-lg p-2 bg-white text-center">
+                <div class="text-xs text-gray-600 uppercase font-semibold">Inspiration</div>
+                <input id="default-checkbox" type="checkbox" value="" class="w-4 h-4 border border-default-medium rounded-xs bg+-neutral-secondary-medium focus:ring-2 focus:ring-brand-soft text-orange-500" [checked]="character()?.hasInspiration ?? false">
+              </div>
+            </header>
+
+            <!-- Main Content Grid -->
+            <div class="grid grid-cols-[300px_1fr_350px] gap-4">
+              
+              <!-- Left Column: Ability Scores & Skills -->
+              <div class="space-y-4">
+                <!-- Ability Scores -->
+                <div class="grid grid-cols-3 gap-3">
+                  @for (ability of abilities(); track ability.name) {
+                    <div class="border-4 border-gray-700 rounded-2xl p-3 bg-white text-center shadow-lg">
+                      <div class="text-xs font-bold text-gray-600 uppercase">{{ ability.abbr }}</div>
+                      <div class="text-3xl font-bold my-1">{{ ability.score }}</div>
+                      <div class="text-lg font-semibold text-gray-700">{{ formatSigned(ability.modifier) }}</div>
+                      <div class="mt-2 pt-2 border-t-2 border-gray-300">
+                        <div class="text-xs text-gray-600">Save</div>
+                        <div class="text-sm font-bold">{{ formatSigned(ability.savingThrowValue) }}</div>
+                      </div>
+                    </div>
+                  }
+                </div>
+
+                <!-- Skills -->
+                <div class="border-4 border-gray-700 rounded-lg p-4 bg-white shadow-lg">
+                  <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-gray-300 pb-2">Skills</h3>
+                  <ul class="space-y-1 text-sm">
+                    @for (s of skillList(); track s.name) {
+                      <li class="flex items-center gap-2">
+                        <span class="w-6 h-6 border-2 border-gray-400 rounded-full flex items-center justify-center text-xs font-bold">
+                          {{ s.levelLabel === 'NONE' ? '' : (s.levelLabel === 'PROF.' ? '●' : (s.levelLabel === 'EXP.' ? '●●' : '◐')) }}
+                        </span>
+                        <span class="font-mono font-bold w-8">{{ s.value }}</span>
+                        <span class="flex-1">{{ s.name }}</span>
+                        <span class="text-xs text-gray-500">({{ getSkillAbility(s.name) }})</span>
+                      </li>
+                    }
+                  </ul>
+                </div>
+
+                <!-- Proficiency & Perception -->
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="border-4 border-gray-700 rounded-full aspect-square p-4 bg-white text-center flex flex-col items-center justify-center shadow-lg">
+                    <div class="text-xs text-gray-600 uppercase font-semibold">Proficiency</div>
+                    <div class="text-3xl font-bold">{{ formatSigned(proficiencyBonus()) }}</div>
+                  </div>
+                  <div class="border-4 border-gray-700 rounded-full aspect-square p-4 bg-white text-center flex flex-col items-center justify-center shadow-lg">
+                    <div class="text-xs text-gray-600 uppercase font-semibold">Passive Per.</div>
+                    <div class="text-3xl font-bold">{{ passivePerception() }}</div>
+                  </div>
+                </div>
+
+                <!-- Languages & Proficiencies -->
+                <div class="border-4 border-gray-700 rounded-lg p-4 bg-white shadow-lg">
+                  <h3 class="text-sm font-bold uppercase text-center mb-2 border-b-2 border-gray-300 pb-2">Languages & Proficiencies</h3>
+                  <div class="text-sm space-y-1">
+                    @if (character()?.proficiencies?.custom?.length ?? 0 > 0) {
+                      @for (prof of character()!.proficiencies!.custom!; track prof) {
+                        <div>{{ prof }}</div>
+                      }
+                    } @else {
+                      <div class="text-gray-400 italic">None listed</div>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <!-- Center Column: Combat Stats & HP -->
+              <div class="space-y-4">
+                <!-- Top Combat Stats -->
+                <div class="flex justify-center gap-4 mb-4">
+                  <div class="border-4 border-gray-700 rounded-full w-24 h-24 bg-white flex flex-col items-center justify-center shadow-lg">
+                    <div class="text-xs text-gray-600 uppercase font-semibold">AC</div>
+                    <div class="text-3xl font-bold">{{ character()?.armorClass ?? '—' }}</div>
+                  </div>
+                  <div class="border-4 border-gray-700 rounded-full w-24 h-24 bg-white flex flex-col items-center justify-center shadow-lg">
+                    <div class="text-xs text-gray-600 uppercase font-semibold">Speed</div>
+                    <div class="text-2xl font-bold">{{ character()?.speeds?.['walk'] ?? 30 }}</div>
+                  </div>
+                  <div class="border-4 border-gray-700 rounded-full w-24 h-24 bg-white flex flex-col items-center justify-center shadow-lg">
+                    <div class="text-xs text-gray-600 uppercase font-semibold">Initiative</div>
+                    <div class="text-3xl font-bold">{{ formatSigned(initiative()) }}</div>
+                  </div>
+                </div>
+
+                <!-- HP Tracker -->
+                <div class="border-4 border-gray-700 rounded-3xl p-6 bg-white shadow-lg">
+                  <div class="text-center">
+                    <div class="text-xs text-gray-600 uppercase font-semibold mb-2">Hit Points</div>
+                    <div class="flex items-center justify-center gap-2 mb-4">
+                      <div class="text-sm text-gray-600">HP Max</div>
+                      <div class="text-4xl font-bold">{{ character()?.maxHp ?? 0 }}</div>
+                    </div>
+                    <div class="text-6xl font-bold mb-4">{{ character()?.currentHp ?? 0 }}</div>
+                    <div class="text-sm text-gray-600 mb-2">Temp HP</div>
+                    <div class="text-2xl font-bold text-sky-600">{{ character()?.tempHp ?? 0 }}</div>
+                    <div class="mt-4 pt-4 border-t-2 border-gray-300">
+                      <div class="text-xs text-gray-600">Hit Dice</div>
+                      <div class="text-lg font-semibold">{{ character()?.hitDice ?? 'N/A' }}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Combat Actions -->
+                <div class="border-4 border-gray-700 rounded-lg p-4 bg-white shadow-lg">
+                  <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-gray-300 pb-2">Attacks</h3>
+                  @if (combatActions().length > 0) {
+                    <div class="space-y-2">
+                      @for (action of combatActions(); track action.name) {
+                        <div class="grid grid-cols-[2fr_1fr_2fr] gap-2 p-2 border-b border-gray-200 text-sm">
+                          <div class="font-semibold">{{ action.name }}</div>
+                          <div class="text-center font-mono">{{ action.hitOrDc }}</div>
+                          <div class="text-center font-mono">{{ action.damageOrHeal }}</div>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <div class="text-gray-400 italic text-sm text-center py-4">No combat actions</div>
+                  }
+                </div>
+              </div>
+
+              <!-- Right Column: Features & Abilities -->
+              <div class="border-4 border-gray-700 rounded-lg p-4 bg-white shadow-lg">
+                <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-gray-300 pb-2">Features & Abilities</h3>
+                <div class="space-y-3 text-sm max-h-[800px] overflow-y-auto">
+                  @if (features().length > 0) {
+                    @for (feature of features(); track feature.name) {
+                      <div class="pb-2 border-b border-gray-200">
+                        <div class="font-bold text-sky-800">{{ feature.name }}</div>
+                        @if (feature.source) {
+                          <div class="text-xs text-gray-500">{{ feature.source }}</div>
+                        }
+                      </div>
+                    }
+                  } @else {
+                    <div class="text-gray-400 italic text-center py-4">No features yet</div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Page 2: Features & Traits -->
+        @if (currentPage() === 2) {
+          <div class="bg-white p-8 rounded-lg border-2 border-gray-300 shadow-lg">
+            <h2 class="text-3xl font-bold mb-6">Features & Traits</h2>
+            <div class="mb-6 flex flex-wrap items-center gap-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-sm font-semibold text-gray-700">Type:</span>
+                @for (type of featureTypes(); track type) {
+                  <button
+                    type="button"
+                    class="px-3 py-1 text-sm border rounded-full"
+                    [class.bg-sky-600]="featureTypeFilter() === type"
+                    [class.text-white]="featureTypeFilter() === type"
+                    [class.border-sky-600]="featureTypeFilter() === type"
+                    [class.border-gray-300]="featureTypeFilter() !== type"
+                    (click)="featureTypeFilter.set(type)"
+                  >
+                    {{ type }}
+                  </button>
+                }
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-sm font-semibold text-gray-700">Source:</span>
+                @for (source of featureSourcesList(); track source) {
+                  <button
+                    type="button"
+                    class="px-3 py-1 text-sm border rounded-full"
+                    [class.bg-sky-600]="featureSourceFilter() === source"
+                    [class.text-white]="featureSourceFilter() === source"
+                    [class.border-sky-600]="featureSourceFilter() === source"
+                    [class.border-gray-300]="featureSourceFilter() !== source"
+                    (click)="featureSourceFilter.set(source)"
+                  >
+                    {{ source }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              @if (sortedFeatures().length > 0) {
+                @for (feature of sortedFeatures(); track feature.name) {
+                  <div class="border-2 border-gray-300 rounded-lg p-4">
+                    <h3 class="text-xl font-bold text-sky-800">{{ feature.name }}</h3>
+                    @if (feature.featureSourceName) {
+                      <div class="text-sm text-gray-600 mb-2">Source: {{ feature.featureSourceName }}</div>
+                    } @else if (feature.source) {
+                      <div class="text-sm text-gray-600 mb-2">Source: {{ feature.source }}</div>
+                    }
+                    <div class="text-sm text-gray-600">Type: {{ featureTypeLabel(feature) }}</div>
+                    <div class="text-sm text-gray-600">Level: {{ featureLevel(feature) }}</div>
+                    @if (feature.featEntity?.category) {
+                      <div class="text-sm text-gray-600">Feat Category: {{ feature.featEntity?.category }}</div>
+                    }
+                    @if ((feature.featEntity?.prerequisite?.length ?? 0) > 0) {
+                      <div class="text-sm text-gray-600">Prerequisites: {{ prerequisiteText(feature.featEntity?.prerequisite ?? []) }}</div>
+                    }
+                    <div class="mt-3" [attr.id]="feature.featureSourceName ? 'source-' + sourceId(feature.featureSourceName) : null">
+                      <app-entry-renderer [entries]="featureEntries(feature)"></app-entry-renderer>
+                    </div>
+                  </div>
+                }
+              } @else {
+                <p class="text-gray-500 italic">No features listed</p>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Page 3: Spells -->
+        @if (currentPage() === 3) {
+          <div class="bg-white p-8 rounded-lg border-2 border-gray-300 shadow-lg">
+            <h2 class="text-3xl font-bold mb-6">Spellcasting</h2>
+            <div class="mb-6 flex flex-wrap items-center gap-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-sm font-semibold text-gray-700">List Type:</span>
+                @for (type of spellListTypes(); track type) {
+                  <button
+                    type="button"
+                    class="px-3 py-1 text-sm border rounded-full"
+                    [class.bg-purple-600]="spellListTypeFilter() === type"
+                    [class.text-white]="spellListTypeFilter() === type"
+                    [class.border-purple-600]="spellListTypeFilter() === type"
+                    [class.border-gray-300]="spellListTypeFilter() !== type"
+                    (click)="spellListTypeFilter.set(type)"
+                  >
+                    {{ type }}
+                  </button>
+                }
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-sm font-semibold text-gray-700">Casting Source:</span>
+                @for (source of spellCastingSourcesList(); track source) {
+                  <button
+                    type="button"
+                    class="px-3 py-1 text-sm border rounded-full"
+                    [class.bg-purple-600]="spellCastingSourceFilter() === source"
+                    [class.text-white]="spellCastingSourceFilter() === source"
+                    [class.border-purple-600]="spellCastingSourceFilter() === source"
+                    [class.border-gray-300]="spellCastingSourceFilter() !== source"
+                    (click)="spellCastingSourceFilter.set(source)"
+                  >
+                    {{ source }}
+                  </button>
+                }
+              </div>
+            </div>
+            <div class="space-y-4">
+              @if (spells().length > 0) {
+                @for (spell of spells(); track spell.name) {
+                  <div class="border-2 border-gray-300 rounded-lg p-4">
+                    <div class="flex flex-wrap items-center gap-3">
+                      <h3 class="text-xl font-bold text-purple-800">{{ spell.name }}</h3>
+                      @if (spell.entity?.level !== undefined) {
+                        <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">{{ spellLevelLabel(spell) }}</span>
+                      }
+                      @if (spell.entity?.school) {
+                        <span class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">{{ spellSchoolLabel(spell.entity?.school ?? '') }}</span>
+                      }
+                      @if (spell.listType) {
+                        <span class="text-xs bg-sky-100 text-sky-700 px-2 py-0.5 rounded">{{ spell.listType }}</span>
+                      }
+                    </div>
+                    <div class="text-sm text-gray-600 space-y-1 mt-2">
+                      @if (spell.source) {
+                        <div>Source: {{ spell.source }}</div>
+                      }
+                      @if (spell.castingSourceName) {
+                        <div>Casting Source: {{ spell.castingSourceName }}</div>
+                      }
+                      @if (spell.entity?.time?.length) {
+                        <div>Time: {{ spellTimeLabel(spell.entity?.time ?? []) }}</div>
+                      }
+                      @if (spell.entity?.range) {
+                        <div>Range: {{ spellRangeLabel(spell.entity?.range ?? null) }}</div>
+                      }
+                      @if (spell.entity?.components) {
+                        <div>Components: {{ spellComponentsLabel(spell.entity?.components ?? null) }}</div>
+                      }
+                      @if (spell.entity?.duration?.length) {
+                        <div>Duration: {{ spellDurationLabel(spell.entity?.duration ?? []) }}</div>
+                      }
+                    </div>
+                    @if (spell.entity?.entries?.length) {
+                      <div class="mt-3">
+                        <app-entry-renderer [entries]="spell.entity?.entries ?? []"></app-entry-renderer>
+                      </div>
+                    }
+                    @if (spell.entity?.entriesHigherLevel?.length) {
+                      <div class="mt-3 border-t border-gray-200 pt-3">
+                        <div class="text-sm font-semibold text-gray-700">At Higher Levels</div>
+                        @for (higher of spell.entity?.entriesHigherLevel ?? []; track $index) {
+                          @if (higher.entries?.length) {
+                            <app-entry-renderer [entries]="higher.entries ?? []"></app-entry-renderer>
+                          }
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              } @else {
+                <p class="text-gray-500 italic">No spells known</p>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Page 4: Equipment -->
+        @if (currentPage() === 4) {
+          <div class="bg-white p-8 rounded-lg border-2 border-gray-300 shadow-lg">
+            <h2 class="text-3xl font-bold mb-6">Equipment & Inventory</h2>
+            
+            <!-- Currency -->
+            @if (character()?.currency && Object.keys(character()!.currency!).length > 0) {
+              <div class="mb-6 border-2 border-gray-300 rounded-lg p-4">
+                <h3 class="text-xl font-bold mb-3">Currency</h3>
+                <div class="flex gap-4">
+                  @for (curr of currencyList(); track curr[0]) {
+                    <div class="text-center">
+                      <div class="text-2xl font-bold">{{ curr[1] }}</div>
+                      <div class="text-sm text-gray-600 uppercase">{{ curr[0] }}</div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Inventory -->
+            <div class="border-2 border-gray-300 rounded-lg p-4">
+              <h3 class="text-xl font-bold mb-3">Items</h3>
+              @if (inventory().length > 0) {
+                <ul class="space-y-2">
+                  @for (item of inventory(); track item.name) {
+                    <li class="flex items-center gap-2 p-2 border-b border-gray-200">
+                      <span class="font-semibold">{{ item.name }}</span>
+                      @if (item.source) {
+                        <span class="text-sm text-gray-600">({{ item.source }})</span>
+                      }
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="text-gray-500 italic">No items in inventory</p>
+              }
+            </div>
+          </div>
+        }
+
+      } @else {
+        <p>No character loaded. Use the <a [routerLink]="['/']" class="text-sky-600 underline">import page</a>.</p>
+      }
+    </main>
+  `,
+})
+
+export class CharacterSheetComponent {
+  private store = inject(CharacterStore);
+
+  characterData = this.store.characterData;
+  character = computed(() => this.characterData()?.character ?? null);
+  currentPage = signal(1);
+  featureTypeFilter = signal<'ALL' | 'CLASS_FEATURE' | 'FEAT' | 'OPTIONAL_FEATURE'>('ALL');
+  featureSourceFilter = signal<string>('ALL');
+  spellListTypeFilter = signal<'PREPARED' | 'KNOWN' | 'SPELLBOOK'>('PREPARED');
+  spellCastingSourceFilter = signal<string>('ALL');
+  Object = Object; // Make Object available in template
+
+  abilities = computed(() => {
+    const c = this.character();
+    if (!c?.abilityScores) return [];
+    return (Object.entries(c.abilityScores) as [string, number][]).map(([key, value]) => {
+        console.log(`Processing ability score: ${key} with value ${value}`);
+        const abbr = this.abilityScoreToAbbreviation(key);
+        const modifier = this.modifierNumber(value);
+        const proficient = this.isProficientInSavingThrow(abbr);
+        const savingThrowValue = this.savingThrowValue(key);
+        return {
+        name: key,
+        abbr: abbr,
+        score: value,
+        modifier: modifier,
+        proficient,
+        savingThrowValue
+    }
+    });
+  });
+
+  spellListTypes = computed(() => {
+    const spells = this.characterData()?.spells ?? [];
+    const useSpellbook = this.character()?.featureSources?.some(fs => fs.useSpellbook) ?? false;
+    const types = new Set(spells.map(spell => spell.listType).filter(Boolean) as string[]);
+    const result: Array<'PREPARED' | 'KNOWN' | 'SPELLBOOK'> = [...Array.from(types)] as any;
+    return useSpellbook ? result : result.filter(t => t !== 'SPELLBOOK');
+  });
+  spellCastingSourcesList = computed(() => {
+    const spells = this.characterData()?.spells ?? [];
+    const sources = new Set(spells.map(spell => spell.castingSourceName).filter(Boolean) as string[]);
+    return ['ALL', ...Array.from(sources).sort()];
+  });
+  spells = computed(() => {
+    const spells = this.characterData()?.spells ?? [];
+    const listTypeFilter = this.spellListTypeFilter();
+    const sourceFilter = this.spellCastingSourceFilter();
+    const filtered = spells.filter(spell => {
+      const matchesListType = spell.listType === listTypeFilter;
+      const matchesSource = sourceFilter === 'ALL' || spell.castingSourceName === sourceFilter;
+      return matchesListType && matchesSource;
+    });
+    return [...filtered].sort((a, b) => {
+      // Sort by casting source first
+      const sourceA = a.castingSourceName ?? '';
+      const sourceB = b.castingSourceName ?? '';
+      if (sourceA !== sourceB) return sourceA.localeCompare(sourceB);
+      // Then by level
+      const levelA = a.entity?.level ?? 0;
+      const levelB = b.entity?.level ?? 0;
+      if (levelA !== levelB) return levelA - levelB;
+      // Then by name
+      return a.name.localeCompare(b.name);
+    });
+  });
+  combatActions = computed(() => this.characterData()?.combatActions ?? []);
+  features = computed(() => this.characterData()?.features ?? []);
+  featureTypes = computed(() => {
+    const items = this.characterData()?.features ?? [];
+    const types = new Set(items.map(feature => this.featureTypeLabel(feature)));
+    return ['ALL', ...Array.from(types)] as Array<'ALL' | 'CLASS_FEATURE' | 'FEAT' | 'OPTIONAL_FEATURE'>;
+  });
+  featureSourcesList = computed(() => {
+    const items = this.characterData()?.features ?? [];
+    const sources = new Set(items.map(feature => feature.featureSourceName).filter(Boolean) as string[]);
+    return ['ALL', ...Array.from(sources).sort()];
+  });
+  sortedFeatures = computed(() => {
+    const items = this.characterData()?.features ?? [];
+    const typeFilter = this.featureTypeFilter();
+    const sourceFilter = this.featureSourceFilter();
+    const filtered = items.filter(feature => {
+      const matchesType = typeFilter === 'ALL' || this.featureTypeLabel(feature) === typeFilter;
+      const matchesSource = sourceFilter === 'ALL' || feature.featureSourceName === sourceFilter;
+      return matchesType && matchesSource;
+    });
+    return [...filtered].sort((a, b) => {
+      const typeA = this.featureTypeOrder(a);
+      const typeB = this.featureTypeOrder(b);
+      if (typeA !== typeB) return typeA - typeB;
+      const levelA = this.featureLevel(a);
+      const levelB = this.featureLevel(b);
+      if (levelA !== levelB) return levelA - levelB;
+      return a.name.localeCompare(b.name);
+    });
+  });
+  inventory = computed(() => this.characterData()?.inventory ?? []);
+  speedList = computed(() => {
+    const speeds = this.character()?.speeds ?? {};
+    return Object.entries(speeds);
+  });
+  currencyList = computed(() => {
+    const currency = this.character()?.currency ?? {};
+    return Object.entries(currency);
+  });
+
+  readonly skillDefinitions = [
+    { name: 'Acrobatics', ability: 'dex' },
+    { name: 'Animal Handling', ability: 'wis' },
+    { name: 'Arcana', ability: 'int' },
+    { name: 'Athletics', ability: 'str' },
+    { name: 'Deception', ability: 'cha' },
+    { name: 'History', ability: 'int' },
+    { name: 'Insight', ability: 'wis' },
+    { name: 'Intimidation', ability: 'cha' },
+    { name: 'Investigation', ability: 'int' },
+    { name: 'Medicine', ability: 'wis' },
+    { name: 'Nature', ability: 'int' },
+    { name: 'Perception', ability: 'wis' },
+    { name: 'Performance', ability: 'cha' },
+    { name: 'Persuasion', ability: 'cha' },
+    { name: 'Religion', ability: 'int' },
+    { name: 'Sleight of Hand', ability: 'dex' },
+    { name: 'Stealth', ability: 'dex' },
+    { name: 'Survival', ability: 'wis' }
+  ];
+
+  skillList = computed(() => {
+    const skills = this.character()?.proficiencies?.skills ?? {};
+    console.log('Raw skills from character data:', skills);
+    return this.skillDefinitions.map((skill) => {
+      const rawProf = skills[skill.name.toUpperCase()] ?? 'NONE' as const;
+      const level = this.skillProficiencyLevel(rawProf);
+      const abilityScore = this.abilityScoreValue(skill.ability);
+      const base = this.modifierNumber(abilityScore);
+      const profBonus = this.proficiencyBonusValue(level);
+      return {
+        name: skill.name,
+        level,
+        levelLabel: this.proficiencyLabel(level),
+        value: this.formatSigned(base + profBonus)
+      };
+    });
+  });
+
+
+
+
+  featureSources = computed(() => this.character()?.featureSources ?? []);
+
+  featureEntries(feature: FeatureEntryFull): Entry[] {
+    return (
+      feature.featureEntity?.entries ??
+      feature.featEntity?.entries ??
+      feature.optionalFeatureEntity?.entries ??
+      []
+    );
+  }
+
+  featureTypeLabel(feature: FeatureEntryFull): string {
+    if (feature.featureType) return feature.featureType;
+    if (feature.featEntity) return 'FEAT';
+    if (feature.optionalFeatureEntity) return 'OPTIONAL_FEATURE';
+    return 'CLASS_FEATURE';
+  }
+
+  featureTypeOrder(feature: FeatureEntryFull): number {
+    const type = this.featureTypeLabel(feature);
+    if (type === 'CLASS_FEATURE') return 0;
+    if (type === 'FEAT') return 1;
+    if (type === 'OPTIONAL_FEATURE') return 2;
+    return 3;
+  }
+
+  featureLevel(feature: FeatureEntryFull): number {
+    return feature.featureEntity?.level ?? 0;
+  }
+
+  sourceId(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  }
+
+  prerequisiteText(prerequisites: Prerequisite[]): string {
+    if (!prerequisites.length) return 'None';
+    return prerequisites
+      .map(prereq => {
+        const parts: string[] = [];
+        if (prereq.level) {
+          if ('class' in prereq.level) {
+            const requisiteClass = (prereq.level as { class: { name: string } }).class;
+            parts.push(`Level ${prereq.level.level} (${requisiteClass.name})`);
+          } else if ('level' in prereq.level) {
+            parts.push(`Level ${prereq.level.level}`);
+          }
+        }
+        if (prereq.other) parts.push(prereq.other);
+        prereq.ability?.forEach(ability => {
+          if (ability.str) parts.push(`Strength ${ability.str}`);
+          if (ability.dex) parts.push(`Dexterity ${ability.dex}`);
+          if (ability.con) parts.push(`Constitution ${ability.con}`);
+          if (ability.int) parts.push(`Intelligence ${ability.int}`);
+          if (ability.wis) parts.push(`Wisdom ${ability.wis}`);
+          if (ability.cha) parts.push(`Charisma ${ability.cha}`);
+        });
+        if (prereq.race?.length) parts.push(`Race: ${prereq.race.map(r => r.name).join(' or ')}`);
+        prereq.proficiency?.forEach(prof => {
+          if (prof.armor) parts.push(`Proficiency: ${prof.armor}`);
+          if (prof.weapon) parts.push(`Proficiency: ${prof.weapon}`);
+          if (prof.weaponGroup) parts.push(`Proficiency: ${prof.weaponGroup} weapons`);
+        });
+        if (prereq.pact) parts.push(`Pact: ${prereq.pact}`);
+        if (prereq.campaign?.length) parts.push(`Campaign: ${prereq.campaign.join(', ')}`);
+        if (prereq.item?.length) parts.push(`Item: ${prereq.item.join(', ')}`);
+        if (prereq.spell?.length) {
+          parts.push(`Spell: ${prereq.spell.map(spell => ('spellName' in spell ? spell.spellName : spell.entrySummary)).join(' or ')}`);
+        }
+        if (prereq.background?.length) parts.push(`Background: ${prereq.background.map(bg => bg.name).join(', ')}`);
+        if (prereq.feat?.length) parts.push(`Feat: ${prereq.feat.join(' or ')}`);
+        if (prereq.feature?.length) parts.push(`Feature: ${prereq.feature.join(', ')}`);
+        if (prereq.otherSummary?.entrySummary) parts.push(prereq.otherSummary.entrySummary);
+        return parts.length ? parts.join(', ') : 'Special';
+      })
+      .join(' or ');
+  }
+
+  spellLevelLabel(spell: SpellEntryFull): string {
+    const level = spell.entity?.level ?? 0;
+    return level === 0 ? 'Cantrip' : `Level ${level}`;
+  }
+
+  spellSchoolLabel(school: string): string {
+    const normalized = school?.trim().toUpperCase();
+    switch (normalized) {
+      case 'A':
+        return 'Abjuration';
+      case 'C':
+        return 'Conjuration';
+      case 'D':
+        return 'Divination';
+      case 'E':
+        return 'Enchantment';
+      case 'V':
+        return 'Evocation';
+      case 'I':
+        return 'Illusion';
+      case 'N':
+        return 'Necromancy';
+      case 'T':
+        return 'Transmutation';
+      default:
+        return school;
+    }
+  }
+
+  spellTimeLabel(times: SpellTime[]): string {
+    return times
+      .map(time => {
+        const number = time.number ?? '';
+        const unit = time.unit ?? '';
+        return `${number} ${unit}`.trim();
+      })
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  spellRangeLabel(range: SpellRange | null): string {
+    if (!range) return '—';
+    if (range.type === 'self' || range.type === 'touch') return range.type;
+    if (range.distance?.type) {
+      const amount = range.distance.amount ?? '';
+      return `${amount} ${range.distance.type}`.trim();
+    }
+    return range.type ?? '—';
+  }
+
+  spellComponentsLabel(components: SpellComponents | null): string {
+    if (!components) return '—';
+    const parts: string[] = [];
+    if (components.v) parts.push('V');
+    if (components.s) parts.push('S');
+    if (components.m) {
+      const text = typeof components.m === 'string' ? components.m : components.m.text;
+      parts.push(text ? `M (${text})` : 'M');
+    }
+    return parts.join(', ');
+  }
+
+  spellDurationLabel(durations: SpellDuration[]): string {
+    return durations
+      .map(duration => {
+        const base = duration.duration?.type ? `${duration.duration.amount ?? ''} ${duration.duration.type}`.trim() : duration.type ?? '';
+        if (duration.concentration) return `Concentration, ${base}`.trim();
+        return base;
+      })
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  isProficientInSavingThrow(abbr?: string) {
+    const saves = this.character()?.proficiencies?.savingThrows ?? [];
+    if (!abbr) return false;
+    return saves.includes((abbr || '').toUpperCase());
+  }
+
+  hasMiscBonusForSavingThrow(abbr?: string) {
+    const misc = this.character()?.proficiencies?.saveMiscBonuses ?? {};
+    if (!abbr) return false;
+    return typeof misc[abbr.toLowerCase()] === 'number';
+  }
+
+  savingThrowValue(abilityScore: string) {
+    if (!abilityScore) return 0;
+    const abbr = this.abilityScoreToAbbreviation(abilityScore);
+    const abilityScoreValue = this.abilityScoreValue(abilityScore);
+    if (typeof abilityScoreValue !== 'number') return 0;
+    const total =  this.modifierNumber(abilityScoreValue) + (this.isProficientInSavingThrow(abbr) ? this.proficiencyBonus() : 0) + (this.hasMiscBonusForSavingThrow(abbr) ? (this.character()?.proficiencies?.saveMiscBonuses?.[abbr.toLowerCase()] ?? 0) : 0);  
+    return total;
+  }
+
+  initiative() {
+    const dex = this.character()?.abilityScores?.dexterity;
+    if (typeof dex !== 'number') return 0;
+    const mod = this.modifierNumber(dex);
+    const misc = this.character()?.proficiencies?.initiative ? this.proficiencyBonus() : 0;
+    return mod + misc;
+  }
+
+  passivePerception(): number {
+    const char = this.character();
+    if (!char) return 10;
+    const wis = this.modifierNumber(char.abilityScores?.wisdom);
+    const perceptionSkill = this.skillList().find(s => s.name === 'Perception');
+    const skillMod = perceptionSkill ? parseInt(perceptionSkill.value) : wis + this.proficiencyBonus();
+    return 10 + skillMod;
+  }
+
+  getSkillAbility(skillName: string): string {
+    const def = this.skillDefinitions.find(d => d.name === skillName);
+    return def ? this.abilityScoreToAbbreviation(def.ability).toUpperCase() : '';
+  }
+
+  modifier(score?: number) {
+    if (typeof score !== 'number') return '';
+    return this.formatSigned(this.modifierNumber(score));
+  }
+
+  proficiencyBonus() {
+    const level = this.character()?.level ?? 0;
+    if (level >= 17) return 6;
+    if (level >= 13) return 5;
+    if (level >= 9) return 4;
+    if (level >= 5) return 3;
+    return 2;
+  }
+
+  private modifierNumber(score?: number) {
+    if (typeof score !== 'number') return 0;
+    return Math.floor((score - 10) / 2);
+  }
+
+  formatSigned(value: number) {
+    return value >= 0 ? `+${value}` : `${value}`;
+  }
+
+  private abilityScoreValue(abbrevOrName?: string) {
+    if (!abbrevOrName) return undefined;
+    const key = this.abilityScoreToAbbreviation(abbrevOrName);
+    const scores = this.character()?.abilityScores;
+    if (!scores) return undefined;
+    switch (key) {
+      case 'str':
+        return scores.strength;
+      case 'dex':
+        return scores.dexterity;
+      case 'con':
+        return scores.constitution;
+      case 'int':
+        return scores.intelligence;
+      case 'wis':
+        return scores.wisdom;
+      case 'cha':
+        return scores.charisma;
+      default:
+        return undefined;
+    }
+  }
+
+  private abilityScoreToAbbreviation(name: string) {
+    const key = name.toLowerCase().slice(0, 3);
+    return key;
+    /*switch (key) {
+      case 'str':
+        return 'STR';
+      case 'dex':
+        return 'DEX';
+      case 'con':
+        return 'CON';
+      case 'int':
+        return 'INT';
+      case 'wis':
+        return 'WIS';
+      case 'cha':
+        return 'CHA';
+      default:
+        return key;
+    }*/
+  }
+
+  private skillProficiencyLevel(value: unknown) {
+    if (typeof value === 'string') {
+      const normalized = value.trim();
+      console.log(`Normalized proficiency string: "${normalized}"`);
+      if (normalized === 'EXPERTISE') return 'EXPERTISE' as const;
+      if (normalized === 'PROFICIENT') return 'PROFICIENT' as const;
+      if (normalized === 'HALF') return 'HALF' as const;
+      return 'NONE' as const;
+    }
+    if (value === true || value === 1) return 'PROFICIENT' as const;
+    if (value === 2) return 'EXPERTISE' as const;
+    if (value === 0.5) return 'HALF' as const;
+    return 'NONE' as const;
+  }
+
+  private proficiencyBonusValue(level: 'EXPERTISE' | 'PROFICIENT' | 'HALF' | 'NONE') {
+    const bonus = this.proficiencyBonus();
+    if (level === 'EXPERTISE') return bonus * 2;
+    if (level === 'PROFICIENT') return bonus;
+    if (level === 'HALF') return Math.floor(bonus / 2);
+    return 0;
+  }
+
+  private proficiencyLabel(level: 'EXPERTISE' | 'PROFICIENT' | 'HALF' | 'NONE') {
+    console.log(`Determining label for proficiency level: ${level}`);
+    if (level === 'EXPERTISE') return 'EXP.';
+    if (level === 'PROFICIENT') return 'PROF.';
+    if (level === 'HALF') return 'HALF';
+    if (level === 'NONE') return 'NONE';
+    return '';
+  }
+}
