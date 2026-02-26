@@ -9,6 +9,8 @@ import {
   SpellRange,
   SpellTime,
   CharacterData,
+  InventoryItem,
+  AbilityScores,
 } from '../models/character.model';
 
 @Injectable({
@@ -241,6 +243,7 @@ export class CharacterHelpersService {
   }
 
   getSkillAbility(skillName: string): string {
+    console.log(`Looking up ability for skill: ${skillName}`);
     const def = this.skillDefinitions.find((d) => d.name === skillName);
     return def ? this.abilityScoreToAbbreviation(def.ability).toUpperCase() : '';
   }
@@ -327,4 +330,128 @@ export class CharacterHelpersService {
     if (level === 'NONE') return 'NONE';
     return '';
   }
+
+  // AC calculation
+  private parseBonusValue(bonusStr: string | null | undefined): number {
+    if (!bonusStr) return 0;
+    // Extract number from strings like "+2" or "2"
+    const match = bonusStr.match(/(\+?-?\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  }
+
+  calculateArmorClass(character: CharacterData | null, allItems: InventoryItem[]): { ac: number; source: string } {
+    if (!character) {
+      return { ac: 10, source: 'No character data' };
+    }
+
+    // Only consider equipped items
+    const equippedItems = allItems.filter((item) => item.isEquipped);
+
+    const dexMod = this.modifierNumber(character.abilityScores?.dexterity);
+
+    let bestArmorAC = 10 + dexMod; // fallback
+    let bestArmorSource = 'Dexterity Only';
+    let bestShieldAC = 0;
+    let bestShieldSource = 'No Shield';
+
+    // Extract armor type from item type string (e.g., "LA|plate armor" → "LA")
+    const getArmorType = (typeStr: string | null | undefined): string | null => {
+      if (!typeStr) return null;
+      return typeStr.includes('|') ? typeStr.split('|')[0] : typeStr;
+    };
+
+    // Split items by category
+    const armorItems = equippedItems.filter((item) => {
+      const type = getArmorType(item.entity?.item?.type);
+      return ['LA', 'MA', 'HA'].includes(type ?? '');
+    });
+
+    const shieldItems = equippedItems.filter((item) => {
+      const type = getArmorType(item.entity?.item?.type);
+      return type === 'S';
+    });
+
+    const miscItems = equippedItems.filter(
+      (item) =>
+        !armorItems.includes(item) &&
+        !shieldItems.includes(item) &&
+        item.entity?.item?.bonusAc
+    );
+
+    // Calculate best armor AC
+    if (armorItems.length > 0) {
+      for (const armor of armorItems) {
+        const baseAC = armor.entity?.item?.ac;
+        if (baseAC === null || baseAC === undefined) continue;
+
+        const bonus = this.parseBonusValue(armor.entity?.item?.bonusAc);
+        const armorType = getArmorType(armor.entity?.item?.type);
+
+        let totalAC = baseAC;
+        if (armorType?.startsWith('LA')) {
+          totalAC = baseAC + dexMod + bonus;
+        } else if (armorType?.startsWith('MA')) {
+          totalAC = baseAC + Math.min(2, dexMod) + bonus;
+        } else if (armorType?.startsWith('HA')) {
+          totalAC = baseAC + bonus; // no dex
+        }
+
+        if (totalAC > bestArmorAC) {
+          bestArmorAC = totalAC;
+          bestArmorSource = armor.name;
+        }
+      }
+    }
+
+    // Check unarmored defense
+    if (character.unarmoredDefense) {
+      const defenseMod = this.modifierNumber(
+        this.abilityScoreValue(character, character.unarmoredDefense as unknown as string)
+      );
+      const unarmoredAC = 10 + dexMod + defenseMod;
+      if (unarmoredAC > bestArmorAC) {
+        bestArmorAC = unarmoredAC;
+        const abilityName = Object.keys(character.unarmoredDefense).find((key) =>
+          ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'].includes(
+            key
+          )
+        );
+        bestArmorSource = abilityName
+          ? `Unarmored Defense (${abilityName})`
+          : 'Unarmored Defense';
+      }
+    }
+
+    // Calculate shield AC
+    if (shieldItems.length > 0) {
+      for (const shield of shieldItems) {
+        const baseAC = shield.entity?.item?.ac ?? 0;
+        const bonus = this.parseBonusValue(shield.entity?.item?.bonusAc);
+        const totalAC = baseAC + bonus;
+
+        if (totalAC > bestShieldAC) {
+          bestShieldAC = totalAC;
+          bestShieldSource = shield.name;
+        }
+      }
+    }
+
+    // Add misc bonuses
+    let miscBonus = 0;
+    const miscSources: string[] = [];
+    for (const item of miscItems) {
+      const bonus = this.parseBonusValue(item.entity?.item?.bonusAc);
+      miscBonus += bonus;
+      miscSources.push(item.name);
+    }
+
+    const totalAC = bestArmorAC + bestShieldAC + miscBonus;
+    const sourceParts = [bestArmorSource, bestShieldSource, ...miscSources].filter(
+      (s) => s && s !== 'No Shield'
+    );
+    const source = sourceParts.join(' + ');
+
+    return { ac: totalAC, source };
+  }
+
 }

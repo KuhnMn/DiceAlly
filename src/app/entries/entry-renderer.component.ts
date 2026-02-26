@@ -38,7 +38,7 @@ import {
     @if (entry()) {
       @switch (detectType(entry()!)) {
         @case ('list') {
-          <ul class="space-y-1">
+          <ul class="space-y-1 mt-2 mb-2 list-none pl-0">
             @for (item of asListEntry(entry()!)?.items ?? []; track trackEntry(item, $index)) {
               <li class="flex items-baseline gap-2">
                 <span class="mt-1 text-gray-700">•</span>
@@ -48,7 +48,7 @@ import {
           </ul>
         }
         @case ('table') {
-          <div class="overflow-x-auto">
+          <div class="overflow-x-auto mt-2 mb-2">
             <table class="min-w-full text-sm border border-gray-300">
               <thead class="bg-gray-50">
                 <tr>
@@ -72,7 +72,7 @@ import {
           </div>
         }
         @case ('entries') {
-          <div class="space-y-2">
+          <div class="space-y-2 mt-2">
             @if (asEntriesEntry(entry()!)?.name) {
               <div class="font-semibold">{{ asEntriesEntry(entry()!)?.name }}</div>
             }
@@ -272,4 +272,7 @@ export class EntryRendererComponent {
       .replace(/\{@actSaveSuccess\s([^}]+)\}/g, 'On success: $1')
       .replace(/\{@actSaveSuccessOrFail\s([^}]+)\}/g, '$1');
   }
+
+
 }
+

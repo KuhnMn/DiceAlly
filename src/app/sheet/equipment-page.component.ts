@@ -1,43 +1,334 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, signal, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ExportedCharacter } from '../models/character.model';
+import { ExportedCharacter, Entry, DisplayItem, InventoryItem } from '../models/character.model';
+import { EntryRendererComponent } from '../entries/entry-renderer.component';
+import { FeatureUsesComponent } from './feature-uses.component';
+import { CharacterHelpersService } from './character-helpers.service';
+import { CharacterStore } from '../stores/character.store';
 
 @Component({
   selector: 'app-equipment-page',
-  imports: [CommonModule],
+  imports: [CommonModule, EntryRendererComponent, FeatureUsesComponent],
+  styles: [`
+    .flash-highlight {
+      animation: item-flash 1.6s ease-out;
+    }
+
+    @keyframes item-flash {
+      0% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
+        border-color: #22c55e;
+      }
+      60% {
+        box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.15);
+        border-color: #22c55e;
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+        border-color: #d1d5db;
+      }
+    }
+    
+    .property-badge, .mastery-badge {
+      position: relative;
+      cursor: help;
+      display: inline-block;
+    }
+    .property-badge .tooltip-box, .mastery-badge .tooltip-box {
+      visibility: hidden;
+      position: absolute;
+      z-index: 1000;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #1f2937;
+      color: #fff;
+      text-align: left;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: normal;
+      width: 320px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    }
+    .property-badge:hover .tooltip-box, .mastery-badge:hover .tooltip-box {
+      visibility: visible;
+    }
+    .property-badge .tooltip-box::after, .mastery-badge .tooltip-box::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 6px;
+      border-style: solid;
+      border-color: #1f2937 transparent transparent transparent;
+    }
+    .tooltip-box p {
+      margin: 0;
+      color: #f3f4f6;
+    }
+    .tooltip-box ul, .tooltip-box ol {
+      margin: 8px 0 0 20px;
+      padding: 0;
+      color: #f3f4f6;
+    }
+    .tooltip-box li {
+      margin: 4px 0;
+    }
+    .tooltip-box strong {
+      color: #fbbf24;
+    }
+  `],
   template: `
     <div class="bg-white p-8 rounded-lg border-2 border-gray-300 shadow-lg">
       <h2 class="text-3xl font-bold mb-6">Equipment & Inventory</h2>
 
-      <!-- Currency -->
-      @if (character()?.currency && Object.keys(character()!.currency!).length > 0) {
-        <div class="mb-6 border-2 border-gray-300 rounded-lg p-4">
-          <h3 class="text-xl font-bold mb-3">Currency</h3>
-          <div class="flex gap-4">
-            @for (curr of currencyList(); track curr[0]) {
-              <div class="text-center">
-                <div class="text-2xl font-bold">{{ curr[1] }}</div>
-                <div class="text-sm text-gray-600 uppercase">{{ curr[0] }}</div>
-              </div>
-            }
+      <!-- Currency Tracker -->
+      <div class="mb-6 border-2 border-amber-300 rounded-lg p-4 bg-amber-50">
+        <h3 class="text-lg font-bold mb-3 text-amber-900">Currency</h3>
+        <div class="flex gap-6 items-center flex-wrap">
+          <div class="flex items-center gap-2">
+            <label class="text-sm font-semibold text-amber-800 w-16">Gold</label>
+            <input
+              type="number"
+              [value]="goldAmount()"
+              (input)="updateCurrency('gold', $any($event.target).value)"
+              class="w-24 px-3 py-2 border-2 border-amber-300 rounded-md focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              min="0"
+            />
+            <span class="text-xs text-amber-700">GP</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-sm font-semibold text-gray-600 w-16">Silver</label>
+            <input
+              type="number"
+              [value]="silverAmount()"
+              (input)="updateCurrency('silver', $any($event.target).value)"
+              class="w-24 px-3 py-2 border-2 border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
+              min="0"
+            />
+            <span class="text-xs text-gray-600">SP</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-sm font-semibold text-orange-700 w-16">Copper</label>
+            <input
+              type="number"
+              [value]="copperAmount()"
+              (input)="updateCurrency('copper', $any($event.target).value)"
+              class="w-24 px-3 py-2 border-2 border-orange-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              min="0"
+            />
+            <span class="text-xs text-orange-700">CP</span>
           </div>
         </div>
-      }
+      </div>
 
       <!-- Inventory -->
-      <div class="border-2 border-gray-300 rounded-lg p-4">
+      <div class="space-y-4">
         <h3 class="text-xl font-bold mb-3">Items</h3>
         @if (inventory().length > 0) {
-          <ul class="space-y-2">
-            @for (item of inventory(); track item.name) {
-              <li class="flex items-center gap-2 p-2 border-b border-gray-200">
-                <span class="font-semibold">{{ item.name }}</span>
-                @if (item.source) {
-                  <span class="text-sm text-gray-600">({{ item.source }})</span>
+          @for (item of inventory(); track item.name) {
+            <div class=\"border-2 border-gray-300 rounded-lg p-4\" [attr.id]=\"'item-' + helpers.sourceId(item.name + '-' + (item.source ?? ''))\" [class.flash-highlight]=\"highlightedId() === ('item-' + helpers.sourceId(item.name + '-' + (item.source ?? '')))\">
+              <!-- Header (always visible, clickable) -->
+              <button
+                type="button"
+                class="w-full text-left hover:bg-gray-50 transition-colors rounded p-2 -m-2"
+                (click)="toggleExpanded('item-' + item.name)"
+              >
+                <div class="flex flex-wrap items-center justify-between gap-2 w-full">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="text-xl font-bold text-green-800">{{ item.name }}</h3>
+                    @if (item.entity?.itemType) {
+                      <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">{{ item.entity?.itemType }}</span>
+                    }
+                                    @if (getItemProp(item, 'weaponCategory')) {
+                  <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded capitalize">{{ getItemProp(item, 'weaponCategory') }}</span>
                 }
-              </li>
-            }
-          </ul>
+                @if (getItemProp(item, 'rarity') && getItemProp(item, 'rarity') !== 'none') {
+                  <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded capitalize">{{ getItemProp(item, 'rarity') }}</span>
+                }
+                @if (getItemProp(item, 'scfType')) {
+                  <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">Focus: {{ getItemProp(item, 'scfType') }}</span>
+                }
+                @for (tag of getItemTypeTags(item); track tag) {
+                  <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{{ tag }}</span>
+                }
+                  </div>
+                  <span class="text-xl text-green-600 font-bold">{{ isExpanded('item-' + item.name) ? '−' : '+' }}</span>
+                </div>
+              </button>
+
+              <!-- Basic Info (always visible) -->
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-600 space-y-1 mt-2">
+                @if (getItemProp(item, 'weight')) {
+                  <div><span class="font-semibold">Weight:</span> {{ getItemProp(item, 'weight') }} lb.</div>
+                }
+                @if (getItemProp(item, 'value')) {
+                  <div><span class="font-semibold">Value:</span> {{ formatGold(getItemProp(item, 'value')) }}</div>
+                }
+                @if (item.entity?.ac) {
+                  <div><span class="font-semibold">AC:</span> {{ item.entity?.ac }}</div>
+                }
+                @if (getItemProp(item, 'dmg1')) {
+                  <div><span class="font-semibold">Damage:</span> {{ getItemProp(item, 'dmg1') }}@if (getItemProp(item, 'dmgType')) { {{ getItemProp(item, 'dmgType') }}}@if (getItemProp(item, 'dmg2')) { ({{ getItemProp(item, 'dmg2') }} versatile)}</div>
+                }
+                @if (getItemProp(item, 'range')) {
+                  <div><span class="font-semibold">Range:</span> {{ getItemProp(item, 'range') }} ft.</div>
+                }
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-sm text-gray-600 space-y-1 mt-2">
+                @if (item.entity?.properties?.length) {
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-semibold">Properties:</span>
+                    @for (prop of item.entity?.properties; track prop.name) {
+                      <span class="property-badge text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded font-medium">
+                        {{ prop.name }}
+                        @if (prop.entry) {
+                          <div class="tooltip-box">
+                            @if (prop.entry && !isArray(prop.entry)) {
+                              <app-entry-renderer [entries]="[prop.entry]"></app-entry-renderer>
+                            } @else if (isArray(prop.entry)) {
+                              <app-entry-renderer [entries]="prop.entry"></app-entry-renderer>
+                            }
+                          </div>
+                        }
+                      </span>
+                    }
+                  </div>
+                }
+                @if (item.entity?.masteries?.length) {
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-semibold">Mastery:</span>
+                    @for (mastery of item.entity?.masteries; track mastery.name) {
+                      <span class="mastery-badge text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded font-medium">
+                        {{ mastery.name }}
+                        @if (mastery.entry) {
+                          <div class="tooltip-box">
+                            @if (mastery.entry && !isArray(mastery.entry)) {
+                              <app-entry-renderer [entries]="[mastery.entry]"></app-entry-renderer>
+                            } @else if (isArray(mastery.entry)) {
+                              <app-entry-renderer [entries]="mastery.entry"></app-entry-renderer>
+                            }
+                          </div>
+                        }
+                      </span>
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- Source && Rarity Tags -->
+              <div class="flex flex-wrap items-center gap-2">
+
+                @if (item.source) {
+                  <span class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">{{ item.source }}</span>
+                }
+              </div>
+
+              <!-- Expandable Content -->
+              @if (isExpanded('item-' + item.name)) {
+                <div class="mt-3 pt-3 border-t border-gray-200">
+                  <!-- Bonuses Section -->
+                  @if (hasAnyBonus(item)) {
+                    <div class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h4 class="text-sm font-bold text-blue-900 mb-2">Bonuses</h4>
+                      <div class="text-sm text-blue-800 space-y-1">
+                        @if (getItemProp(item, 'bonusWeapon')) {
+                          <div>• Weapon: {{ getItemProp(item, 'bonusWeapon') }}</div>
+                        }
+                        @if (getItemProp(item, 'bonusWeaponAttack')) {
+                          <div>• Weapon Attack: {{ getItemProp(item, 'bonusWeaponAttack') }}</div>
+                        }
+                        @if (getItemProp(item, 'bonusWeaponDamage')) {
+                          <div>• Weapon Damage: {{ getItemProp(item, 'bonusWeaponDamage') }}</div>
+                        }
+                        @if (getItemProp(item, 'bonusSavingThrow')) {
+                          <div>• Saving Throws: {{ getItemProp(item, 'bonusSavingThrow') }}</div>
+                        }
+                        @if (getItemProp(item, 'bonusSpellAttack')) {
+                          <div>• Spell Attack: {{ getItemProp(item, 'bonusSpellAttack') }}</div>
+                        }
+                        @if (getItemProp(item, 'bonusSpellSaveDc')) {
+                          <div>• Spell Save DC: {{ getItemProp(item, 'bonusSpellSaveDc') }}</div>
+                        }
+                        @if (getItemProp(item, 'bonusSpellDamage')) {
+                          <div>• Spell Damage: {{ getItemProp(item, 'bonusSpellDamage') }}</div>
+                        }
+                        @if (getItemProp(item, 'bonusAc')) {
+                          <div>• AC Bonus: {{ getItemProp(item, 'bonusAc') }}</div>
+                        }
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Item Description -->
+                  @if (getItemProp(item, 'entries')) {
+                    <div class="mt-3">
+                      <app-entry-renderer [entries]="getItemEntries(item)"></app-entry-renderer>
+                    </div>
+                  }
+
+                  <!-- Uses Tracking -->
+
+                </div>
+              }
+              <!-- Footer (always visible) -->
+                  @if (item.uses?.length) {
+                    <div class="mt-4 border-t border-gray-200 pt-4">
+                      @for (use of item.uses; track use.tag) {
+                        <app-feature-uses 
+                          [uses]="use"
+                          (usesUpdated)="updateItemUses(item, $event)"
+                        />
+                      }
+                    </div>
+                  }
+
+              
+              <div class="flex flex-wrap items-center gap-3 mb-2 mt-4 justify-between">
+                <!-- Equipped Checkbox -->
+                 <div class="flex flex-wrap items-center gap-3">
+                <label class="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    [checked]="item.isEquipped ?? false"
+                    (change)="toggleEquipped(item)"
+                    class="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                  />
+                  <span class="ml-2 text-sm font-semibold text-gray-700">Equipped</span>
+                </label>
+
+                <!-- Attunement (only for equipped items that require attunement) -->
+                @if (item.isEquipped && requiresAttunement(item)) {
+                  <label class="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      [checked]="item.isAttuned ?? false"
+                      (change)="toggleAttuned(item)"
+                      class="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                    />
+                    <span class="ml-2 text-sm font-semibold text-purple-700">✨ Attuned</span>
+                  </label>
+                }
+                 </div>
+                <!-- Count (for multiple items) -->
+                @if (item.allowMultiples) {
+                  <div class="flex items-center gap-2">
+                    <label class="text-sm font-semibold text-gray-700">Quantity:</label>
+                    <input
+                      type="number"
+                      [value]="item.count ?? 1"
+                      (input)="updateItemCount(item, $any($event.target).value)"
+                      class="w-20 px-2 py-1 border-2 border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center"
+                      min="0"
+                    />
+                  </div>
+                }
+              </div>
+            </div>
+          }
         } @else {
           <p class="text-gray-500 italic">No items in inventory</p>
         }
@@ -47,12 +338,207 @@ import { ExportedCharacter } from '../models/character.model';
 })
 export class EquipmentPageComponent {
   characterData = input.required<ExportedCharacter | null>();
-  Object = Object; // Make Object available in template
-
+  private store = inject(CharacterStore);
+  helpers = inject(CharacterHelpersService);
+  
+  highlightedId = signal<string | null>(null);
+  
   character = computed(() => this.characterData()?.character ?? null);
   inventory = computed(() => this.characterData()?.inventory ?? []);
-  currencyList = computed(() => {
-    const currency = this.character()?.currency ?? {};
-    return Object.entries(currency);
-  });
+  
+  // Currency tracking signals
+  goldAmount = signal(0);
+  silverAmount = signal(0);
+  copperAmount = signal(0);
+  expandedItems = signal<Set<string>>(new Set());
+  
+  // Expose Array for template use
+  readonly isArray = Array.isArray;
+
+  constructor() {
+    // Sync currency from character data whenever it changes
+    effect(() => {
+      const currency = this.character()?.currency ?? {};
+      this.goldAmount.set(currency['gold'] ?? 0);
+      this.silverAmount.set(currency['silver'] ?? 0);
+      this.copperAmount.set(currency['copper'] ?? 0);
+    });
+
+    // Handle scroll/highlight on navigation
+    effect(() => {
+      const targetId = this.store.featureScrollTarget();
+      if (!targetId) return;
+      if (typeof document === 'undefined') return;
+      setTimeout(() => {
+        const el = document.getElementById(targetId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          this.highlightedId.set(targetId);
+          setTimeout(() => this.highlightedId.set(null), 1600);
+        }
+        this.store.setFeatureScrollTarget(null);
+      }, 0);
+    });
+  }
+
+  updateCurrency(type: string, value: string) {
+    const numValue = Number(value) || 0;
+    const char = this.character();
+    if (!char) return;
+    
+    if (!char.currency) {
+      char.currency = {};
+    }
+    
+    char.currency[type] = numValue;
+    
+    // Update the corresponding signal
+    if (type === 'gold') {
+      this.goldAmount.set(numValue);
+    } else if (type === 'silver') {
+      this.silverAmount.set(numValue);
+    } else if (type === 'copper') {
+      this.copperAmount.set(numValue);
+    }
+  }
+
+  toggleEquipped(item: any) {
+    item.isEquipped = !item.isEquipped;
+    // If unequipping, also remove attunement
+    if (!item.isEquipped) {
+      item.isAttuned = false;
+    }
+  }
+
+  toggleAttuned(item: any) {
+    item.isAttuned = !item.isAttuned;
+  }
+
+  toggleExpanded(id: string) {
+    const expanded = this.expandedItems();
+    if (expanded.has(id)) {
+      expanded.delete(id);
+    } else {
+      expanded.add(id);
+    }
+    this.expandedItems.set(new Set(expanded));
+  }
+
+  isExpanded(id: string): boolean {
+    return this.expandedItems().has(id);
+  }
+
+  requiresAttunement(item: any): boolean {
+    const reqAttune = item.entity?.item?.['reqAttune'];
+    return reqAttune !== null && reqAttune !== undefined;
+  }
+
+  getItemProp(item: any, prop: string): any {
+    if (!item.entity?.item) return null;
+    return item.entity.item[prop];
+  }
+
+  formatGold(copperValue: any): string {
+    const value = Number(copperValue);
+    if (!value || isNaN(value)) return '—';
+    const gold = value / 10000;
+    if (gold >= 1) {
+      return `${gold.toFixed(2)} gp`;
+    }
+    const silver = value / 100;
+    if (silver >= 1) {
+      return `${silver.toFixed(1)} sp`;
+    }
+    return `${value} cp`;
+  }
+
+  getItemEntries(item: any): Entry[] {
+    const entries = item.entity?.item?.['entries'];
+    if (Array.isArray(entries)) {
+      return entries as Entry[];
+    }
+    return [];
+  }
+
+  getItemProperties(item: InventoryItem): string {
+    const properties = item.entity?.properties;
+    if (!properties || !Array.isArray(properties)) return '—';
+    return properties.map((p: any) => p.name).join(', ');
+  }
+
+  getItemMasteries(item: InventoryItem): string {
+    const masteries = item.entity?.masteries;
+    if (!masteries || !Array.isArray(masteries)) return '—';
+    return masteries.map((m: any) => m.name).join(', ');
+  }
+
+
+
+  getItemTypeTags(item: any): string[] {
+    const tags: string[] = [];
+    const entity = item.entity?.item;
+    if (!entity) return tags;
+
+    // Check boolean flags for item types
+    const typeChecks = [
+      { flag: entity.weapon, label: 'Weapon' },
+      { flag: entity.armor, label: 'Armor' },
+      { flag: entity.sword, label: 'Sword' },
+      { flag: entity.axe, label: 'Axe' },
+      { flag: entity.spear, label: 'Spear' },
+      { flag: entity.crossbow, label: 'Crossbow' },
+      { flag: entity.bow, label: 'Bow' },
+      { flag: entity.polearm, label: 'Polearm' },
+      { flag: entity.arrow, label: 'Arrow' },
+      { flag: entity.firearm, label: 'Firearm' },
+      { flag: entity.bolt, label: 'Bolt' },
+      { flag: entity.bulletFirearm, label: 'Bullet (Firearm)' },
+      { flag: entity.mace, label: 'Mace' },
+      { flag: entity.needleBlowgun, label: 'Needle (Blowgun)' },
+      { flag: entity.club, label: 'Club' },
+      { flag: entity.bulletSling, label: 'Bullet (Sling)' },
+      { flag: entity.hammer, label: 'Hammer' },
+      { flag: entity.net, label: 'Net' },
+      { flag: entity.cellEnergy, label: 'Energy Cell' },
+      { flag: entity.lance, label: 'Lance' },
+    ];
+
+    for (const check of typeChecks) {
+      if (check.flag) {
+        tags.push(check.label);
+      }
+    }
+
+    return tags;
+  }
+
+  hasAnyBonus(item: any): boolean {
+    const entity = item.entity?.item;
+    if (!entity) return false;
+    
+    return !!(
+      entity.bonusWeapon ||
+      entity.bonusWeaponAttack ||
+      entity.bonusWeaponDamage ||
+      entity.bonusSavingThrow ||
+      entity.bonusSpellAttack ||
+      entity.bonusSpellSaveDc ||
+      entity.bonusSpellDamage ||
+      entity.bonusAc
+    );
+  }
+
+  updateItemUses(item: any, event: { usedFreeUses: number; tag?: string }) {
+    if (item.uses) {
+      const useEntry = item.uses.find((u: any) => u.tag === event.tag);
+      if (useEntry) {
+        useEntry.usedFreeUses = event.usedFreeUses;
+      }
+    }
+  }
+
+  updateItemCount(item: any, value: string) {
+    const numValue = Math.max(0, parseInt(value) || 0);
+    item.count = numValue;
+  }
 }

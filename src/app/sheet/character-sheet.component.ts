@@ -6,6 +6,8 @@ import { CharacterInfoPageComponent } from './character-info-page.component';
 import { FeaturesPageComponent } from './features-page.component';
 import { SpellsPageComponent } from './spells-page.component';
 import { EquipmentPageComponent } from './equipment-page.component';
+import { MonstersPageComponent } from './monsters-page.component';
+import { NotesPageComponent } from './notes-page.component';
 
 @Component({
   selector: 'app-character-sheet',
@@ -16,12 +18,14 @@ import { EquipmentPageComponent } from './equipment-page.component';
     FeaturesPageComponent,
     SpellsPageComponent,
     EquipmentPageComponent,
+    MonstersPageComponent,
+    NotesPageComponent,
   ],
   template: `
     <main class="max-w-[1200px] mx-auto my-6 p-4">
       @if (characterData()) {
         <!-- Page Navigation -->
-        <nav class="flex gap-2 mb-6 border-b-2 border-gray-300">
+        <nav class="flex flex-wrap gap-2 mb-6 border-b-2 border-gray-300">
           <button
             (click)="currentPage.set(1)"
             class="px-6 py-3 font-semibold transition-colors"
@@ -70,7 +74,10 @@ import { EquipmentPageComponent } from './equipment-page.component';
         <!-- Page Content -->
         @switch (currentPage()) {
           @case (1) {
-            <app-character-info-page [characterData]="characterData()" />
+            <app-character-info-page
+              [characterData]="characterData()"
+              (navigateToFeatures)="navigateToFeatures($event)"
+            />
           }
           @case (2) {
             <app-features-page [characterData]="characterData()" />
@@ -80,6 +87,12 @@ import { EquipmentPageComponent } from './equipment-page.component';
           }
           @case (4) {
             <app-equipment-page [characterData]="characterData()" />
+          }
+          @case (5) {
+            <app-monsters-page [characterData]="characterData()" />
+          }
+          @case (6) {
+            <app-notes-page [characterData]="characterData()" />
           }
         }
       } @else {
@@ -96,4 +109,22 @@ export class CharacterSheetComponent {
 
   characterData = this.store.characterData;
   currentPage = signal(1);
+
+  navigateToFeatures(targetId: string) {
+    // Determine which page to navigate to based on the anchor ID prefix
+    let page = 2; // Default to Features
+    
+    if (targetId.startsWith('spell-')) {
+      page = 3; // Spells page
+    } else if (targetId.startsWith('item-')) {
+      page = 4; // Equipment page
+    } else if (targetId.startsWith('monster-')) {
+      page = 5; // Monsters page
+    } else if (targetId.startsWith('feature-') || targetId === 'species-section') {
+      page = 2; // Features & Traits page
+    }
+    
+    this.store.setFeatureScrollTarget(targetId);
+    this.currentPage.set(page);
+  }
 }

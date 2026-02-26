@@ -307,7 +307,7 @@ export interface EntriesHigherLevel {
 }
 
 export interface SpellMeta {
-  [key: string]: unknown;
+  ritual?: boolean;
 }
 
 export interface SpellEntity {
@@ -398,14 +398,106 @@ export interface ItemEntity {
   id?: number;
   name: string;
   source: string;
-  [key: string]: unknown;
+  page?: number | null;
+  baseItemId?: number | null;
+  type?: string | null;
+  rarity?: string | null;
+  reqAttune?: string | null;
+  weight?: number | null;
+  entries?: Entry[] | null;
+  dmg1?: string | null;
+  dmgType?: string | null;
+  dmg2?: string | null;
+  value?: number | null;
+  weaponCategory?: string | null;
+  // property?: PropertyEntry[] | null;
+  // mastery?: PropertyEntry[] | null;
+  range?: string | null;
+  bonusWeapon?: string | null;
+  bonusAc?: string | null;
+  ac?: number | null;
+  bonusWeaponAttack?: string | null;
+  bonusSavingThrow?: string | null;
+  bonusSpellAttack?: string | null;
+  bonusSpellSaveDc?: string | null;
+  bonusSpellDamage?: string | null;
+  bonusWeaponDamage?: string | null;
+  scfType?: string | null;
+  weapon?: boolean | null;
+  armor?: boolean | null;
+  sword?: boolean | null;
+  axe?: boolean | null;
+  spear?: boolean | null;
+  crossbow?: boolean | null;
+  bow?: boolean | null;
+  polearm?: boolean | null;
+  arrow?: boolean | null;
+  firearm?: boolean | null;
+  bolt?: boolean | null;
+  bulletFirearm?: boolean | null;
+  mace?: boolean | null;
+  needleBlowgun?: boolean | null;
+  club?: boolean | null;
+  bulletSling?: boolean | null;
+  hammer?: boolean | null;
+  net?: boolean | null;
+  cellEnergy?: boolean | null;
+  lance?: boolean | null;
+}
+
+export interface PropertyEntry {
+  name: string;
+  entry?: Entry | null;
 }
 
 export interface BaseItemEntity {
   id?: number;
-  name?: string;
-  source?: string;
-  [key: string]: unknown;
+  name?: string | null;
+  source?: string | null;
+  page?: number | null;
+  type?: string | null;
+  rarity?: string | null;
+  reqAttune?: string | null;
+  weight?: number | null;
+  entries?: Entry[] | null;
+  dmg1?: string | null;
+  dmgType?: string | null;
+  dmg2?: string | null;
+  value?: number | null;
+  weaponCategory?: string | null;
+  property?: PropertyEntry[] | null;
+  mastery?: PropertyEntry[] | null;
+  range?: string | null;
+  bonusWeapon?: string | null;
+  bonusAc?: string | null;
+  ac?: number | null;
+  bonusWeaponAttack?: string | null;
+  bonusSavingThrow?: string | null;
+  bonusSpellAttack?: string | null;
+  bonusSpellSaveDc?: string | null;
+  bonusSpellDamage?: string | null;
+  bonusWeaponDamage?: string | null;
+  scfType?: string | null;
+  weapon?: boolean | null;
+  armor?: boolean | null;
+  sword?: boolean | null;
+  axe?: boolean | null;
+  spear?: boolean | null;
+  crossbow?: boolean | null;
+  bow?: boolean | null;
+  polearm?: boolean | null;
+  arrow?: boolean | null;
+  firearm?: boolean | null;
+  bolt?: boolean | null;
+  bulletFirearm?: boolean | null;
+  mace?: boolean | null;
+  needleBlowgun?: boolean | null;
+  club?: boolean | null;
+  bulletSling?: boolean | null;
+  hammer?: boolean | null;
+  net?: boolean | null;
+  cellEnergy?: boolean | null;
+  lance?: boolean | null;
 }
 
 export interface DisplayProperty {
@@ -454,6 +546,10 @@ export interface FeatureEntryFull {
 export interface InventoryItem {
   name: string;
   source?: string;
+  isEquipped?: boolean;
+  isAttuned?: boolean;
+  count?: number;
+  allowMultiples?: boolean;
   uses?: FeatureUses[];
   entity?: DisplayItem | null;
 }
@@ -487,6 +583,29 @@ export interface SpellSlot {
   userAdded?: boolean;
 }
 
+export type AdvantageType =
+  | 'attack_roll'
+  | 'saving_throw'
+  | 'skill_check'
+  | 'ability_check'
+  | 'initiative'
+  | 'death_save'
+  | 'other';
+
+export interface AdvantageOn {
+  aType: AdvantageType;
+  appliesTo?: string | null;
+  isDisadvantage?: boolean;
+  condition?: string | null;
+}
+
+export interface HitDieEntry {
+  total: number;
+  used: number;
+  dieType: string;
+  userAdded?: boolean;
+}
+
 export interface CombatAction {
   name?: string;
   range?: string;
@@ -516,6 +635,7 @@ export interface CharacterData {
   level?: number;
   description?: string;
   maxHp?: number;
+  maxHpOverride?: number | null;
   currentHp?: number;
   tempHp?: number;
   armorClass?: number;
@@ -523,16 +643,111 @@ export interface CharacterData {
   abilityScores?: AbilityScores;
   proficiencies?: Proficiencies;
   featureSources?: FeatureSource[];
-  hitDice?: string | null;
+  hitDice?: HitDieEntry[] | string | null;
   speeds?: Speeds;
   savingThrows?: string[];
   currency?: Record<string, number>;
   spellSlots?: Record<string, SpellSlot[]>;
-  advantageOn?: Array<Record<string, string>>;
+  advantageOn?: AdvantageOn[];
   resistances?: string[];
   senses?: Record<string, number> | Record<string, unknown>;
   calculateAC?: boolean;
   unarmoredDefense?: AbilityScores | null;
+  installationId?: string;
+}
+
+export interface ImmuneResistVulnerable {
+  type: string;
+  text: string;
+}
+export interface MonsterInitiative {
+  bonus?: number;
+  proficiency?: number;
+  advantageMode?: string;
+}
+export interface MonsterAbility {
+  name: string;
+  entries: Entry[];
+}
+
+export interface MonsterAction {
+  name: string;
+  entries: Entry[];
+}
+
+export type MonsterCasting = { entry?: string } | string;
+
+export interface MonsterSpellcasting {
+  name: string;
+  type?: string;
+  headerEntries?: string[];
+  ability?: string;
+  displayAs?: string;
+  will?: MonsterCasting[];
+  daily?: Record<string, string[]>;
+  known?: Record<string, string[]>;
+}
+
+export interface MonsterCR {
+  cr: string;
+  xp?: number;
+}
+
+export interface MonsterEntity {
+  id?: number;
+  name?: string;
+  source?: string;
+  page?: number;
+  size?: string[];
+  type?: { type: string };
+  alignment?: string[];
+  ac?: (number | { ac: number; condition: string })[];
+  hp?: { average?: number; formula?: string; special?: string };
+  speed?: Record<string, number>;
+  str?: number;
+  dex?: number;
+  con?: number;
+  int?: number;
+  wis?: number;
+  cha?: number;
+  save?: Record<string, string> | null;
+  skill?: Record<string, string>;
+  senses?: string[];
+  passive?: string | number;
+  immune?: ImmuneResistVulnerable[];
+  resist?: ImmuneResistVulnerable[] | null;
+  vulnerable?: ImmuneResistVulnerable[] | null;
+  conditionImmune?: ImmuneResistVulnerable[];
+  languages?: string[];
+  cr?: MonsterCR | string;
+  initiative?: MonsterInitiative;
+  spellcasting?: Array<MonsterSpellcasting | Entry> | null;
+  trait?: MonsterAbility[];
+  action?: MonsterAction[];
+  reaction?: MonsterAction[];
+  legendary?: MonsterAction[] | null;
+  legendaryActionsLair?: MonsterAction[] | null;
+  environment?: string[] | null;
+  hasToken?: boolean;
+  hasFluff?: boolean;
+}
+
+export interface Monster {
+  name?: string;
+  source?: string;
+  hpEnabled?: boolean;
+  monsterMaxHP?: number;
+  monsterCurrentHP?: number;
+  userAdded?: boolean;
+  entity?: MonsterEntity;
+}
+
+export interface Note {
+  id: number;
+  characterId?: number;
+  title: string;
+  body: string;
+  orderIndex?: number;
 }
 
 export interface ExportedCharacter {
@@ -543,6 +758,6 @@ export interface ExportedCharacter {
   inventory?: InventoryItem[];
   combatActions?: CombatAction[];
   conditions?: unknown[];
-  monsters?: unknown[];
-  notes?: unknown[];
+  monsters?: Monster[];
+  notes?: Note[];
 }

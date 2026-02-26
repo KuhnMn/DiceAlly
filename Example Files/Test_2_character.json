@@ -1,0 +1,3405 @@
+{
+    "installationId": "d7e695bb-8c21-428c-be1a-67263a7c204f",
+    "character": {
+        "name": "Test2",
+        "level": 15,
+        "description": "Blub",
+        "maxHp": 97,
+        "currentHp": 97,
+        "maxHpOverride": null,
+        "tempHp": 0,
+        "armorClass": 10,
+        "hasInspiration": false,
+        "abilityScores": {
+            "strength": 13,
+            "dexterity": 7,
+            "constitution": 17,
+            "intelligence": 12,
+            "wisdom": 12,
+            "charisma": 10
+        },
+        "currency": {},
+        "proficiencies": {
+            "savingThrows": [
+                "STR",
+                "DEX"
+            ],
+            "skills": {
+                "ANIMAL_HANDLING": "PROFICIENT",
+                "INTIMIDATION": "PROFICIENT",
+                "ARCANA": "HALF",
+                "HISTORY": "PROFICIENT",
+                "INSIGHT": "PROFICIENT",
+                "PERSUASION": "EXPERTISE",
+                "ACROBATICS": "HALF",
+                "ATHLETICS": "EXPERTISE"
+            },
+            "tools": {
+                "Bagpipes (XPHB)": 11,
+                "Cartographer's Tools (XPHB)": 581
+            },
+            "custom": [
+                "Light",
+                "Medium",
+                "Shield"
+            ],
+            "simpleWeapons": true,
+            "martialWeapons": true,
+            "jackOfAllTrades": true
+        },
+        "featureSources": [
+            {
+                "name": "Ranger (XPHB)",
+                "usesDexterity": true,
+                "usesWisdom": true,
+                "isGeneralFeatureSource": true,
+                "userAdded": false
+            },
+            {
+                "name": "Ranger (XPHB) - S",
+                "usesWisdom": true,
+                "isSpellcastingSource": true,
+                "userAdded": false
+            },
+            {
+                "name": "Gloom Stalker (XPHB)",
+                "usesDexterity": true,
+                "usesWisdom": true,
+                "isGeneralFeatureSource": true,
+                "userAdded": false
+            },
+            {
+                "name": "Gloom Stalker (XPHB) - S",
+                "usesWisdom": true,
+                "isSpellcastingSource": true,
+                "userAdded": false
+            },
+            {
+                "name": "Barbarian (XPHB)",
+                "usesStrength": true,
+                "isGeneralFeatureSource": true,
+                "userAdded": false
+            },
+            {
+                "name": "Path of the Wild Heart (XPHB)",
+                "usesStrength": true,
+                "isGeneralFeatureSource": true,
+                "userAdded": false
+            }
+        ],
+        "spellSlots": {
+            "Ranger (XPHB) - S": [
+                {
+                    "level": 1,
+                    "total": 4,
+                    "used": 0,
+                    "regainCondition": "LONG_REST",
+                    "userAdded": false
+                },
+                {
+                    "level": 2,
+                    "total": 3,
+                    "used": 0,
+                    "regainCondition": "LONG_REST",
+                    "userAdded": false
+                },
+                {
+                    "level": 3,
+                    "total": 3,
+                    "used": 0,
+                    "regainCondition": "LONG_REST",
+                    "userAdded": false
+                }
+            ]
+        },
+        "advantageOn": [
+            {
+                "aType": "attack_roll",
+                "appliesTo": "All",
+                "condition": "While in Rage"
+            }
+        ],
+        "resistances": [
+            "te",
+            "Acid/Lightning/Fire/Poison/Cold"
+        ],
+        "senses": {
+            "Darkvision": 60
+        },
+        "speeds": {
+            "walk": 30,
+            "swim": 34,
+            "climb": 30
+        },
+        "calculateAC": true,
+        "unarmoredDefense": null,
+        "hitDice": []
+    },
+    "species": {
+        "name": "Dragonborn",
+        "source": "XPHB",
+        "uses": [
+            {
+                "tag": "432432",
+                "freeUsesRegainCondition": "SHORT_REST_ONE"
+            }
+        ],
+        "entity": {
+            "id": 27,
+            "name": "Dragonborn",
+            "source": "XPHB",
+            "page": 187,
+            "darkvision": 60,
+            "entries": [
+                {
+                    "type": "entries",
+                    "name": "Draconic Ancestry",
+                    "entries": [
+                        {
+                            "type": "com.ltx.data.StringEntry",
+                            "text": "Your lineage stems from a dragon progenitor. Choose the kind of dragon from the Draconic Ancestors table. Your choice affects your Breath Weapon and {@variantrule Damage|XPHB} {@variantrule Resistance|XPHB} traits as well as your appearance."
+                        },
+                        {
+                            "type": "table",
+                            "colLabels": [
+                                "Dragon",
+                                "Damage Type"
+                            ],
+                            "rows": [
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Black"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Acid"
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Blue"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Lightning"
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Brass"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Fire"
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Bronze"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Lightning"
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Copper"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Acid"
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Gold"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Fire"
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Green"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Poison"
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Red"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Fire"
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Silver"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Cold"
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "White"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Cold"
+                                    }
+                                ]
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "entries",
+                    "name": "Breath Weapon",
+                    "entries": [
+                        {
+                            "type": "com.ltx.data.StringEntry",
+                            "text": "When you take the {@action Attack|XPHB} action on your turn, you can replace one of your attacks with an exhalation of magical energy in either a 15-foot {@variantrule Cone [Area of Effect]|XPHB|Cone} or a 30-foot {@variantrule Line [Area of Effect]|XPHB|Line} that is 5 feet wide (choose the shape each time). Each creature in that area must make a Dexterity saving throw ({@dc 8} plus your Constitution modifier and {@variantrule Proficiency|XPHB|Proficiency Bonus}). On a failed save, a creature takes {@damage 1d10} damage of the type determined by your Draconic Ancestry trait. On a successful save, a creature takes half as much damage. This damage increases by {@damage 1d10} when you reach character levels 5 ({@damage 2d10}), 11 ({@damage 3d10}), and 17 ({@damage 4d10})."
+                        },
+                        {
+                            "type": "com.ltx.data.StringEntry",
+                            "text": "You can use this Breath Weapon a number of times equal to your {@variantrule Proficiency|XPHB|Proficiency Bonus}, and you regain all expended uses when you finish a {@variantrule Long Rest|XPHB}."
+                        }
+                    ]
+                },
+                {
+                    "type": "entries",
+                    "name": "Damage Resistance",
+                    "entries": [
+                        {
+                            "type": "com.ltx.data.StringEntry",
+                            "text": "You have {@variantrule Resistance|XPHB} to the damage type determined by your Draconic Ancestry trait."
+                        }
+                    ]
+                },
+                {
+                    "type": "entries",
+                    "name": "Darkvision",
+                    "entries": [
+                        {
+                            "type": "com.ltx.data.StringEntry",
+                            "text": "You have {@sense Darkvision|XPHB} with a range of 60 feet."
+                        }
+                    ]
+                },
+                {
+                    "type": "entries",
+                    "name": "Draconic Flight",
+                    "entries": [
+                        {
+                            "type": "com.ltx.data.StringEntry",
+                            "text": "When you reach character level 5, you can channel draconic magic to give yourself temporary flight. As a {@variantrule Bonus Action|XPHB}, you sprout spectral wings on your back that last for 10 minutes or until you retract the wings (no action required) or have the {@condition Incapacitated|XPHB} condition. During that time, you have a {@variantrule Fly Speed|XPHB} equal to your {@variantrule Speed|XPHB}. Your wings appear to be made of the same energy as your Breath Weapon. Once you use this trait, you can't use it again until you finish a {@variantrule Long Rest|XPHB}."
+                        }
+                    ]
+                }
+            ],
+            "size": [
+                "M"
+            ],
+            "speed": {
+                "walk": 30
+            },
+            "creatureTypes": [
+                "humanoid"
+            ],
+            "creatureTypeTags": null,
+            "sizeEntry": {
+                "name": "Size:",
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "Medium (about 5-7 feet tall)"
+                    }
+                ]
+            },
+            "resist": [
+                {
+                    "choose": {
+                        "from": [
+                            "acid",
+                            "lightning",
+                            "fire",
+                            "poison",
+                            "cold"
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "spells": [
+        {
+            "name": "Disguise Self",
+            "source": "XPHB",
+            "castingSourceName": "Gloom Stalker (XPHB) - S",
+            "listType": "KNOWN",
+            "userAdded": false,
+            "entity": {
+                "id": 462,
+                "name": "Disguise Self",
+                "level": 1,
+                "school": "I",
+                "source": "XPHB",
+                "classes": [
+                    {
+                        "name": "Bard",
+                        "source": "XPHB"
+                    },
+                    {
+                        "name": "Sorcerer",
+                        "source": "XPHB"
+                    },
+                    {
+                        "name": "Wizard",
+                        "source": "XPHB"
+                    },
+                    {
+                        "name": "Artificer",
+                        "source": "EFA"
+                    }
+                ],
+                "time": [
+                    {
+                        "number": 1,
+                        "unit": "action"
+                    }
+                ],
+                "range": {
+                    "type": "point",
+                    "distance": {
+                        "type": "self"
+                    }
+                },
+                "components": {
+                    "v": true,
+                    "s": true
+                },
+                "duration": [
+                    {
+                        "type": "timed",
+                        "duration": {
+                            "type": "hour",
+                            "amount": 1
+                        }
+                    }
+                ],
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You make yourself—including your clothing, armor, weapons, and other belongings on your person—look different until the spell ends. You can seem 1 foot shorter or taller and can appear heavier or lighter. You must adopt a form that has the same basic arrangement of limbs as you have. Otherwise, the extent of the illusion is up to you."
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "The changes wrought by this spell fail to hold up to physical inspection. For example, if you use this spell to add a hat to your outfit, objects pass through the hat, and anyone who touches it would feel nothing."
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "To discern that you are disguised, a creature must take the {@action Study|XPHB} action to inspect your appearance and succeed on an Intelligence ({@skill Investigation|XPHB}) check against your spell save DC."
+                    }
+                ],
+                "entriesHigherLevel": null,
+                "meta": null,
+                "damageInflict": null,
+                "spellAttack": null,
+                "areaTags": null,
+                "savingThrow": null
+            }
+        },
+        {
+            "name": "Disguise Self",
+            "source": "XPHB",
+            "castingSourceName": "Gloom Stalker (XPHB) - S",
+            "listType": "PREPARED",
+            "userAdded": false,
+            "uses": [
+                {
+                    "freeUsesRegainCondition": "SHORT_REST"
+                }
+            ],
+            "entity": {
+                "id": 462,
+                "name": "Disguise Self",
+                "level": 1,
+                "school": "I",
+                "source": "XPHB",
+                "classes": [
+                    {
+                        "name": "Bard",
+                        "source": "XPHB"
+                    },
+                    {
+                        "name": "Sorcerer",
+                        "source": "XPHB"
+                    },
+                    {
+                        "name": "Wizard",
+                        "source": "XPHB"
+                    },
+                    {
+                        "name": "Artificer",
+                        "source": "EFA"
+                    }
+                ],
+                "time": [
+                    {
+                        "number": 1,
+                        "unit": "action"
+                    }
+                ],
+                "range": {
+                    "type": "point",
+                    "distance": {
+                        "type": "self"
+                    }
+                },
+                "components": {
+                    "v": true,
+                    "s": true
+                },
+                "duration": [
+                    {
+                        "type": "timed",
+                        "duration": {
+                            "type": "hour",
+                            "amount": 1
+                        }
+                    }
+                ],
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You make yourself—including your clothing, armor, weapons, and other belongings on your person—look different until the spell ends. You can seem 1 foot shorter or taller and can appear heavier or lighter. You must adopt a form that has the same basic arrangement of limbs as you have. Otherwise, the extent of the illusion is up to you."
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "The changes wrought by this spell fail to hold up to physical inspection. For example, if you use this spell to add a hat to your outfit, objects pass through the hat, and anyone who touches it would feel nothing."
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "To discern that you are disguised, a creature must take the {@action Study|XPHB} action to inspect your appearance and succeed on an Intelligence ({@skill Investigation|XPHB}) check against your spell save DC."
+                    }
+                ],
+                "entriesHigherLevel": null,
+                "meta": null,
+                "damageInflict": null,
+                "spellAttack": null,
+                "areaTags": null,
+                "savingThrow": null
+            }
+        },
+        {
+            "name": "Rope Trick",
+            "source": "XPHB",
+            "castingSourceName": "Gloom Stalker (XPHB) - S",
+            "listType": "KNOWN",
+            "userAdded": false,
+            "entity": {
+                "id": 654,
+                "name": "Rope Trick",
+                "level": 2,
+                "school": "T",
+                "source": "XPHB",
+                "classes": [
+                    {
+                        "name": "Wizard",
+                        "source": "XPHB"
+                    },
+                    {
+                        "name": "Artificer",
+                        "source": "EFA"
+                    }
+                ],
+                "time": [
+                    {
+                        "number": 1,
+                        "unit": "action"
+                    }
+                ],
+                "range": {
+                    "type": "point",
+                    "distance": {
+                        "type": "touch"
+                    }
+                },
+                "components": {
+                    "v": true,
+                    "s": true,
+                    "m": {
+                        "type": "com.ltx.data.SimpleMaterial",
+                        "text": "a segment of rope"
+                    }
+                },
+                "duration": [
+                    {
+                        "type": "timed",
+                        "duration": {
+                            "type": "hour",
+                            "amount": 1
+                        }
+                    }
+                ],
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You touch a rope. One end of it hovers upward until the rope hangs perpendicular to the ground or the rope reaches a ceiling. At the rope's upper end, an {@condition Invisible|XPHB} 3-foot-by-5-foot portal opens to an extradimensional space that lasts until the spell ends. That space can be reached by climbing the rope, which can be pulled into or dropped out of it."
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "The space can hold up to eight Medium or smaller creatures. Attacks, spells, and other effects can't pass into or out of the space, but creatures inside it can see through the portal. Anything inside the space drops out when the spell ends."
+                    }
+                ],
+                "entriesHigherLevel": null,
+                "meta": null,
+                "damageInflict": null,
+                "spellAttack": null,
+                "areaTags": null,
+                "savingThrow": null
+            }
+        },
+        {
+            "name": "Rope Trick",
+            "source": "XPHB",
+            "castingSourceName": "Gloom Stalker (XPHB) - S",
+            "listType": "PREPARED",
+            "userAdded": false,
+            "uses": [
+                {
+                    "tag": "wqe",
+                    "freeUsesRegainCondition": "SHORT_REST"
+                }
+            ],
+            "entity": {
+                "id": 654,
+                "name": "Rope Trick",
+                "level": 2,
+                "school": "T",
+                "source": "XPHB",
+                "classes": [
+                    {
+                        "name": "Wizard",
+                        "source": "XPHB"
+                    },
+                    {
+                        "name": "Artificer",
+                        "source": "EFA"
+                    }
+                ],
+                "time": [
+                    {
+                        "number": 1,
+                        "unit": "action"
+                    }
+                ],
+                "range": {
+                    "type": "point",
+                    "distance": {
+                        "type": "touch"
+                    }
+                },
+                "components": {
+                    "v": true,
+                    "s": true,
+                    "m": {
+                        "type": "com.ltx.data.SimpleMaterial",
+                        "text": "a segment of rope"
+                    }
+                },
+                "duration": [
+                    {
+                        "type": "timed",
+                        "duration": {
+                            "type": "hour",
+                            "amount": 1
+                        }
+                    }
+                ],
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You touch a rope. One end of it hovers upward until the rope hangs perpendicular to the ground or the rope reaches a ceiling. At the rope's upper end, an {@condition Invisible|XPHB} 3-foot-by-5-foot portal opens to an extradimensional space that lasts until the spell ends. That space can be reached by climbing the rope, which can be pulled into or dropped out of it."
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "The space can hold up to eight Medium or smaller creatures. Attacks, spells, and other effects can't pass into or out of the space, but creatures inside it can see through the portal. Anything inside the space drops out when the spell ends."
+                    }
+                ],
+                "entriesHigherLevel": null,
+                "meta": null,
+                "damageInflict": null,
+                "spellAttack": null,
+                "areaTags": null,
+                "savingThrow": null
+            }
+        },
+        {
+            "name": "Fear",
+            "source": "XPHB",
+            "castingSourceName": "Gloom Stalker (XPHB) - S",
+            "listType": "KNOWN",
+            "userAdded": false,
+            "entity": {
+                "id": 494,
+                "name": "Fear",
+                "level": 3,
+                "school": "I",
+                "source": "XPHB",
+                "classes": [
+                    {
+                        "name": "Bard",
+                        "source": "XPHB"
+                    },
+                    {
+                        "name": "Sorcerer",
+                        "source": "XPHB"
+                    },
+                    {
+                        "name": "Warlock",
+                        "source": "XPHB"
+                    },
+                    {
+                        "name": "Wizard",
+                        "source": "XPHB"
+                    }
+                ],
+                "time": [
+                    {
+                        "number": 1,
+                        "unit": "action"
+                    }
+                ],
+                "range": {
+                    "type": "cone",
+                    "distance": {
+                        "type": "feet",
+                        "amount": 30
+                    }
+                },
+                "components": {
+                    "v": true,
+                    "s": true,
+                    "m": {
+                        "type": "com.ltx.data.SimpleMaterial",
+                        "text": "a white feather"
+                    }
+                },
+                "duration": [
+                    {
+                        "type": "timed",
+                        "duration": {
+                            "type": "minute",
+                            "amount": 1
+                        },
+                        "concentration": true
+                    }
+                ],
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "Each creature in a 30-foot {@variantrule Cone [Area of Effect]|XPHB|Cone} must succeed on a Wisdom saving throw or drop whatever it is holding and have the {@condition Frightened|XPHB} condition for the duration."
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "A {@condition Frightened|XPHB} creature takes the {@action Dash|XPHB} action and moves away from you by the safest route on each of its turns unless there is nowhere to move. If the creature ends its turn in a space where it doesn't have line of sight to you, the creature makes a Wisdom saving throw. On a successful save, the spell ends on that creature."
+                    }
+                ],
+                "entriesHigherLevel": null,
+                "meta": null,
+                "damageInflict": null,
+                "spellAttack": null,
+                "areaTags": [
+                    "N"
+                ],
+                "savingThrow": [
+                    "wisdom"
+                ]
+            }
+        },
+        {
+            "name": "Fear",
+            "source": "XPHB",
+            "castingSourceName": "Gloom Stalker (XPHB) - S",
+            "listType": "PREPARED",
+            "userAdded": false,
+            "uses": [
+                {
+                    "totalFreeUses": 2,
+                    "freeUsesRegainCondition": "SHORT_REST_ONE"
+                }
+            ],
+            "entity": {
+                "id": 494,
+                "name": "Fear",
+                "level": 3,
+                "school": "I",
+                "source": "XPHB",
+                "classes": [
+                    {
+                        "name": "Bard",
+                        "source": "XPHB"
+                    },
+                    {
+                        "name": "Sorcerer",
+                        "source": "XPHB"
+                    },
+                    {
+                        "name": "Warlock",
+                        "source": "XPHB"
+                    },
+                    {
+                        "name": "Wizard",
+                        "source": "XPHB"
+                    }
+                ],
+                "time": [
+                    {
+                        "number": 1,
+                        "unit": "action"
+                    }
+                ],
+                "range": {
+                    "type": "cone",
+                    "distance": {
+                        "type": "feet",
+                        "amount": 30
+                    }
+                },
+                "components": {
+                    "v": true,
+                    "s": true,
+                    "m": {
+                        "type": "com.ltx.data.SimpleMaterial",
+                        "text": "a white feather"
+                    }
+                },
+                "duration": [
+                    {
+                        "type": "timed",
+                        "duration": {
+                            "type": "minute",
+                            "amount": 1
+                        },
+                        "concentration": true
+                    }
+                ],
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "Each creature in a 30-foot {@variantrule Cone [Area of Effect]|XPHB|Cone} must succeed on a Wisdom saving throw or drop whatever it is holding and have the {@condition Frightened|XPHB} condition for the duration."
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "A {@condition Frightened|XPHB} creature takes the {@action Dash|XPHB} action and moves away from you by the safest route on each of its turns unless there is nowhere to move. If the creature ends its turn in a space where it doesn't have line of sight to you, the creature makes a Wisdom saving throw. On a successful save, the spell ends on that creature."
+                    }
+                ],
+                "entriesHigherLevel": null,
+                "meta": null,
+                "damageInflict": null,
+                "spellAttack": null,
+                "areaTags": [
+                    "N"
+                ],
+                "savingThrow": [
+                    "wisdom"
+                ]
+            }
+        }
+    ],
+    "features": [
+        {
+            "name": "Spellcasting",
+            "source": "XPHB",
+            "featureSourceName": "Ranger (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "uses": [
+                {
+                    "tag": "dsadsa",
+                    "totalFreeUses": 4,
+                    "freeUsesRegainCondition": "LONG_REST"
+                }
+            ],
+            "featureEntity": {
+                "id": 296,
+                "name": "Spellcasting",
+                "level": 1,
+                "source": "XPHB",
+                "className": "Bard",
+                "classSource": "XPHB",
+                "page": 59,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You have learned to cast spells through your bardic arts. See {@book chapter 7|XPHB|7} for the rules on spellcasting. The information below details how you use those rules with Bard spells, which appear in the {@filter Bard spell list|spells|class=Bard} later in the class's description."
+                    },
+                    {
+                        "type": "entries",
+                        "entries": [
+                            {
+                                "type": "entries",
+                                "name": "Cantrips",
+                                "entries": [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "You know two cantrips of your choice from the {@filter Bard spell list|spells|class=Bard}. {@spell Dancing Lights|XPHB} and {@spell Vicious Mockery|XPHB} are recommended."
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Whenever you gain a Bard level, you can replace one of your cantrips with another cantrip of your choice from the {@filter Bard spell list|spells|class=Bard}."
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "When you reach Bard levels 4 and 10, you learn another cantrip of your choice from the {@filter Bard spell list|spells|class=Bard}, as shown in the Cantrips column of the Bard Features table."
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "entries",
+                                "name": "Spell Slots",
+                                "entries": [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "The Bard Features table shows how many spell slots you have to cast your level 1+ spells. You regain all expended slots when you finish a {@variantrule Long Rest|XPHB}."
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "entries",
+                                "name": "Prepared Spells of Level 1+",
+                                "entries": [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "You prepare the list of level 1+ spells that are available for you to cast with this feature. To start, choose four level 1 spells from the {@filter Bard spell list|spells|class=Bard}. {@spell Charm Person|XPHB}, {@spell Color Spray|XPHB}, {@spell Dissonant Whispers|XPHB}, and {@spell Healing Word|XPHB} are recommended."
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "The number of spells on your list increases as you gain Bard levels, as shown in the Prepared Spells column of the Bard Features table. Whenever that number increases, choose additional spells from the {@filter Bard spell list|spells|class=Bard} until the number of spells on your list matches the number on the table. The chosen spells must be of a level for which you have spell slots. For example, if you're a level 3 Bard, your list of prepared spells can include six spells of levels 1 and 2 in any combination."
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "If another Bard feature gives you spells that you always have prepared, those spells don't count against the number of spells you can prepare with this feature, but those spells otherwise count as Bard spells for you."
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "entries",
+                                "name": "Changing Your Prepared Spells",
+                                "entries": [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Whenever you gain a Bard level, you can replace one spell on your list with another Bard spell for which you have spell slots."
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "entries",
+                                "name": "Spellcasting Ability",
+                                "entries": [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Charisma is your spellcasting ability for your Bard spells."
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "entries",
+                                "name": "Spellcasting Focus",
+                                "entries": [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "You can use a {@item Musical Instrument|XPHB} as a {@variantrule Spellcasting Focus|XPHB} for your Bard spells."
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Favored Enemy",
+            "source": "XPHB",
+            "featureSourceName": "Ranger (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 1249,
+                "name": "Favored Enemy",
+                "level": 1,
+                "source": "XPHB",
+                "className": "Ranger",
+                "classSource": "XPHB",
+                "page": 120,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You always have the {@spell Hunter's Mark|XPHB} spell prepared. You can cast it twice without expending a spell slot, and you regain all expended uses of this ability when you finish a {@variantrule Long Rest|XPHB}."
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "The number of times you can cast the spell without a spell slot increases when you reach certain Ranger levels, as shown in the Favored Enemy column of the Ranger Features table."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Weapon Mastery",
+            "source": "XPHB",
+            "featureSourceName": "Ranger (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 147,
+                "name": "Weapon Mastery",
+                "level": 1,
+                "source": "XPHB",
+                "className": "Barbarian",
+                "classSource": "XPHB",
+                "page": 52,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "Your training with weapons allows you to use the {@variantrule weapon mastery properties|XPHB|mastery properties} of two kinds of {@filter Simple|items|type=simple weapon;melee weapon=sand} or {@filter Martial Melee weapons|items|type=martial weapon;melee weapon=sand} of your choice, such as {@item Greataxe|XPHB|Greataxes} and {@item Handaxe|XPHB|Handaxes}. Whenever you finish a {@variantrule Long Rest|XPHB}, you can practice weapon drills and change one of those weapon choices."
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "When you reach certain Barbarian levels, you gain the ability to use the {@variantrule weapon mastery properties|XPHB|mastery properties} of more kinds of weapons, as shown in the Weapon Mastery column of the Barbarian Features table."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Deft Explorer",
+            "source": "XPHB",
+            "featureSourceName": "Ranger (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 1252,
+                "name": "Deft Explorer",
+                "level": 2,
+                "source": "XPHB",
+                "className": "Ranger",
+                "classSource": "XPHB",
+                "page": 120,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "Thanks to your travels, you gain the following benefits."
+                    },
+                    {
+                        "type": "entries",
+                        "entries": [
+                            {
+                                "type": "entries",
+                                "name": "Expertise",
+                                "entries": [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Choose one of your skill proficiencies with which you lack {@variantrule Expertise|XPHB}. You gain {@variantrule Expertise|XPHB} in that skill."
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "entries",
+                                "name": "Languages",
+                                "entries": [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "You know two languages of your choice from the language tables in {@book chapter 2|XPHB|2|Choose Languages}."
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Fighting Style",
+            "source": "XPHB",
+            "featureSourceName": "Ranger (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 744,
+                "name": "Fighting Style",
+                "level": 1,
+                "source": "XPHB",
+                "className": "Fighter",
+                "classSource": "XPHB",
+                "page": 91,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You have honed your martial prowess and gain a {@filter Fighting Style feat|feats|category=FS} of your choice. {@feat Defense|XPHB} is recommended."
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "Whenever you gain a Fighter level, you can replace the feat you chose with a different {@filter Fighting Style feat|feats|category=FS}."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Ranger Subclass",
+            "source": "XPHB",
+            "featureSourceName": "Ranger (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 1254,
+                "name": "Ranger Subclass",
+                "level": 3,
+                "source": "XPHB",
+                "className": "Ranger",
+                "classSource": "XPHB",
+                "page": 120,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You gain a Ranger subclass of your choice. A subclass is a specialization that grants you features at certain Ranger levels. For the rest of your career, you gain each of your subclass's features that are of your Ranger level or lower."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Ability Score Improvement",
+            "source": "XPHB",
+            "featureSourceName": "Ranger (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 152,
+                "name": "Ability Score Improvement",
+                "level": 4,
+                "source": "XPHB",
+                "className": "Barbarian",
+                "classSource": "XPHB",
+                "page": 53,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You gain the {@feat Ability Score Improvement|XPHB} feat or another {@5etools feat|feats.html} of your choice for which you qualify. You gain this feature again at Barbarian levels 8, 12, and 16."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Extra Attack",
+            "source": "XPHB",
+            "featureSourceName": "Ranger (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 153,
+                "name": "Extra Attack",
+                "level": 5,
+                "source": "XPHB",
+                "className": "Barbarian",
+                "classSource": "XPHB",
+                "page": 53,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You can attack twice instead of once whenever you take the {@action Attack|XPHB} action on your turn."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Roving",
+            "source": "XPHB",
+            "featureSourceName": "Ranger (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 1257,
+                "name": "Roving",
+                "level": 6,
+                "source": "XPHB",
+                "className": "Ranger",
+                "classSource": "XPHB",
+                "page": 121,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "Your {@variantrule Speed|XPHB} increases by 10 feet while you aren't wearing Heavy armor. You also have a {@variantrule Climb Speed|XPHB} and a {@variantrule Swim Speed|XPHB} equal to your {@variantrule Speed|XPHB}."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Subclass Feature",
+            "source": "XPHB",
+            "featureSourceName": "Ranger (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 155,
+                "name": "Subclass Feature",
+                "level": 6,
+                "source": "XPHB",
+                "className": "Barbarian",
+                "classSource": "XPHB",
+                "page": 53,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You gain a feature from your Barbarian subclass."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Ability Score Improvement",
+            "source": "XPHB",
+            "featureSourceName": "Ranger (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 152,
+                "name": "Ability Score Improvement",
+                "level": 4,
+                "source": "XPHB",
+                "className": "Barbarian",
+                "classSource": "XPHB",
+                "page": 53,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You gain the {@feat Ability Score Improvement|XPHB} feat or another {@5etools feat|feats.html} of your choice for which you qualify. You gain this feature again at Barbarian levels 8, 12, and 16."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Expertise",
+            "source": "XPHB",
+            "featureSourceName": "Ranger (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 1389,
+                "name": "Expertise",
+                "level": 1,
+                "source": "XPHB",
+                "className": "Rogue",
+                "classSource": "XPHB",
+                "page": 128,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You gain {@variantrule Expertise|XPHB} in two of your skill proficiencies of your choice. {@skill Sleight of Hand|XPHB} and {@skill Stealth|XPHB} are recommended if you have proficiency in them."
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "At Rogue level 6, you gain {@variantrule Expertise|XPHB} in two more of your skill proficiencies of your choice."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Tireless",
+            "source": "XPHB",
+            "featureSourceName": "Ranger (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 1261,
+                "name": "Tireless",
+                "level": 10,
+                "source": "XPHB",
+                "className": "Ranger",
+                "classSource": "XPHB",
+                "page": 121,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "Primal forces now help fuel you on your journeys, granting you the following benefits."
+                    },
+                    {
+                        "type": "entries",
+                        "entries": [
+                            {
+                                "type": "entries",
+                                "name": "Temporary Hit Points",
+                                "entries": [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "As a {@action Magic|XPHB} action, you can give yourself a number of {@variantrule Temporary Hit Points|XPHB} equal to {@dice 1d8} plus your Wisdom modifier (minimum of 1). You can use this action a number of times equal to your Wisdom modifier (minimum of once), and you regain all expended uses when you finish a {@variantrule Long Rest|XPHB}."
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "entries",
+                                "name": "Decrease Exhaustion",
+                                "entries": [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Whenever you finish a {@variantrule Short Rest|XPHB}, your {@condition Exhaustion|XPHB} level, if any, decreases by 1."
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Subclass Feature",
+            "source": "XPHB",
+            "featureSourceName": "Ranger (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 155,
+                "name": "Subclass Feature",
+                "level": 6,
+                "source": "XPHB",
+                "className": "Barbarian",
+                "classSource": "XPHB",
+                "page": 53,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You gain a feature from your Barbarian subclass."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Ability Score Improvement",
+            "source": "XPHB",
+            "featureSourceName": "Ranger (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 152,
+                "name": "Ability Score Improvement",
+                "level": 4,
+                "source": "XPHB",
+                "className": "Barbarian",
+                "classSource": "XPHB",
+                "page": 53,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You gain the {@feat Ability Score Improvement|XPHB} feat or another {@5etools feat|feats.html} of your choice for which you qualify. You gain this feature again at Barbarian levels 8, 12, and 16."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Gloom Stalker",
+            "source": "XPHB",
+            "featureSourceName": "Gloom Stalker (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 1354,
+                "name": "Gloom Stalker",
+                "level": 3,
+                "source": "XPHB",
+                "className": "Ranger",
+                "classSource": "XPHB",
+                "page": 125,
+                "subclassShortName": "Gloom Stalker",
+                "subclassSource": "XPHB",
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "{@i Draw on Shadow Magic to Fight Your Foes}"
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "Gloom Stalkers are at home in the darkest places, wielding magic drawn from the Shadowfell to combat enemies that lurk in darkness."
+                    },
+                    {
+                        "type": "refSubclassFeature",
+                        "subclassFeature": "Dread Ambusher|Ranger|XPHB|Gloom Stalker|XPHB|3"
+                    },
+                    {
+                        "type": "refSubclassFeature",
+                        "subclassFeature": "Gloom Stalker Spells|Ranger|XPHB|Gloom Stalker|XPHB|3"
+                    },
+                    {
+                        "type": "refSubclassFeature",
+                        "subclassFeature": "Umbral Sight|Ranger|XPHB|Gloom Stalker|XPHB|3"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Iron Mind",
+            "source": "XPHB",
+            "featureSourceName": "Gloom Stalker (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 1357,
+                "name": "Iron Mind",
+                "level": 7,
+                "source": "XPHB",
+                "className": "Ranger",
+                "classSource": "XPHB",
+                "page": 126,
+                "subclassShortName": "Gloom Stalker",
+                "subclassSource": "XPHB",
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You have honed your ability to resist mind-altering powers. You gain proficiency in Wisdom saving throws. If you already have this proficiency, you instead gain proficiency in Intelligence or Charisma saving throws (your choice)."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Stalker's Flurry",
+            "source": "XPHB",
+            "featureSourceName": "Gloom Stalker (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 1358,
+                "name": "Stalker's Flurry",
+                "level": 11,
+                "source": "XPHB",
+                "className": "Ranger",
+                "classSource": "XPHB",
+                "page": 126,
+                "subclassShortName": "Gloom Stalker",
+                "subclassSource": "XPHB",
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "The Psychic damage of your Dreadful Strike becomes {@damage 2d8}. In addition, when you use the Dreadful Strike effect of your Dread Ambusher feature, you can cause one of the following additional effects."
+                    },
+                    {
+                        "type": "entries",
+                        "name": "Sudden Strike",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "You can make another attack with the same weapon against a different creature that is within 5 feet of the original target and that is within the weapon's range."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "entries",
+                        "name": "Mass Fear",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "The target and each creature within 10 feet of it must make a Wisdom saving throw against your spell save DC. On a failed save, a creature has the {@condition Frightened|XPHB} condition until the start of your next turn."
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Rage",
+            "source": "XPHB",
+            "featureSourceName": "Barbarian (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 145,
+                "name": "Rage",
+                "level": 1,
+                "source": "XPHB",
+                "className": "Barbarian",
+                "classSource": "XPHB",
+                "page": 51,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You can imbue yourself with a primal power called Rage, a force that grants you extraordinary might and resilience. You can enter it as a {@variantrule Bonus Action|XPHB} if you aren't wearing Heavy armor."
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You can enter your Rage the number of times shown for your Barbarian level in the Rages column of the Barbarian Features table. You regain one expended use when you finish a {@variantrule Short Rest|XPHB}, and you regain all expended uses when you finish a {@variantrule Long Rest|XPHB}."
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "While active, your Rage follows the rules below."
+                    },
+                    {
+                        "type": "entries",
+                        "entries": [
+                            {
+                                "type": "entries",
+                                "name": "Damage Resistance",
+                                "entries": [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "You have {@variantrule Resistance|XPHB} to Bludgeoning, Piercing, and Slashing damage."
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "entries",
+                                "name": "Rage Damage",
+                                "entries": [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "When you make an attack using Strength—with either a weapon or an {@variantrule Unarmed Strike|XPHB}—and deal damage to the target, you gain a bonus to the damage that increases as you gain levels as a Barbarian, as shown in the Rage Damage column of the Barbarian Features table."
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "entries",
+                                "name": "Strength Advantage",
+                                "entries": [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "You have {@variantrule Advantage|XPHB} on Strength checks and Strength saving throws."
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "entries",
+                                "name": "No Concentration or Spells",
+                                "entries": [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "You can't maintain {@status Concentration|XPHB}, and you can't cast spells."
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "entries",
+                                "name": "Duration",
+                                "entries": [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "The Rage lasts until the end of your next turn, and it ends early if you don Heavy armor or have the {@condition Incapacitated|XPHB} condition. If your Rage is still active on your next turn, you can extend the Rage for another round by doing one of the following:"
+                                    },
+                                    {
+                                        "type": "list",
+                                        "items": [
+                                            {
+                                                "type": "com.ltx.data.StringEntry",
+                                                "text": "Make an attack roll against an enemy."
+                                            },
+                                            {
+                                                "type": "com.ltx.data.StringEntry",
+                                                "text": "Force an enemy to make a saving throw."
+                                            },
+                                            {
+                                                "type": "com.ltx.data.StringEntry",
+                                                "text": "Take a {@variantrule Bonus Action|XPHB} to extend your Rage."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "Each time the Rage is extended, it lasts until the end of your next turn. You can maintain a Rage for up to 10 minutes."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Unarmored Defense",
+            "source": "XPHB",
+            "featureSourceName": "Barbarian (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 146,
+                "name": "Unarmored Defense",
+                "level": 1,
+                "source": "XPHB",
+                "className": "Barbarian",
+                "classSource": "XPHB",
+                "page": 51,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "While you aren't wearing any armor, your base {@variantrule Armor Class|XPHB} equals 10 plus your Dexterity and Constitution modifiers. You can use a {@item Shield|XPHB} and still gain this benefit."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Weapon Mastery",
+            "source": "XPHB",
+            "featureSourceName": "Barbarian (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 147,
+                "name": "Weapon Mastery",
+                "level": 1,
+                "source": "XPHB",
+                "className": "Barbarian",
+                "classSource": "XPHB",
+                "page": 52,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "Your training with weapons allows you to use the {@variantrule weapon mastery properties|XPHB|mastery properties} of two kinds of {@filter Simple|items|type=simple weapon;melee weapon=sand} or {@filter Martial Melee weapons|items|type=martial weapon;melee weapon=sand} of your choice, such as {@item Greataxe|XPHB|Greataxes} and {@item Handaxe|XPHB|Handaxes}. Whenever you finish a {@variantrule Long Rest|XPHB}, you can practice weapon drills and change one of those weapon choices."
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "When you reach certain Barbarian levels, you gain the ability to use the {@variantrule weapon mastery properties|XPHB|mastery properties} of more kinds of weapons, as shown in the Weapon Mastery column of the Barbarian Features table."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Danger Sense",
+            "source": "XPHB",
+            "featureSourceName": "Barbarian (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 148,
+                "name": "Danger Sense",
+                "level": 2,
+                "source": "XPHB",
+                "className": "Barbarian",
+                "classSource": "XPHB",
+                "page": 52,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You gain an uncanny sense of when things aren't as they should be, giving you an edge when you dodge perils. You have {@variantrule Advantage|XPHB} on Dexterity saving throws unless you have the {@condition Incapacitated|XPHB} condition."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Reckless Attack",
+            "source": "XPHB",
+            "featureSourceName": "Barbarian (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 149,
+                "name": "Reckless Attack",
+                "level": 2,
+                "source": "XPHB",
+                "className": "Barbarian",
+                "classSource": "XPHB",
+                "page": 52,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You can throw aside all concern for defense to attack with increased ferocity. When you make your first attack roll on your turn, you can decide to attack recklessly. Doing so gives you {@variantrule Advantage|XPHB} on attack rolls using Strength until the start of your next turn, but attack rolls against you have {@variantrule Advantage|XPHB} during that time."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Barbarian Subclass",
+            "source": "XPHB",
+            "featureSourceName": "Barbarian (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 150,
+                "name": "Barbarian Subclass",
+                "level": 3,
+                "source": "XPHB",
+                "className": "Barbarian",
+                "classSource": "XPHB",
+                "page": 52,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You gain a Barbarian subclass of your choice. A subclass is a specialization that grants you features at certain Barbarian levels. For the rest of your career, you gain each of your subclass's features that are of your Barbarian level or lower."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Primal Knowledge",
+            "source": "XPHB",
+            "featureSourceName": "Barbarian (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 151,
+                "name": "Primal Knowledge",
+                "level": 3,
+                "source": "XPHB",
+                "className": "Barbarian",
+                "classSource": "XPHB",
+                "page": 52,
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "You gain proficiency in another skill of your choice from the skill list available to Barbarians at level 1."
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "In addition, while your Rage is active, you can channel primal power when you attempt certain tasks; whenever you make an ability check using one of the following skills, you can make it as a Strength check even if it normally uses a different ability: {@skill Acrobatics|XPHB}, {@skill Intimidation|XPHB}, {@skill Perception|XPHB}, {@skill Stealth|XPHB}, or {@skill Survival|XPHB}. When you use this ability, your Strength represents primal power coursing through you, honing your agility, bearing, and senses."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Path of the Wild Heart",
+            "source": "XPHB",
+            "featureSourceName": "Path of the Wild Heart (XPHB)",
+            "featureType": "CLASS_FEATURE",
+            "userAdded": false,
+            "featureEntity": {
+                "id": 250,
+                "name": "Path of the Wild Heart",
+                "level": 3,
+                "source": "XPHB",
+                "className": "Barbarian",
+                "classSource": "XPHB",
+                "page": 55,
+                "subclassShortName": "Wild Heart",
+                "subclassSource": "XPHB",
+                "entries": [
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "{@i Walk in Community with the Animal World}"
+                    },
+                    {
+                        "type": "com.ltx.data.StringEntry",
+                        "text": "Barbarians who follow the Path of the Wild Heart view themselves as kin to animals. These Barbarians learn magical means to communicate with animals, and their Rage heightens their connection to animals as it fills them with supernatural might."
+                    },
+                    {
+                        "type": "refSubclassFeature",
+                        "subclassFeature": "Animal Speaker|Barbarian|XPHB|Wild Heart|XPHB|3"
+                    },
+                    {
+                        "type": "refSubclassFeature",
+                        "subclassFeature": "Rage of the Wilds|Barbarian|XPHB|Wild Heart|XPHB|3"
+                    }
+                ]
+            }
+        }
+    ],
+    "inventory": [
+        {
+            "name": "+1 Wraps of Unarmed Power",
+            "source": "XDMG",
+            "entity": {
+                "item": {
+                    "id": 209,
+                    "name": "+1 Wraps of Unarmed Power",
+                    "source": "XDMG",
+                    "page": 325,
+                    "baseItemId": null,
+                    "type": null,
+                    "rarity": "uncommon",
+                    "reqAttune": null,
+                    "weight": null,
+                    "entries": [
+                        {
+                            "type": "com.ltx.data.StringEntry",
+                            "text": "While wearing these wraps, you have a +1 bonus to attack rolls and damage rolls made with your Unarmed Strikes. Those strikes deal your choice of Force damage or their normal damage type."
+                        }
+                    ],
+                    "dmg1": null,
+                    "dmgType": null,
+                    "dmg2": null,
+                    "value": null,
+                    "weaponCategory": null,
+                    "property": null,
+                    "mastery": null,
+                    "range": null,
+                    "bonusWeapon": "+1",
+                    "bonusAc": null,
+                    "ac": null,
+                    "bonusWeaponAttack": null,
+                    "bonusSavingThrow": null,
+                    "bonusSpellAttack": null,
+                    "bonusSpellSaveDc": null,
+                    "bonusSpellDamage": null,
+                    "bonusWeaponDamage": null,
+                    "scfType": null,
+                    "weapon": false,
+                    "armor": false,
+                    "sword": false,
+                    "axe": false,
+                    "spear": false,
+                    "crossbow": false,
+                    "bow": false,
+                    "polearm": false,
+                    "arrow": false,
+                    "firearm": false,
+                    "bolt": false,
+                    "bulletFirearm": false,
+                    "mace": false,
+                    "needleBlowgun": false,
+                    "club": false,
+                    "bulletSling": false,
+                    "hammer": false,
+                    "net": false,
+                    "cellEnergy": false,
+                    "lance": false
+                },
+                "baseItem": null,
+                "itemType": null,
+                "properties": [],
+                "masteries": [],
+                "page": 325,
+                "ac": null,
+                "id": 209
+            }
+        },
+        {
+            "name": "Aquamarine",
+            "source": "XDMG",
+            "entity": {
+                "item": {
+                    "id": 299,
+                    "name": "Aquamarine",
+                    "source": "XDMG",
+                    "page": 214,
+                    "baseItemId": null,
+                    "type": "$G|XDMG",
+                    "rarity": "none",
+                    "reqAttune": null,
+                    "weight": null,
+                    "entries": [
+                        {
+                            "type": "com.ltx.data.StringEntry",
+                            "text": "A pale blue green gemstone."
+                        }
+                    ],
+                    "dmg1": null,
+                    "dmgType": null,
+                    "dmg2": null,
+                    "value": 50000.0,
+                    "weaponCategory": null,
+                    "property": null,
+                    "mastery": null,
+                    "range": null,
+                    "bonusWeapon": null,
+                    "bonusAc": null,
+                    "ac": null,
+                    "bonusWeaponAttack": null,
+                    "bonusSavingThrow": null,
+                    "bonusSpellAttack": null,
+                    "bonusSpellSaveDc": null,
+                    "bonusSpellDamage": null,
+                    "bonusWeaponDamage": null,
+                    "scfType": null,
+                    "weapon": false,
+                    "armor": false,
+                    "sword": false,
+                    "axe": false,
+                    "spear": false,
+                    "crossbow": false,
+                    "bow": false,
+                    "polearm": false,
+                    "arrow": false,
+                    "firearm": false,
+                    "bolt": false,
+                    "bulletFirearm": false,
+                    "mace": false,
+                    "needleBlowgun": false,
+                    "club": false,
+                    "bulletSling": false,
+                    "hammer": false,
+                    "net": false,
+                    "cellEnergy": false,
+                    "lance": false
+                },
+                "baseItem": null,
+                "itemType": "Treasure (Gemstone)",
+                "properties": [],
+                "masteries": [],
+                "page": 214,
+                "ac": null,
+                "id": 299
+            }
+        },
+        {
+            "name": "Apparatus of Kwalish",
+            "source": "XDMG",
+            "uses": [
+                {
+                    "tag": "eweqweq",
+                    "freeUsesRegainCondition": "SHORT_REST"
+                }
+            ],
+            "entity": {
+                "item": {
+                    "id": 297,
+                    "name": "Apparatus of Kwalish",
+                    "source": "XDMG",
+                    "page": 229,
+                    "baseItemId": null,
+                    "type": null,
+                    "rarity": "legendary",
+                    "reqAttune": null,
+                    "weight": 500.0,
+                    "entries": [
+                        {
+                            "type": "com.ltx.data.StringEntry",
+                            "text": "This item first appears to be a sealed iron barrel weighing 500 pounds. The barrel has a hidden catch, which can be found with a successful {@dc 20} Intelligence ({@skill Investigation|XPHB}) check. Releasing the catch unlocks a hatch at one end of the barrel, allowing two Medium or smaller creatures to crawl inside. Ten levers are set in a row at the far end, each in a neutral position, able to move up or down. When certain levers are used, the apparatus transforms to resemble a giant lobster."
+                        },
+                        {
+                            "type": "com.ltx.data.StringEntry",
+                            "text": "The Apparatus of Kwalish is a Large object with the following statistics: {@b AC} 20; {@b HP} 200; {@b Speed} 30 ft., Swim 30 ft. (or 0 ft. for both if the legs aren't extended); {@b Immunity} to Poison and Psychic damage."
+                        },
+                        {
+                            "type": "com.ltx.data.StringEntry",
+                            "text": "To be used as a vehicle, the apparatus requires one pilot. While the apparatus's hatch is closed, the compartment is airtight and watertight. The compartment holds enough air for 10 hours of breathing, divided by the number of breathing creatures inside."
+                        },
+                        {
+                            "type": "com.ltx.data.StringEntry",
+                            "text": "The apparatus floats on water. It can also go underwater to a depth of 900 feet. Below that, the vehicle takes {@damage 2d6} Bludgeoning damage each minute from pressure."
+                        },
+                        {
+                            "type": "com.ltx.data.StringEntry",
+                            "text": "A creature in the compartment can take a {@action Utilize|XPHB} action to move as many as two of the apparatus's levers up or down. After each use, a lever goes back to its neutral position. Each lever, from left to right, functions as shown in the Apparatus of Kwalish Levers table."
+                        },
+                        {
+                            "type": "table",
+                            "colLabels": [
+                                "Lever",
+                                "Up",
+                                "Down"
+                            ],
+                            "rows": [
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "1"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Legs extend, allowing the apparatus to walk and swim."
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Legs retract, reducing the apparatus's {@variantrule Speed|XPHB} and {@variantrule Swim Speed|XPHB} to 0 and making it unable to benefit from bonuses to speed."
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "2"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Forward window shutter opens."
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Forward window shutter closes."
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "3"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Side window shutters open (two per side)."
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Side window shutters close (two per side)."
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "4"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Two claws extend from the front side of the apparatus."
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "The claws retract."
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "5"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Each extended claw makes the following melee attack: +8 to hit, reach 5 ft. {@i Hit:} 7 ({@damage 2d6}) Bludgeoning damage."
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Each extended claw makes the following melee attack: +8 to hit, reach 5 ft. {@i Hit:} The target has the {@condition Grappled|XPHB} condition (escape {@dc 15})."
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "6"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "The apparatus walks or swims forward provided its legs are extended."
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "The apparatus walks or swims backward provided its legs are extended."
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "7"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "The apparatus turns 90 degrees counterclockwise provided its legs are extended."
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "The apparatus turns 90 degrees clockwise provided its legs are extended."
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "8"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Eyelike fixtures emit {@variantrule Bright Light|XPHB} in a 30-foot radius and {@variantrule Dim Light|XPHB} for an additional 30 feet."
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "The light turns off."
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "9"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "The apparatus sinks up to 20 feet if it's in liquid."
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "The apparatus rises up to 20 feet if it's in liquid."
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "10"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "The rear hatch unseals and opens."
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "The rear hatch closes and seals."
+                                    }
+                                ]
+                            ]
+                        }
+                    ],
+                    "dmg1": null,
+                    "dmgType": null,
+                    "dmg2": null,
+                    "value": null,
+                    "weaponCategory": null,
+                    "property": null,
+                    "mastery": null,
+                    "range": null,
+                    "bonusWeapon": null,
+                    "bonusAc": null,
+                    "ac": null,
+                    "bonusWeaponAttack": null,
+                    "bonusSavingThrow": null,
+                    "bonusSpellAttack": null,
+                    "bonusSpellSaveDc": null,
+                    "bonusSpellDamage": null,
+                    "bonusWeaponDamage": null,
+                    "scfType": null,
+                    "weapon": false,
+                    "armor": false,
+                    "sword": false,
+                    "axe": false,
+                    "spear": false,
+                    "crossbow": false,
+                    "bow": false,
+                    "polearm": false,
+                    "arrow": false,
+                    "firearm": false,
+                    "bolt": false,
+                    "bulletFirearm": false,
+                    "mace": false,
+                    "needleBlowgun": false,
+                    "club": false,
+                    "bulletSling": false,
+                    "hammer": false,
+                    "net": false,
+                    "cellEnergy": false,
+                    "lance": false
+                },
+                "baseItem": null,
+                "itemType": null,
+                "properties": [],
+                "masteries": [],
+                "page": 229,
+                "ac": null,
+                "id": 297
+            }
+        },
+        {
+            "name": "Belt of Giant Strength",
+            "source": "XDMG",
+            "entity": {
+                "item": {
+                    "id": 2660,
+                    "name": "Belt of Giant Strength",
+                    "source": "XDMG",
+                    "page": 236,
+                    "baseItemId": null,
+                    "type": null,
+                    "rarity": "varies",
+                    "reqAttune": "by anyone",
+                    "weight": null,
+                    "entries": [
+                        {
+                            "type": "table",
+                            "colLabels": [
+                                "Belt",
+                                "Str.",
+                                "Rarity"
+                            ],
+                            "rows": [
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "{@item Belt of Hill Giant Strength|XDMG}"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "21"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Rare"
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "{@item Belt of Frost Giant Strength|XDMG} or {@item Belt of Stone Giant Strength|XDMG}"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "23"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Very Rare"
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "{@item Belt of Fire Giant Strength|XDMG}"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "25"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Very Rare"
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "{@item Belt of Cloud Giant Strength|XDMG}"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "27"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Legendary"
+                                    }
+                                ],
+                                [
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "{@item Belt of Storm Giant Strength|XDMG}"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "29"
+                                    },
+                                    {
+                                        "type": "com.ltx.data.StringEntry",
+                                        "text": "Legendary"
+                                    }
+                                ]
+                            ]
+                        }
+                    ],
+                    "dmg1": null,
+                    "dmgType": null,
+                    "dmg2": null,
+                    "value": null,
+                    "weaponCategory": null,
+                    "property": null,
+                    "mastery": null,
+                    "range": null,
+                    "bonusWeapon": null,
+                    "bonusAc": null,
+                    "ac": null,
+                    "bonusWeaponAttack": null,
+                    "bonusSavingThrow": null,
+                    "bonusSpellAttack": null,
+                    "bonusSpellSaveDc": null,
+                    "bonusSpellDamage": null,
+                    "bonusWeaponDamage": null,
+                    "scfType": null,
+                    "weapon": false,
+                    "armor": false,
+                    "sword": false,
+                    "axe": false,
+                    "spear": false,
+                    "crossbow": false,
+                    "bow": false,
+                    "polearm": false,
+                    "arrow": false,
+                    "firearm": false,
+                    "bolt": false,
+                    "bulletFirearm": false,
+                    "mace": false,
+                    "needleBlowgun": false,
+                    "club": false,
+                    "bulletSling": false,
+                    "hammer": false,
+                    "net": false,
+                    "cellEnergy": false,
+                    "lance": false
+                },
+                "baseItem": null,
+                "itemType": null,
+                "properties": [],
+                "masteries": [],
+                "page": 236,
+                "ac": null,
+                "id": 2660
+            }
+        },
+        {
+            "name": "Belt of Frost Giant Strength",
+            "source": "XDMG",
+            "entity": {
+                "item": {
+                    "id": 395,
+                    "name": "Belt of Frost Giant Strength",
+                    "source": "XDMG",
+                    "page": 236,
+                    "baseItemId": null,
+                    "type": null,
+                    "rarity": "very rare",
+                    "reqAttune": "by anyone",
+                    "weight": null,
+                    "entries": [
+                        {
+                            "type": "com.ltx.data.StringEntry",
+                            "text": "While wearing this belt, your Strength score changes to 23. The item has no effect on you if your Strength without the belt is equal to or greater than the belt's score."
+                        }
+                    ],
+                    "dmg1": null,
+                    "dmgType": null,
+                    "dmg2": null,
+                    "value": null,
+                    "weaponCategory": null,
+                    "property": null,
+                    "mastery": null,
+                    "range": null,
+                    "bonusWeapon": null,
+                    "bonusAc": null,
+                    "ac": null,
+                    "bonusWeaponAttack": null,
+                    "bonusSavingThrow": null,
+                    "bonusSpellAttack": null,
+                    "bonusSpellSaveDc": null,
+                    "bonusSpellDamage": null,
+                    "bonusWeaponDamage": null,
+                    "scfType": null,
+                    "weapon": false,
+                    "armor": false,
+                    "sword": false,
+                    "axe": false,
+                    "spear": false,
+                    "crossbow": false,
+                    "bow": false,
+                    "polearm": false,
+                    "arrow": false,
+                    "firearm": false,
+                    "bolt": false,
+                    "bulletFirearm": false,
+                    "mace": false,
+                    "needleBlowgun": false,
+                    "club": false,
+                    "bulletSling": false,
+                    "hammer": false,
+                    "net": false,
+                    "cellEnergy": false,
+                    "lance": false
+                },
+                "baseItem": null,
+                "itemType": null,
+                "properties": [],
+                "masteries": [],
+                "page": 236,
+                "ac": null,
+                "id": 395
+            }
+        },
+        {
+            "name": "Belt of Hill Giant Strength",
+            "source": "XDMG",
+            "entity": {
+                "item": {
+                    "id": 397,
+                    "name": "Belt of Hill Giant Strength",
+                    "source": "XDMG",
+                    "page": 236,
+                    "baseItemId": null,
+                    "type": null,
+                    "rarity": "rare",
+                    "reqAttune": "by anyone",
+                    "weight": null,
+                    "entries": [
+                        {
+                            "type": "com.ltx.data.StringEntry",
+                            "text": "While wearing this belt, your Strength score changes to 21. The item has no effect on you if your Strength without the belt is equal to or greater than the belt's score."
+                        }
+                    ],
+                    "dmg1": null,
+                    "dmgType": null,
+                    "dmg2": null,
+                    "value": null,
+                    "weaponCategory": null,
+                    "property": null,
+                    "mastery": null,
+                    "range": null,
+                    "bonusWeapon": null,
+                    "bonusAc": null,
+                    "ac": null,
+                    "bonusWeaponAttack": null,
+                    "bonusSavingThrow": null,
+                    "bonusSpellAttack": null,
+                    "bonusSpellSaveDc": null,
+                    "bonusSpellDamage": null,
+                    "bonusWeaponDamage": null,
+                    "scfType": null,
+                    "weapon": false,
+                    "armor": false,
+                    "sword": false,
+                    "axe": false,
+                    "spear": false,
+                    "crossbow": false,
+                    "bow": false,
+                    "polearm": false,
+                    "arrow": false,
+                    "firearm": false,
+                    "bolt": false,
+                    "bulletFirearm": false,
+                    "mace": false,
+                    "needleBlowgun": false,
+                    "club": false,
+                    "bulletSling": false,
+                    "hammer": false,
+                    "net": false,
+                    "cellEnergy": false,
+                    "lance": false
+                },
+                "baseItem": null,
+                "itemType": null,
+                "properties": [],
+                "masteries": [],
+                "page": 236,
+                "ac": null,
+                "id": 397
+            }
+        },
+        {
+            "name": "Carved bone statuette",
+            "source": "XDMG",
+            "entity": {
+                "item": {
+                    "id": 583,
+                    "name": "Carved bone statuette",
+                    "source": "XDMG",
+                    "page": 215,
+                    "baseItemId": null,
+                    "type": "$A|XDMG",
+                    "rarity": "none",
+                    "reqAttune": null,
+                    "weight": null,
+                    "entries": null,
+                    "dmg1": null,
+                    "dmgType": null,
+                    "dmg2": null,
+                    "value": 2500.0,
+                    "weaponCategory": null,
+                    "property": null,
+                    "mastery": null,
+                    "range": null,
+                    "bonusWeapon": null,
+                    "bonusAc": null,
+                    "ac": null,
+                    "bonusWeaponAttack": null,
+                    "bonusSavingThrow": null,
+                    "bonusSpellAttack": null,
+                    "bonusSpellSaveDc": null,
+                    "bonusSpellDamage": null,
+                    "bonusWeaponDamage": null,
+                    "scfType": null,
+                    "weapon": false,
+                    "armor": false,
+                    "sword": false,
+                    "axe": false,
+                    "spear": false,
+                    "crossbow": false,
+                    "bow": false,
+                    "polearm": false,
+                    "arrow": false,
+                    "firearm": false,
+                    "bolt": false,
+                    "bulletFirearm": false,
+                    "mace": false,
+                    "needleBlowgun": false,
+                    "club": false,
+                    "bulletSling": false,
+                    "hammer": false,
+                    "net": false,
+                    "cellEnergy": false,
+                    "lance": false
+                },
+                "baseItem": null,
+                "itemType": "Treasure (Art Object)",
+                "properties": [],
+                "masteries": [],
+                "page": 215,
+                "ac": null,
+                "id": 583
+            }
+        },
+        {
+            "name": "Cartographer's Tools",
+            "source": "XPHB",
+            "entity": {
+                "item": {
+                    "id": 581,
+                    "name": "Cartographer's Tools",
+                    "source": "XPHB",
+                    "page": 220,
+                    "baseItemId": null,
+                    "type": "AT|XPHB",
+                    "rarity": "none",
+                    "reqAttune": null,
+                    "weight": 6.0,
+                    "entries": [
+                        {
+                            "type": "list",
+                            "style": "list-hang-notitle",
+                            "items": [
+                                {
+                                    "type": "item",
+                                    "name": "Ability:",
+                                    "entries": [
+                                        {
+                                            "type": "com.ltx.data.StringEntry",
+                                            "text": "Wisdom"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "item",
+                                    "name": "Utilize:",
+                                    "entries": [
+                                        {
+                                            "type": "com.ltx.data.StringEntry",
+                                            "text": "Draft a map of a small area ({@dc 15})"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "item",
+                                    "name": "Craft:",
+                                    "entries": [
+                                        {
+                                            "type": "com.ltx.data.StringEntry",
+                                            "text": "{@item Map|XPHB}"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "dmg1": null,
+                    "dmgType": null,
+                    "dmg2": null,
+                    "value": 1500.0,
+                    "weaponCategory": null,
+                    "property": null,
+                    "mastery": null,
+                    "range": null,
+                    "bonusWeapon": null,
+                    "bonusAc": null,
+                    "ac": null,
+                    "bonusWeaponAttack": null,
+                    "bonusSavingThrow": null,
+                    "bonusSpellAttack": null,
+                    "bonusSpellSaveDc": null,
+                    "bonusSpellDamage": null,
+                    "bonusWeaponDamage": null,
+                    "scfType": null,
+                    "weapon": false,
+                    "armor": false,
+                    "sword": false,
+                    "axe": false,
+                    "spear": false,
+                    "crossbow": false,
+                    "bow": false,
+                    "polearm": false,
+                    "arrow": false,
+                    "firearm": false,
+                    "bolt": false,
+                    "bulletFirearm": false,
+                    "mace": false,
+                    "needleBlowgun": false,
+                    "club": false,
+                    "bulletSling": false,
+                    "hammer": false,
+                    "net": false,
+                    "cellEnergy": false,
+                    "lance": false
+                },
+                "baseItem": null,
+                "itemType": "Artisan's Tools",
+                "properties": [],
+                "masteries": [],
+                "page": 220,
+                "ac": null,
+                "id": 581
+            }
+        },
+        {
+            "name": "Carved ivory statuette",
+            "source": "XDMG",
+            "entity": {
+                "item": {
+                    "id": 586,
+                    "name": "Carved ivory statuette",
+                    "source": "XDMG",
+                    "page": 215,
+                    "baseItemId": null,
+                    "type": "$A|XDMG",
+                    "rarity": "none",
+                    "reqAttune": null,
+                    "weight": null,
+                    "entries": null,
+                    "dmg1": null,
+                    "dmgType": null,
+                    "dmg2": null,
+                    "value": 25000.0,
+                    "weaponCategory": null,
+                    "property": null,
+                    "mastery": null,
+                    "range": null,
+                    "bonusWeapon": null,
+                    "bonusAc": null,
+                    "ac": null,
+                    "bonusWeaponAttack": null,
+                    "bonusSavingThrow": null,
+                    "bonusSpellAttack": null,
+                    "bonusSpellSaveDc": null,
+                    "bonusSpellDamage": null,
+                    "bonusWeaponDamage": null,
+                    "scfType": null,
+                    "weapon": false,
+                    "armor": false,
+                    "sword": false,
+                    "axe": false,
+                    "spear": false,
+                    "crossbow": false,
+                    "bow": false,
+                    "polearm": false,
+                    "arrow": false,
+                    "firearm": false,
+                    "bolt": false,
+                    "bulletFirearm": false,
+                    "mace": false,
+                    "needleBlowgun": false,
+                    "club": false,
+                    "bulletSling": false,
+                    "hammer": false,
+                    "net": false,
+                    "cellEnergy": false,
+                    "lance": false
+                },
+                "baseItem": null,
+                "itemType": "Treasure (Art Object)",
+                "properties": [],
+                "masteries": [],
+                "page": 215,
+                "ac": null,
+                "id": 586
+            }
+        }
+    ],
+    "conditions": [],
+    "monsters": [
+        {
+            "name": "Adult Brass Dragon",
+            "source": "XMM",
+            "hpEnabled": true,
+            "monsterMaxHP": 50,
+            "userAdded": true,
+            "entity": {
+                "id": 458,
+                "name": "Adult Brass Dragon",
+                "source": "XMM",
+                "page": 55,
+                "size": [
+                    "H"
+                ],
+                "type": {
+                    "type": "dragon",
+                    "tags": [
+                        "metallic"
+                    ]
+                },
+                "alignment": [
+                    "C",
+                    "G"
+                ],
+                "ac": [
+                    18
+                ],
+                "hp": {
+                    "average": 172,
+                    "formula": "15d12 + 75"
+                },
+                "speed": {
+                    "walk": 40,
+                    "fly": 80,
+                    "burrow": 30
+                },
+                "str": 23,
+                "dex": 10,
+                "con": 21,
+                "int": 14,
+                "wis": 13,
+                "cha": 17,
+                "initiative": {
+                    "proficiency": 2
+                },
+                "save": {
+                    "dex": "+5",
+                    "wis": "+6"
+                },
+                "skill": {
+                    "history": "+7",
+                    "perception": "+11",
+                    "persuasion": "+8",
+                    "stealth": "+5"
+                },
+                "senses": [
+                    "Blindsight 60 ft.",
+                    "Darkvision 120 ft."
+                ],
+                "passive": "21",
+                "immune": [
+                    {
+                        "type": "string_immune",
+                        "text": "fire"
+                    }
+                ],
+                "resist": null,
+                "vulnerable": null,
+                "conditionImmune": null,
+                "languages": [
+                    "Common",
+                    "Draconic"
+                ],
+                "cr": {
+                    "cr": "13",
+                    "xpLair": 11500
+                },
+                "spellcasting": [
+                    {
+                        "name": "Spellcasting",
+                        "type": "spellcasting",
+                        "headerEntries": [
+                            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save {@dc 16}):"
+                        ],
+                        "ability": "cha",
+                        "displayAs": "action",
+                        "will": [
+                            {
+                                "type": "com.ltx.data.MonsterCastingObject",
+                                "entry": "{@spell Detect Magic|XPHB}"
+                            },
+                            {
+                                "type": "com.ltx.data.MonsterCastingObject",
+                                "entry": "{@spell Minor Illusion|XPHB}"
+                            },
+                            {
+                                "type": "com.ltx.data.MonsterCastingObject",
+                                "entry": "{@spell Scorching Ray|XPHB}"
+                            },
+                            {
+                                "type": "com.ltx.data.MonsterCastingObject",
+                                "entry": "{@spell Shapechange|XPHB} (Beast or Humanoid form only, no {@variantrule Temporary Hit Points|XPHB} gained from the spell, and no Concentration or {@variantrule Temporary Hit Points|XPHB} required to maintain the spell)"
+                            },
+                            {
+                                "type": "com.ltx.data.MonsterCastingObject",
+                                "entry": "{@spell Speak with Animals|XPHB}"
+                            }
+                        ],
+                        "daily": {
+                            "1e": [
+                                "{@spell Detect Thoughts|XPHB}",
+                                "{@spell Control Weather|XPHB}"
+                            ]
+                        }
+                    }
+                ],
+                "trait": [
+                    {
+                        "name": "Legendary Resistance (3/Day, or 4/Day in Lair)",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "If the dragon fails a saving throw, it can choose to succeed instead."
+                            }
+                        ]
+                    }
+                ],
+                "action": [
+                    {
+                        "name": "Multiattack",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "The dragon makes three Rend attacks. It can replace one attack with a use of (A) Sleep Breath or (B) Spellcasting to cast {@spell Scorching Ray|XPHB}."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Rend",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "{@atkr m} {@hit 11}, reach 10 ft. {@h}17 ({@damage 2d10 + 6}) Slashing damage plus 4 ({@damage 1d8}) Fire damage."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Fire Breath {@recharge 5}",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "{@actSave dex} {@dc 18}, each creature in a 60-foot-long, 5-foot-wide {@variantrule Line [Area of Effect]|XPHB|Line}. {@actSaveFail} 45 ({@damage 10d8}) Fire damage. {@actSaveSuccess} Half damage."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Sleep Breath",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "{@actSave con} {@dc 18}, each creature in a 60-foot {@variantrule Cone [Area of Effect]|XPHB|Cone}. {@actSaveFail} The target has the {@condition Incapacitated|XPHB} condition until the end of its next turn, at which point it repeats the save. {@actSaveFail 2} The target has the {@condition Unconscious|XPHB} condition for 10 minutes. This effect ends for the target if it takes damage or a creature within 5 feet of it takes an action to wake it."
+                            }
+                        ]
+                    }
+                ],
+                "legendary": [
+                    {
+                        "name": "Blazing Light",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "The dragon uses Spellcasting to cast {@spell Scorching Ray|XPHB}."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Pounce",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "The dragon moves up to half its {@variantrule Speed|XPHB}, and it makes one Rend attack."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Scorching Sands",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "{@actSave dex} {@dc 16}, one creature the dragon can see within 120 feet. {@actSaveFail} 27 ({@damage 6d8}) Fire damage, and the target's {@variantrule Speed|XPHB} is halved until the end of its next turn. {@actSaveSuccessOrFail} The dragon can't take this action again until the start of its next turn."
+                            }
+                        ]
+                    }
+                ],
+                "reaction": null,
+                "legendaryActionsLair": 4,
+                "environment": [
+                    "desert"
+                ],
+                "hasToken": true,
+                "hasFluff": true
+            }
+        },
+        {
+            "name": "Adult Bronze Dragon",
+            "source": "XMM",
+            "userAdded": true,
+            "entity": {
+                "id": 459,
+                "name": "Adult Bronze Dragon",
+                "source": "XMM",
+                "page": 59,
+                "size": [
+                    "H"
+                ],
+                "type": {
+                    "type": "dragon",
+                    "tags": [
+                        "metallic"
+                    ]
+                },
+                "alignment": [
+                    "L",
+                    "G"
+                ],
+                "ac": [
+                    18
+                ],
+                "hp": {
+                    "average": 212,
+                    "formula": "17d12 + 102"
+                },
+                "speed": {
+                    "walk": 40,
+                    "fly": 80,
+                    "swim": 40
+                },
+                "str": 25,
+                "dex": 10,
+                "con": 23,
+                "int": 16,
+                "wis": 15,
+                "cha": 20,
+                "initiative": {
+                    "proficiency": 2
+                },
+                "save": {
+                    "dex": "+5",
+                    "wis": "+7"
+                },
+                "skill": {
+                    "insight": "+7",
+                    "perception": "+12",
+                    "stealth": "+5"
+                },
+                "senses": [
+                    "Blindsight 60 ft.",
+                    "Darkvision 120 ft."
+                ],
+                "passive": "22",
+                "immune": [
+                    {
+                        "type": "string_immune",
+                        "text": "lightning"
+                    }
+                ],
+                "resist": null,
+                "vulnerable": null,
+                "conditionImmune": null,
+                "languages": [
+                    "Common",
+                    "Draconic"
+                ],
+                "cr": {
+                    "cr": "15",
+                    "xpLair": 15000
+                },
+                "spellcasting": [
+                    {
+                        "name": "Spellcasting",
+                        "type": "spellcasting",
+                        "headerEntries": [
+                            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save {@dc 17}, {@hit 10} to hit with spell attacks):"
+                        ],
+                        "ability": "cha",
+                        "displayAs": "action",
+                        "will": [
+                            {
+                                "type": "com.ltx.data.MonsterCastingObject",
+                                "entry": "{@spell Detect Magic|XPHB}"
+                            },
+                            {
+                                "type": "com.ltx.data.MonsterCastingObject",
+                                "entry": "{@spell Guiding Bolt|XPHB} (level 2 version)"
+                            },
+                            {
+                                "type": "com.ltx.data.MonsterCastingObject",
+                                "entry": "{@spell Shapechange|XPHB} (Beast or Humanoid form only, no {@variantrule Temporary Hit Points|XPHB} gained from the spell, and no Concentration or {@variantrule Temporary Hit Points|XPHB} required to maintain the spell)"
+                            },
+                            {
+                                "type": "com.ltx.data.MonsterCastingObject",
+                                "entry": "{@spell Speak with Animals|XPHB}"
+                            },
+                            {
+                                "type": "com.ltx.data.MonsterCastingObject",
+                                "entry": "{@spell Thaumaturgy|XPHB}"
+                            }
+                        ],
+                        "daily": {
+                            "1e": [
+                                "{@spell Detect Thoughts|XPHB}",
+                                "{@spell Water Breathing|XPHB}"
+                            ]
+                        }
+                    }
+                ],
+                "trait": [
+                    {
+                        "name": "Amphibious",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "The dragon can breathe air and water."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Legendary Resistance (3/Day, or 4/Day in Lair)",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "If the dragon fails a saving throw, it can choose to succeed instead."
+                            }
+                        ]
+                    }
+                ],
+                "action": [
+                    {
+                        "name": "Multiattack",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "The dragon makes three Rend attacks. It can replace one attack with a use of (A) Repulsion Breath or (B) Spellcasting to cast {@spell Guiding Bolt|XPHB} (level 2 version)."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Rend",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "{@atkr m} {@hit 12}, reach 10 ft. {@h}16 ({@damage 2d8 + 7}) Slashing damage plus 5 ({@damage 1d10}) Lightning damage."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Lightning Breath {@recharge 5}",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "{@actSave dex} {@dc 19}, each creature in a 90-foot-long, 5-foot-wide {@variantrule Line [Area of Effect]|XPHB|Line}. {@actSaveFail} 55 ({@damage 10d10}) Lightning damage. {@actSaveSuccess} Half damage."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Repulsion Breath",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "{@actSave str} {@dc 19}, each creature in a 30-foot {@variantrule Cone [Area of Effect]|XPHB|Cone}. {@actSaveFail} The target is pushed up to 60 feet straight away from the dragon and has the {@condition Prone|XPHB} condition."
+                            }
+                        ]
+                    }
+                ],
+                "legendary": [
+                    {
+                        "name": "Guiding Light",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "The dragon uses Spellcasting to cast {@spell Guiding Bolt|XPHB} (level 2 version)."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Pounce",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "The dragon moves up to half its {@variantrule Speed|XPHB}, and it makes one Rend attack."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Thunderclap",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "{@actSave con} {@dc 17}, each creature in a 20-foot-radius {@variantrule Sphere [Area of Effect]|XPHB|Sphere} centered on a point the dragon can see within 90 feet. {@actSaveFail} 10 ({@damage 3d6}) Thunder damage, and the target has the {@condition Deafened|XPHB} condition until the end of its next turn."
+                            }
+                        ]
+                    }
+                ],
+                "reaction": null,
+                "legendaryActionsLair": 4,
+                "environment": [
+                    "coastal"
+                ],
+                "hasToken": true,
+                "hasFluff": true
+            }
+        },
+        {
+            "name": "Adult Copper Dragon",
+            "source": "XMM",
+            "userAdded": true,
+            "entity": {
+                "id": 460,
+                "name": "Adult Copper Dragon",
+                "source": "XMM",
+                "page": 79,
+                "size": [
+                    "H"
+                ],
+                "type": {
+                    "type": "dragon",
+                    "tags": [
+                        "metallic"
+                    ]
+                },
+                "alignment": [
+                    "C",
+                    "G"
+                ],
+                "ac": [
+                    18
+                ],
+                "hp": {
+                    "average": 184,
+                    "formula": "16d12 + 80"
+                },
+                "speed": {
+                    "walk": 40,
+                    "fly": 80,
+                    "climb": 40
+                },
+                "str": 23,
+                "dex": 12,
+                "con": 21,
+                "int": 18,
+                "wis": 15,
+                "cha": 18,
+                "initiative": {
+                    "proficiency": 2
+                },
+                "save": {
+                    "dex": "+6",
+                    "wis": "+7"
+                },
+                "skill": {
+                    "deception": "+9",
+                    "perception": "+12",
+                    "stealth": "+6"
+                },
+                "senses": [
+                    "Blindsight 60 ft.",
+                    "Darkvision 120 ft."
+                ],
+                "passive": "22",
+                "immune": [
+                    {
+                        "type": "string_immune",
+                        "text": "acid"
+                    }
+                ],
+                "resist": null,
+                "vulnerable": null,
+                "conditionImmune": null,
+                "languages": [
+                    "Common",
+                    "Draconic"
+                ],
+                "cr": {
+                    "cr": "14",
+                    "xpLair": 13000
+                },
+                "spellcasting": [
+                    {
+                        "name": "Spellcasting",
+                        "type": "spellcasting",
+                        "headerEntries": [
+                            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save {@dc 17}):"
+                        ],
+                        "ability": "cha",
+                        "displayAs": "action",
+                        "will": [
+                            {
+                                "type": "com.ltx.data.MonsterCastingObject",
+                                "entry": "{@spell Detect Magic|XPHB}"
+                            },
+                            {
+                                "type": "com.ltx.data.MonsterCastingObject",
+                                "entry": "{@spell Mind Spike|XPHB} (level 4 version)"
+                            },
+                            {
+                                "type": "com.ltx.data.MonsterCastingObject",
+                                "entry": "{@spell Minor Illusion|XPHB}"
+                            },
+                            {
+                                "type": "com.ltx.data.MonsterCastingObject",
+                                "entry": "{@spell Shapechange|XPHB} (Beast or Humanoid form only, no {@variantrule Temporary Hit Points|XPHB} gained from the spell, and no Concentration or {@variantrule Temporary Hit Points|XPHB} required to maintain the spell)"
+                            }
+                        ],
+                        "daily": {
+                            "1e": [
+                                "{@spell Greater Restoration|XPHB}",
+                                "{@spell Major Image|XPHB}"
+                            ]
+                        }
+                    }
+                ],
+                "trait": [
+                    {
+                        "name": "Legendary Resistance (3/Day, or 4/Day in Lair)",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "If the dragon fails a saving throw, it can choose to succeed instead."
+                            }
+                        ]
+                    }
+                ],
+                "action": [
+                    {
+                        "name": "Multiattack",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "The dragon makes three Rend attacks. It can replace one attack with a use of (A) Slowing Breath or (B) Spellcasting to cast {@spell Mind Spike|XPHB} (level 4 version)."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Rend",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "{@atkr m} {@hit 11}, reach 10 ft. {@h}17 ({@damage 2d10 + 6}) Slashing damage plus 4 ({@damage 1d8}) Acid damage."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Acid Breath {@recharge 5}",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "{@actSave dex} {@dc 18}, each creature in an 60-foot-long, 5-foot-wide {@variantrule Line [Area of Effect]|XPHB|Line}. {@actSaveFail} 54 ({@damage 12d8}) Acid damage. {@actSaveSuccess} Half damage."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Slowing Breath",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "{@actSave con} {@dc 18}, each creature in a 60-foot {@variantrule Cone [Area of Effect]|XPHB|Cone}. {@actSaveFail} The target can't take Reactions; its {@variantrule Speed|XPHB} is halved; and it can take either an action or a {@variantrule Bonus Action|XPHB} on its turn, not both. This effect lasts until the end of its next turn."
+                            }
+                        ]
+                    }
+                ],
+                "legendary": [
+                    {
+                        "name": "Giggling Magic",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "{@actSave cha} {@dc 17}, one creature the dragon can see within 90 feet. {@actSaveFail} 24 ({@damage 7d6}) Psychic damage. Until the end of its next turn, the target rolls {@dice 1d6} whenever it makes an ability check or attack roll and subtracts the number rolled from the {@variantrule D20 Test|XPHB}. {@actSaveSuccessOrFail} The dragon can't take this action again until the start of its next turn."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Mind Jolt",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "The dragon uses Spellcasting to cast {@spell Mind Spike|XPHB} (level 4 version). The dragon can't take this action again until the start of its next turn."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Pounce",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "The dragon moves up to half its {@variantrule Speed|XPHB}, and it makes one Rend attack."
+                            }
+                        ]
+                    }
+                ],
+                "reaction": null,
+                "legendaryActionsLair": 4,
+                "environment": [
+                    "hill"
+                ],
+                "hasToken": true,
+                "hasFluff": true
+            }
+        },
+        {
+            "name": "Adult Red Dragon",
+            "source": "XMM",
+            "userAdded": true,
+            "entity": {
+                "id": 463,
+                "name": "Adult Red Dragon",
+                "source": "XMM",
+                "page": 255,
+                "size": [
+                    "H"
+                ],
+                "type": {
+                    "type": "dragon",
+                    "tags": [
+                        "chromatic"
+                    ]
+                },
+                "alignment": [
+                    "C",
+                    "E"
+                ],
+                "ac": [
+                    19
+                ],
+                "hp": {
+                    "average": 256,
+                    "formula": "19d12 + 133"
+                },
+                "speed": {
+                    "walk": 40,
+                    "fly": 80,
+                    "climb": 40
+                },
+                "str": 27,
+                "dex": 10,
+                "con": 25,
+                "int": 16,
+                "wis": 13,
+                "cha": 23,
+                "initiative": {
+                    "proficiency": 2
+                },
+                "save": {
+                    "dex": "+6",
+                    "wis": "+7"
+                },
+                "skill": {
+                    "perception": "+13",
+                    "stealth": "+6"
+                },
+                "senses": [
+                    "Blindsight 60 ft.",
+                    "Darkvision 120 ft."
+                ],
+                "passive": "23",
+                "immune": [
+                    {
+                        "type": "string_immune",
+                        "text": "fire"
+                    }
+                ],
+                "resist": null,
+                "vulnerable": null,
+                "conditionImmune": null,
+                "languages": [
+                    "Common",
+                    "Draconic"
+                ],
+                "cr": {
+                    "cr": "17",
+                    "xpLair": 20000
+                },
+                "spellcasting": [
+                    {
+                        "name": "Spellcasting",
+                        "type": "spellcasting",
+                        "headerEntries": [
+                            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save {@dc 20}, {@hit 12} to hit with spell attacks):"
+                        ],
+                        "ability": "cha",
+                        "displayAs": "action",
+                        "will": [
+                            {
+                                "type": "com.ltx.data.MonsterCastingObject",
+                                "entry": "{@spell Command|XPHB} (level 2 version)"
+                            },
+                            {
+                                "type": "com.ltx.data.MonsterCastingObject",
+                                "entry": "{@spell Detect Magic|XPHB}"
+                            },
+                            {
+                                "type": "com.ltx.data.MonsterCastingObject",
+                                "entry": "{@spell Scorching Ray|XPHB}"
+                            }
+                        ],
+                        "daily": {
+                            "1": [
+                                "{@spell Fireball|XPHB}"
+                            ]
+                        }
+                    }
+                ],
+                "trait": [
+                    {
+                        "name": "Legendary Resistance (3/Day, or 4/Day in Lair)",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "If the dragon fails a saving throw, it can choose to succeed instead."
+                            }
+                        ]
+                    }
+                ],
+                "action": [
+                    {
+                        "name": "Multiattack",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "The dragon makes three Rend attacks. It can replace one attack with a use of Spellcasting to cast {@spell Scorching Ray|XPHB}."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Rend",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "{@atkr m} {@hit 14}, reach 10 ft. {@h}13 ({@damage 1d10 + 8}) Slashing damage plus 5 ({@damage 2d4}) Fire damage."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Fire Breath {@recharge 5}",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "{@actSave dex} {@dc 21}, each creature in a 60-foot {@variantrule Cone [Area of Effect]|XPHB|Cone}. {@actSaveFail} 59 ({@damage 17d6}) Fire damage. {@actSaveSuccess} Half damage."
+                            }
+                        ]
+                    }
+                ],
+                "legendary": [
+                    {
+                        "name": "Commanding Presence",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "The dragon uses Spellcasting to cast {@spell Command|XPHB} (level 2 version). The dragon can't take this action again until the start of its next turn."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Fiery Rays",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "The dragon uses Spellcasting to cast {@spell Scorching Ray|XPHB}. The dragon can't take this action again until the start of its next turn."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Pounce",
+                        "entries": [
+                            {
+                                "type": "com.ltx.data.StringEntry",
+                                "text": "The dragon moves up to half its {@variantrule Speed|XPHB}, and it makes one Rend attack."
+                            }
+                        ]
+                    }
+                ],
+                "reaction": null,
+                "legendaryActionsLair": 4,
+                "environment": [
+                    "hill",
+                    "mountain"
+                ],
+                "hasToken": true,
+                "hasFluff": true
+            }
+        }
+    ],
+    "notes": [
+        {
+            "id": 13,
+            "characterId": 17,
+            "title": "r",
+            "body": "r",
+            "orderIndex": 2
+        },
+        {
+            "id": 14,
+            "characterId": 17,
+            "title": "2",
+            "body": "2",
+            "orderIndex": 1
+        },
+        {
+            "id": 15,
+            "characterId": 17,
+            "title": "Test",
+            "body": "# Test\n\n- This\n- Is\nList"
+        }
+    ],
+    "combatActions": []
+}

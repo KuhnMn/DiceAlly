@@ -6,14 +6,17 @@ import { FeatureUses } from '../models/character.model';
   selector: 'app-feature-uses',
   imports: [CommonModule],
   template: `
-    <div class="feature-uses bg-gray-50 border border-gray-200 rounded-lg p-3">
+    <div 
+      class="feature-uses bg-gray-50 border border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors"
+      (click)="addOneUse()"
+    >
       @if (uses()) {
         <div class="flex items-center justify-between mb-2">
           <span class="text-sm font-semibold text-gray-700">
             {{ tag() }}
           </span>
           <span class="text-xs text-gray-600">
-            {{ usedCount() }} / {{ totalCount() }}
+            {{ totalCount() - usedCount() }} / {{ totalCount() }}
           </span>
         </div>
 
@@ -27,7 +30,7 @@ import { FeatureUses } from '../models/character.model';
 
         <!-- Checkboxes for tracking -->
         @if (totalCount() > 0) {
-          <div class="flex flex-wrap gap-2">
+          <div class="flex flex-wrap gap-2" (click)="$event.stopPropagation()">
             @for (index of availableUses(); track index) {
               <label class="flex items-center cursor-pointer">
                 <input
@@ -46,7 +49,7 @@ import { FeatureUses } from '../models/character.model';
 
         <!-- Regain condition (optional) -->
         @if (regainCondition()) {
-          <div class="text-xs text-gray-500 mt-2">
+          <div class="text-xs text-gray-500 mt-2" (click)="$event.stopPropagation()">
             Regain: {{ regainCondition() }}
           </div>
         }
@@ -100,6 +103,19 @@ export class FeatureUsesComponent {
     this.localUsedCount.set(newUsedCount);
 
     // Emit to parent to update the model
+    this.usesUpdated.emit({
+      usedFreeUses: newUsedCount,
+      tag: uses.tag,
+    });
+  }
+
+  addOneUse() {
+    const uses = this.uses();
+    if (!uses) return;
+
+    const newUsedCount = Math.min(this.usedCount() + 1, this.totalCount());
+    this.localUsedCount.set(newUsedCount);
+
     this.usesUpdated.emit({
       usedFreeUses: newUsedCount,
       tag: uses.tag,
