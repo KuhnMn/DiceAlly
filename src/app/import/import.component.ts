@@ -11,7 +11,7 @@ import type { ExportedCharacter } from '../models/character.model';
   template: `
     <main class="max-w-[900px] mx-auto my-8 p-4">
       <h2 class="text-3xl font-bold mb-4">Import Character JSON</h2>
-      <p class="text-gray-600 mb-6">Choose an exported character JSON file to view it in the browser.</p>
+      <p class="text-on-surface-variant mb-6">Choose an exported character JSON file to view it in the browser.</p>
 
       <label class="block mb-6">
         <span class="block text-sm font-medium mb-2">Upload File</span>
@@ -36,7 +36,7 @@ import type { ExportedCharacter } from '../models/character.model';
       <div class="mt-4">
         <button 
           (click)="loadFromText()"
-          class="px-6 py-2 bg-sky-600 text-white font-semibold rounded hover:bg-sky-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+          class="px-6 py-2 bg-primary text-on-primary font-semibold rounded hover:bg-primary-container transition-colors disabled:bg-surface-variant disabled:cursor-not-allowed"
           [disabled]="!raw.trim()"
         >
           Load from paste

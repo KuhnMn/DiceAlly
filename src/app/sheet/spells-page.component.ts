@@ -16,41 +16,41 @@ import { CharacterStore } from '../stores/character.store';
 
     @keyframes spell-flash {
       0% {
-        box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.6);
-        border-color: #9333ea;
+        box-shadow: 0 0 0 0 rgba(var(--md-sys-color-purple) / 0.6);
+        border-color: rgb(var(--md-sys-color-purple));
       }
       60% {
-        box-shadow: 0 0 0 8px rgba(147, 51, 234, 0.15);
-        border-color: #9333ea;
+        box-shadow: 0 0 0 8px rgba(var(--md-sys-color-purple) / 0.15);
+        border-color: rgb(var(--md-sys-color-purple));
       }
       100% {
-        box-shadow: 0 0 0 0 rgba(147, 51, 234, 0);
-        border-color: #d1d5db;
+        box-shadow: 0 0 0 0 rgba(var(--md-sys-color-purple) / 0);
+        border-color: rgb(var(--md-sys-color-outline-variant));
       }
     }
   `],
   template: `
-    <div class="bg-white p-8 rounded-lg border-2 border-gray-300 shadow-lg">
+    <div class="bg-surface-container-highest p-8 rounded-lg border-2 border-outline shadow-lg">
       <h2 class="text-3xl font-bold mb-6">Spellcasting</h2>
       @if (spellSlotGroups().length > 0) {
           <h3 class="text-xl font-bold mb-3">Spell Slots</h3>
           <div class="space-y-4">
             @for (group of spellSlotGroups(); track group.source) {
-              <div class="border border-gray-200 rounded-lg p-3">
-                <div class="text-sm font-semibold text-gray-700 mb-3">{{ group.source }}</div>
+              <div class="border border-surface border-2 rounded-lg p-3 bg-surface-container">
+                <div class="text-sm font-semibold text-on-surface mb-3">{{ group.source }}</div>
                 <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
                   @for (slot of group.slots; track slot.level) {
                     <div 
-                      class="border border-gray-200 rounded-md p-3 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
+                      class="border border-surface border-2 rounded-md p-3 bg-surface-container-high cursor-pointer hover:bg-surface-container-high transition-colors"
                       (click)="addOneSpellSlot(group.source, slot)"
                     >
-                      <div class="flex items-center justify-between text-sm font-semibold text-gray-700 mb-2">
+                      <div class="flex items-center justify-between text-sm font-semibold text-on-surface-container-high mb-2">
                         <span>Level {{ slot.level }}</span>
                         <span>{{ slot.total-spellSlotUsed(group.source, slot) }} / {{ slot.total }}</span>
                       </div>
-                      <div class="w-full bg-gray-200 rounded-full h-2 mb-3">
+                      <div class="w-full bg-outline-variant rounded-full h-2 mb-3">
                         <div
-                          class="bg-purple-600 h-2 rounded-full transition-all"
+                          class="bg-purple h-2 rounded-full transition-all"
                           [style.width.%]="spellSlotProgress(group.source, slot)"
                         ></div>
                       </div>
@@ -62,17 +62,17 @@ import { CharacterStore } from '../stores/character.store';
                                 type="checkbox"
                                 [checked]="index < spellSlotUsed(group.source, slot)"
                                 (change)="toggleSpellSlot(group.source, slot, index)"
-                                class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                                class="w-4 h-4 text-purple on-surface-container-high border-surface-container-high rounded focus:ring-2 focus:ring-purple accent-purple"
                               />
-                              <span class="ml-1 text-sm text-gray-600">{{ index + 1 }}</span>
+                              <span class="ml-1 text-sm text-on-surface-container-high">{{ index + 1 }}</span>
                             </label>
                           }
                         </div>
                       } @else {
-                        <p class="text-xs text-gray-500 italic">No slots available</p>
+                        <p class="text-xs text-on-surface-container-high italic">No slots available</p>
                       }
                       @if (slot.regainCondition) {
-                        <div class="text-xs text-gray-500 mt-2" (click)="$event.stopPropagation()">Regain: {{ slot.regainCondition }}</div>
+                        <div class="text-xs text-on-surface-container-high mt-2" (click)="$event.stopPropagation()">Regain: {{ slot.regainCondition }}</div>
                       }
                     </div>
                   }
@@ -83,15 +83,15 @@ import { CharacterStore } from '../stores/character.store';
       }
       <h3 class="text-xl font-bold mb-3 mt-6">Spells</h3>
       <div class="mb-6 flex flex-wrap items-center gap-2">
-        <span class="text-sm font-semibold text-gray-700">List Type:</span>
+        <span class="text-sm font-semibold text-on-surface">List Type:</span>
         @for (type of spellListTypes(); track type) {
           <button
             type="button"
             class="px-3 py-1 text-sm border rounded-full"
-            [class.bg-purple-600]="spellListTypeFilter() === type"
-            [class.text-white]="spellListTypeFilter() === type"
-            [class.border-purple-600]="spellListTypeFilter() === type"
-            [class.border-gray-300]="spellListTypeFilter() !== type"
+            [class.bg-purple]="spellListTypeFilter() === type"
+            [class.text-on-purple]="spellListTypeFilter() === type"
+            [class.border-purple]="spellListTypeFilter() === type"
+            [class.border-outline-variant]="spellListTypeFilter() !== type"
             (click)="spellListTypeFilter.set(type)"
           >
             {{ type }}
@@ -100,40 +100,49 @@ import { CharacterStore } from '../stores/character.store';
       </div>
       <div class="mb-6">
         <div class="mb-3">
-          <span class="text-sm font-semibold text-gray-700">Casting Source:</span>
+          <span class="text-sm font-semibold text-on-surface">Casting Source:</span>
         </div>
         @if (featureSourceStats().length > 0) {
           <div class="grid gap-3 grid-cols-2 md:grid-cols-4 xl:grid-cols-6">
             <button
               type="button"
-              class="text-left border-2 rounded-lg p-3 transition-colors"
-              [class.bg-purple-100]="spellCastingSourceFilter() === 'ALL'"
-              [class.border-purple-600]="spellCastingSourceFilter() === 'ALL'"
-              [class.bg-gray-50]="spellCastingSourceFilter() !== 'ALL'"
-              [class.border-gray-200]="spellCastingSourceFilter() !== 'ALL'"
+              class="text-center border-2 rounded-lg p-3 transition-colors"
+              [class.bg-purple-container]="spellCastingSourceFilter() === 'ALL'"
+              [class.border-purple]="spellCastingSourceFilter() === 'ALL'"
+              [class.text-on-purple-container]="spellCastingSourceFilter() === 'ALL'"
+              [class.bg-surface-container]="spellCastingSourceFilter() !== 'ALL'"
+              [class.border-outline-variant]="spellCastingSourceFilter() !== 'ALL'"
+              [class.text-on-surface]="spellCastingSourceFilter() !== 'ALL'"
               (click)="spellCastingSourceFilter.set('ALL')"
             >
-              <div class="text-sm font-semibold text-gray-800">ALL</div>
+              <div class="text-sm font-semibold">ALL</div>
             </button>
             @for (source of featureSourceStats(); track source.name) {
               <button
                 type="button"
-                class="text-left border-2 rounded-lg p-3 transition-colors"
-                [class.bg-purple-100]="spellCastingSourceFilter() === source.name"
-                [class.border-purple-600]="spellCastingSourceFilter() === source.name"
-                [class.bg-gray-50]="spellCastingSourceFilter() !== source.name"
-                [class.border-gray-200]="spellCastingSourceFilter() !== source.name"
+                class="text-center border-2 rounded-lg p-3 transition-colors wrap-break-word"
+                [class.bg-purple-container]="spellCastingSourceFilter() === source.name"
+                [class.border-purple]="spellCastingSourceFilter() === source.name"
+                [class.bg-surface-container]="spellCastingSourceFilter() !== source.name"
+                [class.border-outline-variant]="spellCastingSourceFilter() !== source.name"
                 (click)="spellCastingSourceFilter.set(source.name)"
               >
-                <div class="text-sm font-semibold text-gray-800">{{ source.name }}</div>
+                <div class="text-sm font-semibold over" [class.text-on-purple-container]="spellCastingSourceFilter() === source.name" [class.text-on-surface]="spellCastingSourceFilter() !== source.name">{{ source.name }}</div>
                 <div class="mt-2 grid gap-2">
                   @for (stat of source.abilities; track stat.ability) {
-                    <div class="flex flex-wrap items-center gap-2 text-sm text-gray-700">
-                      <span class="font-semibold">{{ stat.ability }}</span>
-                      <span>Attack {{ stat.attack }}</span>
-                      <span>•</span>
-                      <span>Save DC {{ stat.save }}</span>
-                    </div>
+                      <div class="flex flex-wrap items-center gap-2 text-sm justify-center" [class.text-on-blue-container]="spellCastingSourceFilter() === source.name" [class.text-on-surface-variant]="spellCastingSourceFilter() !== source.name">
+                        <span class="font-semibold w-full">{{ stat.ability }}</span>
+                        <div class="flex items-center gap-4">
+                        <div>
+                          <div>Attack </div>
+                        <div class="text-tertiary">{{ stat.attack }}</div>
+                        </div>
+                        <div>
+                          <div>Save DC</div><div class="text-primary">{{ stat.save }}</div>
+                        </div>
+                        
+                        </div>
+                      </div>
                   }
                 </div>
               </button>
@@ -145,75 +154,75 @@ import { CharacterStore } from '../stores/character.store';
         @if (spellsByLevel().length > 0) {
           @for (levelGroup of spellsByLevel(); track levelGroup.level) {
             <div>
-              <h4 class="text-lg font-bold text-purple-900 mb-3 border-b-2 border-purple-200 pb-1">
+              <h4 class="text-lg font-bold text-purple mb-3 border-b-2 border-purple pb-1">
                 {{ spellLevelHeader(levelGroup.level) }}
               </h4>
               <div class="space-y-4">
                 @for (spell of levelGroup.spells; track spell.name) {
-                  <div class="border-2 border-gray-300 rounded-lg p-4" [attr.id]="'spell-' + helpers.sourceId(spell.name + '-' + (spell.source ?? ''))" [class.flash-highlight]=\"highlightedId() === ('spell-' + helpers.sourceId(spell.name + '-' + (spell.source ?? '')))\">
+                  <div class="border-2 border-purple rounded-lg p-4 bg-surface-container" [attr.id]="'spell-' + helpers.sourceId(spell.name + '-' + (spell.source ?? ''))" [class.flash-highlight]="highlightedId() === ('spell-' + helpers.sourceId(spell.name + '-' + (spell.source ?? '')))">
                     <!-- Header (always visible, clickable) -->
                     <button
                       type="button"
-                      class="w-full text-left hover:bg-gray-50 transition-colors rounded p-2 -m-2"
+                      class="w-full text-left hover:bg-surface-container-low transition-colors rounded p-2 -m-2"
                       (click)="toggleExpanded('spell-' + spell.name)"
                     >
                       <div class="flex flex-wrap items-center justify-between gap-2 w-full">
                         <div class="flex flex-wrap items-center gap-2">
-                          <h3 class="text-xl font-bold text-purple-800">{{ spell.name }}</h3>
+                          <h3 class="text-xl font-bold text-purple">{{ spell.name }}</h3>
                           @if (spell.entity?.level !== undefined) {
-                            <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">{{ helpers.spellLevelLabel(spell) }}</span>
+                            <span class="text-xs bg-purple-container text-on-purple-container px-2 py-0.5 rounded">{{ helpers.spellLevelLabel(spell) }}</span>
                           }
                           @if (spell.entity?.school) {
-                            <span class="text-xs bg-mauve-100 text-mauve-700 px-2 py-0.5 rounded">{{ helpers.spellSchoolLabel(spell.entity?.school ?? '') }}</span>
+                            <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded">{{ helpers.spellSchoolLabel(spell.entity?.school ?? '') }}</span>
                           }
                           @if (spell.entity?.meta?.ritual) {
-                            <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">Ritual</span>
+                            <span class="text-xs bg-green-container text-on-green-container px-2 py-0.5 rounded">Ritual</span>
                           }
                           @if (spell.listType) {
-                            <span class="text-xs bg-sky-100 text-sky-700 px-2 py-0.5 rounded">{{ spell.listType }}</span>
+                            <span class="text-xs bg-blue-container text-on-blue-container px-2 py-0.5 rounded">{{ spell.listType }}</span>
                           }
                         </div>
-                        <span class="text-xl text-purple-600 font-bold">{{ isExpanded('spell-' + spell.name) ? '−' : '+' }}</span>
+                        <span class="text-xl text-purple font-bold">{{ isExpanded('spell-' + spell.name) ? '−' : '+' }}</span>
                       </div>
                     </button>
 
                     <!-- Basic Info (always visible) -->
                     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mt-3">
                       @if (spell.entity?.time?.length) {
-                        <div class="text-sm text-gray-600">Time: {{ helpers.spellTimeLabel(spell.entity?.time ?? []) }}</div>
+                        <div class="text-sm text-on-surface-container">Time: {{ helpers.spellTimeLabel(spell.entity?.time ?? []) }}</div>
                       }
                       @if (spell.entity?.range) {
-                        <div class="text-sm text-gray-600">Range: {{ helpers.spellRangeLabel(spell.entity?.range ?? null) }}</div>
+                        <div class="text-sm text-on-surface-container">Range: {{ helpers.spellRangeLabel(spell.entity?.range ?? null) }}</div>
                       }
                       @if (spell.entity?.components) {
-                        <div class="text-sm text-gray-600">Components: {{ helpers.spellComponentsLabel(spell.entity?.components ?? null) }}</div>
+                        <div class="text-sm text-on-surface-container">Components: {{ helpers.spellComponentsLabel(spell.entity?.components ?? null) }}</div>
                       }
                       @if (spell.entity?.duration?.length) {
-                        <div class="text-sm text-gray-600">Duration: {{ helpers.spellDurationLabel(spell.entity?.duration ?? []) }}</div>
+                        <div class="text-sm text-on-surface-container">Duration: {{ helpers.spellDurationLabel(spell.entity?.duration ?? []) }}</div>
                       }
                     </div>
 
                     <!-- Source Tags -->
                     <div class="flex flex-wrap items-center gap-2 mt-2">
                       @if (spell.source) {
-                        <span class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">{{ spell.source }}</span>
+                        <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ spell.source }}</span>
                       }
                       @if (spell.castingSourceName) {
-                        <span class="text-xs bg-mist-100 text-mist-700 px-2 py-0.5 rounded">{{ spell.castingSourceName }}</span>
+                        <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">{{ spell.castingSourceName }}</span>
                       }
                     </div>
 
                     <!-- Expandable Content -->
                     @if (isExpanded('spell-' + spell.name)) {
-                      <div class="mt-3 pt-3 border-t border-gray-200">
+                      <div class="mt-3 pt-3 border-t border-outline-variant">
                         @if (spell.entity?.entries?.length) {
                           <div>
                             <app-entry-renderer [entries]="spell.entity?.entries ?? []"></app-entry-renderer>
                           </div>
                         }
                         @if (spell.entity?.entriesHigherLevel?.length) {
-                          <div class="mt-3 border-t border-gray-200 pt-3">
-                            <div class="text-sm font-semibold text-gray-700">At Higher Levels</div>
+                          <div class="mt-3 border-t border-outline-variant pt-3">
+                            <div class="text-sm font-semibold text-on-surface">At Higher Levels</div>
                             @for (higher of spell.entity?.entriesHigherLevel ?? []; track $index) {
                               @if (higher.entries?.length) {
                                 <app-entry-renderer [entries]="higher.entries ?? []"></app-entry-renderer>
@@ -225,7 +234,7 @@ import { CharacterStore } from '../stores/character.store';
                       </div>
                     }
                         @if (spell.uses?.length) {
-                          <div class="mt-4 border-t border-gray-200 pt-4">
+                          <div class="mt-4 border-t border-outline-variant pt-4">
                             @for (use of spell.uses; track use.tag) {
                               <app-feature-uses 
                                 [uses]="use"
@@ -240,7 +249,7 @@ import { CharacterStore } from '../stores/character.store';
             </div>
           }
         } @else {
-          <p class="text-gray-500 italic">No spells known</p>
+          <p class="text-on-surface-variant italic">No spells known</p>
         }
       </div>
     </div>

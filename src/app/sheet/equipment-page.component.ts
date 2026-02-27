@@ -16,16 +16,16 @@ import { CharacterStore } from '../stores/character.store';
 
     @keyframes item-flash {
       0% {
-        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
-        border-color: #22c55e;
+        box-shadow: 0 0 0 0 rgba(var(--md-sys-color-green) / 0.6);
+        border-color: rgb(var(--md-sys-color-green));
       }
       60% {
-        box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.15);
-        border-color: #22c55e;
+        box-shadow: 0 0 0 8px rgba(var(--md-sys-color-green) / 0.15);
+        border-color: rgb(var(--md-sys-color-green));
       }
       100% {
-        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
-        border-color: #d1d5db;
+        box-shadow: 0 0 0 0 rgba(var(--md-sys-color-green) / 0);
+        border-color: rgb(var(--md-sys-color-outline-variant));
       }
     }
     
@@ -82,45 +82,45 @@ import { CharacterStore } from '../stores/character.store';
     }
   `],
   template: `
-    <div class="bg-white p-8 rounded-lg border-2 border-gray-300 shadow-lg">
+    <div class="bg-surface-container-highest p-8 rounded-lg border-2 border-outline shadow-lg">
       <h2 class="text-3xl font-bold mb-6">Equipment & Inventory</h2>
 
       <!-- Currency Tracker -->
-      <div class="mb-6 border-2 border-amber-300 rounded-lg p-4 bg-amber-50">
-        <h3 class="text-lg font-bold mb-3 text-amber-900">Currency</h3>
-        <div class="flex gap-6 items-center flex-wrap">
-          <div class="flex items-center gap-2">
-            <label class="text-sm font-semibold text-amber-800 w-16">Gold</label>
+      <div class="mb-6 border-4 border-tertiary rounded-lg p-4 bg-tertiary-container">
+        <h3 class="text-lg font-bold mb-3 text-on-tertiary-container">Currency</h3>
+        <div class="flex justify-between gap-6 items-center flex-wrap bg-surface-variant border border-outline-variant rounded-md p-1 px-2">
+          <div class="flex items-center gap-2  ">
+            <label class="text-sm font-semibold text-tertiary w-16">Gold</label>
             <input
               type="number"
               [value]="goldAmount()"
               (input)="updateCurrency('gold', $any($event.target).value)"
-              class="w-24 px-3 py-2 border-2 border-amber-300 rounded-md focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              class="w-24 px-3 py-2 border-2 border-tertiary rounded-md focus:ring-2 focus:ring-tertiary focus:border-tertiary"
               min="0"
             />
-            <span class="text-xs text-amber-700">GP</span>
+            <span class="text-xs text-tertiary">GP</span>
           </div>
-          <div class="flex items-center gap-2">
-            <label class="text-sm font-semibold text-gray-600 w-16">Silver</label>
+          <div class="flex items-center gap-2  ">
+            <label class="text-sm font-semibold text-secondary w-16">Silver</label>
             <input
               type="number"
               [value]="silverAmount()"
               (input)="updateCurrency('silver', $any($event.target).value)"
-              class="w-24 px-3 py-2 border-2 border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
+              class="w-24 px-3 py-2 border-2 border-secondary rounded-md focus:ring-2 focus:ring-secondary focus:border-secondary"
               min="0"
             />
-            <span class="text-xs text-gray-600">SP</span>
+            <span class="text-xs text-secondary">SP</span>
           </div>
-          <div class="flex items-center gap-2">
-            <label class="text-sm font-semibold text-orange-700 w-16">Copper</label>
+          <div class="flex items-center gap-2 ">
+            <label class="text-sm font-semibold text-primary w-16 ">Copper</label>
             <input
               type="number"
               [value]="copperAmount()"
               (input)="updateCurrency('copper', $any($event.target).value)"
-              class="w-24 px-3 py-2 border-2 border-orange-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              class="w-24 px-3 py-2 border-2 border-primary rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
               min="0"
             />
-            <span class="text-xs text-orange-700">CP</span>
+            <span class="text-xs text-primary">CP</span>
           </div>
         </div>
       </div>
@@ -130,38 +130,38 @@ import { CharacterStore } from '../stores/character.store';
         <h3 class="text-xl font-bold mb-3">Items</h3>
         @if (inventory().length > 0) {
           @for (item of inventory(); track item.name) {
-            <div class=\"border-2 border-gray-300 rounded-lg p-4\" [attr.id]=\"'item-' + helpers.sourceId(item.name + '-' + (item.source ?? ''))\" [class.flash-highlight]=\"highlightedId() === ('item-' + helpers.sourceId(item.name + '-' + (item.source ?? '')))\">
+            <div class="border-2 border-green rounded-lg p-4 bg-surface-container" [attr.id]="'item-' + helpers.sourceId(item.name + '-' + (item.source ?? ''))" [class.flash-highlight]="highlightedId() === ('item-' + helpers.sourceId(item.name + '-' + (item.source ?? '')))">
               <!-- Header (always visible, clickable) -->
               <button
                 type="button"
-                class="w-full text-left hover:bg-gray-50 transition-colors rounded p-2 -m-2"
+                class="w-full text-left hover:bg-surface-container-low transition-colors rounded p-2 -m-2"
                 (click)="toggleExpanded('item-' + item.name)"
               >
                 <div class="flex flex-wrap items-center justify-between gap-2 w-full">
                   <div class="flex flex-wrap items-center gap-2">
-                    <h3 class="text-xl font-bold text-green-800">{{ item.name }}</h3>
+                    <h3 class="text-xl font-bold text-green">{{ item.name }}</h3>
                     @if (item.entity?.itemType) {
-                      <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">{{ item.entity?.itemType }}</span>
+                      <span class="text-xs bg-green-container text-on-green-container px-2 py-0.5 rounded">{{ item.entity?.itemType }}</span>
                     }
                                     @if (getItemProp(item, 'weaponCategory')) {
-                  <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded capitalize">{{ getItemProp(item, 'weaponCategory') }}</span>
+                  <span class="text-xs bg-blue-container text-on-blue-container px-2 py-0.5 rounded capitalize">{{ getItemProp(item, 'weaponCategory') }}</span>
                 }
                 @if (getItemProp(item, 'rarity') && getItemProp(item, 'rarity') !== 'none') {
-                  <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded capitalize">{{ getItemProp(item, 'rarity') }}</span>
+                  <span class="text-xs bg-tertiary-container text-on-tertiary-container px-2 py-0.5 rounded capitalize">{{ getItemProp(item, 'rarity') }}</span>
                 }
                 @if (getItemProp(item, 'scfType')) {
-                  <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">Focus: {{ getItemProp(item, 'scfType') }}</span>
+                  <span class="text-xs bg-purple-container text-on-purple-container px-2 py-0.5 rounded">Focus: {{ getItemProp(item, 'scfType') }}</span>
                 }
                 @for (tag of getItemTypeTags(item); track tag) {
-                  <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{{ tag }}</span>
+                  <span class="text-xs bg-surface-container-low text-on-surface px-2 py-0.5 rounded">{{ tag }}</span>
                 }
                   </div>
-                  <span class="text-xl text-green-600 font-bold">{{ isExpanded('item-' + item.name) ? '−' : '+' }}</span>
+                  <span class="text-xl text-green font-bold">{{ isExpanded('item-' + item.name) ? '−' : '+' }}</span>
                 </div>
               </button>
 
               <!-- Basic Info (always visible) -->
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-600 space-y-1 mt-2">
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-on-surface-container space-y-1 mt-2">
                 @if (getItemProp(item, 'weight')) {
                   <div><span class="font-semibold">Weight:</span> {{ getItemProp(item, 'weight') }} lb.</div>
                 }
@@ -178,12 +178,12 @@ import { CharacterStore } from '../stores/character.store';
                   <div><span class="font-semibold">Range:</span> {{ getItemProp(item, 'range') }} ft.</div>
                 }
               </div>
-              <div class="grid grid-cols-2 gap-2 text-sm text-gray-600 space-y-1 mt-2">
+              <div class="grid grid-cols-2 gap-2 text-sm text-on-surface-container space-y-1 mt-2">
                 @if (item.entity?.properties?.length) {
                   <div class="flex flex-wrap items-center gap-2">
                     <span class="font-semibold">Properties:</span>
                     @for (prop of item.entity?.properties; track prop.name) {
-                      <span class="property-badge text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded font-medium">
+                      <span class="property-badge text-xs bg-teal-container text-on-teal-container px-2 py-1 rounded font-medium">
                         {{ prop.name }}
                         @if (prop.entry) {
                           <div class="tooltip-box">
@@ -202,7 +202,7 @@ import { CharacterStore } from '../stores/character.store';
                   <div class="flex flex-wrap items-center gap-2">
                     <span class="font-semibold">Mastery:</span>
                     @for (mastery of item.entity?.masteries; track mastery.name) {
-                      <span class="mastery-badge text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded font-medium">
+                      <span class="mastery-badge text-xs bg-secondary-container text-on-secondary-container px-2 py-1 rounded font-medium">
                         {{ mastery.name }}
                         @if (mastery.entry) {
                           <div class="tooltip-box">
@@ -223,18 +223,18 @@ import { CharacterStore } from '../stores/character.store';
               <div class="flex flex-wrap items-center gap-2">
 
                 @if (item.source) {
-                  <span class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">{{ item.source }}</span>
+                  <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ item.source }}</span>
                 }
               </div>
 
               <!-- Expandable Content -->
               @if (isExpanded('item-' + item.name)) {
-                <div class="mt-3 pt-3 border-t border-gray-200">
+                <div class="mt-3 pt-3 border-t border-outline-variant">
                   <!-- Bonuses Section -->
                   @if (hasAnyBonus(item)) {
-                    <div class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-                      <h4 class="text-sm font-bold text-blue-900 mb-2">Bonuses</h4>
-                      <div class="text-sm text-blue-800 space-y-1">
+                    <div class="mt-2 p-2 bg-blue-container border border-blue rounded-lg">
+                      <h4 class="text-sm font-bold text-on-blue-container mb-2">Bonuses</h4>
+                      <div class="text-sm text-on-blue-container space-y-1">
                         @if (getItemProp(item, 'bonusWeapon')) {
                           <div>• Weapon: {{ getItemProp(item, 'bonusWeapon') }}</div>
                         }
@@ -276,7 +276,7 @@ import { CharacterStore } from '../stores/character.store';
               }
               <!-- Footer (always visible) -->
                   @if (item.uses?.length) {
-                    <div class="mt-4 border-t border-gray-200 pt-4">
+                    <div class="mt-4 border-t border-outline-variant pt-4">
                       @for (use of item.uses; track use.tag) {
                         <app-feature-uses 
                           [uses]="use"
@@ -295,9 +295,9 @@ import { CharacterStore } from '../stores/character.store';
                     type="checkbox"
                     [checked]="item.isEquipped ?? false"
                     (change)="toggleEquipped(item)"
-                    class="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                    class="w-5 h-5 text-green border-outline-variant rounded focus:ring-2 focus:ring-green accent-green"
                   />
-                  <span class="ml-2 text-sm font-semibold text-gray-700">Equipped</span>
+                  <span class="ml-2 text-sm font-semibold text-on-surface">Equipped</span>
                 </label>
 
                 <!-- Attunement (only for equipped items that require attunement) -->
@@ -307,21 +307,21 @@ import { CharacterStore } from '../stores/character.store';
                       type="checkbox"
                       [checked]="item.isAttuned ?? false"
                       (change)="toggleAttuned(item)"
-                      class="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                      class="w-5 h-5 text-purple border-outline-variant rounded focus:ring-2 focus:ring-purple accent-purple"
                     />
-                    <span class="ml-2 text-sm font-semibold text-purple-700">✨ Attuned</span>
+                    <span class="ml-2 text-sm font-semibold text-purple">✨ Attuned</span>
                   </label>
                 }
                  </div>
                 <!-- Count (for multiple items) -->
                 @if (item.allowMultiples) {
                   <div class="flex items-center gap-2">
-                    <label class="text-sm font-semibold text-gray-700">Quantity:</label>
+                    <label class="text-sm font-semibold text-on-surface">Quantity:</label>
                     <input
                       type="number"
                       [value]="item.count ?? 1"
                       (input)="updateItemCount(item, $any($event.target).value)"
-                      class="w-20 px-2 py-1 border-2 border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center"
+                      class="w-20 px-2 py-1 border-2 border-outline-variant rounded-md focus:ring-2 focus:ring-green focus:border-green text-center"
                       min="0"
                     />
                   </div>
@@ -330,7 +330,7 @@ import { CharacterStore } from '../stores/character.store';
             </div>
           }
         } @else {
-          <p class="text-gray-500 italic">No items in inventory</p>
+          <p class="text-on-surface-variant italic">No items in inventory</p>
         }
       </div>
     </div>

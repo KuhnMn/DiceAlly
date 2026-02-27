@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { CharacterStore } from '../stores/character.store';
+import { ThemeService } from '../services/theme.service';
 import { CharacterInfoPageComponent } from './character-info-page.component';
 import { FeaturesPageComponent } from './features-page.component';
 import { SpellsPageComponent } from './spells-page.component';
@@ -25,14 +26,14 @@ import { NotesPageComponent } from './notes-page.component';
     <main class="max-w-[1200px] mx-auto my-6 p-4">
       @if (characterData()) {
         <!-- Page Navigation -->
-        <nav class="flex flex-wrap gap-2 mb-6 border-b-2 border-gray-300">
+        <nav class="flex flex-wrap gap-2 mb-6 border-b-2 border-outline">
           <button
             (click)="currentPage.set(1)"
             class="px-6 py-3 font-semibold transition-colors"
             [class.border-b-4]="currentPage() === 1"
-            [class.border-sky-600]="currentPage() === 1"
-            [class.text-sky-600]="currentPage() === 1"
-            [class.text-gray-600]="currentPage() !== 1"
+            [class.border-primary]="currentPage() === 1"
+            [class.text-primary]="currentPage() === 1"
+            [class.text-on-surface-variant]="currentPage() !== 1"
           >
             Character
           </button>
@@ -40,9 +41,9 @@ import { NotesPageComponent } from './notes-page.component';
             (click)="currentPage.set(2)"
             class="px-6 py-3 font-semibold transition-colors"
             [class.border-b-4]="currentPage() === 2"
-            [class.border-sky-600]="currentPage() === 2"
-            [class.text-sky-600]="currentPage() === 2"
-            [class.text-gray-600]="currentPage() !== 2"
+            [class.border-primary]="currentPage() === 2"
+            [class.text-primary]="currentPage() === 2"
+            [class.text-on-surface-variant]="currentPage() !== 2"
           >
             Features & Traits
           </button>
@@ -50,9 +51,9 @@ import { NotesPageComponent } from './notes-page.component';
             (click)="currentPage.set(3)"
             class="px-6 py-3 font-semibold transition-colors"
             [class.border-b-4]="currentPage() === 3"
-            [class.border-sky-600]="currentPage() === 3"
-            [class.text-sky-600]="currentPage() === 3"
-            [class.text-gray-600]="currentPage() !== 3"
+            [class.border-primary]="currentPage() === 3"
+            [class.text-primary]="currentPage() === 3"
+            [class.text-on-surface-variant]="currentPage() !== 3"
           >
             Spells
           </button>
@@ -60,15 +61,42 @@ import { NotesPageComponent } from './notes-page.component';
             (click)="currentPage.set(4)"
             class="px-6 py-3 font-semibold transition-colors"
             [class.border-b-4]="currentPage() === 4"
-            [class.border-sky-600]="currentPage() === 4"
-            [class.text-sky-600]="currentPage() === 4"
-            [class.text-gray-600]="currentPage() !== 4"
+            [class.border-primary]="currentPage() === 4"
+            [class.text-primary]="currentPage() === 4"
+            [class.text-on-surface-variant]="currentPage() !== 4"
           >
             Equipment
           </button>
-          <a [routerLink]="['/']" class="ml-auto px-6 py-3 text-sm text-gray-600 hover:text-sky-600">
+          <button
+            (click)="currentPage.set(5)"
+            class="px-6 py-3 font-semibold transition-colors"
+            [class.border-b-4]="currentPage() === 5"
+            [class.border-primary]="currentPage() === 5"
+            [class.text-primary]="currentPage() === 5"
+            [class.text-on-surface-variant]="currentPage() !== 5"
+          >
+            Monsters
+          </button>
+          <button
+            (click)="currentPage.set(6)"
+            class="px-6 py-3 font-semibold transition-colors"
+            [class.border-b-4]="currentPage() === 6"
+            [class.border-primary]="currentPage() === 6"
+            [class.text-primary]="currentPage() === 6"
+            [class.text-on-surface-variant]="currentPage() !== 6"
+          >
+            Notes
+          </button>
+          <a [routerLink]="['/']" class="ml-auto px-6 py-3 text-sm text-on-surface-variant hover:text-primary transition-colors">
             ← Import another
           </a>
+          <button
+            (click)="themeService.toggleTheme()"
+            class="px-4 py-3 text-sm font-medium transition-colors rounded-md bg-surface-container hover:bg-surface-container-high text-on-surface"
+            title="Toggle theme"
+          >
+            {{ themeService.currentTheme() === 'light' ? '🌙 Dark' : '☀️ Light' }}
+          </button>
         </nav>
 
         <!-- Page Content -->
@@ -98,7 +126,7 @@ import { NotesPageComponent } from './notes-page.component';
       } @else {
         <p>
           No character loaded. Use the
-          <a [routerLink]="['/']" class="text-sky-600 underline">import page</a>.
+          <a [routerLink]="['/']" class="text-primary underline">import page</a>.
         </p>
       }
     </main>
@@ -106,6 +134,7 @@ import { NotesPageComponent } from './notes-page.component';
 })
 export class CharacterSheetComponent {
   private store = inject(CharacterStore);
+  protected themeService = inject(ThemeService);
 
   characterData = this.store.characterData;
   currentPage = signal(1);

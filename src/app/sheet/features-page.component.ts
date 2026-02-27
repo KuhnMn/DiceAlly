@@ -17,16 +17,16 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
 
     @keyframes feature-flash {
       0% {
-        box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.6);
-        border-color: #0ea5e9;
+        box-shadow: 0 0 0 0 rgba(var(--md-sys-color-blue) / 0.6);
+        border-color: rgb(var(--md-sys-color-blue));
       }
       60% {
-        box-shadow: 0 0 0 8px rgba(14, 165, 233, 0.15);
-        border-color: #0ea5e9;
+        box-shadow: 0 0 0 8px rgba(var(--md-sys-color-blue) / 0.15);
+        border-color: rgb(var(--md-sys-color-blue));
       }
       100% {
-        box-shadow: 0 0 0 0 rgba(14, 165, 233, 0);
-        border-color: #d1d5db;
+        box-shadow: 0 0 0 0 rgba(var(--md-sys-color-blue) / 0);
+        border-color: rgb(var(--md-sys-color-outline-variant));
       }
     }
 
@@ -36,38 +36,37 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
 
     @keyframes species-flash {
       0% {
-        box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.6);
-        border-color: #e11d48;
+        box-shadow: 0 0 0 0 rgba(var(--md-sys-color-rose) / 0.6);
+        border-color: rgb(var(--md-sys-color-rose));
       }
       60% {
-        box-shadow: 0 0 0 8px rgba(225, 29, 72, 0.15);
-        border-color: #e11d48;
+        box-shadow: 0 0 0 8px rgba(var(--md-sys-color-rose) / 0.15);
+        border-color: rgb(var(--md-sys-color-rose));
       }
       100% {
-        box-shadow: 0 0 0 0 rgba(225, 29, 72, 0);
-        border-color: #d1d5db;
+        box-shadow: 0 0 0 0 rgba(var(--md-sys-color-rose) / 0);
+        border-color: rgb(var(--md-sys-color-outline-variant));
       }
     }
   `],
   template: `
-    <div class="bg-white p-8 rounded-lg border-2 border-gray-300 shadow-lg">
+    <div class="bg-surface-container-highest p-8 rounded-lg border-2 border-outline  shadow-lg">
       <h2 class="text-3xl font-bold mb-6">Features & Traits</h2>
       @if (species()) {
         <h3 class="text-xl font-bold mb-3 mt-6">Species</h3>
         <div
           id="species-section"
-          class="mb-8 border-2 border-rose-300 rounded-lg p-4 bg-white"
+          class="mb-8 border-2 border-rose rounded-lg p-4 bg-surface-container"
           [class.flash-highlight]="highlightedId() === 'species-section'"
         >
           <!-- Header (always visible, clickable) -->
           <button 
             type="button"
-            class="w-full text-left hover:bg-rose-50 transition-colors rounded p-2 -m-2"
-            (click)="toggleExpanded('species')"
-          >
+            class="w-full text-left hover:bg-surface-container-low transition-colors rounded p-2 -m-2"
+            (click)="toggleExpanded('species')">
             <div class="flex flex-wrap items-center justify-between gap-2 w-full">
-              <h3 class="text-2xl font-bold text-rose-700"> {{ species()?.name ?? 'Unknown' }}</h3>
-              <span class="text-xl text-rose-600 font-bold">{{ isExpanded('species') ? '−' : '+' }}</span>
+              <h3 class="text-2xl font-bold text-rose"> {{ species()?.name ?? 'Unknown' }}</h3>
+              <span class="text-xl text-rose font-bold">{{ isExpanded('species') ? '−' : '+' }}</span>
             </div>
           </button>
 
@@ -75,7 +74,7 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
           <div class="flex flex-wrap items-center gap-2 mt-2">
 
           </div>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-on-surface-container">
                 @if (species()?.entity?.size?.length) {
                   <div>Size: {{ species()?.entity?.size?.join(', ') }}</div>
                 }
@@ -89,13 +88,13 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
                   <div>Creature Type: {{ speciesCreatureTypes() }}</div>
                 }
               </div>
-                          @if (species()?.source) {
-              <span class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">{{ species()?.source }}</span>
+              @if (species()?.source) {
+              <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ species()?.source }}</span>
             }
 
           <!-- Expandable Content -->
           @if (isExpanded('species')) {
-            <div class="mt-3 pt-3 border-t border-gray-200">
+            <div class="mt-3 pt-3 border-t border-outline-variant">
 
               @if (species()?.entity?.entries?.length) {
                 <div class="mt-3">
@@ -106,7 +105,7 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
             </div>
           }
                         @if (species()?.uses?.length) {
-                <div class="mt-4 border-t border-gray-200 pt-4">
+                <div class="mt-4 border-t border-outline-variant pt-4">
                   @for (use of species()?.uses ?? []; track use.tag) {
                     <app-feature-uses 
                       [uses]="use"
@@ -121,15 +120,15 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
 
       <div class="mb-6 space-y-4">
         <div class="flex flex-wrap items-center gap-2 mb-4">
-          <span class="text-sm font-semibold text-gray-700">Type:</span>
+          <span class="text-sm font-semibold text-on-surface">Type:</span>
           @for (type of featureTypes(); track type) {
             <button
               type="button"
               class="px-3 py-1 text-sm border rounded-full"
-              [class.bg-sky-600]="featureTypeFilter() === type"
-              [class.text-white]="featureTypeFilter() === type"
-              [class.border-sky-600]="featureTypeFilter() === type"
-              [class.border-gray-300]="featureTypeFilter() !== type"
+              [class.bg-blue]="featureTypeFilter() === type"
+              [class.text-on-blue]="featureTypeFilter() === type"
+              [class.border-blue]="featureTypeFilter() === type"
+              [class.border-outline-variant]="featureTypeFilter() !== type"
               (click)="featureTypeFilter.set(type)"
             >
               {{ type }}
@@ -138,39 +137,48 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
         </div>
         <div>
           <div class="mb-3">
-            <span class="text-sm font-semibold text-gray-700">Source:</span>
+            <span class="text-sm font-semibold text-on-surface">Source:</span>
           </div>
           @if (featureSourceStats().length > 0) {
             <div class="grid gap-3 grid-cols-2 md:grid-cols-4 xl:grid-cols-6">
               <button
                 type="button"
                 class="text-left border-2 rounded-lg p-3 transition-colors"
-                [class.bg-sky-100]="featureSourceFilter() === 'ALL'"
-                [class.border-sky-600]="featureSourceFilter() === 'ALL'"
-                [class.bg-gray-50]="featureSourceFilter() !== 'ALL'"
-                [class.border-gray-200]="featureSourceFilter() !== 'ALL'"
+                [class.bg-blue-container]="featureSourceFilter() === 'ALL'"
+                [class.border-blue]="featureSourceFilter() === 'ALL'"
+                [class.text-on-blue-container]="featureSourceFilter() === 'ALL'"
+                [class.bg-surface-container]="featureSourceFilter() !== 'ALL'"
+                [class.border-outline-variant]="featureSourceFilter() !== 'ALL'"
+                [class.text-on-surface]="featureSourceFilter() !== 'ALL'"
                 (click)="featureSourceFilter.set('ALL')"
               >
-                <div class="text-sm font-semibold text-gray-800">ALL</div>
+                <div class="text-sm font-semibold text-center">ALL</div>
               </button>
               @for (source of featureSourceStats(); track source.name) {
                 <button
                   type="button"
-                  class="text-left border-2 rounded-lg p-3 transition-colors"
-                  [class.bg-sky-100]="featureSourceFilter() === source.name"
-                  [class.border-sky-600]="featureSourceFilter() === source.name"
-                  [class.bg-gray-50]="featureSourceFilter() !== source.name"
-                  [class.border-gray-200]="featureSourceFilter() !== source.name"
+                  class="text-center border-2 rounded-lg p-3 transition-colors wrap-break-word"
+                  [class.bg-blue-container]="featureSourceFilter() === source.name"
+                  [class.border-blue]="featureSourceFilter() === source.name"
+                  [class.bg-surface-container]="featureSourceFilter() !== source.name"
+                  [class.border-outline-variant]="featureSourceFilter() !== source.name"
                   (click)="featureSourceFilter.set(source.name)"
                 >
-                  <div class="text-sm font-semibold text-gray-800">{{ source.name }}</div>
+                  <div class="text-sm font-semibold" [class.text-on-blue-container]="featureSourceFilter() === source.name" [class.text-on-surface]="featureSourceFilter() !== source.name">{{ source.name }}</div>
                   <div class="mt-2 grid gap-2">
                     @for (stat of source.abilities; track stat.ability) {
-                      <div class="flex flex-wrap items-center gap-2 text-sm text-gray-700">
-                        <span class="font-semibold">{{ stat.ability }}</span>
-                        <span>Attack {{ stat.attack }}</span>
-                        <span>•</span>
-                        <span>Save DC {{ stat.save }}</span>
+                      <div class="flex flex-wrap items-center gap-2 text-sm  justify-center" [class.text-on-blue-container]="featureSourceFilter() === source.name" [class.text-on-surface-variant]="featureSourceFilter() !== source.name">
+                        <span class="font-semibold w-full">{{ stat.ability }}</span>
+                        <div class="flex items-center gap-4">
+                        <div>
+                                                  <div>Attack </div>
+                        <div class="text-tertiary">{{ stat.attack }}</div>
+                        </div>
+                        <div>
+                          <div>Save DC</div><div class="text-primary">{{ stat.save }}</div>
+                        </div>
+                        
+                        </div>
                       </div>
                     }
                   </div>
@@ -185,46 +193,46 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
         @if (sortedFeatures().length > 0) {
           @for (feature of sortedFeatures(); track feature.name) {
             <div
-              class="border-2 border-gray-300 rounded-lg p-4"
+              class="border-2 border-blue rounded-lg p-4 bg-surface-container transition-colors"
               [attr.id]="featureAnchorId(feature)"
               [class.flash-highlight]="highlightedId() === featureAnchorId(feature)"
             >
                 <!-- Header (always visible, clickable) -->
                 <button 
                   type="button"
-                  class="w-full text-left hover:bg-gray-50 transition-colors rounded p-2 -m-2"
+                  class="w-full text-left hover:bg-surface-container-low transition-colors rounded p-2 -m-2"
                   (click)="toggleExpanded(featureAnchorId(feature) ?? 'feature')"
                 >
                   <div class="flex flex-wrap items-center justify-between gap-2 w-full">
                     <div class="flex flex-wrap items-center gap-2">
-                      <h3 class="text-xl font-bold text-sky-800">{{ feature.name }}</h3>
+                      <h3 class="text-xl font-bold text-blue">{{ feature.name }}</h3>
                       @if (feature.featureType !== undefined) {
-                        <span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded">{{ helpers.featureTypeLabel(feature) }}</span>
+                        <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded">{{ helpers.featureTypeLabel(feature) }}</span>
                       }
                     </div>
-                    <span class="text-xl text-sky-600 font-bold">{{ isExpanded(featureAnchorId(feature) ?? 'feature') ? '−' : '+' }}</span>
+                    <span class="text-xl text-blue font-bold">{{ isExpanded(featureAnchorId(feature) ?? 'feature') ? '−' : '+' }}</span>
                   </div>
-                  <div class="text-sm text-gray-600 mt-1">Level: {{ helpers.featureLevel(feature) }}</div>
+                  <div class="text-sm text-on-surface-container-low mt-1">Level: {{ helpers.featureLevel(feature) }}</div>
                 </button>
 
                 <!-- Basic Info (always visible) -->
                 <div class="flex flex-wrap items-center gap-2 mt-2">
                   @if (feature.source) {
-                    <span class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">{{ feature.source }}</span>
+                    <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ feature.source }}</span>
                   }
                   @if (feature.featureSourceName) {
-                    <span class="text-xs bg-mist-100 text-mist-700 px-2 py-0.5 rounded">{{ feature.featureSourceName }}</span>
+                    <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">{{ feature.featureSourceName }}</span>
                   }
                 </div>
 
                 <!-- Expandable Content -->
                 @if (isExpanded(featureAnchorId(feature) ?? 'feature')) {
-                  <div class="mt-3 pt-3 border-t border-gray-200">
+                  <div class="mt-3 pt-3 border-t border-outline-variant">
                     @if (feature.featEntity?.category) {
-                      <div class="text-sm text-gray-600">Feat Category: {{ feature.featEntity?.category }}</div>
+                      <div class="text-sm text-on-surface-variant">Feat Category: {{ feature.featEntity?.category }}</div>
                     }
                     @if ((feature.featEntity?.prerequisite?.length ?? 0) > 0) {
-                      <div class="text-sm text-gray-600">Prerequisites: {{ helpers.prerequisiteText(feature.featEntity?.prerequisite ?? []) }}</div>
+                      <div class="text-sm text-on-surface-variant">Prerequisites: {{ helpers.prerequisiteText(feature.featEntity?.prerequisite ?? []) }}</div>
                     }
                     <div class="mt-3" [attr.id]="feature.featureSourceName ? 'source-' + helpers.sourceId(feature.featureSourceName) : null">
                       <app-entry-renderer [entries]="helpers.featureEntries(feature)"></app-entry-renderer>
@@ -234,7 +242,7 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
 
                 }
                     @if (feature.uses?.length) {
-                      <div class="mt-4 border-t border-gray-200 pt-4">
+                      <div class="mt-4 border-t border-outline-variant pt-4">
                         @for (use of feature.uses; track use.tag) {
                           <app-feature-uses
                             [uses]="use"
@@ -246,7 +254,7 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
             </div>
           }
         } @else {
-          <p class="text-gray-500 italic">No features listed</p>
+          <p class="text-on-surface-variant italic">No features listed</p>
         }
       </div>
     </div>

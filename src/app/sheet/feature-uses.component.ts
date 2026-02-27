@@ -7,23 +7,23 @@ import { FeatureUses } from '../models/character.model';
   imports: [CommonModule],
   template: `
     <div 
-      class="feature-uses bg-gray-50 border border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors"
+      class="feature-uses bg-surface-variant border border-outline-variant rounded-lg p-3 cursor-pointer hover:bg-surface-container-high transition-colors mb-2"
       (click)="addOneUse()"
     >
       @if (uses()) {
         <div class="flex items-center justify-between mb-2">
-          <span class="text-sm font-semibold text-gray-700">
+          <span class="text-sm font-semibold text-on-surface">
             {{ tag() }}
           </span>
-          <span class="text-xs text-gray-600">
+          <span class="text-xs text-on-surface-variant">
             {{ totalCount() - usedCount() }} / {{ totalCount() }}
           </span>
         </div>
 
         <!-- Visual progress bar -->
-        <div class="w-full bg-gray-200 rounded-full h-2 mb-3">
+        <div class="w-full bg-surface-container-low rounded-full h-2 mb-3">
           <div
-            class="bg-sky-600 h-2 rounded-full transition-all"
+            class="bg-primary h-2 rounded-full transition-all"
             [style.width.%]="progressPercent()"
           ></div>
         </div>
@@ -37,24 +37,24 @@ import { FeatureUses } from '../models/character.model';
                   type="checkbox"
                   [checked]="index < usedCount()"
                   (change)="toggleUse(index)"
-                  class="w-4 h-4 text-sky-600 border-gray-300 rounded focus:ring-2 focus:ring-sky-500"
+                  class="w-4 h-4 text-primary border-outline-variant rounded focus:ring-2 focus:ring-primary accent-primary"
                 />
-                <span class="ml-1 text-sm text-gray-600">{{ index + 1 }}</span>
+                <span class="ml-1 text-sm text-on-surface-variant">{{ index + 1 }}</span>
               </label>
             }
           </div>
         } @else {
-          <p class="text-xs text-gray-500 italic">No uses available</p>
+          <p class="text-xs text-on-surface-variant italic">No uses available</p>
         }
 
         <!-- Regain condition (optional) -->
         @if (regainCondition()) {
-          <div class="text-xs text-gray-500 mt-2" (click)="$event.stopPropagation()">
+          <div class="text-xs text-on-surface-variant mt-2" (click)="$event.stopPropagation()">
             Regain: {{ regainCondition() }}
           </div>
         }
       } @else {
-        <p class="text-xs text-gray-500 italic">No uses data</p>
+        <p class="text-xs text-on-surface-variant italic">No uses data</p>
       }
     </div>
   `,

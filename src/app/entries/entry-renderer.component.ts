@@ -22,6 +22,13 @@ import {
   TableRow,
 } from '../models/character.model';
 
+interface StyledTextSegment {
+  text: string;
+  type: 'normal' | 'tag' | 'bonus' | 'link';
+}
+
+type StyleType = 'TAG' | 'BONUS' | 'LINK';
+
 @Component({
   selector: 'app-entry-renderer',
   imports: [CommonModule],
@@ -41,7 +48,7 @@ import {
           <ul class="space-y-1 mt-2 mb-2 list-none pl-0">
             @for (item of asListEntry(entry()!)?.items ?? []; track trackEntry(item, $index)) {
               <li class="flex items-baseline gap-2">
-                <span class="mt-1 text-gray-700">•</span>
+                <span class="mt-1 text-primary">•</span>
                 <app-entry-renderer [entry]="item" [compact]="true"></app-entry-renderer>
               </li>
             }
@@ -49,17 +56,17 @@ import {
         }
         @case ('table') {
           <div class="overflow-x-auto mt-2 mb-2">
-            <table class="min-w-full text-sm border border-gray-300">
-              <thead class="bg-gray-50">
+            <table class="min-w-full text-sm border border-outline-variant">
+              <thead class="bg-primary-container text-on-primary-container">
                 <tr>
                   @for (label of asTableEntry(entry()!)?.colLabels ?? []; track label) {
-                    <th class="px-2 py-1 text-left border-b border-gray-300">{{ label }}</th>
+                    <th class="px-2 py-1 text-left border-b border-outline-variant">{{ label }}</th>
                   }
                 </tr>
               </thead>
               <tbody>
                 @for (row of asTableEntry(entry()!)?.rows ?? []; track $index) {
-                  <tr class="border-b border-gray-200">
+                  <tr class="border-b border-outline-variant">
                     @for (cell of normalizeTableRow(row); track $index) {
                       <td class="px-2 py-1 align-top">
                         <app-entry-renderer [entry]="cell" [compact]="true"></app-entry-renderer>
@@ -102,18 +109,18 @@ import {
           </div>
         }
         @case ('inset') {
-          <div class="border-l-4 border-gray-300 pl-3 py-1">
+          <div class="border-l-4 border-outline-variant pl-3 py-1">
             <div class="font-semibold">{{ asInsetEntry(entry()!)?.name }}</div>
             <app-entry-renderer [entries]="asInsetEntry(entry()!)?.entries ?? []" [compact]="true"></app-entry-renderer>
           </div>
         }
         @case ('abilityDC') {
-          <div class="text-sm text-gray-700">
+          <div class="text-sm text-on-surface-container">
             {{ asAbilityDcEntry(entry()!)?.name }} DC ({{ asAbilityDcEntry(entry()!)?.attributes?.join(', ') }})
           </div>
         }
         @case ('abilityAttackMod') {
-          <div class="text-sm text-gray-700">
+          <div class="text-sm text-on-surface-container">
             {{ asAbilityAttackModEntry(entry()!)?.name }} Attack Mod ({{ asAbilityAttackModEntry(entry()!)?.attributes?.join(', ') }})
           </div>
         }
@@ -124,19 +131,34 @@ import {
           <app-entry-renderer [entries]="asSectionEntry(entry()!)?.entries ?? []" [compact]="compact()"></app-entry-renderer>
         }
         @case ('refSubclassFeature') {
-          <div class="text-sm text-sky-700">Subclass Feature: {{ asRefSubclassEntry(entry()!)?.subclassFeature }}</div>
+          <div class="text-sm text-secondary">Subclass Feature: {{ asRefSubclassEntry(entry()!)?.subclassFeature }}</div>
         }
         @case ('refClassFeature') {
-          <div class="text-sm text-sky-700">Class Feature: {{ asRefClassEntry(entry()!)?.classFeature }}</div>
+          <div class="text-sm text-secondary">Class Feature: {{ asRefClassEntry(entry()!)?.classFeature }}</div>
         }
         @case ('refFeat') {
-          <div class="text-sm text-sky-700">Feat: {{ asRefFeatEntry(entry()!)?.feat }}</div>
+          <div class="text-sm text-secondary">Feat: {{ asRefFeatEntry(entry()!)?.feat }}</div>
         }
         @case ('refOptionalfeature') {
-          <div class="text-sm text-sky-700">Optional Feature: {{ asRefOptionalEntry(entry()!)?.optionalfeature }}</div>
+          <div class="text-sm text-secondary">Optional Feature: {{ asRefOptionalEntry(entry()!)?.optionalfeature }}</div>
         }
         @default {
-          <div class="text-sm whitespace-pre-wrap">{{ formatText(asStringEntry(entry()!)?.text ?? fallbackText(entry()!)) }}</div>
+          <div class="text-sm whitespace-pre-wrap">
+            @for (segment of parseStyledText(asStringEntry(entry()!)?.text ?? fallbackText(entry()!)); track $index) {
+              @if (segment.type === 'normal') {
+                <span>{{ segment.text }}</span>
+              }
+              @if (segment.type === 'tag') {
+                <span class="text-primary font-bold">{{ segment.text }}</span>
+              }
+              @if (segment.type === 'bonus') {
+                <span class="text-tertiary font-bold">{{ segment.text }}</span>
+              }
+              @if (segment.type === 'link') {
+                <span class="text-secondary font-bold">{{ segment.text }}</span>
+              }
+            }
+          </div>
         }
       }
     }
@@ -249,6 +271,189 @@ export class EntryRendererComponent {
 
   fallbackText(entry: Entry) {
     return JSON.stringify(entry, null, 2);
+  }
+
+  private readonly tagRegex = /\{@(\w*)\s*([^}]*)\}/g;
+  private readonly bonusRegex = /\{=(\w*)\}/g;
+  private readonly linkRegex = /\{#(\w*)\s*([^}]*)\}/g;
+
+  parseStyledText(text: string): StyledTextSegment[] {
+    if (!text) return [];
+
+    const segments: StyledTextSegment[] = [];
+    const tagMatches = Array.from(text.matchAll(this.tagRegex)).map(m => ({ match: m, type: 'TAG' as StyleType }));
+    const bonusMatches = Array.from(text.matchAll(this.bonusRegex)).map(m => ({ match: m, type: 'BONUS' as StyleType }));
+    const linkMatches = Array.from(text.matchAll(this.linkRegex)).map(m => ({ match: m, type: 'LINK' as StyleType }));
+
+    // Combine and sort by start position
+    const allMatches = [...tagMatches, ...bonusMatches, ...linkMatches].sort(
+      (a, b) => a.match.index! - b.match.index!
+    );
+
+    let lastIndex = 0;
+
+    for (const { match, type } of allMatches) {
+      // Append normal text before the match
+      if (match.index! > lastIndex) {
+        segments.push({
+          text: text.substring(lastIndex, match.index!),
+          type: 'normal',
+        });
+      }
+
+      // Skip overlapping matches
+      if (match.index! < lastIndex) continue;
+
+      const styledText = this.processMatch(match, type);
+      if (styledText) {
+        segments.push({
+          text: styledText,
+          type: this.mapStyleType(type),
+        });
+      }
+
+      lastIndex = match.index! + match[0].length;
+    }
+
+    // Append remaining text
+    if (lastIndex < text.length) {
+      segments.push({
+        text: text.substring(lastIndex),
+        type: 'normal',
+      });
+    }
+
+    return segments;
+  }
+
+  private mapStyleType(type: StyleType): 'tag' | 'bonus' | 'link' {
+    return type === 'TAG' ? 'tag' : type === 'BONUS' ? 'bonus' : 'link';
+  }
+
+  private processMatch(matchResult: RegExpMatchArray, type: StyleType): string | null {
+    switch (type) {
+      case 'TAG':
+        return this.processTagMatch(matchResult);
+      case 'BONUS':
+        return this.processBonusMatch(matchResult);
+      case 'LINK':
+        return this.processLinkMatch(matchResult);
+    }
+  }
+
+  private processTagMatch(matchResult: RegExpMatchArray): string {
+    const classifier = matchResult[1];
+    let tagName = matchResult[2] || '';
+
+    if (tagName) {
+      const parts = tagName.split('|');
+      tagName = parts.length > 2 && (classifier === 'scaledamage' || classifier === 'variantrule')
+        ? parts[2]
+        : parts[0];
+    } else {
+      tagName = classifier;
+    }
+
+    const mappedTag = this.mapTagName(tagName, classifier);
+    return this.capitalizeWords(mappedTag);
+  }
+
+  private mapTagName(tag: string, classifier: string): string {
+    const suffixHandler = () => {
+      if (classifier === 'atkr') return ' Attack Roll:';
+      if (classifier === 'atk') return ' Attack:';
+      return ':';
+    };
+
+    switch (tag) {
+      case 'h':
+        return 'Hit: ';
+      case 'm,r':
+        return 'Melee or Ranged' + suffixHandler();
+      case 'm':
+        return 'Melee' + suffixHandler();
+      case 'r':
+        return 'Ranged' + suffixHandler();
+      case 'mw':
+        return 'Melee Weapon' + suffixHandler();
+      case 'rw':
+        return 'Ranged Weapon' + suffixHandler();
+      case 'mw,rw':
+        return 'Melee or Ranged Weapon' + suffixHandler();
+      case 'ms':
+        return 'Melee Spell' + suffixHandler();
+      case 'rs':
+        return 'Ranged Spell' + suffixHandler();
+      case 'ms,rs':
+        return 'Melee or Ranged Spell' + suffixHandler();
+      case 'hom':
+        return 'Hit or Miss:';
+      case 'actSaveFail':
+        return 'Failure:';
+      case 'actSaveSuccess':
+        return 'Success:';
+      case 'actSaveSuccessOrFail':
+        return 'Success or Failure:';
+      case 'actTrigger':
+        return 'Trigger:';
+      case 'actResponse':
+        return 'Response:';
+      default: {
+        let prefix = '';
+        if (classifier === 'hit') prefix = '+';
+        else if (classifier === 'dc') prefix = 'DC ';
+        else if (classifier === 'recharge' && tag !== 'recharge') prefix = 'Recharge: ';
+
+        let suffix = '';
+        if (classifier === 'actSave') suffix = ' Saving Throw:';
+        else if (classifier === 'recharge' && tag !== 'recharge') suffix = '+';
+        else if (tag === 'recharge') suffix = ': 6';
+
+        let result = prefix + tag + suffix;
+        // Replace placeholder text
+        result = result
+          .replace('summonSpellLevel', "the spell's level")
+          .replace('hitYourSpellAttack', 'your spell attack modifier')
+          .replace('saveYourSpellDC', 'your spell DC');
+
+        return result;
+      }
+    }
+  }
+
+  private processBonusMatch(matchResult: RegExpMatchArray): string {
+    const tag = matchResult[1];
+    const bonusMapping: { [key: string]: string } = {
+      'baseName/at': 'An',
+      'baseName/a': 'an',
+      'baseName/l': 'item',
+      'baseName/lt': 'Item',
+      'dmgType': 'X-type',
+      'bonusWeaponAttack': '+X',
+      'bonusWeapon': '+X',
+      'bonusAc': '+X',
+      'bonusSpellAttack': '+X',
+      'bonusSpellDc': '+X',
+      'bonusSpellDamage': '+X',
+      'bonusSavingThrow': '+X',
+    };
+
+    return bonusMapping[tag] || tag;
+  }
+
+  private processLinkMatch(matchResult: RegExpMatchArray): string {
+    const linkText = matchResult[2].split('|')[0];
+    return `See ${linkText}`;
+  }
+
+  private capitalizeWords(text: string): string {
+    return text
+      .split(' ')
+      .map(word => {
+        if (word.length === 0) return word;
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
+      .join(' ');
   }
 
   formatText(text: string) {

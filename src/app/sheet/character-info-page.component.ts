@@ -80,43 +80,42 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
   `],
   template: `
     <div
-      class="character-sheet bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-lg border-4 border-gray-800"
+      class="character-sheet bg-surface-container-highest p-6 rounded-lg border-2 border-outline"
     >
       <!-- Header Banner -->
       <header class="grid grid-cols-2 md:grid-cols-5 gap-2 mb-6">
-        <div class="col-span-1 border-2 border-gray-700 rounded-lg p-2 bg-white text-center overflow-wrap order-2 md:order-1">
-          <div class="text-xs text-gray-600 uppercase font-semibold overflow-wrap">Level / XP</div>
-          <div class="text-2xl font-bold">{{ character()?.level ?? 1 }}</div>
+        <div class="col-span-1 border-2 border-secondary rounded-lg p-2 bg-secondary-container text-center content-center overflow-wrap order-2 md:order-1">
+          <div class="text-xs text-on-secondary-container uppercase font-semibold overflow-wrap">Level / XP</div>
+          <div class="text-2xl font-bold text-on-secondary-container">{{ character()?.level ?? 1 }}</div>
         </div>
-        <div class="col-span-1 border-2 border-gray-700 rounded-lg p-2 bg-white text-center overflow-wrap order-3 md:order-2">
-          <div class="text-xs text-gray-600 uppercase font-semibold">Description</div>
-          <div class="text-sm font-medium">{{ character()?.description || '—' }}</div>
+        <div class="col-span-1 border-2 border-secondary rounded-lg p-2 bg-secondary-container text-center content-center overflow-wrap order-3 md:order-2">
+          <div class="text-xs text-on-secondary-container uppercase font-semibold">Description</div>
+          <div class="text-sm font-medium text-on-secondary-container">{{ character()?.description || '—' }}</div>
         </div>
-        <div class="col-span-2 md:col-span-1 border-2 border-gray-700 rounded-lg p-2 bg-white text-center overflow-wrap order-1 md:order-3">
-          <div class="text-xs text-gray-600 uppercase font-semibold">Character Name</div>
-          <div class="text-lg font-bold">{{ character()?.name }}</div>
+        <div class="col-span-2 md:col-span-1 border-2 border-primary rounded-lg p-2 bg-primary-container text-center content-center overflow-wrap order-1 md:order-3">
+          <div class="text-xl font-bold text-on-primary-container">{{ character()?.name }}</div>
         </div>
-        <div class="col-span-1 border-2 border-gray-700 rounded-lg p-2 bg-white text-center overflow-wrap order-4 md:order-4">
-          <div class="text-xs text-gray-600 uppercase font-semibold">Species</div>
+        <div class="col-span-1 border-2 border-secondary rounded-lg p-2 bg-secondary-container text-center content-center overflow-wrap order-4 md:order-4">
+          <div class="text-xs text-on-secondary-container uppercase font-semibold">Species</div>
           @if (characterData()?.species?.name) {
             <button
               type="button"
-              class="text-sm font-medium text-sky-700 underline"
+              class="text-sm font-medium text-tertiary underline"
               (click)="goToSpecies()"
             >
               {{ characterData()?.species?.name }}
             </button>
           } @else {
-            <div class="text-sm font-medium">—</div>
+            <div class="text-sm font-medium text-on-secondary-container">—</div>
           }
         </div>
-        <div class="col-span-1 border-2 border-gray-700 rounded-lg p-2 bg-white text-center overflow-wrap order-5 md:order-5">
-          <div class="text-xs text-gray-600 uppercase font-semibold">Inspiration</div>
+        <div class="col-span-1 border-2 border-secondary rounded-lg p-2 bg-secondary-container text-center content-center overflow-wrap order-5 md:order-5">
+          <div class="text-xs text-on-secondary-container uppercase font-semibold">Inspiration</div>
           <input
-            id="default-checkbox"
+            id="inspiration-checkbox"
             type="checkbox"
             value=""
-            class="w-4 h-4 border border-default-medium rounded-xs bg+-neutral-secondary-medium focus:ring-2 focus:ring-brand-soft text-orange-500"
+            class="appearance-none w-8 h-8 text-tertiary border-2 border-outline-variant rounded bg-surface-container-high cursor-pointer inline-flex items-center justify-center relative transition-all hover:border-tertiary checked:bg-tertiary-container checked:border-tertiary checked:after:content-['★'] checked:after:text-2xl checked:after:text-tertiary checked:after:absolute focus:ring-2 focus:ring-tertiary"
             [checked]="character()?.hasInspiration ?? false"
           />
         </div>
@@ -129,22 +128,22 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
           <!-- Ability Scores -->
           <div class="grid grid-cols-3 gap-3">
             @for (ability of abilities(); track ability.name) {
-              <div class="border-4 border-gray-700 rounded-2xl p-3 bg-white text-center shadow-lg">
-                <div class="text-xs font-bold text-gray-600 uppercase">{{ ability.abbr }}</div>
-                <div class="text-3xl font-bold my-1">{{ ability.score }}</div>
-                <div class="text-lg font-semibold text-gray-700">
+              <div class="border-4 border-surface rounded-2xl p-3 bg-surface-container-low text-center shadow-lg">
+                <div class="text-xs font-bold text-on-surface-variant uppercase">{{ ability.abbr }}</div>
+                <div class="text-3xl font-bold my-1 text-primary">{{ ability.score }}</div>
+                <div class="text-lg font-semibold text-tertiary">
                   {{ helpers.formatSigned(ability.modifier) }}
                 </div>
-                <div class="mt-2 pt-2 border-t-2 border-gray-300">
+                <div class="mt-2 pt-2 border-t-2 border-outline-variant">
                   <div class="text-xs">
                       @if (ability.proficient) {
-                      <span
+                      <span class="text-primary font-bold"
                         title="Proficient">●
                     </span>
                     }  
                   Save</div>
                   <div class="flex items-center justify-center gap-1">
-                    <div class="text-sm font-bold">
+                    <div class="text-sm font-bold text-tertiary">
                       {{ helpers.formatSigned(ability.savingThrowValue) }}
                     </div>
                   </div>
@@ -154,53 +153,62 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
           </div>
 
           <!-- Skills -->
-          <div class="border-4 border-gray-700 rounded-lg p-4 bg-white shadow-lg">
-            <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-gray-300 pb-2">
+          <div class="border-4 border-surface rounded-lg p-4 bg-surface-container-low shadow-lg">
+            <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
               Skills
             </h3>
             <ul class="space-y-1 text-sm">
               @for (s of skillList(); track s.name) {
                 <li class="flex items-center gap-2">
-                  <span
-                    class="w-6 h-6 border-2 border-gray-400 rounded-full flex items-center justify-center text-xs font-bold"
-                  >
-                    {{
-                      s.levelLabel === 'NONE'
-                        ? ''
-                        : s.levelLabel === 'PROF.'
-                          ? '●'
-                          : s.levelLabel === 'EXP.'
-                            ? '★'
-                            : '◐'
-                    }}
-                  </span>
+                                  @switch (s.levelLabel) {
+                  @case ('NONE') {
+                    <span class="w-6 h-6 border-2 border-outline rounded-full flex items-center justify-center text-xs font-bold text-on-surface-variant">
+                      
+                    </span>
+                  }
+                  @case ('PROF.') {
+                    <span class="w-6 h-6 border-2 border-outline rounded-full flex items-center justify-center text-xs font-bold text-primary">
+                      ●
+                    </span>
+                  }
+                  @case ('EXP.') {
+                    <span class="w-6 h-6 border-2 border-outline rounded-full flex items-center justify-center text-s font-bold text-tertiary">
+                      ✪
+                    </span>
+                  }
+                  @default {
+                    <span class="w-6 h-6 border-2 border-outline rounded-full flex items-center justify-center text-xs font-bold text-secondary">
+                      ◐
+                    </span>
+                  }
+                }
                   <span class="font-mono font-bold w-8">{{ s.value }}</span>
                   <span class="flex-1">{{ s.name }}</span>
-                  <span class="text-xs text-gray-500">({{ helpers.getSkillAbility(s.name) }})</span>
+                  <span class="text-xs text-on-surface-variant">({{ helpers.getSkillAbility(s.name) }})</span>
                 </li>
               }
             </ul>
           </div>
 
           <!-- Proficiency & Perception -->
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-2 gap-3 justify-items-center">
             <div
-              class="border-4 border-gray-700 rounded-full aspect-square p-4 bg-white text-center flex flex-col items-center justify-center shadow-lg"
+              class="border-4 border-surface w-32 h-32 rounded-full aspect-square p-4 bg-surface-container-low text-center flex flex-col items-center justify-center shadow-lg"
             >
-              <div class="text-xs text-gray-600 uppercase font-semibold">Proficiency</div>
-              <div class="text-3xl font-bold">{{ helpers.formatSigned(proficiencyBonus()) }}</div>
+              <div class="text-xs text-on-surface-variant uppercase font-semibold">Proficiency</div>
+              <div class="text-3xl font-bold text-tertiary">{{ helpers.formatSigned(proficiencyBonus()) }}</div>
             </div>
             <div
-              class="border-4 border-gray-700 rounded-full aspect-square p-4 bg-white text-center flex flex-col items-center justify-center shadow-lg"
+              class="border-4 border-surface w-32 h-32 rounded-full aspect-square p-4 bg-surface-container-low text-center flex flex-col items-center justify-center shadow-lg"
             >
-              <div class="text-xs text-gray-600 uppercase font-semibold">Passive Per.</div>
-              <div class="text-3xl font-bold">{{ passivePerception() }}</div>
+              <div class="text-xs text-on-surface-variant uppercase font-semibold">Passive Per.</div>
+              <div class="text-3xl font-bold text-primary">{{ passivePerception() }}</div>
             </div>
           </div>
 
           <!-- Languages & Proficiencies -->
-          <div class="border-4 border-gray-700 rounded-lg p-4 bg-white shadow-lg">
-            <h3 class="text-sm font-bold uppercase text-center mb-2 border-b-2 border-gray-300 pb-2">
+          <div class="border-4 border-surface rounded-lg p-4 bg-surface-container-low shadow-lg">
+            <h3 class="text-sm font-bold uppercase text-center mb-2 border-b-2 border-outline-variant pb-2">
               Languages & Proficiencies
             </h3>
             <div class="text-sm space-y-1">
@@ -209,7 +217,7 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
                   <div>{{ prof }}</div>
                 }
               } @else {
-                <div class="text-gray-400 italic">None listed</div>
+                <div class="text-on-surface-variant italic">None listed</div>
               }
             </div>
           </div>
@@ -220,16 +228,16 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
           <!-- Top Combat Stats -->
           <div class="flex justify-center gap-4 mb-4">
             <div
-              class="border-4 border-gray-700 rounded-full w-24 h-24 bg-white flex flex-col items-center justify-center shadow-lg ac-display relative"
+              class="border-4 border-surface rounded-full w-24 h-24 bg-surface-container-low flex flex-col items-center justify-center shadow-lg ac-display relative"
             >
-              <div class="text-xs text-gray-600 uppercase font-semibold">AC</div>
-              <div class="text-3xl font-bold">{{ armorClassInfo().ac }}</div>
+              <div class="text-xs text-on-surface-variant uppercase font-semibold">AC</div>
+              <div class="text-2xl font-bold text-primary">{{ armorClassInfo().ac }}</div>
               <div class="ac-tooltip">{{ armorClassInfo().source }}</div>
             </div>
             <div
-              class="border-4 border-gray-700 rounded-full w-24 h-24 bg-white flex flex-col items-center justify-center shadow-lg speed-display relative"
+              class="border-4 border-surface rounded-full w-24 h-24 bg-surface-container-low flex flex-col items-center justify-center shadow-lg speed-display relative"
             >
-              <div class="text-xs text-gray-600 uppercase font-semibold">
+              <div class="text-xs text-on-surface-variant uppercase font-semibold">
                 <span class="inline-flex items-center gap-1">
                   <span
                     class=""
@@ -246,28 +254,39 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
                   }
                 </span>
               </div>
-              <div class="text-2xl font-bold">{{ character()?.speeds?.['walk'] ?? 30 }}</div>
+              <div class="text-2xl font-bold text-primary">{{ character()?.speeds?.['walk'] ?? 30 }}</div>
               @if (getSpeedsTooltip()) {
                 <div class="speed-tooltip">{{ getSpeedsTooltip() }}</div>
               }
             </div>
             <div
-              class="border-4 border-gray-700 rounded-full w-24 h-24 bg-white flex flex-col items-center justify-center shadow-lg"
+              class="border-4 border-surface rounded-full w-24 h-24 bg-surface-container-low flex flex-col items-center justify-center shadow-lg"
             >
-              <div class="text-xs text-gray-600 uppercase font-semibold">Initiative</div>
-              <div class="text-3xl font-bold">{{ helpers.formatSigned(initiative()) }}</div>
+              <div class="text-xs text-on-surface-variant uppercase font-semibold">Initiative</div>
+              <div class="text-2xl font-bold text-tertiary">{{ helpers.formatSigned(initiative()) }}</div>
             </div>
           </div>
 
           <!-- HP Tracker -->
-          <div class="border-4 border-gray-700 rounded-3xl p-6 bg-white shadow-lg">
+          <div class="border-4 border-surface rounded-3xl p-6 bg-surface-container-low shadow-lg">
             <div class="text-center">
-              <div class="text-xs text-gray-600 uppercase font-semibold mb-2">Hit Points</div>
-              <div class="flex items-center justify-center gap-2">
-                <div class="text-sm text-gray-600">HP Max</div>
-                <div class="text-4xl font-bold">{{ getEffectiveMaxHp() }}</div>
+              <div class="text-xs text-on-surface-variant uppercase font-semibold mb-2">Hit Points</div>
+
+
+
+              <div class="mt-4">
+
+                <input
+                  type="number"
+                  [value]="character()?.currentHp ?? 0"
+                  (input)="updateCurrentHp($any($event.target).value)"
+                  class="w-24 text-center text-4xl font-bold border-2 border-outline-variant rounded-lg py-1 pr-2 focus:ring-2 focus:ring-rose focus:border-rose"
+                  min="0"
+                  max="{{ getEffectiveMaxHp() }}"
+                />
+                <span class="text-4xl font-bold"> / {{ getEffectiveMaxHp() }}</span>
               </div>
-              <div class="mt-2 flex items-center justify-center gap-4 text-xs text-gray-600">
+                            <div class="mt-2 flex items-center justify-center gap-4 text-xs text-on-surface-variant">
                 <div>Base: {{ character()?.maxHp ?? 0 }}</div>
                 <label class="flex items-center gap-2">
                   <span>Override</span>
@@ -278,13 +297,13 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
                     (input)="onMaxHpOverrideInput($any($event.target).value)"
                     (change)="commitMaxHpOverride()"
                     (blur)="commitMaxHpOverride()"
-                    class="w-20 px-2 py-1 border border-gray-300 rounded-md text-center"
+                    class="w-20 px-2 py-1 border border-outline-variant rounded-md text-center focus:ring-2 focus:ring-rose focus:border-rose"
                     min="0"
                   />
                 </label>
                 <button
                   type="button"
-                  class="px-2 py-1 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100"
+                  class="px-2 py-1 border border-outline-variant rounded-md text-on-surface-variant hover:bg-surface-container"
                   (click)="clearMaxHpOverride()"
                 >
                   Clear
@@ -292,42 +311,31 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
               </div>
 
               <div class="mt-4">
-                <div class="text-xs text-gray-600 uppercase font-semibold mb-1">Current HP</div>
-                <input
-                  type="number"
-                  [value]="character()?.currentHp ?? 0"
-                  (input)="updateCurrentHp($any($event.target).value)"
-                  class="w-32 text-center text-4xl font-bold border-2 border-gray-300 rounded-lg py-1"
-                  min="0"
-                />
-              </div>
-
-              <div class="mt-4">
-                <div class="text-xs text-gray-600 uppercase font-semibold mb-1">Temp HP</div>
+                <div class="text-xs text-on-surface-variant uppercase font-semibold mb-1">Temp HP</div>
                 <input
                   type="number"
                   [value]="character()?.tempHp ?? 0"
                   (input)="updateTempHp($any($event.target).value)"
-                  class="w-28 text-center text-2xl font-bold text-sky-600 border border-gray-300 rounded-lg py-1"
+                  class="w-28 text-center text-2xl font-bold text-green border border-outline-variant rounded-lg py-1 focus:ring-2 focus:ring-green focus:border-green pr-2"
                   min="0"
                 />
               </div>
 
-              <div class="mt-4 pt-4 border-t-2 border-gray-300">
-                <div class="text-xs text-gray-600 uppercase font-semibold">Hit Dice</div>
+              <div class="mt-4 pt-4 border-t-2 border-outline-variant">
+                <div class="text-xs text-on-surface-variant uppercase font-semibold">Hit Dice</div>
                 @if (hasHitDiceList()) {
                   <div class="mt-2 space-y-2 text-sm">
                     @for (die of hitDiceList(); track die.dieType) {
                       <div class="flex items-center justify-between gap-2">
                         <div class="font-semibold">{{ die.dieType }}</div>
-                        <div class="text-xs text-gray-500">Total: {{ die.total }}</div>
-                        <label class="flex items-center gap-1 text-xs text-gray-600">
+                        <div class="text-xs text-on-surface-variant">Total: {{ die.total }}</div>
+                        <label class="flex items-center gap-1 text-xs text-on-surface-variant">
                           <span>Avail</span>
                           <input
                             type="number"
                             [value]="getHitDieAvailable(die)"
                             (input)="updateHitDieAvailable(die, $any($event.target).value)"
-                            class="w-16 px-2 py-1 border border-gray-300 rounded-md text-center"
+                            class="w-16 px-2 py-1 border border-outline-variant rounded-md text-center focus:ring-2 focus:ring-secondary focus:border-secondary"
                             min="0"
                             [max]="die.total"
                           />
@@ -343,8 +351,8 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
           </div>
 
           <!-- Combat Actions -->
-          <div class="border-4 border-gray-700 rounded-lg p-4 bg-white shadow-lg">
-            <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-gray-300 pb-2">
+          <div class="border-4 border-surface rounded-lg p-4 bg-surface-container-low shadow-lg">
+            <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
               Combat
             </h3>
             @if (combatActions().length > 0) {
@@ -352,7 +360,7 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
                 @for (actionType of ['ACTION', 'BONUS', 'REACTION', 'OTHER']; track actionType) {
                   @if ((groupedCombatActions()[actionType]?.length ?? 0) > 0) {
                     <div>
-                      <h4 class="text-xs font-bold uppercase text-gray-600 mb-2 pt-2 border-t border-gray-200">
+                      <h4 class="text-xs font-bold uppercase text-on-surface-variant mb-2 pt-2 border-t border-outline-variant">
                         {{ getActionTypeLabel(actionType) }}
                       </h4>
                       <div class="space-y-1">
@@ -361,31 +369,31 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
                             type="button"
                             [disabled]="!isActionClickable(action)"
                             (click)="navigateToCombatAction(action)"
-                            class="w-full text-left p-2 rounded transition-colors border-2"
-                            [class.border-sky-400]="getCombatActionLinkType(action) === 'feature'"
-                            [class.border-rose-400]="getCombatActionLinkType(action) === 'species'"
-                            [class.border-purple-400]="getCombatActionLinkType(action) === 'spell'"
-                            [class.border-green-400]="getCombatActionLinkType(action) === 'item'"
-                            [class.border-gray-400]="getCombatActionLinkType(action) === 'monster'"
-                            [class.border-gray-200]="getCombatActionLinkType(action) === null"
-                            [class.hover:border-sky-500]="getCombatActionLinkType(action) === 'feature'"
-                            [class.hover:border-rose-500]="getCombatActionLinkType(action) === 'species'"
-                            [class.hover:border-purple-500]="getCombatActionLinkType(action) === 'spell'"
-                            [class.hover:border-green-500]="getCombatActionLinkType(action) === 'item'"
-                            [class.hover:border-gray-500]="getCombatActionLinkType(action) === 'monster'"
-                            [class.hover:bg-sky-50]="getCombatActionLinkType(action) === 'feature'"
-                            [class.hover:bg-rose-50]="getCombatActionLinkType(action) === 'species'"
-                            [class.hover:bg-purple-50]="getCombatActionLinkType(action) === 'spell'"
-                            [class.hover:bg-green-50]="getCombatActionLinkType(action) === 'item'"
-                            [class.hover:bg-gray-50]="getCombatActionLinkType(action) === 'monster'"
+                            class="w-full text-left p-2 rounded transition-colors border-2 bg-surface-container"
+                            [class.border-blue]="getCombatActionLinkType(action) === 'feature'"
+                            [class.border-rose]="getCombatActionLinkType(action) === 'species'"
+                            [class.border-purple]="getCombatActionLinkType(action) === 'spell'"
+                            [class.border-green]="getCombatActionLinkType(action) === 'item'"
+                            [class.border-teal]="getCombatActionLinkType(action) === 'monster'"
+                            [class.border-outline-variant]="getCombatActionLinkType(action) === null"
+                            [class.hover:border-blue]="getCombatActionLinkType(action) === 'feature'"
+                            [class.hover:border-rose]="getCombatActionLinkType(action) === 'species'"
+                            [class.hover:border-purple]="getCombatActionLinkType(action) === 'spell'"
+                            [class.hover:border-green]="getCombatActionLinkType(action) === 'item'"
+                            [class.hover:border-teal]="getCombatActionLinkType(action) === 'monster'"
+                            [class.hover:bg-blue-container]="getCombatActionLinkType(action) === 'feature'"
+                            [class.hover:bg-rose-container]="getCombatActionLinkType(action) === 'species'"
+                            [class.hover:bg-purple-container]="getCombatActionLinkType(action) === 'spell'"
+                            [class.hover:bg-green-container]="getCombatActionLinkType(action) === 'item'"
+                            [class.hover:bg-teal-container]="getCombatActionLinkType(action) === 'monster'"
                             [class.cursor-pointer]="isActionClickable(action)"
-                            [class.text-sky-700]="getCombatActionLinkType(action) === 'feature'"
-                            [class.text-rose-700]="getCombatActionLinkType(action) === 'species'"
-                            [class.text-purple-700]="getCombatActionLinkType(action) === 'spell'"
-                            [class.text-green-700]="getCombatActionLinkType(action) === 'item'"
-                            [class.text-gray-700]="getCombatActionLinkType(action) === 'monster'"
+                            [class.text-blue]="getCombatActionLinkType(action) === 'feature'"
+                            [class.text-rose]="getCombatActionLinkType(action) === 'species'"
+                            [class.text-purple]="getCombatActionLinkType(action) === 'spell'"
+                            [class.text-green]="getCombatActionLinkType(action) === 'item'"
+                            [class.text-teal]="getCombatActionLinkType(action) === 'monster'"
                             [class.cursor-default]="!isActionClickable(action)"
-                            [class.text-gray-600]="!isActionClickable(action)"
+                            [class.text-on-surface-variant]="!isActionClickable(action)"
                           >
                             <div class="grid grid-cols-[2fr_1fr_2fr] gap-2 text-sm">
                               <div class="font-semibold">{{ action.name }}</div>
@@ -400,20 +408,20 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
                 }
               </div>
             } @else {
-              <div class="text-gray-400 italic text-sm text-center py-4">No combat actions</div>
+              <div class="text-on-surface-variant italic text-sm text-center py-4">No combat actions</div>
             }
           </div>
         </div>
 
         <!-- Right Column: Overview + Features -->
         <div class="space-y-4 order-3 md:order-3">
-          <div class="border-4 border-gray-700 rounded-lg p-4 bg-white shadow-lg">
-            <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-gray-300 pb-2">
+          <div class="border-4 border-surface rounded-lg p-4 bg-surface-container-low shadow-lg">
+            <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
               General Stats
             </h3>
             <div class="space-y-3 text-sm">
               <div>
-                <div class="text-xs text-gray-600 uppercase font-semibold mb-1">Speeds</div>
+                <div class="text-xs text-on-surface-variant uppercase font-semibold mb-1">Speeds</div>
                 @if (speedEntries().length > 0) {
                   <div class="space-y-1">
                     @for (speed of speedEntries(); track speed) {
@@ -421,12 +429,12 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
                     }
                   </div>
                 } @else {
-                  <div class="text-gray-400 italic">None listed</div>
+                  <div class="text-on-surface-variant italic">None listed</div>
                 }
               </div>
 
               <div>
-                <div class="text-xs text-gray-600 uppercase font-semibold mb-1">Senses</div>
+                <div class="text-xs text-on-surface-variant uppercase font-semibold mb-1">Senses</div>
                 @if (senseEntries().length > 0) {
                   <div class="space-y-1">
                     @for (sense of senseEntries(); track sense) {
@@ -434,12 +442,12 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
                     }
                   </div>
                 } @else {
-                  <div class="text-gray-400 italic">None listed</div>
+                  <div class="text-on-surface-variant italic">None listed</div>
                 }
               </div>
 
               <div>
-                <div class="text-xs text-gray-600 uppercase font-semibold mb-1">Resistances</div>
+                <div class="text-xs text-on-surface-variant uppercase font-semibold mb-1">Resistances</div>
                 @if (resistanceEntries().length > 0) {
                   <div class="space-y-1">
                     @for (resist of resistanceEntries(); track resist) {
@@ -447,60 +455,60 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
                     }
                   </div>
                 } @else {
-                  <div class="text-gray-400 italic">None listed</div>
+                  <div class="text-on-surface-variant italic">None listed</div>
                 }
               </div>
 
               <div>
-                <div class="text-xs text-gray-600 uppercase font-semibold mb-1">Advantage On</div>
+                <div class="text-xs text-on-surface-variant uppercase font-semibold mb-1">(Dis)Advantages</div>
                 @if (advantageItems().length > 0) {
                   <div class="space-y-1">
                     @for (adv of advantageItems(); track adv.text) {
                       <div class="flex items-center gap-2">
                         <span
-                          class="inline-block h-2.5 w-2.5 rounded-full"
-                          [class.bg-emerald-500]="!adv.isDisadvantage"
-                          [class.bg-red-500]="adv.isDisadvantage"
-                        ></span>
+                          class="inline-block"
+                          [class.text-green]="!adv.isDisadvantage"
+                          [class.text-rose]="adv.isDisadvantage"
+                        >{{ adv.isDisadvantage ? 'D' : 'A' }}</span>
                         <span>{{ adv.text }}</span>
                       </div>
                     }
                   </div>
                 } @else {
-                  <div class="text-gray-400 italic">None listed</div>
+                  <div class="text-on-surface-variant italic">None listed</div>
                 }
               </div>
             </div>
           </div>
 
-          <div class="border-4 border-gray-700 rounded-lg p-4 bg-white shadow-lg">
-            <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-gray-300 pb-2">
+          <div class="border-4 border-surface rounded-lg p-4 bg-surface-container-low shadow-lg">
+            <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
               Features & Abilities
             </h3>
             <div class="space-y-3 text-sm max-h-[800px] overflow-y-auto  pr-3">
               @if (features().length > 0) {
                 @for (feature of features(); track feature.name) {
-                  <div class="pb-2 border-b border-gray-200">
+                  <div class="pb-2 border-b border-outline-variant">
                     <button
                       type="button"
-                      class="font-bold text-sky-800 underline"
+                      class="font-bold text-tertiary underline"
                       (click)="goToFeature(feature)"
                     >
                       {{ feature.name }}
                     </button>
-                    <div>
+                    <div class="gap-2 mt-1 flex flex-wrap items-center mt-1">
                       @if (feature.featureType !== undefined) {
-                        <span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded">{{ helpers.featureTypeLabel(feature) }}</span>
+                        <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded">{{ helpers.featureTypeLabel(feature) }}</span>
                       }
                     @if (feature.source) {
-                      <span class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">{{ feature.source }}</span>
+                      <span class="text-xs bg-surface-container-highest text-on-surface-container-highest px-2 py-0.5 rounded">{{ feature.source }}</span>
                     }
                     </div>
 
                   </div>
                 }
               } @else {
-                <div class="text-gray-400 italic text-center py-4">No features yet</div>
+                <div class="text-on-surface-variant italic text-center py-4">No features yet</div>
               }
             </div>
           </div>
@@ -851,22 +859,6 @@ export class CharacterInfoPageComponent {
     return null;
   }
 
-  getBorderColorClass(linkType: 'feature' | 'species' | 'spell' | 'item' | 'monster' | null): string {
-    switch (linkType) {
-      case 'feature':
-        return 'border-sky-400 hover:border-sky-500';
-      case 'species':
-        return 'border-rose-400 hover:border-rose-500';
-      case 'spell':
-        return 'border-purple-400 hover:border-purple-500';
-      case 'item':
-        return 'border-green-400 hover:border-green-500';
-      case 'monster':
-        return 'border-gray-400 hover:border-gray-500';
-      default:
-        return 'border-gray-200';
-    }
-  }
 
   navigateToCombatAction(action: any) {
     const anchorId = this.getCombatActionAnchorId(action);

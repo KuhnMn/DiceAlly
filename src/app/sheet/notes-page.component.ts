@@ -15,31 +15,31 @@ interface Note {
   selector: 'app-notes-page',
   imports: [CommonModule],
   template: `
-    <div class="bg-white p-8 rounded-lg border-2 border-gray-300 shadow-lg">
+    <div class="bg-surface-container-highest p-8 rounded-lg border-2 border-outline shadow-lg">
       <h2 class="text-3xl font-bold mb-6">Notes</h2>
       
       @if (groupedNotes().size > 0) {
         <div class="space-y-6">
           @for (section of sortedSections(); track section) {
-            <div class="border-2 border-gray-300 rounded-lg p-6 bg-gray-50">
+            <div class="border-2 border-primary rounded-lg p-6 bg-surface-container">
               <!-- Section Header (clickable) -->
               <button
                 type="button"
-                class="w-full text-left hover:bg-gray-100 transition-colors rounded p-2 -m-2 mb-3"
+                class="w-full text-left hover:bg-surface-container-low transition-colors rounded p-2 -m-2 mb-3"
                 (click)="toggleExpanded('section-' + section)"
               >
                 <div class="flex justify-between items-center">
-                  <h3 class="text-2xl font-bold text-gray-900">{{ section }}</h3>
-                  <span class="text-2xl text-gray-600 font-bold">{{ isExpanded('section-' + section) ? '−' : '+' }}</span>
+                  <h3 class="text-2xl font-bold text-on-surface">{{ section }}</h3>
+                  <span class="text-2xl text-on-surface font-bold">{{ isExpanded('section-' + section) ? '−' : '+' }}</span>
                 </div>
               </button>
               
               <!-- Notes Content (expandable) -->
               @if (isExpanded('section-' + section)) {
-                <div class="space-y-3 pt-3 border-t border-gray-300">
+                <div class="space-y-3 pt-3 border-t border-outline-variant">
                   @for (note of groupedNotes().get(section); track note.id) {
-                    <div class="p-4 bg-white rounded border-l-4 border-blue-400 hover:shadow-md transition-shadow">
-                      <div class="text-sm leading-relaxed prose prose-sm max-w-none text-gray-700" [innerHTML]="parseMarkdown(note.body)"></div>
+                    <div class="p-4 bg-surface-container-high rounded border-l-4 border-secondary hover:shadow-md transition-shadow">
+                      <div class="text-sm leading-relaxed prose prose-sm max-w-none text-on-surface-variant" [innerHTML]="parseMarkdown(note.body)"></div>
                     </div>
                   }
                 </div>
@@ -48,7 +48,7 @@ interface Note {
           }
         </div>
       } @else {
-        <div class="text-center py-10 px-5 text-gray-400 text-base">
+        <div class="text-center py-10 px-5 text-on-surface-variant text-base">
           <p>No notes yet.</p>
         </div>
       }
