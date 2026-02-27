@@ -653,7 +653,7 @@ export interface CharacterData {
   senses?: Record<string, number> | Record<string, unknown>;
   calculateAC?: boolean;
   unarmoredDefense?: AbilityScores | null;
-  installationId?: string;
+  characterId?: string;
 }
 
 export interface ImmuneResistVulnerable {
@@ -751,6 +751,7 @@ export interface Note {
 }
 
 export interface ExportedCharacter {
+  installationId?: string;
   character?: CharacterData;
   species?: Species;
   spells?: SpellEntryFull[];

@@ -1,6 +1,7 @@
 import { Component, inject, computed, input, effect, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CharacterHelpersService } from './character-helpers.service';
+import { RestService } from '../services/rest.service';
 import { ExportedCharacter, HitDieEntry } from '../models/character.model';
 
 @Component({
@@ -114,8 +115,9 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
           <input
             id="inspiration-checkbox"
             type="checkbox"
-            value=""
+            value="{{ character()?.hasInspiration }}"
             class="appearance-none w-8 h-8 text-tertiary border-2 border-outline-variant rounded bg-surface-container-high cursor-pointer inline-flex items-center justify-center relative transition-all hover:border-tertiary checked:bg-tertiary-container checked:border-tertiary checked:after:content-['★'] checked:after:text-2xl checked:after:text-tertiary checked:after:absolute focus:ring-2 focus:ring-tertiary"
+            (change)="toggleInspiration()"
             [checked]="character()?.hasInspiration ?? false"
           />
         </div>
@@ -271,16 +273,13 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
           <div class="border-4 border-surface rounded-3xl p-6 bg-surface-container-low shadow-lg">
             <div class="text-center">
               <div class="text-xs text-on-surface-variant uppercase font-semibold mb-2">Hit Points</div>
-
-
-
               <div class="mt-4">
 
                 <input
                   type="number"
                   [value]="character()?.currentHp ?? 0"
                   (input)="updateCurrentHp($any($event.target).value)"
-                  class="w-24 text-center text-4xl font-bold border-2 border-outline-variant rounded-lg py-1 pr-2 focus:ring-2 focus:ring-rose focus:border-rose"
+                  class="w-28 text-center text-4xl font-bold border-2 border-outline-variant rounded-lg py-1 pr-3 focus:ring-2 focus:ring-rose focus:border-rose"
                   min="0"
                   max="{{ getEffectiveMaxHp() }}"
                 />
@@ -319,6 +318,24 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
                   class="w-28 text-center text-2xl font-bold text-green border border-outline-variant rounded-lg py-1 focus:ring-2 focus:ring-green focus:border-green pr-2"
                   min="0"
                 />
+              </div>
+
+              <!-- Rest Buttons -->
+              <div class="mt-4 pt-4 border-t-2 border-outline-variant flex gap-2">
+                <button
+                  (click)="performShortRest()"
+                  class="flex-1 px-4 py-2 bg-blue-container text-on-blue-container font-semibold rounded-lg hover:bg-blue transition-colors text-sm"
+                  title="Restore Short Rest resources (1 hour rest)"
+                >
+                  Short Rest
+                </button>
+                <button
+                  (click)="performLongRest()"
+                  class="flex-1 px-4 py-2 bg-purple-container text-on-purple-container font-semibold rounded-lg hover:bg-purple transition-colors text-sm"
+                  title="Restore Long Rest resources and heal to full (8 hour rest)"
+                >
+                  Long Rest
+                </button>
               </div>
 
               <div class="mt-4 pt-4 border-t-2 border-outline-variant">
@@ -520,7 +537,10 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
 export class CharacterInfoPageComponent {
   characterData = input.required<ExportedCharacter | null>();
   helpers = inject(CharacterHelpersService);
+  restService = inject(RestService);
   navigateToFeatures = output<string>();
+  inspirationChanged = output<boolean>();
+  characterRested = output<'short' | 'long'>();
 
   character = computed(() => this.characterData()?.character ?? null);
   inventory = computed(() => this.characterData()?.inventory ?? []);
@@ -865,5 +885,28 @@ export class CharacterInfoPageComponent {
     if (anchorId) {
       this.navigateToFeatures.emit(anchorId);
     }
+  }
+
+  toggleInspiration() {
+    const char = this.character();
+    if (!char) return;
+    const newValue = !char.hasInspiration;
+    char.hasInspiration = newValue;
+    // Emit the change so the parent can update the store
+    this.inspirationChanged.emit(newValue);
+  }
+
+  performShortRest() {
+    const data = this.characterData();
+    if (!data) return;
+    this.restService.performShortRest(data);
+    this.characterRested.emit('short');
+  }
+
+  performLongRest() {
+    const data = this.characterData();
+    if (!data) return;
+    this.restService.performLongRest(data);
+    this.characterRested.emit('long');
   }
 }

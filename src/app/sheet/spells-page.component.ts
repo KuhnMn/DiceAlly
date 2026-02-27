@@ -349,6 +349,12 @@ export class SpellsPageComponent {
         this.store.setFeatureScrollTarget(null);
       }, 0);
     });
+
+    // Clear spell slot overrides when character data updates (e.g., after rest)
+    effect(() => {
+      this.characterData();
+      this.spellSlotUsedOverrides.set({});
+    });
   }
 
   spellLevelHeader(level: number): string {
