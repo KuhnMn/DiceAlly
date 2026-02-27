@@ -21,16 +21,19 @@ import { CharacterStore } from '../stores/character.store';
 
     @keyframes monster-flash {
       0% {
-        box-shadow: 0 0 0 0 rgba(var(--md-sys-color-teal) / 0.6);
-        border-color: rgb(var(--md-sys-color-teal));
+        background-color: rgba(79, 219, 216, 0.5);
+        box-shadow: 0 0 0 0 rgba(79, 219, 216, 0.8);
+      
       }
-      60% {
-        box-shadow: 0 0 0 8px rgba(var(--md-sys-color-teal) / 0.15);
-        border-color: rgb(var(--md-sys-color-teal));
+      40% {
+        background-color: rgba(79, 219, 216, 0.25);
+        box-shadow: 0 0 0 8px rgba(79, 219, 216, 0.2);
+        border-color: rgb(79, 219, 216);
       }
       100% {
-        box-shadow: 0 0 0 0 rgba(var(--md-sys-color-teal) / 0);
-        border-color: rgb(var(--md-sys-color-outline-variant));
+        background-color: transparent;
+        box-shadow: 0 0 0 0 rgba(79, 219, 216, 0);
+      
       }
     }
   `],

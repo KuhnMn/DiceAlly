@@ -2,11 +2,6 @@ import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { CharacterData, ExportedCharacter } from '../models/character.model';
-import * as pako from 'pako';
-
-// Import QR code library
-// @ts-ignore - qrcode module type definitions
-import QRCode from 'qrcode';
 
 export interface SavedCharacterMetadata {
   characterId: string;
@@ -27,6 +22,11 @@ export class CharacterStorageService {
   private readonly STORAGE_KEY_PREFIX = 'ally_character_';
   private readonly STORAGE_METADATA_KEY = 'ally_character_metadata';
   private platformId = inject(PLATFORM_ID);
+  private qrDepsPromise?: Promise<{
+    Encoder: typeof import('@nuintun/qrcode').Encoder;
+    Byte: typeof import('@nuintun/qrcode').Byte;
+    deflate: typeof import('pako').deflate;
+  }>;
 
   // Signal to track when character data changes
   characterSaved = signal<{ characterId: string; timestamp: number } | null>(null);
@@ -37,6 +37,25 @@ export class CharacterStorageService {
 
   private generateCharacterId(): string {
     return `char_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private loadQrDeps(): Promise<{
+    Encoder: typeof import('@nuintun/qrcode').Encoder;
+    Byte: typeof import('@nuintun/qrcode').Byte;
+    deflate: typeof import('pako').deflate;
+  }> {
+    if (!this.qrDepsPromise) {
+      this.qrDepsPromise = Promise.all([
+        import('@nuintun/qrcode'),
+        import('pako')
+      ]).then(([qrcode, pako]) => ({
+        Encoder: qrcode.Encoder,
+        Byte: qrcode.Byte,
+        deflate: pako.deflate
+      }));
+    }
+
+    return this.qrDepsPromise;
   }
 
   /**
@@ -480,30 +499,31 @@ export class CharacterStorageService {
    * Uses gzip compression to fit larger character data
    */
   async generateQRCode(character: ExportedCharacter, errorCorrectionLevel: 'L' | 'M' | 'Q' | 'H' = 'L'): Promise<string> {
+    if (!this.isBrowser) {
+      throw new Error('QR code generation is only available in the browser');
+    }
+
     const minimalExport = this.createMinimalExport(character);
     const jsonString = JSON.stringify(minimalExport);
 
     console.log('Original JSON size:', jsonString.length, 'bytes');
 
     try {
+      const { Encoder, Byte, deflate } = await this.loadQrDeps();
+
       // Compress the JSON using gzip (deflate)
-      const compressed = pako.deflate(jsonString, { level: 9 }); // Max compression
-      
+      const compressed = deflate(jsonString, { level: 9 });
+
       // Convert Uint8Array to base64
       const base64 = btoa(String.fromCharCode.apply(null, Array.from(compressed)));
-      
+
       console.log('Compressed size:', base64.length, 'bytes', `(${Math.round((base64.length / jsonString.length) * 100)}% of original)`);
 
-      // Generate QR code with the compressed data
-      const qrCodeDataUrl = await QRCode.toDataURL(base64, {
-        errorCorrectionLevel,
-        type: 'image/png',
-        quality: 0.92,
-        margin: 1,
-        width: 300,
-      });
+      const encoder = new Encoder({ level: errorCorrectionLevel });
+      const qrCode = encoder.encode(new Byte(base64));
+      const moduleSize = Math.max(2, Math.floor(300 / qrCode.size));
 
-      return qrCodeDataUrl;
+      return qrCode.toDataURL(moduleSize, { margin: 1 });
     } catch (error) {
       console.error('Failed to generate QR code:', error);
       // Provide detailed error message for debugging

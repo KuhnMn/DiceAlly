@@ -16,16 +16,17 @@ import { CharacterStore } from '../stores/character.store';
 
     @keyframes spell-flash {
       0% {
-        box-shadow: 0 0 0 0 rgba(var(--md-sys-color-purple) / 0.6);
-        border-color: rgb(var(--md-sys-color-purple));
+        background-color: rgba(219, 186, 255, 0.5);
+        box-shadow: 0 0 0 0 rgba(219, 186, 255, 0.8);
       }
-      60% {
-        box-shadow: 0 0 0 8px rgba(var(--md-sys-color-purple) / 0.15);
-        border-color: rgb(var(--md-sys-color-purple));
+      40% {
+        background-color: rgba(219, 186, 255, 0.25);
+        box-shadow: 0 0 0 8px rgba(219, 186, 255, 0.2);
+        border-color: rgb(219, 186, 255);
       }
       100% {
-        box-shadow: 0 0 0 0 rgba(var(--md-sys-color-purple) / 0);
-        border-color: rgb(var(--md-sys-color-outline-variant));
+        background-color: transparent;
+        box-shadow: 0 0 0 0 rgba(219, 186, 255, 0);
       }
     }
   `],

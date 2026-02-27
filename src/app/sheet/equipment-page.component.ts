@@ -16,15 +16,18 @@ import { CharacterStore } from '../stores/character.store';
 
     @keyframes item-flash {
       0% {
-        box-shadow: 0 0 0 0 rgba(var(--md-sys-color-green) / 0.6);
-        border-color: rgb(var(--md-sys-color-green));
+        background-color: rgba(152, 216, 81, 0.5);
+        box-shadow: 0 0 0 0 rgba(152, 216, 81, 0.8);
+        border-color: rgb(152, 216, 81);
       }
-      60% {
-        box-shadow: 0 0 0 8px rgba(var(--md-sys-color-green) / 0.15);
-        border-color: rgb(var(--md-sys-color-green));
+      40% {
+        background-color: rgba(152, 216, 81, 0.25);
+        box-shadow: 0 0 0 8px rgba(152, 216, 81, 0.2);
+        border-color: rgb(152, 216, 81);
       }
       100% {
-        box-shadow: 0 0 0 0 rgba(var(--md-sys-color-green) / 0);
+        background-color: transparent;
+        box-shadow: 0 0 0 0 rgba(152, 216, 81, 0);
         border-color: rgb(var(--md-sys-color-outline-variant));
       }
     }
