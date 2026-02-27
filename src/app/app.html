@@ -1,5 +1,20 @@
 <main class="app-container">
-  <section>
+  <header class="app-header" aria-label="Application header">
+    <img
+      class="app-icon"
+      ngSrc="app_icon.png"
+      width="48"
+      height="48"
+      priority
+      alt="AllySheetViewer logo"
+    />
+    <div class="app-header__text">
+      <span class="app-title">AllySheetViewer</span>
+      <span class="app-subtitle">Character sheet companion</span>
+    </div>
+  </header>
+
+  <section class="app-content">
     <router-outlet></router-outlet>
   </section>
 </main>

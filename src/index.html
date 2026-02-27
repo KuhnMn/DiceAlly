@@ -5,7 +5,29 @@
   <title>AllySheetViewer</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" href="app_icon.png">
+  <link rel="apple-touch-icon" href="app_icon.png">
+  <script>
+    (function () {
+      var search = window.location.search;
+      if (!search || search.indexOf('p=') === -1) {
+        return;
+      }
+
+      var params = new URLSearchParams(search);
+      var path = params.get('p');
+      var query = params.get('q');
+
+      if (path === null) {
+        return;
+      }
+
+      var newPath = window.location.pathname.replace(/\/$/, '') + '/' + path;
+      var newSearch = query ? ('?' + query) : '';
+      var newUrl = newPath + newSearch + window.location.hash;
+      window.history.replaceState(null, '', newUrl);
+    })();
+  </script>
 </head>
 <body>
   <app-root></app-root>
