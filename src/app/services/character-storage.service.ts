@@ -75,12 +75,12 @@ export class CharacterStorageService {
 
     try {
       // Ensure character has an ID
-      if (!character.character?.characterId) {
+      if (!character.character?.characterUuid) {
         character.character = character.character || {};
-        character.character.characterId = this.generateCharacterId();
+        character.character.characterUuid = this.generateCharacterId();
       }
 
-      const characterId = character.character.characterId;
+      const characterId = character.character.characterUuid;
       const storageKey = `${this.STORAGE_KEY_PREFIX}${characterId}`;
 
       // Check storage quota
@@ -248,11 +248,11 @@ export class CharacterStorageService {
       }
 
       // Ensure characterId exists
-      if (!imported.character.characterId) {
-        imported.character.characterId = this.generateCharacterId();
+      if (!imported.character.characterUuid) {
+        imported.character.characterUuid = this.generateCharacterId();
       }
 
-      const characterId = imported.character.characterId;
+      const characterId = imported.character.characterUuid;
       const existing = this.loadCharacter(characterId);
 
       // Check if character exists and override not allowed
@@ -415,7 +415,7 @@ export class CharacterStorageService {
   createMinimalExport(character: ExportedCharacter): ExportedCharacter {
     // Only include essential character state
     const minimalCharacter: any = {};
-    if (character.character?.characterId) minimalCharacter.characterId = character.character.characterId;
+    if (character.character?.characterUuid) minimalCharacter.characterUuid = character.character.characterUuid;
     if (character.character?.currentHp !== undefined) minimalCharacter.currentHp = character.character.currentHp;
     if (character.character?.tempHp !== undefined) minimalCharacter.tempHp = character.character.tempHp;
     if (character.character?.maxHpOverride !== undefined) minimalCharacter.maxHpOverride = character.character.maxHpOverride;

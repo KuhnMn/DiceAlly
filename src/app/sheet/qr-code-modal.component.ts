@@ -76,7 +76,7 @@ export class QRCodeModalComponent {
 
   downloadJson() {
     const character = this.character();
-    if (!character?.character?.characterId) return;
+    if (!character?.character?.characterUuid) return;
 
     const jsonString = this.storage.getMinimalExportJson(character);
     const blob = new Blob([jsonString], { type: 'application/json' });

@@ -298,12 +298,12 @@ export class CharacterSheetComponent {
   async exportJson() {
     await this.quickSave();
     const character = this.characterData();
-    if (!character || !character.character?.characterId) {
+    if (!character || !character.character?.characterUuid) {
       alert('Cannot export: no character loaded');
       return;
     }
 
-    this.storage.downloadCharacterAsFile(character.character.characterId);
+    this.storage.downloadCharacterAsFile(character.character.characterUuid);
   }
 
   async generateQRCode() {

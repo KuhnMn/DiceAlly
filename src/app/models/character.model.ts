@@ -653,7 +653,7 @@ export interface CharacterData {
   senses?: Record<string, number> | Record<string, unknown>;
   calculateAC?: boolean;
   unarmoredDefense?: AbilityScores | null;
-  characterId?: string;
+  characterUuid?: string;
 }
 
 export interface ImmuneResistVulnerable {
