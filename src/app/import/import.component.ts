@@ -117,18 +117,26 @@ import type { ExportedCharacter } from '../models/character.model';
           <div>
             <label class="block">
               <span class="block text-sm font-medium mb-3">Upload File</span>
-              <div class="border-2 border-dashed border-outline-variant rounded-lg p-8 text-center cursor-pointer hover:bg-surface-container transition-colors"
+              <div
+                class="upload-desktop border-2 border-dashed border-outline-variant rounded-lg p-8 text-center cursor-pointer hover:bg-surface-container transition-colors"
                 (click)="fileInput.click()"
                 (drop)="onDrop($event)"
                 (dragover)="$event.preventDefault()"
               >
                 <p class="text-on-surface-variant">Drop a JSON file here or click to browse</p>
               </div>
-              <input 
+              <button
+                type="button"
+                class="upload-mobile w-full px-4 py-3 bg-secondary-container text-on-secondary-container font-semibold rounded hover:bg-secondary transition-colors"
+                (click)="fileInput.click()"
+              >
+                Choose JSON File
+              </button>
+              <input
                 #fileInput
                 hidden
-                type="file" 
-                accept="application/json" 
+                type="file"
+                accept="application/json"
                 (change)="onFile($event)"
               />
             </label>

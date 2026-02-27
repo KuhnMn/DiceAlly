@@ -267,32 +267,36 @@ export class CharacterSheetComponent {
     this.quickSave();
   }
 
-  quickSave() {
+  quickSave(): Promise<void> {
     const character = this.characterData();
-    if (!character) return;
+    if (!character) return Promise.resolve();
 
     this.isSaving.set(true);
     this.saveStatus.set(false);
 
-    // Simulate async save
-    setTimeout(() => {
-      const result = this.storage.saveCharacter(character);
-      if (result.success) {
-        // Mark this state as saved
-        this.unsavedChangesGuard.setLastSavedState(character);
-        this.saveStatus.set(true);
-        // Clear "Saved!" message after 2 seconds
-        setTimeout(() => {
-          this.saveStatus.set(false);
-        }, 2000);
-      } else {
-        alert(`Save failed: ${result.error?.message}`);
-      }
-      this.isSaving.set(false);
-    }, 300);
+    return new Promise((resolve) => {
+      // Simulate async save
+      setTimeout(() => {
+        const result = this.storage.saveCharacter(character);
+        if (result.success) {
+          // Mark this state as saved
+          this.unsavedChangesGuard.setLastSavedState(character);
+          this.saveStatus.set(true);
+          // Clear "Saved!" message after 2 seconds
+          setTimeout(() => {
+            this.saveStatus.set(false);
+          }, 2000);
+        } else {
+          alert(`Save failed: ${result.error?.message}`);
+        }
+        this.isSaving.set(false);
+        resolve();
+      }, 300);
+    });
   }
 
-  exportJson() {
+  async exportJson() {
+    await this.quickSave();
     const character = this.characterData();
     if (!character || !character.character?.characterId) {
       alert('Cannot export: no character loaded');
@@ -303,6 +307,7 @@ export class CharacterSheetComponent {
   }
 
   async generateQRCode() {
+    await this.quickSave();
     const character = this.characterData();
     if (!character) {
       alert('No character loaded');

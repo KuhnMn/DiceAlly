@@ -179,9 +179,34 @@ import { CharacterStore } from '../stores/character.store';
                           @if (spell.entity?.meta?.ritual) {
                             <span class="text-xs bg-green-container text-on-green-container px-2 py-0.5 rounded">Ritual</span>
                           }
-                          @if (spell.listType) {
-                            <span class="text-xs bg-blue-container text-on-blue-container px-2 py-0.5 rounded">{{ spell.listType }}</span>
-                          }
+                          <!-- Interactive List Type Tags -->
+                          <div class="flex gap-1 flex-wrap">
+                            @for (type of availableListTypes(); track type) {
+                              @if (type === 'PREPARED') {
+                                <button
+                                  type="button"
+                                  (click)="togglePreparedSpell(spell, $event)"
+                                  [class.bg-blue-container]="hasSpellListType(spell, type)"
+                                  [class.text-on-blue-container]="hasSpellListType(spell, type)"
+                                  [class.bg-blue]="!hasSpellListType(spell, type)"
+                                  [class.text-on-blue]="!hasSpellListType(spell, type)"
+                                  class="text-xs px-2 py-0.5 rounded cursor-pointer hover:opacity-80 transition-opacity"
+                                >
+                                  {{ (hasSpellListType(spell, type) ? '- ' : '+ ') + type }}
+                                </button>
+                              } @else {
+                                <span
+                                  [class.bg-blue-container]="hasSpellListType(spell, type)"
+                                  [class.text-on-blue-container]="hasSpellListType(spell, type)"
+                                  [class.bg-surface-variant]="!hasSpellListType(spell, type)"
+                                  [class.text-on-surface-variant]="!hasSpellListType(spell, type)"
+                                  class="text-xs px-2 py-0.5 rounded"
+                                >
+                                  {{ type }}
+                                </span>
+                              }
+                            }
+                          </div>
                         </div>
                         <span class="text-xl text-purple font-bold">{{ isExpanded('spell-' + spell.name) ? '−' : '+' }}</span>
                       </div>
@@ -357,6 +382,58 @@ export class SpellsPageComponent {
       this.spellSlotUsedOverrides.set({});
     });
   }
+
+  private spellKey(spell: any): string {
+    return spell.name + ':' + (spell.source ?? '');
+  }
+
+  getSpellListTypes(spell: any): string[] {
+    const allSpells = this.characterData()?.spells ?? [];
+    const key = this.spellKey(spell);
+    const matching = allSpells.filter((s) => this.spellKey(s) === key);
+    return matching.map((s) => s.listType).filter(Boolean) as string[];
+  }
+
+  hasSpellListType(spell: any, listType: string): boolean {
+    return this.getSpellListTypes(spell).includes(listType);
+  }
+
+  togglePreparedSpell(spell: any, event: Event) {
+    event.stopPropagation();
+    
+    const allSpells = this.characterData()?.spells ?? [];
+    const key = this.spellKey(spell);
+    const isPrepared = this.hasSpellListType(spell, 'PREPARED');
+    
+    if (isPrepared) {
+      // Remove the PREPARED version
+      const index = allSpells.findIndex((s) => this.spellKey(s) === key && s.listType === 'PREPARED');
+      if (index >= 0) {
+        allSpells.splice(index, 1);
+      }
+    } else {
+      // Add a PREPARED version by copying the current spell
+      const preparedSpell = { ...spell, listType: 'PREPARED' };
+      allSpells.push(preparedSpell);
+    }
+    
+    // Update the store
+    const character = this.characterData();
+    if (character) {
+      const updated = { ...character, spells: [...allSpells] };
+      this.store.setCharacter(updated);
+    }
+  }
+
+  availableListTypes = computed(() => {
+    const useSpellbook = this.character()?.featureSources?.some((fs) => fs.useSpellbook) ?? false;
+    const types: Array<'KNOWN' | 'SPELLBOOK' | 'PREPARED'> = ['KNOWN'];
+    if (useSpellbook) {
+      types.push('SPELLBOOK');
+    }
+    types.push('PREPARED');
+    return types;
+  });
 
   spellLevelHeader(level: number): string {
     return level === 0 ? 'Cantrips' : `Level ${level}`;

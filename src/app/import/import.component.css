@@ -1,1 +1,15 @@
 /* Import component styles */
+
+.upload-mobile {
+	display: none;
+}
+
+@media (max-width: 640px) {
+	.upload-desktop {
+		display: none;
+	}
+
+	.upload-mobile {
+		display: block;
+	}
+}
