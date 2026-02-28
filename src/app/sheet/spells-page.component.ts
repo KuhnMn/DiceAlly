@@ -198,8 +198,8 @@ import { CharacterStore } from '../stores/character.store';
                                 <span
                                   [class.bg-blue-container]="hasSpellListType(spell, type)"
                                   [class.text-on-blue-container]="hasSpellListType(spell, type)"
-                                  [class.bg-surface-variant]="!hasSpellListType(spell, type)"
-                                  [class.text-on-surface-variant]="!hasSpellListType(spell, type)"
+                                  [class.bg-blue]="!hasSpellListType(spell, type)"
+                                  [class.text-on-blue]="!hasSpellListType(spell, type)"
                                   class="text-xs px-2 py-0.5 rounded"
                                 >
                                   {{ type }}

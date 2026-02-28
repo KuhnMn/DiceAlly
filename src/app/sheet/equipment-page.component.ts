@@ -680,7 +680,7 @@ export class EquipmentPageComponent {
     // Add the dummy item
     charData.inventory.push({
       name,
-      source: source || undefined,
+      source: source || "CUSTOM",
       isDummy: true,
       allowMultiples: stackable,
       count: stackable ? 1 : undefined,
