@@ -1,5 +1,6 @@
 import { Component, computed, input, signal, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ExportedCharacter, Entry, DisplayItem, InventoryItem } from '../models/character.model';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { FeatureUsesComponent } from './feature-uses.component';
@@ -8,7 +9,7 @@ import { CharacterStore } from '../stores/character.store';
 
 @Component({
   selector: 'app-equipment-page',
-  imports: [CommonModule, EntryRendererComponent, FeatureUsesComponent],
+  imports: [CommonModule, FormsModule, EntryRendererComponent, FeatureUsesComponent],
   styles: [`
     .flash-highlight {
       animation: item-flash 1.6s ease-out;
@@ -130,7 +131,76 @@ import { CharacterStore } from '../stores/character.store';
 
       <!-- Inventory -->
       <div class="space-y-4">
-        <h3 class="text-xl font-bold mb-3">Items</h3>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-xl font-bold">Items</h3>
+          @if (!isAddingItem()) {
+            <button
+              (click)="startAddingItem()"
+              class="px-4 py-2 bg-primary text-on-primary font-medium rounded-lg hover:bg-primary-container transition-colors text-sm"
+            >
+              + Add Item
+            </button>
+          }
+        </div>
+
+        <!-- Add Item Form -->
+        @if (isAddingItem()) {
+          <div class="border-2 border-primary rounded-lg p-4 bg-surface-container-low mb-4">
+            <h4 class="text-lg font-semibold mb-3 text-primary">Add New Item</h4>
+            <div class="space-y-3">
+              <div>
+                <label class="block text-sm font-medium mb-1">Item Name *</label>
+                <input
+                  type="text"
+                  [(ngModel)]="newItemName"
+                  placeholder="e.g., Healing Potion"
+                  class="w-full px-3 py-2 border-2 border-outline-variant rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
+                  (keydown.enter)="addDummyItem()"
+                  (keydown.escape)="cancelAddingItem()"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Source (optional)</label>
+                <input
+                  type="text"
+                  [(ngModel)]="newItemSource"
+                  placeholder="e.g., PHB"
+                  class="w-full px-3 py-2 border-2 border-outline-variant rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
+                  (keydown.enter)="addDummyItem()"
+                  (keydown.escape)="cancelAddingItem()"
+                />
+              </div>
+              <div>
+                <label class="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="newItemStackable"
+                    class="w-5 h-5 text-primary border-outline-variant rounded focus:ring-2 focus:ring-primary accent-primary"
+                  />
+                  <span class="ml-2 text-sm font-medium">Stackable (allows quantity tracking)</span>
+                </label>
+              </div>
+              <div class="flex gap-2">
+                <button
+                  (click)="addDummyItem()"
+                  class="flex-1 px-4 py-2 bg-primary text-on-primary font-medium rounded-lg hover:bg-primary-container transition-colors"
+                >
+                  Add Item
+                </button>
+                <button
+                  (click)="cancelAddingItem()"
+                  class="flex-1 px-4 py-2 bg-surface-container text-on-surface font-medium rounded-lg hover:bg-surface-container-high transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+              <p class="text-xs text-on-surface-variant">
+                💡 Items added here will sync to your Android app, which will automatically fill in the full details.
+              </p>
+            </div>
+          </div>
+        }
+
         @if (inventory().length > 0) {
           @for (item of inventory(); track item.name) {
             <div class="border-2 border-green rounded-lg p-4 bg-surface-container" [attr.id]="'item-' + helpers.sourceId(item.name + '-' + (item.source ?? ''))" [class.flash-highlight]="highlightedId() === ('item-' + helpers.sourceId(item.name + '-' + (item.source ?? '')))">
@@ -143,6 +213,9 @@ import { CharacterStore } from '../stores/character.store';
                 <div class="flex flex-wrap items-center justify-between gap-2 w-full">
                   <div class="flex flex-wrap items-center gap-2">
                     <h3 class="text-xl font-bold text-green">{{ item.name }}</h3>
+                    @if (item.isDummy) {
+                      <span class="text-xs bg-orange-container text-on-orange-container px-2 py-0.5 rounded font-semibold">📝 Pending Sync</span>
+                    }
                     @if (item.entity?.itemType) {
                       <span class="text-xs bg-green-container text-on-green-container px-2 py-0.5 rounded">{{ item.entity?.itemType }}</span>
                     }
@@ -159,7 +232,18 @@ import { CharacterStore } from '../stores/character.store';
                   <span class="text-xs bg-surface-container-low text-on-surface px-2 py-0.5 rounded">{{ tag }}</span>
                 }
                   </div>
-                  <span class="text-xl text-green font-bold">{{ isExpanded('item-' + item.name) ? '−' : '+' }}</span>
+                  <div class="flex items-center gap-2">
+                    @if (item.isDummy) {
+                      <button
+                        (click)="deleteDummyItem(item); $event.stopPropagation()"
+                        class="px-3 py-1 bg-rose text-on-rose font-medium rounded text-sm hover:bg-rose-container transition-colors"
+                        title="Delete this item"
+                      >
+                        Delete
+                      </button>
+                    }
+                    <span class="text-xl text-green font-bold">{{ isExpanded('item-' + item.name) ? '−' : '+' }}</span>
+                  </div>
                 </div>
               </button>
 
@@ -355,6 +439,12 @@ export class EquipmentPageComponent {
   copperAmount = signal(0);
   expandedItems = signal<Set<string>>(new Set());
   
+  // Dummy item creation
+  isAddingItem = signal(false);
+  newItemName = signal('');
+  newItemSource = signal('');
+  newItemStackable = signal(false);
+  
   // Expose Array for template use
   readonly isArray = Array.isArray;
 
@@ -543,5 +633,80 @@ export class EquipmentPageComponent {
   updateItemCount(item: any, value: string) {
     const numValue = Math.max(0, parseInt(value) || 0);
     item.count = numValue;
+  }
+
+  startAddingItem() {
+    this.isAddingItem.set(true);
+    this.newItemName.set('');
+    this.newItemSource.set('');
+    this.newItemStackable.set(false);
+  }
+
+  cancelAddingItem() {
+    this.isAddingItem.set(false);
+    this.newItemName.set('');
+    this.newItemSource.set('');
+    this.newItemStackable.set(false);
+  }
+
+  addDummyItem() {
+    const name = this.newItemName().trim();
+    const source = this.newItemSource().trim();
+    const stackable = this.newItemStackable();
+    
+    if (!name) {
+      alert('Please enter an item name');
+      return;
+    }
+
+    const charData = this.characterData();
+    if (!charData) return;
+
+    if (!charData.inventory) {
+      charData.inventory = [];
+    }
+
+    // Check if item already exists
+    const exists = charData.inventory.some(item => 
+      item.name.toLowerCase() === name.toLowerCase() && 
+      (item.source || '').toLowerCase() === (source || '').toLowerCase()
+    );
+
+    if (exists) {
+      alert('An item with this name and source already exists');
+      return;
+    }
+
+    // Add the dummy item
+    charData.inventory.push({
+      name,
+      source: source || undefined,
+      isDummy: true,
+      allowMultiples: stackable,
+      count: stackable ? 1 : undefined,
+      entity: null,
+    });
+
+    // Reset form
+    this.cancelAddingItem();
+  }
+
+  deleteDummyItem(item: InventoryItem) {
+    if (!item.isDummy) {
+      alert('Only dummy items can be deleted');
+      return;
+    }
+
+    if (!confirm(`Delete "${item.name}"?`)) {
+      return;
+    }
+
+    const charData = this.characterData();
+    if (!charData?.inventory) return;
+
+    const index = charData.inventory.indexOf(item);
+    if (index > -1) {
+      charData.inventory.splice(index, 1);
+    }
   }
 }

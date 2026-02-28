@@ -552,6 +552,7 @@ export interface InventoryItem {
   allowMultiples?: boolean;
   uses?: FeatureUses[];
   entity?: DisplayItem | null;
+  isDummy?: boolean; // Marks items created by user without full data
 }
 
 export interface Species {

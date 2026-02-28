@@ -4,12 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CharacterStore } from '../stores/character.store';
 import { CharacterStorageService, SavedCharacterMetadata } from '../services/character-storage.service';
+import { TmpfilesService } from '../services/tmpfiles.service';
 import { UnsavedChangesGuard } from '../guards/unsaved-changes.guard';
+import { ExportOptionsModalComponent } from './export-options-modal.component';
 import type { ExportedCharacter } from '../models/character.model';
 
 @Component({
   selector: 'app-import',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ExportOptionsModalComponent],
   template: `
     <main class="max-w-[1000px] mx-auto my-8 p-4">
       <!-- Saved Characters Section -->
@@ -27,6 +29,7 @@ import type { ExportedCharacter } from '../models/character.model';
                     <div>
                       <h3 class="text-lg font-semibold text-on-surface">{{ char.name }}</h3>
                       <p class="text-sm text-on-surface-variant">Level {{ char.level }}</p>
+                      <p class="text-sm text-on-surface-variant">{{ char.description }}</p>
                     </div>
                     <div class="text-xs text-on-surface-variant">
                       {{ formatDate(char.lastModified) }}
@@ -52,6 +55,8 @@ import type { ExportedCharacter } from '../models/character.model';
                       Delete
                     </button>
                   </div>
+                  <p class="text-on-surface-variant text-xs pt-2">Id: {{ char.characterId }}</p>
+                  <p class="text-on-surface-variant text-xs pt-2">Installation: {{ char.installationId }}</p>
                 </div>
               }
             </div>
@@ -69,17 +74,17 @@ import type { ExportedCharacter } from '../models/character.model';
       <!-- Import Section -->
       <section class="border-t-2 border-outline pt-8">
         <h2 class="text-3xl font-bold mb-2">Import Character</h2>
-        <p class="text-on-surface-variant mb-6">Load a character from a JSON file or paste</p>
+        <p class="text-on-surface-variant mb-6">Load a character from a JSON file, tmpfiles.org upload, or JSON paste</p>
 
         <!-- URL Import -->
         <div class="mb-6">
           <label class="block">
-            <span class="block text-sm font-medium mb-3">Import from URL</span>
+            <span class="block text-sm font-medium mb-3">Import from URL or File ID</span>
             <div class="flex gap-2">
               <input
                 [(ngModel)]="importUrl"
-                type="url"
-                placeholder="https://example.com/character.json"
+                type="text"
+                placeholder="URL or tmpfiles ID (e.g., 26737738)"
                 class="flex-1 px-4 py-2 border-2 border-outline-variant rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-surface text-on-surface"
               />
               <button
@@ -94,7 +99,7 @@ import type { ExportedCharacter } from '../models/character.model';
                 }
               </button>
             </div>
-            <p class="text-xs text-on-surface-variant mt-2">Paste a direct link to a JSON character file</p>
+            <p class="text-xs text-on-surface-variant mt-2">Paste a tmpfiles.org share link, or just the tmpfiles file ID (the number from the URL)</p>
           </label>
         </div>
 
@@ -102,12 +107,21 @@ import type { ExportedCharacter } from '../models/character.model';
           <div class="mb-6 p-4 bg-error-container text-on-error-container rounded-lg">
             <p class="font-semibold mb-2">{{ error.message }}</p>
             @if (error.code === 'IMPORT_CONFLICT') {
-              <button
+              <div class="flex flex-row gap-2">
+                              <button
                 (click)="confirmOverride()"
                 class="mt-2 px-4 py-2 bg-rose-container text-on-rose-container font-medium rounded text-sm hover:opacity-90 transition-opacity"
               >
                 Override and Load
               </button>
+                <button
+                (click)="clearImportError()"
+                class="mt-2 px-4 py-2 bg-rose text-on-rose font-medium rounded text-sm hover:opacity-90 transition-opacity"
+              >
+                Cancel
+              </button>
+              </div>
+
             }
           </div>
         }
@@ -162,6 +176,14 @@ import type { ExportedCharacter } from '../models/character.model';
           </div>
         </div>
       </section>
+
+      <!-- Export Options Modal -->
+      @if (exportingCharacterId()) {
+        <app-export-options-modal
+          [characterId]="exportingCharacterId()!"
+          (close)="closeExportModal()"
+        />
+      }
     </main>
   `,
   styleUrl: './import.component.css',
@@ -169,6 +191,7 @@ import type { ExportedCharacter } from '../models/character.model';
 export class ImportComponent {
   private store = inject(CharacterStore);
   private storage = inject(CharacterStorageService);
+  private tmpfiles = inject(TmpfilesService);
   private router = inject(Router);
   private unsavedChangesGuard = inject(UnsavedChangesGuard);
 
@@ -176,8 +199,9 @@ export class ImportComponent {
   importUrl = '';
   savedCharacters = signal<SavedCharacterMetadata[]>([]);
   importError = signal<{ code: string; message: string } | null>(null);
-  pendingImport: { json: string; override: boolean } | null = null;
+  pendingImport = signal<{ json: string; override: boolean } | null>(null);
   isLoadingUrl = signal<boolean>(false);
+  exportingCharacterId = signal<string | null>(null);
 
   constructor() {
     // Reload saved characters list
@@ -236,21 +260,36 @@ export class ImportComponent {
 
     this.isLoadingUrl.set(true);
     try {
-      const response = await fetch(this.importUrl);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      let jsonContent: string;
+
+      // Check if this is a tmpfiles.org URL
+      if (this.tmpfiles.isTmpfilesUrl(this.importUrl)) {
+        const result = await this.tmpfiles.downloadCharacter(this.importUrl);
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to download from tmpfiles.org');
+        }
+        jsonContent = JSON.stringify(result.character);
+      } else {
+        // Standard URL import
+        const response = await fetch(this.importUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        jsonContent = await response.text();
       }
 
-      const jsonContent = await response.text();
       this.raw = jsonContent;
       const result = this.storage.importCharacterFromJson(jsonContent);
       this.handleImportResult(result);
       this.importUrl = ''; // Clear URL on success
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
+      const isTmpfiles = this.tmpfiles.isTmpfilesUrl(this.importUrl);
       this.importError.set({
         code: 'UNKNOWN',
-        message: `Failed to download from URL: ${message}. Make sure the URL is correct and CORS is enabled.`,
+        message: isTmpfiles
+          ? `Failed to import from tmpfiles.org: ${message}\n\n💡 Backup option: Click "Copy JSON (Backup)" in the Share modal and paste it below.`
+          : `Failed to download from URL: ${message}. Make sure the URL is correct and accessible.`,
       });
     } finally {
       this.isLoadingUrl.set(false);
@@ -268,7 +307,11 @@ export class ImportComponent {
   }
 
   downloadCharacter(characterId: string) {
-    this.storage.downloadCharacterAsFile(characterId);
+    this.exportingCharacterId.set(characterId);
+  }
+
+  closeExportModal() {
+    this.exportingCharacterId.set(null);
   }
 
   deleteCharacter(characterId: string) {
@@ -279,8 +322,9 @@ export class ImportComponent {
   }
 
   confirmOverride() {
-    if (this.pendingImport) {
-      const json = this.pendingImport.json;
+    const pending = this.pendingImport();
+    if (pending) {
+      const json = pending.json;
       const result = this.storage.importCharacterFromJson(json, {
         overrideExisting: true,
       });
@@ -288,11 +332,16 @@ export class ImportComponent {
     }
   }
 
+  clearImportError() {
+    this.importError.set(null);
+    this.pendingImport.set(null);
+  }
+
   private handleImportResult(result: { success: boolean; characterId?: string; error?: any }) {
     if (result.success) {
       this.importError.set(null);
       this.raw = '';
-      this.pendingImport = null; // Clear pending import state
+      this.pendingImport.set(null);
       const character = this.storage.loadCharacter(result.characterId!);
       if (character) {
         this.store.setCharacter(character);
@@ -301,7 +350,7 @@ export class ImportComponent {
         this.router.navigate(['/sheet']);
       }
     } else if (result.error?.code === 'IMPORT_CONFLICT') {
-      this.pendingImport = { json: this.raw, override: false };
+      this.pendingImport.set({ json: this.raw, override: false });
       this.importError.set({
         code: 'IMPORT_CONFLICT',
         message: result.error.message,

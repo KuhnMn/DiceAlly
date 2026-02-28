@@ -7,6 +7,8 @@ export interface SavedCharacterMetadata {
   characterId: string;
   name: string;
   level: number;
+  description?: string;
+  installationId?: string;
   lastModified: number;
 }
 
@@ -100,7 +102,7 @@ export class CharacterStorageService {
       localStorage.setItem(storageKey, serialized);
 
       // Update metadata
-      this.updateMetadata(characterId, character.character.name || 'Unnamed', character.character.level || 1);
+      this.updateMetadata(characterId, character.character.name || 'Unnamed', character.character.level || 1, character.character?.description || "", character.installationId);
 
       this.characterSaved.set({ characterId, timestamp: Date.now() });
 
@@ -262,7 +264,7 @@ export class CharacterStorageService {
           characterId,
           error: {
             code: 'IMPORT_CONFLICT',
-            message: `Character "${existing.character?.name}" already exists. Use overrideExisting: true to replace it.`,
+            message: `Character "${existing.character?.name}" with ID ${characterId} already exists.`,
           },
         };
       }
@@ -384,7 +386,7 @@ export class CharacterStorageService {
     }
   }
 
-  private updateMetadata(characterId: string, name: string, level: number): void {
+  private updateMetadata(characterId: string, name: string, level: number, description?: string, installationId?: string): void {
     if (!this.isBrowser) {
       return;
     }
@@ -398,6 +400,8 @@ export class CharacterStorageService {
         name,
         level,
         lastModified: Date.now(),
+        description: description || undefined,
+        installationId: installationId || undefined,
       };
 
       localStorage.setItem(this.STORAGE_METADATA_KEY, JSON.stringify(metadataMap));
@@ -460,6 +464,8 @@ export class CharacterStorageService {
         name: spell.name,
         source: spell.source,
         uses: spell.uses,
+        listType: spell.listType,
+        castingSourceName: spell.castingSourceName,
         entity: null,
       }));
     if (spells && spells.length > 0) {
@@ -475,16 +481,22 @@ export class CharacterStorageService {
         featureEntity: null,
         featEntity: null,
         optionalFeatureEntity: null,
+        featureSourceName: feature.featureSourceName,
+        featureType: feature.featureType,
       }));
     if (features && features.length > 0) {
       result.features = features;
     }
 
-    const inventory = character.inventory?.filter((item) => item.uses && item.uses.length > 0 || item.allowMultiples).map((item) => cleanObject({
+    const inventory = character.inventory?.filter((item) => item.uses && item.uses.length > 0 || item.allowMultiples || item.isDummy).map((item) => cleanObject({
       name: item.name,
       source: item.source,
+      allowMultiples: item.allowMultiples,
       count: item.count,
+      isEquipped: item.isEquipped,
+      isAttuned: item.isAttuned,
       uses: item.uses,
+      isDummy: item.isDummy,
       entity: null,
     }));
     if (inventory && inventory.length > 0) {

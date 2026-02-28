@@ -1,12 +1,13 @@
 import { Component, inject, computed, input, effect, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { CharacterHelpersService } from './character-helpers.service';
 import { RestService } from '../services/rest.service';
 import { ExportedCharacter, HitDieEntry } from '../models/character.model';
 
 @Component({
   selector: 'app-character-info-page',
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   styles: [`
     .ac-display {
       position: relative;
@@ -214,11 +215,19 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
               Languages & Proficiencies
             </h3>
             <div class="text-sm space-y-1">
-              @if (character()?.proficiencies?.custom?.length ?? 0 > 0) {
-                @for (prof of character()!.proficiencies!.custom!; track prof) {
-                  <div>{{ prof }}</div>
+              @if (toolProficiencies().length > 0) {
+                <div class="font-semibold text-on-surface-variant text-xs mb-2">Tools</div>
+                @for (toolName of toolProficiencies(); track toolName) {
+                  <div class="ml-2">{{ toolName }}</div>
                 }
-              } @else {
+              }
+              @if (customProficiencies().length > 0) {
+                <div class="font-semibold text-on-surface-variant text-xs mb-2 mt-2">Other</div>
+                @for (prof of customProficiencies(); track prof) {
+                  <div class="ml-2">{{ prof }}</div>
+                }
+              }
+              @if (toolProficiencies().length === 0 && customProficiencies().length === 0) {
                 <div class="text-on-surface-variant italic">None listed</div>
               }
             </div>
@@ -231,10 +240,38 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
           <div class="flex justify-center gap-4 mb-4">
             <div
               class="border-4 border-surface rounded-full w-24 h-24 bg-surface-container-low flex flex-col items-center justify-center shadow-lg ac-display relative"
+              [class.cursor-pointer]="!isEditingAcOverride()"
+              (click)="!isEditingAcOverride() && startEditingAc()"
             >
-              <div class="text-xs text-on-surface-variant uppercase font-semibold">AC</div>
-              <div class="text-2xl font-bold text-primary">{{ armorClassInfo().ac }}</div>
+              <div class="text-xs text-on-surface-variant uppercase font-semibold"
+              >AC</div>
+              @if (isEditingAcOverride()) {
+                <input
+                  type="number"
+                  [(ngModel)]="acOverrideInput"
+                  (keydown)="handleAcKeydown($event)"
+                  (blur)="saveAcOverride()"
+                  class="w-16 text-center text-2xl font-bold bg-transparent border-b-2 border-primary outline-none"
+                                  [class.text-teal]="acOverride() !== null"
+                [class.text-primary]="acOverride() == null"
+                  autofocus
+                />
+              } @else {
+                <div class="text-2xl font-bold "
+                [class.text-teal]="acOverride() !== null"
+                [class.text-primary]="acOverride() == null"
+                >{{ armorClassInfo().ac }}</div>
+              }
               <div class="ac-tooltip">{{ armorClassInfo().source }}</div>
+              @if (acOverride() !== null && !isEditingAcOverride()) {
+                <button
+                  (click)="resetAcOverride(); $event.stopPropagation()"
+                  class="absolute -top-2 -right-2 bg-teal text-on-teal rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-error-container transition-colors"
+                  title="Reset AC"
+                >
+                  ✕
+                </button>
+              }
             </div>
             <div
               class="border-4 border-surface rounded-full w-24 h-24 bg-surface-container-low flex flex-col items-center justify-center shadow-lg speed-display relative"
@@ -248,7 +285,7 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
                   </span>
                   @if (getSpeedsTooltip()) {
                     <span
-                      class="inline-flex h-4 w-4 items-end justify-center rounded-full border border-emerald-400 text-grey-600"
+                      class="absolute -top-2 -right-2 bg-green text-on-green rounded-full w-6 h-6 flex items-center justify-center text-xl hover:bg-error-container transition-colors"
                       aria-hidden="true"
                     >
                       +
@@ -546,6 +583,9 @@ export class CharacterInfoPageComponent {
   inventory = computed(() => this.characterData()?.inventory ?? []);
   maxHpOverrideInput = signal('');
   isEditingMaxHpOverride = signal(false);
+  acOverride = signal<number | null>(null);
+  acOverrideInput = signal('');
+  isEditingAcOverride = signal(false);
 
   constructor() {
     effect(() => {
@@ -571,6 +611,11 @@ export class CharacterInfoPageComponent {
   }
 
   armorClassInfo = computed(() => {
+    const override = this.acOverride();
+    if (override !== null) {
+      return { ac: override, source: 'Manual Override' };
+    }
+    
     const char = this.character();
     if (!char?.calculateAC) {
       // Use static AC from character data if not calculating
@@ -583,7 +628,6 @@ export class CharacterInfoPageComponent {
     const c = this.character();
     if (!c?.abilityScores) return [];
     return (Object.entries(c.abilityScores) as [string, number][]).map(([key, value]) => {
-      console.log(`Processing ability score: ${key} with value ${value}`);
       const abbr = this.helpers.abilityScoreToAbbreviation(key);
       const modifier = this.helpers.modifierNumber(value);
       const proficient = this.helpers.isProficientInSavingThrow(c, abbr);
@@ -601,7 +645,6 @@ export class CharacterInfoPageComponent {
 
   skillList = computed(() => {
     const skills = this.character()?.proficiencies?.skills ?? {};
-    console.log('Raw skills from character data:', skills);
     return this.helpers.skillDefinitions.map((skill) => {
       const rawProf = skills[skill.name.toUpperCase().replace(/\s+/g, '_')] ?? 'NONE';
       const level = this.helpers.skillProficiencyLevel(rawProf);
@@ -646,6 +689,15 @@ export class CharacterInfoPageComponent {
   });
   
   features = computed(() => this.characterData()?.features ?? []);
+
+  toolProficiencies = computed(() => {
+    const tools = this.character()?.proficiencies?.tools;
+    return tools ? Object.keys(tools) : [];
+  });
+
+  customProficiencies = computed(() => {
+    return this.character()?.proficiencies?.custom ?? [];
+  });
 
   proficiencyBonus() {
     return this.helpers.proficiencyBonus(this.character());
@@ -908,5 +960,38 @@ export class CharacterInfoPageComponent {
     if (!data) return;
     this.restService.performLongRest(data);
     this.characterRested.emit('long');
+  }
+
+  startEditingAc() {
+    const currentAc = this.armorClassInfo().ac;
+    this.acOverrideInput.set(String(currentAc));
+    this.isEditingAcOverride.set(true);
+  }
+
+  saveAcOverride() {
+    const value = parseInt(this.acOverrideInput(), 10);
+    if (!isNaN(value) && value >= 0) {
+      this.acOverride.set(value);
+    }
+    this.isEditingAcOverride.set(false);
+  }
+
+  cancelAcOverride() {
+    this.isEditingAcOverride.set(false);
+    this.acOverrideInput.set('');
+  }
+
+  resetAcOverride() {
+    this.acOverride.set(null);
+    this.isEditingAcOverride.set(false);
+    this.acOverrideInput.set('');
+  }
+
+  handleAcKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter') {
+      this.saveAcOverride();
+    } else if (event.key === 'Escape') {
+      this.cancelAcOverride();
+    }
   }
 }

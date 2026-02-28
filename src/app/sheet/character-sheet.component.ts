@@ -34,6 +34,9 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
         <!-- Top Action Bar (Save/Export/Navigation) -->
         <div class="flex gap-2 mb-6 items-center justify-between flex-wrap">
           <div class="flex gap-2 items-center">
+            <a [routerLink]="['/']" class="gap-2 px-4 py-2 bg-surface-container hover:bg-surface-container-high text-surface-container font-medium rounded-lg hover:bg-surface-container-high transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              ← Menu
+            </a>
             <button
               (click)="quickSave()"
               class="flex items-center gap-2 px-4 py-2 bg-secondary-container text-on-secondary-container font-medium rounded-lg hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -45,13 +48,6 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
                 <span>💾</span>
               }
               {{ saveStatus() ? 'Saved!' : 'Quick Save' }}
-            </button>
-            <button
-              (click)="exportJson()"
-              class="flex items-center gap-2 px-4 py-2 bg-tertiary-container text-on-tertiary-container font-medium rounded-lg hover:bg-tertiary transition-colors"
-            >
-              <span>⬇️</span>
-              Export JSON
             </button>
             <button
               (click)="generateQRCode()"
@@ -81,9 +77,6 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
             >
               🌙 Long Rest
             </button>
-            <a [routerLink]="['/']" class="px-4 py-2 text-sm text-on-surface-variant hover:text-primary transition-colors bg-surface-container rounded-lg hover:bg-surface-container-high">
-              ← Import another
-            </a>
             <button
               (click)="themeService.toggleTheme()"
               class="px-4 py-2 text-sm font-medium transition-colors rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface"
@@ -295,17 +288,6 @@ export class CharacterSheetComponent {
     });
   }
 
-  async exportJson() {
-    await this.quickSave();
-    const character = this.characterData();
-    if (!character || !character.character?.characterUuid) {
-      alert('Cannot export: no character loaded');
-      return;
-    }
-
-    this.storage.downloadCharacterAsFile(character.character.characterUuid);
-  }
-
   async generateQRCode() {
     await this.quickSave();
     const character = this.characterData();
@@ -328,7 +310,7 @@ export class CharacterSheetComponent {
       console.log('QR Code generated successfully');
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      alert(`Failed to generate QR code:\n\n${msg}\n\nTry using "Export JSON" instead and transfer the file directly.`);
+      alert(`Failed to generate QR code:\n\n${msg}\n\nTry using "Export" from the character overview instead.`);
       console.error('QR code generation error:', error);
     } finally {
       this.isGeneratingQR.set(false);

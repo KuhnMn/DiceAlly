@@ -243,7 +243,6 @@ export class CharacterHelpersService {
   }
 
   getSkillAbility(skillName: string): string {
-    console.log(`Looking up ability for skill: ${skillName}`);
     const def = this.skillDefinitions.find((d) => d.name === skillName);
     return def ? this.abilityScoreToAbbreviation(def.ability).toUpperCase() : '';
   }
@@ -302,7 +301,6 @@ export class CharacterHelpersService {
   skillProficiencyLevel(value: unknown) {
     if (typeof value === 'string') {
       const normalized = value.trim();
-      console.log(`Normalized proficiency string: "${normalized}"`);
       if (normalized === 'EXPERTISE') return 'EXPERTISE' as const;
       if (normalized === 'PROFICIENT') return 'PROFICIENT' as const;
       if (normalized === 'HALF') return 'HALF' as const;
@@ -323,7 +321,6 @@ export class CharacterHelpersService {
   }
 
   proficiencyLabel(level: 'EXPERTISE' | 'PROFICIENT' | 'HALF' | 'NONE') {
-    console.log(`Determining label for proficiency level: ${level}`);
     if (level === 'EXPERTISE') return 'EXP.';
     if (level === 'PROFICIENT') return 'PROF.';
     if (level === 'HALF') return 'HALF';
