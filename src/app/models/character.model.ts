@@ -793,7 +793,7 @@ export type ConditionName =
 
 export interface ExportedCharacter {
   installationId?: string;
-  portailUrl?: string | null;
+  portaitUrl?: string | null;
   character?: CharacterData;
   species?: Species;
   spells?: SpellEntryFull[];

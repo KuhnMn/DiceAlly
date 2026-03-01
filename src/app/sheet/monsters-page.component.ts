@@ -92,7 +92,7 @@ import { CharacterStore } from '../stores/character.store';
                 <!-- HP Tracker -->
                 @if (monster.hpEnabled) {
                   <div class="space-y-3 my-4">
-                    <div class="flex justify-between p-3 bg-primary-container rounded-md border-2 border-primary">
+                    <div class="flex flex-wrap gap-2 justify-between p-3 bg-primary-container rounded-md border-2 border-primary">
                       <div class="flex gap-3 items-center">
                       <div class="text-sm text-on-primary-container uppercase font-bold min-w-[3rem]">HP</div>
                       <input
@@ -108,7 +108,7 @@ import { CharacterStore } from '../stores/character.store';
                       [class.text-teal]="monster.monsterMaxHpOverride !== null"
                       >{{ getEffectiveMonsterMaxHP(monster) }}</div>
                       </div>
-                                          <div class="flex items-center justify-center gap-3 text-xs text-on-primary-container">
+                      <div class="flex flex-wrap items-center justify-center gap-3 text-xs text-on-primary-container">
                       <div>Base: {{ monster.monsterMaxHP ?? 0 }}</div>
                       <label class="flex items-center gap-2 text-on-primary-container">
                         <span>Override</span>

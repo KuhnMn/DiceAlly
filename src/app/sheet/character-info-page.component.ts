@@ -91,10 +91,10 @@ import { get } from 'http';
         <!-- Profile Picture -->
         <div class="col-span-1 md:col-span-1 border-2 border-surface rounded-lg p-2 bg-surface-container-low text-center content-center overflow-hidden order-2 md:order-4 aspect-square relative">
           @if (!isEditingProfilePictureUrl()) {
-            @if (characterData()?.portailUrl) {
+            @if (characterData()?.portaitUrl) {
               <div class="relative w-full h-full flex items-center justify-center cursor-pointer group" (click)="startEditingProfilePictureUrl()">
                 <img
-                  [src]="characterData()!.portailUrl"
+                  [src]="characterData()!.portaitUrl"
                   alt="Portrait of {{ character()?.name }}"
                   class="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
                 />
@@ -126,20 +126,20 @@ import { get } from 'http';
                 placeholder="Paste image URL..."
                 [(ngModel)]="profilePictureUrlInput"
                 (keydown)="handleProfilePictureUrlKeydown($event)"
-                class="w-full text-xs px-2 py-1 border-2 border-primary rounded bg-surface outline-none text-on-surface"
+                class="w-full text-xs px-1 py-0 md:px-2 md:py-1 border-2 border-primary rounded bg-surface outline-none text-on-surface"
                 autofocus
               />
-              <div class="flex gap-1">
+              <div class="flex flex-wrap justify-center gap-1">
                 <button
                   type="button"
-                  class="px-2 py-1 bg-primary text-on-primary text-xs font-semibold rounded hover:bg-primary/80 transition-colors"
+                  class="px-1 py-0 md:px-2 md:py-1 bg-primary text-on-primary text-xs font-semibold rounded hover:bg-primary/80 transition-colors"
                   (click)="saveProfilePictureUrl()"
                 >
                   Save
                 </button>
                 <button
                   type="button"
-                  class="px-2 py-1 bg-surface-variant text-on-surface-variant text-xs font-semibold rounded hover:bg-surface-variant/80 transition-colors"
+                  class="px-1 py-0 md:px-2 md:py-1 bg-surface-variant text-on-surface-variant text-xs font-semibold rounded hover:bg-surface-variant/80 transition-colors"
                   (click)="cancelProfilePictureUrlEdit()"
                 >
                   Cancel
@@ -1126,7 +1126,7 @@ export class CharacterInfoPageComponent {
   }
 
   startEditingProfilePictureUrl() {
-    const url = this.characterData()?.portailUrl ?? '';
+    const url = this.characterData()?.portaitUrl ?? '';
     this.profilePictureUrlInput.set(url);
     this.isEditingProfilePictureUrl.set(true);
   }
@@ -1135,7 +1135,7 @@ export class CharacterInfoPageComponent {
     const char = this.characterData();
     if (!char) return;
     const trimmed = this.profilePictureUrlInput().trim();
-    char.portailUrl = trimmed.length > 0 ? trimmed : null;
+    char.portaitUrl = trimmed.length > 0 ? trimmed : null;
     this.isEditingProfilePictureUrl.set(false);
     this.profilePictureUrlInput.set('');
   }
@@ -1156,7 +1156,7 @@ export class CharacterInfoPageComponent {
   removeProfilePicture() {
     const char = this.characterData();
     if (char) {
-      char.portailUrl = null;
+      char.portaitUrl = null;
     }
   }
 

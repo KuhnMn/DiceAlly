@@ -269,6 +269,10 @@ export class CharacterStorageService {
         };
       }
 
+      if (existing && options?.overrideExisting && existing.portaitUrl &&  imported.portaitUrl == null) {
+        imported.portaitUrl = existing.portaitUrl;
+      }
+
       // Save the imported character
       const result = this.saveCharacter(imported);
 

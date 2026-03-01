@@ -88,11 +88,10 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
         </div>
 
         <!-- Page Navigation Tabs -->
-        <nav class="flex flex-wrap gap-2 mb-6 border-b-2 border-outline items-center">
-
+        <nav class="flex flex-wrap-reverse flex-row-reverse justify-between mb-6 items-center">
           <button
             (click)="currentPage.set(1)"
-            class="px-6 py-3 font-semibold transition-colors"
+            class="px-6 py-3 font-semibold transition-colors flex-auto order-6 border-b-2 border-outline"
             [class.border-b-4]="currentPage() === 1"
             [class.border-primary]="currentPage() === 1"
             [class.text-primary]="currentPage() === 1"
@@ -121,7 +120,7 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
           </button>
           <button
             (click)="currentPage.set(2)"
-            class="px-6 py-3 font-semibold transition-colors"
+            class="px-6 py-3 font-semibold transition-colors flex-auto order-4 border-b-2 border-outline"
             [class.border-b-4]="currentPage() === 2"
             [class.border-primary]="currentPage() === 2"
             [class.text-primary]="currentPage() === 2"
@@ -131,7 +130,7 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
           </button>
           <button
             (click)="currentPage.set(3)"
-            class="px-6 py-3 font-semibold transition-colors"
+            class="px-6 py-3 font-semibold transition-colors flex-auto order-3 border-b-2 border-outline"
             [class.border-b-4]="currentPage() === 3"
             [class.border-primary]="currentPage() === 3"
             [class.text-primary]="currentPage() === 3"
@@ -141,7 +140,7 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
           </button>
           <button
             (click)="currentPage.set(4)"
-            class="px-6 py-3 font-semibold transition-colors"
+            class="px-6 py-3 font-semibold transition-colors flex-auto order-2 border-b-2 border-outline"
             [class.border-b-4]="currentPage() === 4"
             [class.border-primary]="currentPage() === 4"
             [class.text-primary]="currentPage() === 4"
@@ -151,7 +150,7 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
           </button>
           <button
             (click)="currentPage.set(5)"
-            class="px-6 py-3 font-semibold transition-colors"
+            class="px-6 py-3 font-semibold transition-colors flex-auto order-1 border-b-2 border-outline"
             [class.border-b-4]="currentPage() === 5"
             [class.border-primary]="currentPage() === 5"
             [class.text-primary]="currentPage() === 5"
@@ -161,7 +160,7 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
           </button>
           <button
             (click)="currentPage.set(6)"
-            class="px-6 py-3 font-semibold transition-colors"
+            class="px-6 py-3 font-semibold transition-colors flex-auto order-0 border-b-2 border-outline"
             [class.border-b-4]="currentPage() === 6"
             [class.border-primary]="currentPage() === 6"
             [class.text-primary]="currentPage() === 6"
