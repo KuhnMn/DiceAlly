@@ -720,12 +720,6 @@ export class CharacterInfoPageComponent {
       const char = this.character();
       if (!char) return;
 
-      if (char.maxHpOverride === null || char.maxHpOverride === undefined) {
-        if (typeof char.maxHp === 'number') {
-          char.maxHpOverride = char.maxHp;
-        }
-      }
-
       if (!this.isEditingMaxHpOverride()) {
         const overrideValue = char.maxHpOverride ?? char.maxHp ?? 0;
         this.maxHpOverrideInput.set(String(overrideValue));
