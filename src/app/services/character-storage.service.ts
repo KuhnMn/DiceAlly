@@ -426,6 +426,8 @@ export class CharacterStorageService {
     if (character.character?.hitDice) minimalCharacter.hitDice = character.character.hitDice;
     if (character.character?.currency) minimalCharacter.currency = character.character.currency;
     if (character.character?.spellSlots) minimalCharacter.spellSlots = character.character.spellSlots;
+    if (character.character?.deathSavesSuccesses !== undefined) minimalCharacter.deathSavesSuccesses = character.character.deathSavesSuccesses;
+    if (character.character?.deathSavesFailures !== undefined) minimalCharacter.deathSavesFailures = character.character.deathSavesFailures;
     minimalCharacter.hasInspiration = character.character?.hasInspiration;
 
     // Helper to remove null/undefined from objects
@@ -501,6 +503,16 @@ export class CharacterStorageService {
     }));
     if (inventory && inventory.length > 0) {
       result.inventory = inventory;
+    }
+    const monsters = character.monsters?.filter((monster) => monster.hpEnabled).map((monster) => cleanObject({
+      name: monster.name,
+      source: monster.source,
+      monsterCurrentHP: monster.monsterCurrentHP,
+      monsterTempHP: monster.monsterTempHP,
+      monsterMaxHpOverride: monster.monsterMaxHpOverride,
+    }));
+    if (monsters && monsters.length > 0) {
+      result.monsters = monsters;
     }
 
     return result;

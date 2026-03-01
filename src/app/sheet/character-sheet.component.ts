@@ -88,7 +88,8 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
         </div>
 
         <!-- Page Navigation Tabs -->
-        <nav class="flex flex-wrap gap-2 mb-6 border-b-2 border-outline">
+        <nav class="flex flex-wrap gap-2 mb-6 border-b-2 border-outline items-end">
+
           <button
             (click)="currentPage.set(1)"
             class="px-6 py-3 font-semibold transition-colors"
@@ -97,7 +98,26 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
             [class.text-primary]="currentPage() === 1"
             [class.text-on-surface-variant]="currentPage() !== 1"
           >
-            Character
+          <div class="flex items-center justify-center gap-2">
+            <span>
+              Sheet
+            </span>
+            
+            <div 
+            class="border-1 px-1 border-primary rounded-xl bg-primary-container text-center content-center overflow-hidden transition-all duration-350 ease-in"
+            [class.opacity-0]="!characterData()?.character?.name || currentPage() === 1"
+            [class.opacity-100]="characterData()?.character?.name && currentPage() !== 1"
+            [class.max-w-0]="!characterData()?.character?.name || currentPage() === 1"
+            [class.max-w-xs]="characterData()?.character?.name && currentPage() !== 1"
+            [class.pointer-events-none]="!characterData()?.character?.name || currentPage() === 1"
+            [class.-mb-50]="!characterData()?.character?.name || currentPage() === 1"
+            [class.mb-0]="characterData()?.character?.name && currentPage() !== 1"
+          >
+              <div class="text-xs text-on-primary-container whitespace-nowrap">{{ characterData()?.character?.name }}</div>
+          </div>
+          </div>
+
+
           </button>
           <button
             (click)="currentPage.set(2)"
@@ -186,12 +206,14 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
 
       <!-- QR Code Modal -->
       @if (qrCodeUrl()) {
-        <app-qr-code-modal
-          [character]="characterData()"
-          [qrCodeUrl]="qrCodeUrl()"
-          [jsonSize]="qrJsonSize()"
-          (close)="closeQRCode()"
-        />
+        <div class="transition-opacity duration-300">
+          <app-qr-code-modal
+            [character]="characterData()"
+            [qrCodeUrl]="qrCodeUrl()"
+            [jsonSize]="qrJsonSize()"
+            (close)="closeQRCode()"
+          />
+        </div>
       }
     </main>
   `,

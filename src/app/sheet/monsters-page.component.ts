@@ -91,18 +91,69 @@ import { CharacterStore } from '../stores/character.store';
               @if (monster.entity) {
                 <!-- HP Tracker -->
                 @if (monster.hpEnabled) {
-                  <div class="flex gap-3 items-center my-4 p-3 bg-primary-container rounded-md border-2 border-primary">
-                    <div class="text-sm text-on-primary-container uppercase font-bold">HP</div>
-                    <input
-                      type="number"
-                      [value]="monster.monsterCurrentHP ?? monster.monsterMaxHP ?? 0"
-                      (input)="updateMonsterHP(monster, $any($event.target).value)"
-                      class=" text-on-primary-container w-24 p-2 border-2 border-primary rounded-md text-base font-bold focus:ring-2 focus:ring-primary focus:border-primary"
-                      min="0"
-                      [max]="monster.monsterMaxHP ?? 0"
-                    >
-                    <div class="text-on-primary-container">/</div>
-                    <div class="text-on-primary-container font-bold">{{ monster.monsterMaxHP }}</div>
+                  <div class="space-y-3 my-4">
+                    <div class="flex justify-between p-3 bg-primary-container rounded-md border-2 border-primary">
+                      <div class="flex gap-3 items-center">
+                      <div class="text-sm text-on-primary-container uppercase font-bold min-w-[3rem]">HP</div>
+                      <input
+                        type="number"
+                        [value]="monster.monsterCurrentHP ?? getEffectiveMonsterMaxHP(monster)"
+                        (input)="updateMonsterHP(monster, $any($event.target).value)"
+                        class="text-on-primary-container w-20 p-2 border-2 border-primary rounded-md text-base font-bold focus:ring-2 focus:ring-primary focus:border-primary"
+                        min="0"
+                        [max]="getEffectiveMonsterMaxHP(monster)"
+                      >
+                      <div class="text-on-primary-container">/</div>
+                      <div class="text-on-primary-container font-bold">{{ getEffectiveMonsterMaxHP(monster) }}</div>
+                      </div>
+                                          <div class="flex items-center justify-center gap-3 text-xs text-on-primary-container">
+                      <div>Base: {{ monster.monsterMaxHP ?? 0 }}</div>
+                      <label class="flex items-center gap-2 text-on-primary-container">
+                        <span>Override</span>
+                        <input
+                          type="number"
+                          [value]="getMonsterMaxHpOverrideInput(monster)"
+                          (input)="onMonsterMaxHpOverrideInput(monster, $any($event.target).value)"
+                          (change)="commitMonsterMaxHpOverride(monster)"
+                          (blur)="commitMonsterMaxHpOverride(monster)"
+                          class="w-20 px-2 py-1 border border-primary rounded-md text-center focus:ring-2 focus:ring-primary focus:border-primary"
+                          min="0"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        class="px-2 py-1 border border-primary rounded-md hover:bg-surface-container"
+                        (click)="clearMonsterMaxHpOverride(monster)"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    </div>
+
+                    
+                    <!-- Max HP Override -->
+
+                    
+                    <!-- Temp HP -->
+                    <div class="flex gap-3 items-center p-3 bg-secondary-container rounded-md border-2 border-green">
+                      <div class="text-sm text-on-secondary-container uppercase font-bold min-w-[3rem]">Temp HP</div>
+                      <input
+                        type="number"
+                        [value]="monster.monsterTempHP ?? 0"
+                        (input)="updateMonsterTempHP(monster, $any($event.target).value)"
+                        class="text-on-secondary-container w-24 p-2 border-2 border-green rounded-md text-base font-bold focus:ring-2 focus:ring-green focus:border-green"
+                        min="0"
+                      >
+                      @if (monster.monsterTempHP && monster.monsterTempHP > 0) {
+                        <button
+                          (click)="clearMonsterTempHP(monster)"
+                          class="px-2 py-1 bg-secondary text-on-secondary rounded text-xs font-semibold transition-colors"
+                          title="Clear temp HP"
+                        >
+                          Clear
+                        </button>
+                      }
+                    </div>
                   </div>
                 }
 
@@ -473,8 +524,65 @@ export class MonstersPageComponent {
   updateMonsterHP(monster: Monster, value: string) {
     const numValue = Number(value);
     if (Number.isFinite(numValue)) {
-      monster.monsterCurrentHP = Math.max(0, Math.min(numValue, monster.monsterMaxHP ?? 0));
+      const maxHP = this.getEffectiveMonsterMaxHP(monster);
+      monster.monsterCurrentHP = Math.max(0, Math.min(numValue, maxHP ?? 0));
     }
+  }
+
+  getEffectiveMonsterMaxHP(monster: Monster): number {
+    if (monster.monsterMaxHpOverride !== null && monster.monsterMaxHpOverride !== undefined) {
+      return monster.monsterMaxHpOverride;
+    }
+    return monster.monsterMaxHP ?? 0;
+  }
+
+  getMonsterMaxHpOverrideInput(monster: Monster): string {
+    if (monster.monsterMaxHpOverride !== null && monster.monsterMaxHpOverride !== undefined) {
+      return String(monster.monsterMaxHpOverride);
+    }
+    return String(monster.monsterMaxHP ?? 0);
+  }
+
+  onMonsterMaxHpOverrideInput(monster: Monster, value: string) {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      monster.monsterMaxHpOverride = monster.monsterMaxHP ?? 0;
+    } else {
+      const numValue = Number(trimmed);
+      if (Number.isFinite(numValue) && numValue > 0) {
+        monster.monsterMaxHpOverride = numValue;
+      } else {
+        monster.monsterMaxHpOverride = monster.monsterMaxHP ?? 0;
+      }
+    }
+  }
+
+  commitMonsterMaxHpOverride(monster: Monster) {
+    // Adjust current HP if it exceeds new max
+    const maxHP = this.getEffectiveMonsterMaxHP(monster);
+    if (monster.monsterCurrentHP && monster.monsterCurrentHP > maxHP) {
+      monster.monsterCurrentHP = maxHP;
+    }
+  }
+
+  clearMonsterMaxHpOverride(monster: Monster) {
+    monster.monsterMaxHpOverride = null;
+    // Adjust current HP if it exceeds base max
+    const baseMax = monster.monsterMaxHP ?? 0;
+    if (monster.monsterCurrentHP && monster.monsterCurrentHP > baseMax) {
+      monster.monsterCurrentHP = baseMax;
+    }
+  }
+
+  updateMonsterTempHP(monster: Monster, value: string) {
+    const numValue = Number(value);
+    if (Number.isFinite(numValue)) {
+      monster.monsterTempHP = Math.max(0, numValue);
+    }
+  }
+
+  clearMonsterTempHP(monster: Monster) {
+    monster.monsterTempHP = 0;
   }
 
   toggleExpanded(id: string) {

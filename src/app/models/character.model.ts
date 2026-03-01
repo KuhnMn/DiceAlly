@@ -655,6 +655,8 @@ export interface CharacterData {
   calculateAC?: boolean;
   unarmoredDefense?: AbilityScores | null;
   characterUuid?: string;
+  deathSavesSuccesses?: number;
+  deathSavesFailures?: number;
 }
 
 export interface ImmuneResistVulnerable {
@@ -741,6 +743,8 @@ export interface Monster {
   monsterCurrentHP?: number;
   userAdded?: boolean;
   entity?: MonsterEntity;
+  monsterTempHP?: number;
+  monsterMaxHpOverride?: number | null;
 }
 
 export interface Note {
@@ -753,6 +757,7 @@ export interface Note {
 
 export interface ExportedCharacter {
   installationId?: string;
+  portailUrl?: string | null;
   character?: CharacterData;
   species?: Species;
   spells?: SpellEntryFull[];

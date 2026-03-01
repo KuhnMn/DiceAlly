@@ -85,19 +85,80 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
       class="character-sheet bg-surface-container-highest p-6 rounded-lg border-2 border-outline"
     >
       <!-- Header Banner -->
-      <header class="grid grid-cols-2 md:grid-cols-5 gap-2 mb-6">
-        <div class="col-span-1 border-2 border-secondary rounded-lg p-2 bg-secondary-container text-center content-center overflow-wrap order-2 md:order-1">
-          <div class="text-xs text-on-secondary-container uppercase font-semibold overflow-wrap">Level / XP</div>
+      <header class="grid grid-cols-5 md:grid-cols-9 gap-2 mb-6">
+        <!-- Profile Picture -->
+        <div class="col-span-1 md:col-span-1 border-2 border-surface rounded-lg p-2 bg-surface-container-low text-center content-center overflow-hidden order-2 md:order-4 aspect-square relative">
+          @if (!isEditingProfilePictureUrl()) {
+            @if (characterData()?.portailUrl) {
+              <div class="relative w-full h-full flex items-center justify-center cursor-pointer group" (click)="startEditingProfilePictureUrl()">
+                <img
+                  [src]="characterData()!.portailUrl"
+                  alt="Portrait of {{ character()?.name }}"
+                  class="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
+                />
+                <div class="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity flex items-center justify-center">
+                  <span class="text-white text-2xl opacity-0 group-hover:opacity-100 transition-opacity">✎</span>
+                </div>
+              </div>
+              <button
+                (click)="removeProfilePicture(); $event.stopPropagation()"
+                class="absolute top-1 right-1 bg-primary text-on-primary rounded-full w-3 h-3 flex items-center justify-center text-xs hover:bg-error/80 transition-colors"
+                title="Remove profile picture"
+              >
+                ✕
+              </button>
+            } @else {
+              <button
+                type="button"
+                class="w-full h-full flex flex-col items-center justify-center gap-1 text-on-surface-variant hover:bg-surface-container-highest transition-colors"
+                (click)="startEditingProfilePictureUrl()"
+              >
+                <span class="text-2xl">🖼️</span>
+                <span class="text-xs uppercase font-semibold">Add Picture</span>
+              </button>
+            }
+          } @else {
+            <div class="w-full h-full flex flex-col items-center justify-center gap-2 p-2">
+              <input
+                type="text"
+                placeholder="Paste image URL..."
+                [(ngModel)]="profilePictureUrlInput"
+                (keydown)="handleProfilePictureUrlKeydown($event)"
+                class="w-full text-xs px-2 py-1 border-2 border-primary rounded bg-surface outline-none text-on-surface"
+                autofocus
+              />
+              <div class="flex gap-1">
+                <button
+                  type="button"
+                  class="px-2 py-1 bg-primary text-on-primary text-xs font-semibold rounded hover:bg-primary/80 transition-colors"
+                  (click)="saveProfilePictureUrl()"
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  class="px-2 py-1 bg-surface-variant text-on-surface-variant text-xs font-semibold rounded hover:bg-surface-variant/80 transition-colors"
+                  (click)="cancelProfilePictureUrlEdit()"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="col-span-2 md:col-span-2 border-2 border-secondary rounded-lg p-2 bg-secondary-container text-center content-center overflow-wrap order-1 md:order-2">
+          <div class="text-xs text-on-secondary-container uppercase font-semibold overflow-wrap">Level</div>
           <div class="text-2xl font-bold text-on-secondary-container">{{ character()?.level ?? 1 }}</div>
         </div>
-        <div class="col-span-1 border-2 border-secondary rounded-lg p-2 bg-secondary-container text-center content-center overflow-wrap order-3 md:order-2">
+        <div class="col-span-5 md:col-span-2 border-2 border-secondary rounded-lg p-2 bg-secondary-container text-center content-center overflow-wrap order-4 md:order-3">
           <div class="text-xs text-on-secondary-container uppercase font-semibold">Description</div>
           <div class="text-sm font-medium text-on-secondary-container">{{ character()?.description || '—' }}</div>
         </div>
-        <div class="col-span-2 md:col-span-1 border-2 border-primary rounded-lg p-2 bg-primary-container text-center content-center overflow-wrap order-1 md:order-3">
+        <div class="col-span-5 md:col-span-9 border-2 border-primary rounded-lg p-2 bg-primary-container text-center content-center overflow-wrap md:order-0 order-0">
           <div class="text-xl font-bold text-on-primary-container">{{ character()?.name }}</div>
         </div>
-        <div class="col-span-1 border-2 border-secondary rounded-lg p-2 bg-secondary-container text-center content-center overflow-wrap order-4 md:order-4">
+        <div class="col-span-5 md:col-span-2 border-2 border-secondary rounded-lg p-2 bg-secondary-container text-center content-center overflow-wrap order-5 md:order-5">
           <div class="text-xs text-on-secondary-container uppercase font-semibold">Species</div>
           @if (characterData()?.species?.name) {
             <button
@@ -111,7 +172,7 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
             <div class="text-sm font-medium text-on-secondary-container">—</div>
           }
         </div>
-        <div class="col-span-1 border-2 border-secondary rounded-lg p-2 bg-secondary-container text-center content-center overflow-wrap order-5 md:order-5">
+        <div class="col-span-2 md:col-span-2 border-2 border-secondary rounded-lg p-2 bg-secondary-container text-center content-center overflow-wrap order-3 md:order-6">
           <div class="text-xs text-on-secondary-container uppercase font-semibold">Inspiration</div>
           <input
             id="inspiration-checkbox"
@@ -401,6 +462,45 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
                   <div class="text-lg font-semibold">{{ character()?.hitDice ?? 'N/A' }}</div>
                 }
               </div>
+
+              <div class="mt-4 pt-4 border-t-2 border-outline-variant">
+                <div class="text-xs text-on-surface-variant uppercase font-semibold mb-2">Death Saves</div>
+                <div class="flex items-center justify-center gap-6">
+                  <!-- Failures -->
+                  <div class="flex items-center gap-2">
+                    
+                    <div class="flex flex-row-reverse gap-1">
+                      @for (i of [0, 1, 2]; track i) {
+                        <label class="flex  items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            [checked]="(character()?.deathSavesFailures ?? 0) > i"
+                            (change)="toggleDeathSaveFailure(i)"
+                            class="w-4 h-4 rounded border-2 border-primary accent-primary cursor-pointer"
+                          />
+                        </label>
+                      }
+                    </div>
+                    <span class="text-xs text-primary font-semibold">🕯</span>
+                  </div>
+                  <!-- Successes -->
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-tertiary font-semibold">❤</span>
+                    <div class="flex gap-1">
+                      @for (i of [0, 1, 2]; track i) {
+                        <label class="flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            [checked]="(character()?.deathSavesSuccesses ?? 0) > i"
+                            (change)="toggleDeathSaveSuccess(i)"
+                            class="w-4 h-4 rounded border-2 border-tertiary accent-tertiary cursor-pointer"
+                          />
+                        </label>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -586,6 +686,8 @@ export class CharacterInfoPageComponent {
   acOverride = signal<number | null>(null);
   acOverrideInput = signal('');
   isEditingAcOverride = signal(false);
+  isEditingProfilePictureUrl = signal(false);
+  profilePictureUrlInput = signal('');
 
   constructor() {
     effect(() => {
@@ -992,6 +1094,71 @@ export class CharacterInfoPageComponent {
       this.saveAcOverride();
     } else if (event.key === 'Escape') {
       this.cancelAcOverride();
+    }
+  }
+
+  startEditingProfilePictureUrl() {
+    const url = this.characterData()?.portailUrl ?? '';
+    this.profilePictureUrlInput.set(url);
+    this.isEditingProfilePictureUrl.set(true);
+  }
+
+  saveProfilePictureUrl() {
+    const char = this.characterData();
+    if (!char) return;
+    const trimmed = this.profilePictureUrlInput().trim();
+    char.portailUrl = trimmed.length > 0 ? trimmed : null;
+    this.isEditingProfilePictureUrl.set(false);
+    this.profilePictureUrlInput.set('');
+  }
+
+  cancelProfilePictureUrlEdit() {
+    this.isEditingProfilePictureUrl.set(false);
+    this.profilePictureUrlInput.set('');
+  }
+
+  handleProfilePictureUrlKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter') {
+      this.saveProfilePictureUrl();
+    } else if (event.key === 'Escape') {
+      this.cancelProfilePictureUrlEdit();
+    }
+  }
+
+  removeProfilePicture() {
+    const char = this.characterData();
+    if (char) {
+      char.portailUrl = null;
+    }
+  }
+
+  toggleDeathSaveFailure(index: number) {
+    const char = this.character();
+    if (!char) return;
+    const currentFailures = char.deathSavesFailures ?? 0;
+    const isChecked = currentFailures > index;
+    
+    if (isChecked) {
+      // Uncheck: remove this failure
+      char.deathSavesFailures = index;
+    } else {
+      // Check: add this failure (must be in sequence)
+      char.deathSavesFailures = index + 1;
+    }
+  }
+
+  toggleDeathSaveSuccess(index: number) {
+    const char = this.character();
+    if (!char) return;
+    const currentSuccesses = char.deathSavesSuccesses ?? 0;
+    const isChecked = currentSuccesses > index;
+    
+    if (isChecked) {
+      // Uncheck: remove this success
+      char.deathSavesSuccesses = index;
+    } else {
+      // Check: add this success (must be in sequence)
+      char.deathSavesSuccesses = index + 1;
     }
   }
 }

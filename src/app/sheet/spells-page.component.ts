@@ -192,7 +192,7 @@ import { CharacterStore } from '../stores/character.store';
                                   [class.text-on-blue]="!hasSpellListType(spell, type)"
                                   class="text-xs px-2 py-0.5 rounded cursor-pointer hover:opacity-80 transition-opacity"
                                 >
-                                  {{ (hasSpellListType(spell, type) ? '- ' : '+ ') + type }}
+                                  {{ determineIconForSpell(spell) + " " + type }}
                                 </button>
                               } @else {
                                 <span
@@ -404,7 +404,9 @@ export class SpellsPageComponent {
     const allSpells = this.characterData()?.spells ?? [];
     const key = this.spellKey(spell);
     const isPrepared = this.hasSpellListType(spell, 'PREPARED');
-    
+    if (this.hasUses(spell)) {
+      return; // Don't allow toggling if the spell has uses (e.g., limited daily casts)
+    }
     if (isPrepared) {
       // Remove the PREPARED version
       const index = allSpells.findIndex((s) => this.spellKey(s) === key && s.listType === 'PREPARED');
@@ -555,6 +557,21 @@ export class SpellsPageComponent {
       if (useEntry) {
         useEntry.usedFreeUses = event.usedFreeUses;
       }
+    }
+  }
+
+  hasUses(spell: any): boolean {
+    return spell.uses !== undefined && spell.uses.length > 0;
+  }
+
+  determineIconForSpell(spell: any): string {
+    if (this.hasUses(spell)) {
+      return '🔒';
+    }
+    if (this.hasSpellListType(spell, 'PREPARED')) {
+      return '-';
+    } else {
+      return '+'
     }
   }
 }
