@@ -104,7 +104,9 @@ import { CharacterStore } from '../stores/character.store';
                         [max]="getEffectiveMonsterMaxHP(monster)"
                       >
                       <div class="text-on-primary-container">/</div>
-                      <div class="text-on-primary-container font-bold">{{ getEffectiveMonsterMaxHP(monster) }}</div>
+                      <div class="text-on-primary-container font-bold"
+                      [class.text-teal]="monster.monsterMaxHpOverride !== null"
+                      >{{ getEffectiveMonsterMaxHP(monster) }}</div>
                       </div>
                                           <div class="flex items-center justify-center gap-3 text-xs text-on-primary-container">
                       <div>Base: {{ monster.monsterMaxHP ?? 0 }}</div>
@@ -122,7 +124,8 @@ import { CharacterStore } from '../stores/character.store';
                       </label>
                       <button
                         type="button"
-                        class="px-2 py-1 border border-primary rounded-md hover:bg-surface-container"
+                        class="px-2 py-1 border border-primary rounded-md hover:bg-primary text-on-primary-containerhover:border-surface hover:text-on-primary transition-colors text-xs font-semibold "
+                        [class.border-teal]="monster.monsterMaxHpOverride !== null"
                         (click)="clearMonsterMaxHpOverride(monster)"
                       >
                         Clear
@@ -147,7 +150,7 @@ import { CharacterStore } from '../stores/character.store';
                       @if (monster.monsterTempHP && monster.monsterTempHP > 0) {
                         <button
                           (click)="clearMonsterTempHP(monster)"
-                          class="px-2 py-1 bg-secondary text-on-secondary rounded text-xs font-semibold transition-colors"
+                          class="px-2 py-1 bg-secondary-container border border-secondary text-on-secondary rounded text-xs font-semibold transition-colors hover:bg-secondary hover:text-on-secondary"
                           title="Clear temp HP"
                         >
                           Clear

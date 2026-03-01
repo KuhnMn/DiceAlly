@@ -238,6 +238,12 @@ body {
 .hover\:border-tertiary:hover { border-color: var(--md-sys-color-tertiary); }
 
 .hover\:text-primary:hover { color: var(--md-sys-color-primary); }
+.hover\:bg-primary:hover { background-color: var(--md-sys-color-primary); }
+.hover\:bg-primary-container:hover { background-color: var(--md-sys-color-primary-container); }
+.hover\:bg-secondary:hover { background-color: var(--md-sys-color-secondary); }
+.hover\:bg-secondary-container:hover { background-color: var(--md-sys-color-secondary-container); }
+.hover\:bg-tertiary:hover { background-color: var(--md-sys-color-tertiary); }
+.hover\:bg-tertiary-container:hover { background-color: var(--md-sys-color-tertiary-container); }
 .hover\:bg-surface:hover { background-color: var(--md-sys-color-surface); }
 .hover\:bg-surface-container-lowest:hover { background-color: var(--md-sys-color-surface-container-lowest); }
 .hover\:bg-surface-container-low:hover { background-color: var(--md-sys-color-surface-container-low); }
