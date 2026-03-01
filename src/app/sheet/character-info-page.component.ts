@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CharacterHelpersService } from './character-helpers.service';
 import { RestService } from '../services/rest.service';
-import { ExportedCharacter, HitDieEntry } from '../models/character.model';
+import { ExportedCharacter, HitDieEntry, ConditionName } from '../models/character.model';
+import { ConditionsComponent } from './conditions.component';
+import { get } from 'http';
 
 @Component({
   selector: 'app-character-info-page',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ConditionsComponent],
   styles: [`
     .ac-display {
       position: relative;
@@ -163,7 +165,7 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
           @if (characterData()?.species?.name) {
             <button
               type="button"
-              class="text-sm font-medium text-tertiary underline"
+              class="text-sm font-medium text-tertiary underline cursor-pointer hover:opacity-80 transition-all"
               (click)="goToSpecies()"
             >
               {{ characterData()?.species?.name }}
@@ -178,7 +180,7 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
             id="inspiration-checkbox"
             type="checkbox"
             value="{{ character()?.hasInspiration }}"
-            class="appearance-none w-8 h-8 text-tertiary border-2 border-outline-variant rounded bg-surface-container-high cursor-pointer inline-flex items-center justify-center relative transition-all hover:border-tertiary checked:bg-tertiary-container checked:border-tertiary checked:after:content-['★'] checked:after:text-2xl checked:after:text-tertiary checked:after:absolute focus:ring-2 focus:ring-tertiary"
+            class="appearance-none w-8 h-8 hover:border-tertiary hover:border-3 text-tertiary border-2 border-outline-variant rounded bg-surface-container-high cursor-pointer inline-flex items-center justify-center relative transition-all  checked:bg-tertiary-container checked:border-tertiary checked:after:content-['★'] checked:after:text-2xl checked:after:text-tertiary checked:after:absolute focus:ring-2 focus:ring-tertiary"
             (change)="toggleInspiration()"
             [checked]="character()?.hasInspiration ?? false"
           />
@@ -369,7 +371,10 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
 
           <!-- HP Tracker -->
           <div class="border-4 border-surface rounded-3xl p-6 bg-surface-container-low shadow-lg">
-            <div class="text-center">
+                      <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
+              Health
+            </h3>  
+          <div class="text-center">
               <div class="text-xs text-on-surface-variant uppercase font-semibold mb-2">Hit Points</div>
               <div class="mt-4">
 
@@ -381,7 +386,8 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
                   min="0"
                   max="{{ getEffectiveMaxHp() }}"
                 />
-                <span class="text-4xl font-bold"> / {{ getEffectiveMaxHp() }}</span>
+                <span class="text-4xl font-bold transition-colors duration-300"
+                [class.text-teal]="character()?.maxHpOverride !== null"> / {{ getEffectiveMaxHp() }}</span>
               </div>
                             <div class="mt-2 flex items-center justify-center gap-4 text-xs text-on-surface-variant">
                 <div>Base: {{ character()?.maxHp ?? 0 }}</div>
@@ -394,13 +400,14 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
                     (input)="onMaxHpOverrideInput($any($event.target).value)"
                     (change)="commitMaxHpOverride()"
                     (blur)="commitMaxHpOverride()"
-                    class="w-20 px-2 py-1 border border-outline-variant rounded-md text-center focus:ring-2 focus:ring-rose focus:border-rose"
+                    class="w-20 px-2 py-1 border border-outline-variant rounded-md text-center focus:ring-2 focus:ring-teal focus:border-teal"
                     min="0"
                   />
                 </label>
                 <button
                   type="button"
-                  class="px-2 py-1 border border-outline-variant rounded-md text-on-surface-variant hover:bg-surface-container"
+                  class="transition-colors duration-300 px-2 py-1 border border-outline-variant rounded-md text-on-surface-variant hover:bg-surface-container"
+                  [class.border-teal]="character()?.maxHpOverride !== null"
                   (click)="clearMaxHpOverride()"
                 >
                   Clear
@@ -419,7 +426,7 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
               </div>
 
               <!-- Rest Buttons -->
-              <div class="mt-4 pt-4 border-t-2 border-outline-variant flex gap-2">
+<!--               <div class="mt-4 pt-4 border-t-2 border-outline-variant flex gap-2">
                 <button
                   (click)="performShortRest()"
                   class="flex-1 px-4 py-2 bg-blue-container text-on-blue-container font-semibold rounded-lg hover:bg-blue transition-colors text-sm"
@@ -434,7 +441,7 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
                 >
                   Long Rest
                 </button>
-              </div>
+              </div> -->
 
               <div class="mt-4 pt-4 border-t-2 border-outline-variant">
                 <div class="text-xs text-on-surface-variant uppercase font-semibold">Hit Dice</div>
@@ -504,6 +511,17 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
             </div>
           </div>
 
+          <!-- Conditions Card -->
+          <div class="border-4 border-surface rounded-lg p-4 bg-surface-container-low shadow-lg">
+            <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
+              Conditions
+            </h3>
+            <app-conditions
+              [activeConditions]="activeConditions()"
+              (conditionsChanged)="onConditionsChanged($event)"
+            />
+          </div>
+
           <!-- Combat Actions -->
           <div class="border-4 border-surface rounded-lg p-4 bg-surface-container-low shadow-lg">
             <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
@@ -523,7 +541,7 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
                             type="button"
                             [disabled]="!isActionClickable(action)"
                             (click)="navigateToCombatAction(action)"
-                            class="w-full text-left p-2 rounded transition-colors border-2 bg-surface-container"
+                            class="w-full text-left p-2 rounded transition-colors duration-300 border-2 bg-surface-container"
                             [class.border-blue]="getCombatActionLinkType(action) === 'feature'"
                             [class.border-rose]="getCombatActionLinkType(action) === 'species'"
                             [class.border-purple]="getCombatActionLinkType(action) === 'spell'"
@@ -645,7 +663,7 @@ import { ExportedCharacter, HitDieEntry } from '../models/character.model';
                   <div class="pb-2 border-b border-outline-variant">
                     <button
                       type="button"
-                      class="font-bold text-tertiary underline"
+                      class="font-bold text-tertiary underline cursor-pointer hover:opacity-80 transition-all"
                       (click)="goToFeature(feature)"
                     >
                       {{ feature.name }}
@@ -688,8 +706,16 @@ export class CharacterInfoPageComponent {
   isEditingAcOverride = signal(false);
   isEditingProfilePictureUrl = signal(false);
   profilePictureUrlInput = signal('');
+  activeConditions = signal<ConditionName[]>([]);
 
   constructor() {
+    effect(() => {
+      const data = this.characterData();
+      if (data?.conditions) {
+        this.activeConditions.set(data.conditions);
+      }
+    });
+
     effect(() => {
       const char = this.character();
       if (!char) return;
@@ -866,11 +892,19 @@ export class CharacterInfoPageComponent {
   clearMaxHpOverride() {
     const char = this.character();
     if (!char) return;
-    char.maxHpOverride = char.maxHp ?? 0;
-    if (typeof char.currentHp === 'number' && char.currentHp > char.maxHpOverride) {
-      char.currentHp = char.maxHpOverride;
+    char.maxHpOverride = null;
+    if (typeof char.currentHp === 'number' && char.currentHp > this.getEffectiveMaxHp()) {
+      char.currentHp = this.getEffectiveMaxHp();
     }
-    this.maxHpOverrideInput.set(String(char.maxHpOverride ?? 0));
+    this.maxHpOverrideInput.set(String(char.maxHp ?? 0));
+  }
+
+  onConditionsChanged(conditions: ConditionName[]) {
+    const data = this.characterData();
+    if (data) {
+      data.conditions = conditions;
+      this.activeConditions.set(conditions);
+    }
   }
 
   goToFeature(feature: { name?: string; source?: string }) {

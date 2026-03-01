@@ -607,6 +607,26 @@ export interface HitDieEntry {
   userAdded?: boolean;
 }
 
+export interface MinimalUses {
+  tag?: string;
+  t: number;
+  u: number | 0;
+  r?: string;
+}
+
+export interface MinimalHitDice {
+  t: number;
+  u: number;
+  dieType: string;
+}
+
+export interface MinimalSpellSlotInfo {
+  l: number;
+  t: number;
+  u: number;
+  r?: string;
+}
+
 export interface CombatAction {
   name?: string;
   range?: string;
@@ -755,6 +775,22 @@ export interface Note {
   orderIndex?: number;
 }
 
+export type ConditionName =
+  | 'BLINDED'
+  | 'CHARMED'
+  | 'DEAFENED'
+  | 'EXHAUSTION'
+  | 'FRIGHTENED'
+  | 'GRAPPLED'
+  | 'INCAPACITATED'
+  | 'PARALYZED'
+  | 'PETRIFIED'
+  | 'POISONED'
+  | 'PRONE'
+  | 'RESTRAINED'
+  | 'STUNNED'
+  | 'UNCONSCIOUS';
+
 export interface ExportedCharacter {
   installationId?: string;
   portailUrl?: string | null;
@@ -764,7 +800,7 @@ export interface ExportedCharacter {
   features?: FeatureEntryFull[];
   inventory?: InventoryItem[];
   combatActions?: CombatAction[];
-  conditions?: unknown[];
+  conditions?: ConditionName[];
   monsters?: Monster[];
   notes?: Note[];
 }

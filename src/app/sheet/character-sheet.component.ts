@@ -88,7 +88,7 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
         </div>
 
         <!-- Page Navigation Tabs -->
-        <nav class="flex flex-wrap gap-2 mb-6 border-b-2 border-outline items-end">
+        <nav class="flex flex-wrap gap-2 mb-6 border-b-2 border-outline items-center">
 
           <button
             (click)="currentPage.set(1)"

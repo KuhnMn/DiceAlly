@@ -233,6 +233,10 @@ body {
 .border-surface-container-high { border-color: var(--md-sys-color-surface-container-high); }
 .border-surface-container-highest { border-color: var(--md-sys-color-surface-container-highest); }
 
+.hover\:border-primary:hover { border-color: var(--md-sys-color-primary); }
+.hover\:border-secondary:hover { border-color: var(--md-sys-color-secondary); }
+.hover\:border-tertiary:hover { border-color: var(--md-sys-color-tertiary); }
+
 .hover\:text-primary:hover { color: var(--md-sys-color-primary); }
 .hover\:bg-surface:hover { background-color: var(--md-sys-color-surface); }
 .hover\:bg-surface-container-lowest:hover { background-color: var(--md-sys-color-surface-container-lowest); }

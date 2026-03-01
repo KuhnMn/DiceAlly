@@ -417,15 +417,97 @@ export class CharacterStorageService {
    * combatActions, conditions, notes, and monsters are empty arrays for compatibility
    */
   createMinimalExport(character: ExportedCharacter): ExportedCharacter {
+    // Helper to convert FeatureUses to MinimalUses (omitting default values)
+    const toMinimalUses = (uses: any): any => {
+      if (!uses) return undefined;
+      const minimal: any = {};
+      // Omit defaults: tag defaults to undefined, t defaults to 1, u defaults to 0, r defaults to undefined
+      if (uses.tag) minimal.tag = uses.tag;
+      const total = uses.totalFreeUses ?? 1;
+      if (total !== 1) minimal.t = total;
+      const used = uses.usedFreeUses ?? 0;
+      if (used !== 0) minimal.u = used;
+      if (uses.freeUsesRegainCondition) minimal.r = uses.freeUsesRegainCondition;
+      return Object.keys(minimal).length > 0 ? minimal : undefined;
+    };
+
+    // Helper to convert FeatureUses[] to MinimalUses[]
+    const toMinimalUsesList = (usesList?: any[]): any[] | undefined => {
+      if (!usesList || usesList.length === 0) return undefined;
+      return usesList.map(toMinimalUses).filter((u) => u !== undefined);
+    };
+
+    // Helper to convert HitDieEntry to MinimalHitDice
+    const toMinimalHitDice = (hitDie: any): any => {
+      if (!hitDie) return undefined;
+      return {
+        t: hitDie.total,
+        u: hitDie.used,
+        dieType: hitDie.dieType,
+      };
+    };
+
+    // Helper to convert HitDieEntry[] to MinimalHitDice[]
+    const toMinimalHitDiceList = (hitDice?: any): any[] | undefined => {
+      if (!hitDice || !Array.isArray(hitDice) || hitDice.length === 0) return undefined;
+      return hitDice.map(toMinimalHitDice);
+    };
+
+    // Helper to convert SpellSlot to MinimalSpellSlotInfo (omitting default values)
+    const toMinimalSpellSlot = (slot: any): any => {
+      if (!slot) return undefined;
+      const minimal: any = {
+        l: slot.level,
+        t: slot.total,
+      };
+      // Only include 'u' if not 0 (default), and 'r' if present
+      if (slot.used !== 0 && slot.used !== undefined) minimal.u = slot.used;
+      if (slot.regainCondition) minimal.r = slot.regainCondition;
+      return minimal;
+    };
+
+    // Helper to convert SpellSlot[] to MinimalSpellSlotInfo[]
+    const toMinimalSpellSlotList = (slots?: any[]): any[] | undefined => {
+      if (!slots || slots.length === 0) return undefined;
+      return slots.map(toMinimalSpellSlot);
+    };
+
+    // Helper to convert Record<string, SpellSlot[]> to Record<string, MinimalSpellSlotInfo[]>
+    const convertSpellSlotsRecord = (spellSlotsRecord?: Record<string, any[]>): Record<string, any[]> | undefined => {
+      if (!spellSlotsRecord) return undefined;
+      const result: Record<string, any[]> = {};
+      Object.entries(spellSlotsRecord).forEach(([source, slots]) => {
+        if (Array.isArray(slots) && slots.length > 0) {
+          const minimalSlots = toMinimalSpellSlotList(slots);
+          if (minimalSlots && minimalSlots.length > 0) {
+            result[source] = minimalSlots;
+          }
+        }
+      });
+      return Object.keys(result).length > 0 ? result : undefined;
+    };
+
     // Only include essential character state
     const minimalCharacter: any = {};
     if (character.character?.characterUuid) minimalCharacter.characterUuid = character.character.characterUuid;
     if (character.character?.currentHp !== undefined) minimalCharacter.currentHp = character.character.currentHp;
     if (character.character?.tempHp !== undefined) minimalCharacter.tempHp = character.character.tempHp;
     if (character.character?.maxHpOverride !== undefined) minimalCharacter.maxHpOverride = character.character.maxHpOverride;
-    if (character.character?.hitDice) minimalCharacter.hitDice = character.character.hitDice;
+    
+    // Convert hitDice to minimal format
+    if (character.character?.hitDice && Array.isArray(character.character.hitDice)) {
+      const minimalHitDice = toMinimalHitDiceList(character.character.hitDice);
+      if (minimalHitDice) minimalCharacter.hitDice = minimalHitDice;
+    }
+    
     if (character.character?.currency) minimalCharacter.currency = character.character.currency;
-    if (character.character?.spellSlots) minimalCharacter.spellSlots = character.character.spellSlots;
+    
+    // Convert spellSlots to minimal format (preserve source grouping)
+    if (character.character?.spellSlots) {
+      const minimalSpellSlots = convertSpellSlotsRecord(character.character.spellSlots);
+      if (minimalSpellSlots) minimalCharacter.spellSlots = minimalSpellSlots;
+    }
+    
     if (character.character?.deathSavesSuccesses !== undefined) minimalCharacter.deathSavesSuccesses = character.character.deathSavesSuccesses;
     if (character.character?.deathSavesFailures !== undefined) minimalCharacter.deathSavesFailures = character.character.deathSavesFailures;
     minimalCharacter.hasInspiration = character.character?.hasInspiration;
@@ -444,75 +526,90 @@ export class CharacterStorageService {
     const result: any = {
       character: minimalCharacter,
       installationId: character.installationId,
-      combatActions: [],
-      conditions: [],
-      monsters: [],
-      notes: [],
     };
+
+    // Include conditions if present
+    if (character.conditions && character.conditions.length > 0) {
+      result.conditions = character.conditions;
+    }
 
     // Only add arrays if they have content
     if (character.species) {
+      const minimalUses = toMinimalUsesList(character.species.uses);
       result.species = cleanObject({
         name: character.species.name,
         source: character.species.source,
-        uses: character.species.uses,
+        uses: minimalUses,
         entity: null,
       });
     }
 
     const spells = character.spells
       ?.filter((spell) => spell.uses && spell.uses.length > 0)
-      .map((spell) => cleanObject({
-        name: spell.name,
-        source: spell.source,
-        uses: spell.uses,
-        listType: spell.listType,
-        castingSourceName: spell.castingSourceName,
-        entity: null,
-      }));
+      .map((spell) => {
+        const minimalUses = toMinimalUsesList(spell.uses);
+        return cleanObject({
+          name: spell.name,
+          source: spell.source,
+          uses: minimalUses,
+          lT: spell.listType,
+          cSN: spell.castingSourceName,
+          entity: null,
+        });
+      });
     if (spells && spells.length > 0) {
       result.spells = spells;
     }
 
     const features = character.features
       ?.filter((feature) => feature.uses && feature.uses.length > 0)
-      .map((feature) => cleanObject({
-        name: feature.name,
-        source: feature.source,
-        uses: feature.uses,
-        featureEntity: null,
-        featEntity: null,
-        optionalFeatureEntity: null,
-        featureSourceName: feature.featureSourceName,
-        featureType: feature.featureType,
-      }));
+      .map((feature) => {
+        const minimalUses = toMinimalUsesList(feature.uses);
+        return cleanObject({
+          name: feature.name,
+          source: feature.source,
+          uses: minimalUses,
+          featureEntity: null,
+          featEntity: null,
+          optionalFeatureEntity: null,
+          fSN: feature.featureSourceName,
+          fT: feature.featureType,
+        });
+      });
     if (features && features.length > 0) {
       result.features = features;
     }
 
-    const inventory = character.inventory?.filter((item) => item.uses && item.uses.length > 0 || item.allowMultiples || item.isDummy).map((item) => cleanObject({
-      name: item.name,
-      source: item.source,
-      allowMultiples: item.allowMultiples,
-      count: item.count,
-      isEquipped: item.isEquipped,
-      isAttuned: item.isAttuned,
-      uses: item.uses,
-      isDummy: item.isDummy,
-      entity: null,
-    }));
-    if (inventory && inventory.length > 0) {
-      result.inventory = inventory;
-    }
-    const monsters = character.monsters?.filter((monster) => monster.hpEnabled).map((monster) => cleanObject({
-      name: monster.name,
-      source: monster.source,
-      monsterCurrentHP: monster.monsterCurrentHP,
-      monsterTempHP: monster.monsterTempHP,
-      monsterMaxHpOverride: monster.monsterMaxHpOverride,
+    console.log('Monsters before filtering:', character.monsters);
+    const monsters = character.monsters
+    ?.filter((monster) => monster.hpEnabled)
+    .map((monster) => cleanObject({
+        name: monster.name,
+        source: monster.source,
+        mCHP: monster.monsterCurrentHP ?? monster.monsterMaxHP ?? 0,
+        mTHP: monster.monsterTempHP ?? 0,
+        mMHPO: monster.monsterMaxHpOverride,
     }));
     if (monsters && monsters.length > 0) {
       result.monsters = monsters;
+    }
+
+    const inventory = character.inventory?.filter((item) => item.uses && item.uses.length > 0 || item.allowMultiples || item.isDummy).map((item) => {
+      const minimalUses = toMinimalUsesList(item.uses);
+      return cleanObject({
+        name: item.name,
+        source: item.source,
+        aM: item.allowMultiples,
+        count: item.count,
+        iE: item.isEquipped,
+        iA: item.isAttuned,
+        uses: minimalUses,
+        isDummy: item.isDummy,
+        entity: null,
+      });
+    });
+    if (inventory && inventory.length > 0) {
+      result.inventory = inventory;
     }
 
     return result;
