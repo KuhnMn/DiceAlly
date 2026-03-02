@@ -36,6 +36,16 @@ ng build
 
 This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
 
+## Deployment
+
+To deploy to GitHub Pages, run:
+
+```bash
+ng deploy --base-href=/AllySheetViewer/
+```
+
+This builds the project and deploys it to GitHub Pages with the correct base href for the repository.
+
 ## Running unit tests
 
 To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:

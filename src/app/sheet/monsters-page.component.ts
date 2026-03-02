@@ -493,7 +493,41 @@ export class MonstersPageComponent {
   
   highlightedId = signal<string | null>(null);
 
-  monsters = computed(() => this.characterData()?.monsters ?? []);
+  monsters = computed(() => 
+    (this.characterData()?.monsters ?? []).sort((a, b) => {
+      // First: hpEnabled monsters first (true before false)
+      const aHpEnabled = a.hpEnabled ? 1 : 0;
+      const bHpEnabled = b.hpEnabled ? 1 : 0;
+      
+      if (aHpEnabled !== bHpEnabled) {
+        return bHpEnabled - aHpEnabled; // true (1) sorts before false (0)
+      }
+      
+      // Then: sort by CR (treating ? and no CR as -1)
+      const getCRValue = (cr: any): number => {
+        if (!cr) return -1;
+        const crStr = typeof cr === 'string' ? cr : cr.cr;
+        if (crStr === '?' || !crStr) return -1;
+        
+        // Handle fractions like "1/4", "1/2", etc.
+        if (crStr.includes('/')) {
+          const [numerator, denominator] = crStr.split('/').map(Number);
+          if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
+            return numerator / denominator;
+          }
+          return -1;
+        }
+        
+        const parsed = parseFloat(crStr);
+        return isNaN(parsed) ? -1 : parsed;
+      };
+      
+      const aCR = getCRValue(a.entity?.cr);
+      const bCR = getCRValue(b.entity?.cr);
+      
+      return aCR - bCR;
+    })
+  );
 
   constructor() {
     // Handle scroll/highlight on navigation

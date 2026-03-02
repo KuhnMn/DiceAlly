@@ -804,7 +804,7 @@ export class CharacterInfoPageComponent {
     
     // Sort each group by orderIndex
     for (const type in grouped) {
-      grouped[type].sort((a, b) => (a.orderIndex ?? 999) - (b.orderIndex ?? 999));
+      grouped[type].sort((a, b) => (a.orderIndex ?? 1) - (b.orderIndex ?? 1));
     }
     
     return grouped;
