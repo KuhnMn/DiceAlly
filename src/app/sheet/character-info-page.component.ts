@@ -81,6 +81,15 @@ import { get } from 'http';
       border-style: solid;
       border-color: #1f2937 transparent transparent transparent;
     }
+    .round-tracker-input::-webkit-outer-spin-button,
+    .round-tracker-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .round-tracker-input {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
   `],
   template: `
     <div
@@ -570,7 +579,7 @@ import { get } from 'http';
                             <div class="grid grid-cols-[2fr_1fr_2fr] gap-2 text-sm">
                               <div class="font-semibold">{{ action.name }}</div>
                               <div class="text-center font-mono text-xs">{{ action.hitOrDc }}</div>
-                              <div class="text-right font-mono text-xs">{{ action.damageOrHeal }}</div>
+                              <div class="text-right text-wrap font-mono text-xs">{{ action.damageOrHeal }}</div>
                             </div>
                           </button>
                         }
@@ -587,6 +596,50 @@ import { get } from 'http';
 
         <!-- Right Column: Overview + Features -->
         <div class="space-y-4 order-3 md:order-3">
+          <div class="border-4 border-surface rounded-lg p-4 bg-surface-container-low shadow-lg">
+            <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
+              Round Tracker
+            </h3>
+            <div class="flex items-center justify-center gap-2">
+              <button
+                type="button"
+                class="w-9 h-9 rounded border-2 border-outline-variant bg-surface-container text-on-surface hover:bg-surface-container-high"
+                (click)="adjustRoundTracker(-1)"
+                aria-label="Decrease round tracker"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                inputmode="numeric"
+                min="0"
+                [value]="character()?.roundTracker ?? 0"
+                (input)="updateRoundTracker($any($event.target).value)"
+                class="round-tracker-input w-24 px-2 py-1 border-2 border-outline-variant rounded bg-surface text-on-surface text-center"
+                aria-label="Round tracker value"
+              />
+              <button
+                type="button"
+                class="w-9 h-9 rounded border-2 border-outline-variant bg-surface-container text-on-surface hover:bg-surface-container-high"
+                (click)="adjustRoundTracker(1)"
+                aria-label="Increase round tracker"
+              >
+                +
+              </button>
+              @if ((character()?.roundTracker ?? 0) !== 0) {
+                <button
+                  type="button"
+                  class="w-9 h-9 rounded border-2 border-outline-variant bg-surface-container text-on-surface hover:bg-surface-container-high text-sm"
+                  (click)="resetRoundTracker()"
+                  aria-label="Reset round tracker"
+                  title="Reset"
+                >
+                  ↺
+                </button>
+              }
+            </div>
+          </div>
+
           <div class="border-4 border-surface rounded-lg p-4 bg-surface-container-low shadow-lg">
             <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
               General Stats
@@ -852,6 +905,27 @@ export class CharacterInfoPageComponent {
     if (!char) return;
     const numValue = Number(value);
     char.tempHp = Number.isFinite(numValue) ? numValue : 0;
+  }
+
+  updateRoundTracker(value: string) {
+    const char = this.character();
+    if (!char) return;
+    const numValue = Number(value);
+    const nextValue = Number.isFinite(numValue) ? Math.floor(numValue) : 0;
+    char.roundTracker = Math.max(0, nextValue);
+  }
+
+  adjustRoundTracker(delta: number) {
+    const char = this.character();
+    if (!char) return;
+    const current = char.roundTracker ?? 0;
+    char.roundTracker = Math.max(0, current + delta);
+  }
+
+  resetRoundTracker() {
+    const char = this.character();
+    if (!char) return;
+    char.roundTracker = 0;
   }
 
   startMaxHpOverrideEdit() {

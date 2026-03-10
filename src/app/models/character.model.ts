@@ -659,6 +659,7 @@ export interface CharacterData {
   maxHpOverride?: number | null;
   currentHp?: number;
   tempHp?: number;
+  roundTracker?: number;
   armorClass?: number;
   hasInspiration?: boolean;
   abilityScores?: AbilityScores;

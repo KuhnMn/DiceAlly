@@ -236,7 +236,11 @@ export class CharacterStorageService {
     options?: { overrideExisting?: boolean }
   ): { success: boolean; characterId?: string; error?: StorageError } {
     try {
-      const imported = JSON.parse(json) as ExportedCharacter;
+      const imported = JSON.parse(json) as ExportedCharacter & { character?: CharacterData & { rt?: number | null } };
+
+      if (imported.character && imported.character.roundTracker === undefined && imported.character.rt !== undefined) {
+        imported.character.roundTracker = imported.character.rt ?? 0;
+      }
 
       // Validate basic structure
       if (!imported.character) {
@@ -497,6 +501,7 @@ export class CharacterStorageService {
     if (character.character?.currentHp !== undefined) minimalCharacter.currentHp = character.character.currentHp;
     if (character.character?.tempHp !== undefined) minimalCharacter.tempHp = character.character.tempHp;
     if (character.character?.maxHpOverride !== undefined) minimalCharacter.maxHpOverride = character.character.maxHpOverride;
+    minimalCharacter.rt = character.character?.roundTracker ?? 0;
     
     // Convert hitDice to minimal format
     if (character.character?.hitDice && Array.isArray(character.character.hitDice)) {

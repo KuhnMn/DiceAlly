@@ -44,7 +44,7 @@ import { CharacterStore } from '../stores/character.store';
       @if (monsters().length > 0) {
         <div class="space-y-6">
           @for (monster of monsters(); track monster.name) {
-            <div class="border-2 border-teal rounded-lg p-6 bg-surface-container hover:shadow-md transition-shadow\" [attr.id]=\"'monster-' + helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? ''))\" [class.flash-highlight]=\"highlightedId() === ('monster-' + helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? '')))\">
+            <div class="border-2 border-teal rounded-lg p-4 bg-surface-container hover:shadow-md transition-shadow\" [attr.id]=\"'monster-' + helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? ''))\" [class.flash-highlight]=\"highlightedId() === ('monster-' + helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? '')))\">
               <!-- Header (always visible, clickable) -->
               <button
                 type="button"
@@ -92,7 +92,8 @@ import { CharacterStore } from '../stores/character.store';
                 <!-- HP Tracker -->
                 @if (monster.hpEnabled) {
                   <div class="space-y-3 my-4">
-                    <div class="flex flex-wrap gap-2 justify-between p-3 bg-primary-container rounded-md border-2 border-primary">
+                    <div class="space-y-1 p-3 bg-primary-container rounded-md border-2 border-primary">
+                    <div class="flex flex-wrap gap-2 justify-between">
                       <div class="flex gap-3 items-center">
                       <div class="text-sm text-on-primary-container uppercase font-bold min-w-[3rem]">HP</div>
                       <input
@@ -109,7 +110,8 @@ import { CharacterStore } from '../stores/character.store';
                       >{{ getEffectiveMonsterMaxHP(monster) }}</div>
                       </div>
                       <div class="flex flex-wrap items-center justify-center gap-3 text-xs text-on-primary-container">
-                      <div>Base: {{ monster.monsterMaxHP ?? 0 }}</div>
+                      <div>Base:</div>
+                      <div>{{ monster.monsterMaxHP ?? 0 }}</div>
                       <label class="flex items-center gap-2 text-on-primary-container">
                         <span>Override</span>
                         <input
@@ -131,7 +133,24 @@ import { CharacterStore } from '../stores/character.store';
                         Clear
                       </button>
                     </div>
+    
                     </div>
+                    <div class="flex flex-wrap gap-2 text-sm">
+                      @if (monster.entity.hp) {
+                        ≈
+                        @if (monster.entity.hp.average) {
+                        {{ monster.entity.hp.average }}
+                        }
+                        @if (monster.entity.hp.formula) {
+                          <span> ({{ monster.entity.hp.formula }})</span>
+                        }
+                        @if (monster.entity.hp.special) {
+                          <span class="italic"> {{ monster.entity.hp.special }}</span>
+                        }
+                      }
+                    </div>
+                  </div>
+                </div>
 
                     
                     <!-- Max HP Override -->
@@ -156,10 +175,28 @@ import { CharacterStore } from '../stores/character.store';
                           Clear
                         </button>
                       }
+
+                  </div>
+                }  @else if (monster.entity.hp) {
+                  <div class="space-y-3 my-4">
+                    <div class="flex flex-wrap gap-2 justify-between p-3 bg-primary-container rounded-md border-2 border-primary">
+                      <div class="flex gap-2 items-center">
+                      <div class="text-sm text-on-primary-container uppercase font-bold min-w-[3rem]">HP</div>
+                      <div class="text-sm text-on-primary-container">
+                      @if (monster.entity.hp.average) {
+                          {{ monster.entity.hp.average }}
+                        }
+                        @if (monster.entity.hp.formula) {
+                          <span> ({{ monster.entity.hp.formula }})</span>
+                        }
+                        @if (monster.entity.hp.special) {
+                          <span class="italic"> {{ monster.entity.hp.special }}</span>
+                        }
+                      </div>
                     </div>
                   </div>
+                  </div>
                 }
-
                 <!-- AC, Speed, Initiative, CR -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 my-4">
                   @if (monster.entity.ac && monster.entity.ac.length > 0) {
@@ -169,7 +206,14 @@ import { CharacterStore } from '../stores/character.store';
                         @if (isNumber(monster.entity.ac[0])) {
                           {{ monster.entity.ac[0] }}
                         } @else if (hasAcProperty(monster.entity.ac[0])) {
-                          {{ monster.entity.ac[0].ac }}
+                          @if (monster.entity.ac[0].ac === 0) {
+                            ?
+                          } @else {
+                            {{ monster.entity.ac[0].ac }}
+                          }
+                          @if (monster.entity.ac[0].condition) {
+                            <span class="text-xl"> ({{ monster.entity.ac[0].condition }})</span>
+                          }
                         }
                       </div>
                     </div>
@@ -181,13 +225,15 @@ import { CharacterStore } from '../stores/character.store';
                   @if (monster.entity.speed) {
                     <div class="p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high">
                       <div class="text-xs text-on-surface-variant uppercase font-bold tracking-wide">Speed</div>
-                      <div class="text-2xl font-bold text-on-surface-container-high">{{ formatSpeeds(monster.entity.speed) }}</div>
+                      <div class="text-xl font-bold text-on-surface-container-high">{{ formatSpeeds(monster.entity.speed) }}</div>
                     </div>
                   }
                   @if (monster.entity.cr) {
                     <div class="p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high">
                       <div class="text-xs text-on-surface-variant uppercase font-bold tracking-wide">CR</div>
-                      <div class="text-2xl font-bold text-tertiary">{{ typeof monster.entity.cr === 'string' ? monster.entity.cr : monster.entity.cr.cr }} (PB +{{ getProficiencyBonusFromCR(typeof monster.entity.cr === 'string' ? monster.entity.cr : monster.entity.cr.cr) }})</div>
+                      <div class="text-2xl font-bold text-tertiary">{{ typeof monster.entity.cr === 'string' ? monster.entity.cr : monster.entity.cr.cr }} 
+                        <span class="text-xl">(PB +{{ getProficiencyBonusFromCR(typeof monster.entity.cr === 'string' ? monster.entity.cr : monster.entity.cr.cr) }})</span>
+                      </div>
                     </div>
                   }
                 </div>
@@ -406,7 +452,7 @@ import { CharacterStore } from '../stores/character.store';
                         @if (action.entries && action.entries.length > 0) {
                           @for (entry of action.entries; track $index) {
                             <div class="text-sm leading-relaxed text-on-surface-variant">
-                              {{ getEntryText(entry) }}
+                              <app-entry-renderer [entry]="entry"></app-entry-renderer>
                             </div>
                           }
                         }
@@ -425,7 +471,7 @@ import { CharacterStore } from '../stores/character.store';
                         @if (reaction.entries && reaction.entries.length > 0) {
                           @for (entry of reaction.entries; track $index) {
                             <div class="text-sm leading-relaxed text-on-surface-variant">
-                              {{ getEntryText(entry) }}
+                              <app-entry-renderer [entry]="entry"></app-entry-renderer>
                             </div>
                           }
                         }
@@ -444,7 +490,7 @@ import { CharacterStore } from '../stores/character.store';
                         @if (action.entries && action.entries.length > 0) {
                           @for (entry of action.entries; track $index) {
                             <div class="text-sm leading-relaxed text-on-surface-variant">
-                              {{ getEntryText(entry) }}
+                              <app-entry-renderer [entry]="entry"></app-entry-renderer>
                             </div>
                           }
                         }
@@ -463,7 +509,7 @@ import { CharacterStore } from '../stores/character.store';
                         @if (action.entries && action.entries.length > 0) {
                           @for (entry of action.entries; track $index) {
                             <div class="text-sm leading-relaxed text-on-surface-variant">
-                              {{ getEntryText(entry) }}
+                              <app-entry-renderer [entry]="entry"></app-entry-renderer>
                             </div>
                           }
                         }
