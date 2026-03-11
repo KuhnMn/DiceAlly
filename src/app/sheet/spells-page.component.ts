@@ -2,13 +2,14 @@ import { Component, inject, computed, signal, input, effect } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { FeatureUsesComponent } from './feature-uses.component';
+import { FeatureNotesComponent } from './feature-notes.component';
 import { CharacterHelpersService } from './character-helpers.service';
-import { ExportedCharacter } from '../models/character.model';
+import { ExportedCharacter, FeatureNotes } from '../models/character.model';
 import { CharacterStore } from '../stores/character.store';
 
 @Component({
   selector: 'app-spells-page',
-  imports: [CommonModule, EntryRendererComponent, FeatureUsesComponent],
+  imports: [CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: spell-flash 1.6s ease-out;
@@ -269,6 +270,10 @@ import { CharacterStore } from '../stores/character.store';
                             }
                           </div>
                         }
+                        <app-feature-notes
+                          [notes]="spell.notes"
+                          (notesChanged)="updateSpellNotes(spell, $event)"
+                        />
                   </div>
                 }
               </div>
@@ -558,6 +563,10 @@ export class SpellsPageComponent {
         useEntry.usedFreeUses = event.usedFreeUses;
       }
     }
+  }
+
+  updateSpellNotes(spell: any, event: FeatureNotes[]): void {
+    spell.notes = event;
   }
 
   hasUses(spell: any): boolean {

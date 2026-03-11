@@ -1,15 +1,16 @@
 import { Component, computed, input, signal, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ExportedCharacter, Entry, DisplayItem, InventoryItem } from '../models/character.model';
+import { ExportedCharacter, Entry, DisplayItem, InventoryItem, FeatureNotes } from '../models/character.model';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { FeatureUsesComponent } from './feature-uses.component';
+import { FeatureNotesComponent } from './feature-notes.component';
 import { CharacterHelpersService } from './character-helpers.service';
 import { CharacterStore } from '../stores/character.store';
 
 @Component({
   selector: 'app-equipment-page',
-  imports: [CommonModule, FormsModule, EntryRendererComponent, FeatureUsesComponent],
+  imports: [CommonModule, FormsModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: item-flash 1.6s ease-out;
@@ -372,6 +373,10 @@ import { CharacterStore } from '../stores/character.store';
                       }
                     </div>
                   }
+                  <app-feature-notes
+                    [notes]="item.notes"
+                    (notesChanged)="updateItemNotes(item, $event)"
+                  />
 
               
               <div class="flex flex-wrap items-center gap-3 mb-2 mt-4 justify-between">
@@ -628,6 +633,10 @@ export class EquipmentPageComponent {
         useEntry.usedFreeUses = event.usedFreeUses;
       }
     }
+  }
+
+  updateItemNotes(item: any, event: FeatureNotes[]): void {
+    item.notes = event;
   }
 
   updateItemCount(item: any, value: string) {

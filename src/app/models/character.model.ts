@@ -249,6 +249,11 @@ export interface FeatureUses {
   userAdded?: boolean;
 }
 
+export interface FeatureNotes {
+  tag?: string;
+  notes: string[];
+}
+
 export interface AbilityScores {
   strength?: number;
   dexterity?: number;
@@ -528,6 +533,7 @@ export interface SpellEntryFull {
   listType?: string;
   userAdded?: boolean;
   uses?: FeatureUses[];
+  notes?: FeatureNotes[];
   entity?: SpellEntity | null;
 }
 
@@ -538,6 +544,7 @@ export interface FeatureEntryFull {
   featureType?: string;
   userAdded?: boolean;
   uses?: FeatureUses[];
+  notes?: FeatureNotes[];
   featureEntity?: FeatureEntity | null;
   featEntity?: FeatEntity | null;
   optionalFeatureEntity?: OptionalFeatureEntity | null;
@@ -551,6 +558,7 @@ export interface InventoryItem {
   count?: number;
   allowMultiples?: boolean;
   uses?: FeatureUses[];
+  notes?: FeatureNotes[];
   entity?: DisplayItem | null;
   isDummy?: boolean; // Marks items created by user without full data
 }
@@ -559,6 +567,7 @@ export interface Species {
   name?: string;
   source?: string;
   uses?: FeatureUses[];
+  notes?: FeatureNotes[];
   entity?: SpeciesEntity | null;
 }
 
@@ -678,6 +687,7 @@ export interface CharacterData {
   characterUuid?: string;
   deathSavesSuccesses?: number;
   deathSavesFailures?: number;
+  armorClassOverride?: number | null;
 }
 
 export interface ImmuneResistVulnerable {

@@ -767,6 +767,8 @@ export class CharacterInfoPageComponent {
       if (data?.conditions) {
         this.activeConditions.set(data.conditions);
       }
+
+      this.acOverride.set(data?.character?.armorClassOverride ?? null);
     });
 
     effect(() => {
@@ -1173,10 +1175,15 @@ export class CharacterInfoPageComponent {
   }
 
   saveAcOverride() {
+    const char = this.character();
+    if (!char) return;
+
     const value = parseInt(this.acOverrideInput(), 10);
     if (!isNaN(value) && value >= 0) {
       this.acOverride.set(value);
+      char.armorClassOverride = value;
     }
+
     this.isEditingAcOverride.set(false);
   }
 
@@ -1186,7 +1193,11 @@ export class CharacterInfoPageComponent {
   }
 
   resetAcOverride() {
+    const char = this.character();
     this.acOverride.set(null);
+    if (char) {
+      char.armorClassOverride = null;
+    }
     this.isEditingAcOverride.set(false);
     this.acOverrideInput.set('');
   }

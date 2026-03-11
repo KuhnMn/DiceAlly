@@ -1,7 +1,7 @@
 import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { CharacterData, ExportedCharacter } from '../models/character.model';
+import { ExportedCharacter } from '../models/character.model';
 
 export interface SavedCharacterMetadata {
   characterId: string;
@@ -236,11 +236,7 @@ export class CharacterStorageService {
     options?: { overrideExisting?: boolean }
   ): { success: boolean; characterId?: string; error?: StorageError } {
     try {
-      const imported = JSON.parse(json) as ExportedCharacter & { character?: CharacterData & { rt?: number | null } };
-
-      if (imported.character && imported.character.roundTracker === undefined && imported.character.rt !== undefined) {
-        imported.character.roundTracker = imported.character.rt ?? 0;
-      }
+      const imported = JSON.parse(json) as ExportedCharacter;
 
       // Validate basic structure
       if (!imported.character) {
@@ -439,10 +435,24 @@ export class CharacterStorageService {
       return Object.keys(minimal).length > 0 ? minimal : undefined;
     };
 
+      const toMinimalNotes = (notes: any): any => {
+      if (!notes) return undefined;
+      const minimal: any = {};
+      if (notes.tag) minimal.tag = notes.tag;
+      const noteList = notes.notes ?? [];
+      if (noteList.length > 0) minimal.n = noteList;
+      return Object.keys(minimal).length > 0 ? minimal : undefined;
+    };
+
     // Helper to convert FeatureUses[] to MinimalUses[]
     const toMinimalUsesList = (usesList?: any[]): any[] | undefined => {
       if (!usesList || usesList.length === 0) return undefined;
       return usesList.map(toMinimalUses).filter((u) => u !== undefined);
+    };
+
+    const toMinimalNotesList = (notesList?: any[]): any[] | undefined => {
+      if (!notesList || notesList.length === 0) return undefined;
+      return notesList.map(toMinimalNotes).filter((n) => n !== undefined);
     };
 
     // Helper to convert HitDieEntry to MinimalHitDice
@@ -501,6 +511,7 @@ export class CharacterStorageService {
     if (character.character?.currentHp !== undefined) minimalCharacter.currentHp = character.character.currentHp;
     if (character.character?.tempHp !== undefined) minimalCharacter.tempHp = character.character.tempHp;
     if (character.character?.maxHpOverride !== undefined) minimalCharacter.maxHpOverride = character.character.maxHpOverride;
+    if (character.character?.armorClassOverride !== undefined) minimalCharacter.acO = character.character.armorClassOverride;
     minimalCharacter.rt = character.character?.roundTracker ?? 0;
     
     // Convert hitDice to minimal format
@@ -545,22 +556,26 @@ export class CharacterStorageService {
     // Only add arrays if they have content
     if (character.species) {
       const minimalUses = toMinimalUsesList(character.species.uses);
+      const minimalNotes = toMinimalNotesList(character.species.notes);
       result.species = cleanObject({
         name: character.species.name,
         source: character.species.source,
         uses: minimalUses,
+        notes: minimalNotes,
         entity: null,
       });
     }
 
     const spells = character.spells
-      ?.filter((spell) => spell.uses && spell.uses.length > 0)
+      ?.filter((spell) => (spell.uses && spell.uses.length > 0) || (spell.notes && spell.notes.length > 0))
       .map((spell) => {
         const minimalUses = toMinimalUsesList(spell.uses);
+        const minimalNotes = toMinimalNotesList(spell.notes);
         return cleanObject({
           name: spell.name,
           source: spell.source,
           uses: minimalUses,
+          notes: minimalNotes,
           lT: spell.listType,
           cSN: spell.castingSourceName,
           entity: null,
@@ -571,13 +586,15 @@ export class CharacterStorageService {
     }
 
     const features = character.features
-      ?.filter((feature) => feature.uses && feature.uses.length > 0)
+      ?.filter((feature) => (feature.uses && feature.uses.length > 0) || (feature.notes && feature.notes.length > 0))
       .map((feature) => {
         const minimalUses = toMinimalUsesList(feature.uses);
+        const minimalNotes = toMinimalNotesList(feature.notes);
         return cleanObject({
           name: feature.name,
           source: feature.source,
           uses: minimalUses,
+          notes: minimalNotes,
           featureEntity: null,
           featEntity: null,
           optionalFeatureEntity: null,
@@ -603,8 +620,9 @@ export class CharacterStorageService {
       result.monsters = monsters;
     }
 
-    const inventory = character.inventory?.filter((item) => item.uses && item.uses.length > 0 || item.allowMultiples || item.isDummy).map((item) => {
+    const inventory = character.inventory?.filter((item) => (item.uses && item.uses.length > 0) || (item.notes && item.notes.length > 0) || item.allowMultiples || item.isDummy).map((item) => {
       const minimalUses = toMinimalUsesList(item.uses);
+      const minimalNotes = toMinimalNotesList(item.notes);
       return cleanObject({
         name: item.name,
         source: item.source,
@@ -613,6 +631,7 @@ export class CharacterStorageService {
         iE: item.isEquipped,
         iA: item.isAttuned,
         uses: minimalUses,
+        notes: minimalNotes,
         isDummy: item.isDummy,
         entity: null,
       });

@@ -2,14 +2,15 @@ import { Component, inject, computed, signal, input, effect } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { FeatureUsesComponent } from './feature-uses.component';
+import { FeatureNotesComponent } from './feature-notes.component';
 import { CharacterHelpersService } from './character-helpers.service';
-import { ExportedCharacter, Speeds } from '../models/character.model';
+import { ExportedCharacter, FeatureNotes, Speeds } from '../models/character.model';
 import { CharacterStore } from '../stores/character.store';
 import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
 
 @Component({
   selector: 'app-features-page',
-  imports: [CommonModule, EntryRendererComponent, FeatureUsesComponent],
+  imports: [CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: feature-flash 1.6s ease-out;
@@ -107,7 +108,7 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
 
             </div>
           }
-                        @if (species()?.uses?.length) {
+              @if (species()?.uses?.length) {
                 <div class="mt-4 border-t border-outline-variant pt-4">
                   @for (use of species()?.uses ?? []; track use.tag) {
                     <app-feature-uses 
@@ -117,6 +118,10 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
                   }
                 </div>
               }
+              <app-feature-notes
+                [notes]="species()?.notes"
+                (notesChanged)="updateSpeciesNotes($event)"
+              />
         </div>
       }
       <h3 class="text-xl font-bold mb-3 mt-6">Features</h3>
@@ -254,6 +259,10 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
                         }
                       </div>
                     }
+                    <app-feature-notes
+                      [notes]="feature.notes"
+                      (notesChanged)="updateFeatureNotes(feature, $event)"
+                    />
             </div>
           }
         } @else {
@@ -360,6 +369,16 @@ export class FeaturesPageComponent {
     if (useEntry) {
       useEntry.usedFreeUses = event.usedFreeUses;
     }
+  }
+
+  updateSpeciesNotes(event: FeatureNotes[]): void {
+    const species = this.species();
+    if (!species) return;
+    species.notes = event;
+  }
+
+  updateFeatureNotes(feature: any, event: FeatureNotes[]): void {
+    feature.notes = event;
   }
 
   formatSpeeds(speeds: Speeds | null): string {

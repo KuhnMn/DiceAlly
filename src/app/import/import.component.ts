@@ -84,6 +84,7 @@ import type { ExportedCharacter } from '../models/character.model';
               <input
                 [(ngModel)]="importUrl"
                 type="text"
+                (keydown.enter)="importFromUrl()"
                 placeholder="URL or tmpfiles ID (e.g., 26737738)"
                 class="flex-1 px-4 py-2 border-2 border-outline-variant rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-surface text-on-surface"
               />
