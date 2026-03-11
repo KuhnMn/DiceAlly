@@ -320,6 +320,10 @@ export class CharacterHelpersService {
     return 0;
   }
 
+  getCustomSkillBonus(character: CharacterData | null, skillName: string): number | undefined {
+    return character?.proficiencies?.skillMiscBonuses?.[(skillName.toUpperCase().replace(/\s+/g, '_'))] ?? 0;
+  }
+
   proficiencyLabel(level: 'EXPERTISE' | 'PROFICIENT' | 'HALF' | 'NONE') {
     if (level === 'EXPERTISE') return 'EXP.';
     if (level === 'PROFICIENT') return 'PROF.';

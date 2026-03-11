@@ -287,6 +287,15 @@ import { get } from 'http';
               Languages & Proficiencies
             </h3>
             <div class="text-sm space-y-1">
+              @if (character()?.proficiencies?.simpleWeapons || character()?.proficiencies?.martialWeapons) {
+                <div class="font-semibold text-on-surface-variant text-xs mb-2">Weapons</div>
+                @if (character()?.proficiencies?.simpleWeapons) {
+                  <div class="ml-2">Simple</div>
+                }
+                @if (character()?.proficiencies?.martialWeapons) {
+                  <div class="ml-2">Martial</div>
+                }
+              }
               @if (toolProficiencies().length > 0) {
                 <div class="font-semibold text-on-surface-variant text-xs mb-2">Tools</div>
                 @for (toolName of toolProficiencies(); track toolName) {
@@ -828,11 +837,12 @@ export class CharacterInfoPageComponent {
       const abilityScore = this.helpers.abilityScoreValue(this.character(), skill.ability);
       const base = this.helpers.modifierNumber(abilityScore);
       const profBonus = this.helpers.proficiencyBonusValue(this.character(), level);
+      const otherBonus = this.helpers.getCustomSkillBonus(this.character(), skill.name) ?? 0;
       return {
         name: skill.name,
         level,
         levelLabel: this.helpers.proficiencyLabel(level),
-        value: this.helpers.formatSigned(base + profBonus),
+        value: this.helpers.formatSigned(base + profBonus + otherBonus),
       };
     });
   });
