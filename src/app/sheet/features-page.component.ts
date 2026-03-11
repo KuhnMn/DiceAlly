@@ -237,10 +237,16 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
                 @if (isExpanded(featureAnchorId(feature) ?? 'feature')) {
                   <div class="mt-3 pt-3 border-t border-outline-variant">
                     @if (feature.featEntity?.category) {
-                      <div class="text-sm text-on-surface-variant">Feat Category: {{ feature.featEntity?.category }}</div>
+                      <div class="text-base text-on-surface">Feat Category: {{ feature.featEntity?.category }}</div>
                     }
                     @if ((feature.featEntity?.prerequisite?.length ?? 0) > 0) {
-                      <div class="text-sm text-on-surface-variant">Prerequisites: {{ helpers.prerequisiteText(feature.featEntity?.prerequisite ?? []) }}</div>
+                      <div class="text-base text-on-surface">Prerequisites: {{ helpers.prerequisiteText(feature.featEntity?.prerequisite ?? []) }}</div>
+                    }
+                    @if (feature.optionalFeatureEntity?.featureType) {
+                      <div class="text-base text-on-surface">Feature Type: {{ feature.optionalFeatureEntity?.featureType }}</div>
+                    }
+                    @if ((feature.optionalFeatureEntity?.prerequisite?.length ?? 0) > 0) {
+                      <div class="text-base text-on-surface">Prerequisites: {{ helpers.prerequisiteText(feature.optionalFeatureEntity?.prerequisite ?? []) }}</div>
                     }
                     <div class="mt-3" [attr.id]="feature.featureSourceName ? 'source-' + helpers.sourceId(feature.featureSourceName) : null">
                       <app-entry-renderer [entries]="helpers.featureEntries(feature)"></app-entry-renderer>
