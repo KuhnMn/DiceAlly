@@ -24,8 +24,8 @@ export class TmpfilesService {
   private readonly TMPFILES_DL = 'https://tmpfiles.org/dl';
   private readonly TMPFILES_HTTP = 'http://tmpfiles.org';
   // CORS proxy for handling cross-origin requests to tmpfiles.org
-  private readonly CORS_PROXY = 'https://corsproxy.io/?';
-
+  // private readonly CORS_PROXY = 'https://corsproxy.io/?';
+  private readonly CORS_PROXY = 'https://whateverorigin.org/get?url=';
   /**
    * Extract file ID from a tmpfiles.org download URL or just the ID string
    * Example: https://tmpfiles.org/dl/26737738/character_upload.json -> 26737738
@@ -133,17 +133,23 @@ export class TmpfilesService {
       const url = this.buildTmpfilesUrl(fileId);
       
       // Use CORS proxy to fetch the file
-      const proxiedUrl = this.CORS_PROXY + encodeURIComponent(url);
+      const proxiedUrl = this.CORS_PROXY + `${encodeURIComponent(url)}`;
       
       const response = await fetch(proxiedUrl);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const character = await response.json() as ExportedCharacter;
+      //console.log('Download response from tmpfiles.org (via CORS proxy):', response.json());
+
+
+      // response.json().then(r => console.log(r['contents'])).catch(e => console.error('Error parsing JSON from CORS proxy response:', e));
+
+      const character = await response.json().then(r => JSON.parse(r["contents"])) as ExportedCharacter;
 
       // Validate basic structure
       if (!character.character) {
+        console.error('Invalid character data structure:', character);
         throw new Error('Invalid character data: missing character object');
       }
 

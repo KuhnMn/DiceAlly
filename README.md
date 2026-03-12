@@ -1,69 +1,76 @@
 # AllySheetViewer
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.4.
+AllySheetViewer is a personal Angular web app for viewing and managing character-sheet style data with a fast, mobile-friendly interface.
 
-## Development server
+The project focuses on practical in-session usage: quick lookup, notes, feature tracking, and import/export workflows.
 
-To start a local development server, run:
+## Highlights
 
-```bash
-ng serve
-```
+- Character sheet companion UI with focused page sections (info, equipment, features, spells, notes, monsters)
+- Feature use tracking with visual progress and regain-condition display
+- Import and export workflow with modal-based options
+- Local persistence through storage services
+- Theme support and responsive layout for desktop and mobile
+- QR code and share modal utilities for easy transfer scenarios
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Tech Stack
 
-## Code scaffolding
+- Angular 21
+- TypeScript
+- Angular CLI + angular-cli-ghpages deployment target
+- Vitest for unit testing
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Local Development
 
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
+Install dependencies:
 
 ```bash
-ng build
+npm install
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Deployment
-
-To deploy to GitHub Pages, run:
+Start the dev server:
 
 ```bash
-ng deploy --base-href=/AllySheetViewer/
+npm start
 ```
 
-This builds the project and deploys it to GitHub Pages with the correct base href for the repository.
+App URL:
 
-## Running unit tests
+- http://localhost:4200
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+Build for production:
 
 ```bash
-ng test
+npm run build
 ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
+Run tests:
 
 ```bash
-ng e2e
+npm test
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Repository Scope
 
-## Additional Resources
+This repository is published primarily for personal hosting and reference.
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- External contributions are not currently being accepted.
+- Issues and pull requests may be closed without review.
+
+## Disclaimer
+
+This application is a **viewer and interface only**. It does not include, distribute, or provide any game content, rulebook text, stat blocks, spell descriptions, item descriptions, or any other gameplay data.
+
+All game content, mechanics, rules, names, and related material are the intellectual property of their respective owners. This project makes no claim of ownership over any gameplay elements, systems, or creative works associated with any tabletop roleplaying game or related product.
+
+Any data displayed through this interface is entered by the user themselves and is not supplied by this application or its author.
+
+## Ownership and Credits
+
+- The application interface and source code in this repository are authored and maintained by the repository owner.
+- Third-party libraries remain under their respective licenses and ownership.
+- No game content, gameplay mechanics, or ruleset material of any kind is included in or claimed by this project.
+
+## Security
+
+If you discover a security issue, open a private report through GitHub security advisories if enabled, or contact the repository owner directly.

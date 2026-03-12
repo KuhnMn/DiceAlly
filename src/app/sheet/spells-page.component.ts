@@ -260,6 +260,7 @@ import { CharacterStore } from '../stores/character.store';
 
                       </div>
                     }
+                    @if (hasSpellListType(spell, "PREPARED")) {
                         @if (spell.uses?.length) {
                           <div class="mt-4 border-t border-outline-variant pt-4">
                             @for (use of spell.uses; track use.tag) {
@@ -274,6 +275,7 @@ import { CharacterStore } from '../stores/character.store';
                           [notes]="spell.notes"
                           (notesChanged)="updateSpellNotes(spell, $event)"
                         />
+                    }
                   </div>
                 }
               </div>

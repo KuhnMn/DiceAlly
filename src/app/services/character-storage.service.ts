@@ -567,7 +567,7 @@ export class CharacterStorageService {
     }
 
     const spells = character.spells
-      ?.filter((spell) => (spell.uses && spell.uses.length > 0) || (spell.notes && spell.notes.length > 0))
+      ?.filter((spell) => (spell.listType === "PREPARED" && (spell.uses && spell.uses.length > 0) || (spell.notes && spell.notes.length > 0)))
       .map((spell) => {
         const minimalUses = toMinimalUsesList(spell.uses);
         const minimalNotes = toMinimalNotesList(spell.notes);
