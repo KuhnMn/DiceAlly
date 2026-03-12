@@ -26,6 +26,7 @@ export class TmpfilesService {
   private readonly TMPFILES_HTTP = 'http://tmpfiles.org';
   private readonly runtimeConfig = inject(APP_RUNTIME_CONFIG);
   private readonly CORS_PROXY = this.runtimeConfig.tmpfilesProxyUrl;
+  private readonly AUTH_TOKEN = this.runtimeConfig.tmpfilesProxyAuthToken;
   /**
    * Extract file ID from a tmpfiles.org download URL or just the ID string
    * Example: https://tmpfiles.org/dl/26737738/character_upload.json -> 26737738
@@ -124,7 +125,14 @@ export class TmpfilesService {
       if (this.CORS_PROXY.includes('REPLACE_WITH_YOUR_WORKER')) {
         return {
           success: false,
-          error: 'Tmpfiles proxy is not configured yet. Deploy cloudflare/tmpfiles-proxy-worker.js and update tmpfilesProxyUrl in src/app/app.tokens.ts.',
+          error: 'Tmpfiles proxy is not configured yet. Deploy cloudflare/tmpfiles-proxy-worker.js and set tmpfilesProxyUrl in public/runtime-config.js.',
+        };
+      }
+
+      if (this.AUTH_TOKEN.includes('REPLACE_WITH_YOUR_AUTH_TOKEN')) {
+        return {
+          success: false,
+          error: 'Tmpfiles proxy auth token is not configured. Set tmpfilesProxyAuthToken in public/runtime-config.js.',
         };
       }
 
@@ -142,7 +150,9 @@ export class TmpfilesService {
       // Use Cloudflare Worker to fetch the file with CORS headers
       const proxiedUrl = `${this.CORS_PROXY}/?url=${encodeURIComponent(url)}`;
       
-      const response = await fetch(proxiedUrl);
+      const response = await fetch(proxiedUrl, {
+        headers: { 'Authorization': `Bearer ${this.AUTH_TOKEN}` },
+      });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }

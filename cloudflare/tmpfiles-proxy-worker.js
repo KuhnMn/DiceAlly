@@ -1,13 +1,44 @@
+const ALLOWED_ORIGINS = [
+  'https://allysheetviewer.pages.mxkuhn.de',
+  'https://kuhnmn.github.io',
+  'https://mxkuhn.de',
+  'https://pages.mxkuhn.de',
+];
+
+function getAllowedOrigin(origin) {
+  if (!origin) return null;
+  if (/^http:\/\/localhost(:\d+)?$/.test(origin)) return origin;
+  return ALLOWED_ORIGINS.includes(origin) ? origin : null;
+}
+
+function corsHeaders(origin) {
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+    'Vary': 'Origin',
+  };
+}
+
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
+    const origin = request.headers.get('Origin');
+    const allowedOrigin = getAllowedOrigin(origin);
+
+    // Reject browser requests from disallowed origins
+    if (origin && !allowedOrigin) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
     if (request.method === 'OPTIONS') {
       return new Response(null, {
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
+        headers: allowedOrigin ? corsHeaders(allowedOrigin) : {},
       });
+    }
+
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || authHeader !== `Bearer ${env.AUTH_TOKEN}`) {
+      return new Response('Unauthorized', { status: 401 });
     }
 
     if (request.method !== 'GET') {
@@ -40,9 +71,9 @@ export default {
     });
 
     const headers = new Headers(upstreamResponse.headers);
-    headers.set('Access-Control-Allow-Origin', '*');
-    headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    headers.set('Access-Control-Allow-Headers', 'Content-Type');
+    if (allowedOrigin) {
+      Object.entries(corsHeaders(allowedOrigin)).forEach(([k, v]) => headers.set(k, v));
+    }
 
     return new Response(upstreamResponse.body, {
       status: upstreamResponse.status,

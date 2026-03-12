@@ -28,6 +28,45 @@ Install dependencies:
 npm install
 ```
 
+### Runtime Configuration
+
+The app requires a runtime config file for the tmpfiles.org CORS proxy. This file is **not** committed to the repository.
+
+Copy the example file:
+
+```bash
+cp public/runtime-config.example.js public/runtime-config.js
+```
+
+Then edit `public/runtime-config.js` and fill in your values:
+
+```js
+window.__ALLY_APP_CONFIG__ = {
+  tmpfilesProxyUrl: 'https://YOUR_WORKER.workers.dev',
+  tmpfilesProxyAuthToken: 'YOUR_AUTH_TOKEN',
+};
+```
+
+#### Setting up the Cloudflare Worker proxy
+
+The Worker source is at `cloudflare/tmpfiles-proxy-worker.js`. It proxies requests to `tmpfiles.org` and enforces Bearer token authentication.
+
+Deploy it with:
+
+```bash
+npx wrangler deploy cloudflare/tmpfiles-proxy-worker.js --name allysheetviewer-tmpfiles-proxy
+```
+
+Store your auth token as a Cloudflare Worker secret:
+
+```bash
+npx wrangler secret put AUTH_TOKEN
+```
+
+Set `tmpfilesProxyUrl` to your deployed Worker URL and `tmpfilesProxyAuthToken` to the same token in `public/runtime-config.js`.
+
+Without this configuration, the share/import-via-link feature will display an error but all other functionality works normally.
+
 Start the dev server:
 
 ```bash
