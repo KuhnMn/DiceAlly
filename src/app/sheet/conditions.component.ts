@@ -1,5 +1,6 @@
 import { Component, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ConditionName } from '../models/character.model';
 
 const CONDITION_NAMES = [
   'BLINDED',
@@ -18,8 +19,6 @@ const CONDITION_NAMES = [
   'UNCONSCIOUS',
 ] as const;
 
-export type ConditionName = (typeof CONDITION_NAMES)[number];
-
 @Component({
   selector: 'app-conditions',
   standalone: true,
@@ -30,7 +29,7 @@ export type ConditionName = (typeof CONDITION_NAMES)[number];
             <button
               (click)="removeCondition(condition)"
               title="Click to remove"
-              class="px-2 py-1 rounded text-xs font-semibold bg-rose-container text-on-rose-container border border-rose hover:bg-rose transition-colors"
+              class="px-2 py-1 rounded text-xs font-semibold bg-primary-container text-on-primary-container border border-primary hover:bg-primary transition-colors"
             >
               {{ getConditionLabel(condition) }} ✕
             </button>
@@ -45,6 +44,24 @@ export type ConditionName = (typeof CONDITION_NAMES)[number];
         
         @if (showDropdown()) {
           <div class="absolute left-0 top-full mt-1 z-50 bg-surface-container-highest border-2 border-outline rounded-lg shadow-lg max-h-64 overflow-y-auto">
+            <div class="sticky top-0 z-10 bg-surface-container-highest p-2 border-b border-outline-variant">
+              <div class="flex gap-2">
+                <input
+                  #customConditionField
+                  [value]="customConditionInput()"
+                  (input)="onCustomConditionInput(customConditionField.value)"
+                  (keydown.enter)="addCustomCondition()"
+                  placeholder="Add custom condition/effect"
+                  class="w-min px-2 py-1 text-xs rounded border border-outline-variant bg-surface text-on-surface"
+                />
+                <button
+                  (click)="addCustomCondition()"
+                  class="w-max px-2 py-1 text-xs rounded bg-primary-container text-on-primary-container border border-primary hover:bg-primary transition-colors"
+                >
+                  <span>+ Add</span> 
+                </button>
+              </div>
+            </div>
             @for (condition of availableConditions(); track condition) {
               <button
                 (click)="addCondition(condition)"
@@ -71,6 +88,7 @@ export class ConditionsComponent {
   conditionsChanged = output<ConditionName[]>();
   
   showDropdown = signal(false);
+  customConditionInput = signal('');
   allConditions = CONDITION_NAMES;
 
   availableConditions = () => {
@@ -79,9 +97,35 @@ export class ConditionsComponent {
   };
 
   addCondition(condition: ConditionName): void {
+    if (this.activeConditions().includes(condition)) {
+      this.showDropdown.set(false);
+      return;
+    }
+
     const updated = [...this.activeConditions(), condition];
     this.conditionsChanged.emit(updated);
     this.showDropdown.set(false);
+  }
+
+  addCustomCondition(): void {
+    const nextCondition = this.customConditionInput().trim();
+    if (!nextCondition) {
+      return;
+    }
+
+    if (this.activeConditions().includes(nextCondition)) {
+      this.customConditionInput.set('');
+      return;
+    }
+
+    const updated = [...this.activeConditions(), nextCondition];
+    this.conditionsChanged.emit(updated);
+    this.customConditionInput.set('');
+    this.showDropdown.set(false);
+  }
+
+  onCustomConditionInput(value: string): void {
+    this.customConditionInput.set(value);
   }
 
   removeCondition(condition: ConditionName): void {
@@ -90,6 +134,10 @@ export class ConditionsComponent {
   }
 
   getConditionLabel(condition: ConditionName): string {
+    if (!this.allConditions.includes(condition as (typeof CONDITION_NAMES)[number])) {
+      return condition;
+    }
+
     return condition
       .split('_')
       .map((word) => word.charAt(0) + word.slice(1).toLowerCase())

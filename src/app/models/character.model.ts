@@ -786,21 +786,7 @@ export interface Note {
   orderIndex?: number;
 }
 
-export type ConditionName =
-  | 'BLINDED'
-  | 'CHARMED'
-  | 'DEAFENED'
-  | 'EXHAUSTION'
-  | 'FRIGHTENED'
-  | 'GRAPPLED'
-  | 'INCAPACITATED'
-  | 'PARALYZED'
-  | 'PETRIFIED'
-  | 'POISONED'
-  | 'PRONE'
-  | 'RESTRAINED'
-  | 'STUNNED'
-  | 'UNCONSCIOUS';
+export type ConditionName = string;
 
 export interface ExportedCharacter {
   installationId?: string;

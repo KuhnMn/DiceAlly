@@ -532,7 +532,7 @@ import { get } from 'http';
           <!-- Conditions Card -->
           <div class="border-4 border-surface rounded-lg p-4 bg-surface-container-low shadow-lg">
             <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
-              Conditions
+              Conditions & Effects
             </h3>
             <app-conditions
               [activeConditions]="activeConditions()"
