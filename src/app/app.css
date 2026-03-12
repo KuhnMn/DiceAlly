@@ -38,3 +38,29 @@
 .app-content {
 	flex: 1;
 }
+
+.app-footer {
+	padding: 0.85rem 1rem 1.2rem;
+	border-top: 1px solid var(--md-sys-color-outline-variant);
+	margin-top: 1rem;
+}
+
+.app-footer__links {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.9rem;
+}
+
+.app-footer__links a {
+	color: var(--md-sys-color-primary);
+	text-decoration: underline;
+	text-underline-offset: 0.16rem;
+}
+
+.app-footer__links a:focus-visible {
+	outline: 2px solid var(--md-sys-color-primary);
+	outline-offset: 2px;
+	border-radius: 4px;
+}
