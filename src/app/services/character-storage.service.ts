@@ -431,7 +431,7 @@ export class CharacterStorageService {
       if (total !== 1) minimal.t = total;
       const used = uses.usedFreeUses ?? 0;
       if (used !== 0) minimal.u = used;
-      if (uses.freeUsesRegainCondition) minimal.r = uses.freeUsesRegainCondition;
+      if (uses.freeUsesRegainCondition && uses.freeUsesRegainCondition !== "LONG_REST") minimal.r = uses.freeUsesRegainCondition;
       return Object.keys(minimal).length > 0 ? minimal : undefined;
     };
 
@@ -480,7 +480,7 @@ export class CharacterStorageService {
       };
       // Only include 'u' if not 0 (default), and 'r' if present
       if (slot.used !== 0 && slot.used !== undefined) minimal.u = slot.used;
-      if (slot.regainCondition) minimal.r = slot.regainCondition;
+      if (slot.regainCondition && slot.regainCondition !== "LONG_REST") minimal.r = slot.regainCondition;
       return minimal;
     };
 
@@ -507,10 +507,10 @@ export class CharacterStorageService {
 
     // Only include essential character state
     const minimalCharacter: any = {};
-    if (character.character?.characterUuid) minimalCharacter.characterUuid = character.character.characterUuid;
-    if (character.character?.currentHp !== undefined) minimalCharacter.currentHp = character.character.currentHp;
+    if (character.character?.characterUuid) minimalCharacter.uuid = character.character.characterUuid;
+    if (character.character?.currentHp !== undefined) minimalCharacter.cHp = character.character.currentHp;
     if (character.character?.tempHp !== undefined) minimalCharacter.tempHp = character.character.tempHp;
-    if (character.character?.maxHpOverride !== undefined) minimalCharacter.maxHpOverride = character.character.maxHpOverride;
+    if (character.character?.maxHpOverride !== undefined) minimalCharacter.maxHpO = character.character.maxHpOverride;
     if (character.character?.armorClassOverride !== undefined) minimalCharacter.acO = character.character.armorClassOverride;
     minimalCharacter.rt = character.character?.roundTracker ?? 0;
     
@@ -528,9 +528,9 @@ export class CharacterStorageService {
       if (minimalSpellSlots) minimalCharacter.spellSlots = minimalSpellSlots;
     }
     
-    if (character.character?.deathSavesSuccesses !== undefined) minimalCharacter.deathSavesSuccesses = character.character.deathSavesSuccesses;
-    if (character.character?.deathSavesFailures !== undefined) minimalCharacter.deathSavesFailures = character.character.deathSavesFailures;
-    minimalCharacter.hasInspiration = character.character?.hasInspiration;
+    if (character.character?.deathSavesSuccesses !== undefined) minimalCharacter.dSS = character.character.deathSavesSuccesses;
+    if (character.character?.deathSavesFailures !== undefined) minimalCharacter.dSF = character.character.deathSavesFailures;
+    minimalCharacter.insp = character.character?.hasInspiration;
 
     // Helper to remove null/undefined from objects
     const cleanObject = (obj: any) => {
@@ -545,7 +545,6 @@ export class CharacterStorageService {
 
     const result: any = {
       character: minimalCharacter,
-      installationId: character.installationId,
     };
 
     // Include conditions if present
@@ -576,7 +575,6 @@ export class CharacterStorageService {
           source: spell.source,
           uses: minimalUses,
           notes: minimalNotes,
-          lT: spell.listType,
           cSN: spell.castingSourceName,
           entity: null,
         });

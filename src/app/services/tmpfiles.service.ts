@@ -16,16 +16,16 @@ export interface TmpfilesDownloadResult {
 /**
  * Service for uploading and downloading character files from tmpfiles.org
  * tmpfiles.org provides temporary file hosting (30 days) without authentication
- * Uses corsproxy.io for downloads since tmpfiles.org doesn't support CORS
+ * Downloads are proxied through a user-controlled Cloudflare Worker since tmpfiles.org doesn't support CORS
  */
 @Injectable({ providedIn: 'root' })
 export class TmpfilesService {
   private readonly TMPFILES_API = 'https://tmpfiles.org/api/v1/upload';
   private readonly TMPFILES_DL = 'https://tmpfiles.org/dl';
   private readonly TMPFILES_HTTP = 'http://tmpfiles.org';
-  // CORS proxy for handling cross-origin requests to tmpfiles.org
-  // private readonly CORS_PROXY = 'https://corsproxy.io/?';
-  private readonly CORS_PROXY = 'https://whateverorigin.org/get?url=';
+  // Replace this with your deployed Cloudflare Worker URL.
+  // Example: https://allysheetviewer-proxy.<your-subdomain>.workers.dev
+  private readonly CORS_PROXY = 'https://REPLACE_WITH_YOUR_WORKER.workers.dev';
   /**
    * Extract file ID from a tmpfiles.org download URL or just the ID string
    * Example: https://tmpfiles.org/dl/26737738/character_upload.json -> 26737738
@@ -121,6 +121,13 @@ export class TmpfilesService {
    */
   async downloadCharacter(input: string): Promise<TmpfilesDownloadResult> {
     try {
+      if (this.CORS_PROXY.includes('REPLACE_WITH_YOUR_WORKER')) {
+        return {
+          success: false,
+          error: 'Tmpfiles proxy is not configured yet. Deploy cloudflare/tmpfiles-proxy-worker.js and update the CORS_PROXY URL in tmpfiles.service.ts.',
+        };
+      }
+
       const fileId = this.extractFileId(input);
       if (!fileId) {
         return {
@@ -132,20 +139,15 @@ export class TmpfilesService {
       // Build the full URL from ID
       const url = this.buildTmpfilesUrl(fileId);
       
-      // Use CORS proxy to fetch the file
-      const proxiedUrl = this.CORS_PROXY + `${encodeURIComponent(url)}`;
+      // Use Cloudflare Worker to fetch the file with CORS headers
+      const proxiedUrl = `${this.CORS_PROXY}/?url=${encodeURIComponent(url)}`;
       
       const response = await fetch(proxiedUrl);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      //console.log('Download response from tmpfiles.org (via CORS proxy):', response.json());
-
-
-      // response.json().then(r => console.log(r['contents'])).catch(e => console.error('Error parsing JSON from CORS proxy response:', e));
-
-      const character = await response.json().then(r => JSON.parse(r["contents"])) as ExportedCharacter;
+      const character = await response.json() as ExportedCharacter;
 
       // Validate basic structure
       if (!character.character) {
