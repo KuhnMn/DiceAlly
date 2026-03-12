@@ -1,5 +1,6 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { ExportedCharacter } from '../models/character.model';
+import { APP_RUNTIME_CONFIG } from '../app.tokens';
 
 export interface TmpfilesUploadResult {
   success: boolean;
@@ -23,9 +24,8 @@ export class TmpfilesService {
   private readonly TMPFILES_API = 'https://tmpfiles.org/api/v1/upload';
   private readonly TMPFILES_DL = 'https://tmpfiles.org/dl';
   private readonly TMPFILES_HTTP = 'http://tmpfiles.org';
-  // Replace this with your deployed Cloudflare Worker URL.
-  // Example: https://allysheetviewer-proxy.<your-subdomain>.workers.dev
-  private readonly CORS_PROXY = 'https://REPLACE_WITH_YOUR_WORKER.workers.dev';
+  private readonly runtimeConfig = inject(APP_RUNTIME_CONFIG);
+  private readonly CORS_PROXY = this.runtimeConfig.tmpfilesProxyUrl;
   /**
    * Extract file ID from a tmpfiles.org download URL or just the ID string
    * Example: https://tmpfiles.org/dl/26737738/character_upload.json -> 26737738
@@ -124,7 +124,7 @@ export class TmpfilesService {
       if (this.CORS_PROXY.includes('REPLACE_WITH_YOUR_WORKER')) {
         return {
           success: false,
-          error: 'Tmpfiles proxy is not configured yet. Deploy cloudflare/tmpfiles-proxy-worker.js and update the CORS_PROXY URL in tmpfiles.service.ts.',
+          error: 'Tmpfiles proxy is not configured yet. Deploy cloudflare/tmpfiles-proxy-worker.js and update tmpfilesProxyUrl in src/app/app.tokens.ts.',
         };
       }
 
