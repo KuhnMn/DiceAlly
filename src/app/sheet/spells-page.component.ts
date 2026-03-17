@@ -7,6 +7,13 @@ import { CharacterHelpersService } from './character-helpers.service';
 import { ExportedCharacter, FeatureNotes } from '../models/character.model';
 import { CharacterStore } from '../stores/character.store';
 
+type SpellBonusItemOverview = {
+  key: string;
+  name: string;
+  source: string | undefined;
+  bonusesText: string;
+};
+
 @Component({
   selector: 'app-spells-page',
   imports: [CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
@@ -75,6 +82,8 @@ import { CharacterStore } from '../stores/character.store';
                       }
                       @if (slot.regainCondition) {
                         <div class="text-xs text-on-surface-container-high mt-2" (click)="$event.stopPropagation()">Regain: {{ slot.regainCondition }}</div>
+                      } @else {
+                        <div class="text-xs text-on-surface-container-high mt-2 italic">LONG_REST</div>
                       }
                     </div>
                   }
@@ -83,6 +92,7 @@ import { CharacterStore } from '../stores/character.store';
             }
           </div>
       }
+
       <h3 class="text-xl font-bold mb-3 mt-6">Spells</h3>
       <div class="mb-6 flex flex-wrap items-center gap-2">
         <span class="text-sm font-semibold text-on-surface">List Type:</span>
@@ -152,6 +162,22 @@ import { CharacterStore } from '../stores/character.store';
           </div>
         }
       </div>
+      @if (spellBonusItemsOverview().length > 0) {
+        <div class="mb-6 mt-4 p-3 border border-tertiary rounded-lg bg-tertiary-container">
+          <div class="text-xs font-semibold text-on-tertiary-container mb-2">Item Spell Bonuses</div>
+          <div class="space-y-1">
+            @for (entry of spellBonusItemsOverview(); track entry.key) {
+              <div class="text-xs text-on-tertiary-container">
+                <span class="font-semibold">{{ entry.name }}</span>
+                @if (entry.source) {
+                  <span class="opacity-80"> ({{ entry.source }})</span>
+                }
+                <span class="ml-1">- {{ entry.bonusesText }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
       <div class="space-y-6">
         @if (spellsByLevel().length > 0) {
           @for (levelGroup of spellsByLevel(); track levelGroup.level) {
@@ -316,12 +342,48 @@ export class SpellsPageComponent {
     return ['ALL', ...Array.from(sources).sort()];
   });
 
+  spellBonusItemsOverview = computed(() => {
+    const inventory = this.characterData()?.inventory ?? [];
+    const entries: SpellBonusItemOverview[] = [];
+
+    inventory.forEach((item, index) => {
+        const entity = item.entity?.item;
+        if (!entity) return;
+
+        const isEquipped = item.isEquipped ?? false;
+        if (!isEquipped) return;
+
+        const requiresAttunement = entity.reqAttune !== null && entity.reqAttune !== undefined;
+        if (requiresAttunement && !(item.isAttuned ?? false)) return;
+
+        const bonuses: string[] = [];
+        if (entity.bonusSpellAttack) bonuses.push(`Spell Attack ${entity.bonusSpellAttack}`);
+        if (entity.bonusSpellSaveDc) bonuses.push(`Spell Save DC ${entity.bonusSpellSaveDc}`);
+        if (entity.bonusSpellDamage) bonuses.push(`Spell Damage ${entity.bonusSpellDamage}`);
+        if (bonuses.length === 0) return;
+
+        entries.push({
+          key: `${item.name}:${item.source ?? ''}:${index}`,
+          name: item.name,
+          source: item.source,
+          bonusesText: bonuses.join(', '),
+        });
+      });
+
+    return entries;
+  });
+
   spellSlotGroups = computed(() => {
     const spellSlots = this.character()?.spellSlots ?? {};
     return Object.entries(spellSlots)
       .map(([source, slots]) => ({
         source,
-        slots: [...slots].sort((a, b) => a.level - b.level),
+        slots: [...slots]
+          .sort((a, b) => a.level - b.level)
+          .map((slot) => ({
+            ...slot,
+            regainCondition: slot.regainCondition ?? 'LONG_REST',
+          })),
       }))
       .sort((a, b) => a.source.localeCompare(b.source));
   });
@@ -518,17 +580,42 @@ export class SpellsPageComponent {
     return (this.spellSlotUsed(source, slot) / total) * 100;
   }
 
+  private persistSpellSlotUsed(source: string, level: number, used: number) {
+    const data = this.characterData();
+    const character = data?.character;
+    const spellSlots = character?.spellSlots;
+    const sourceSlots = spellSlots?.[source];
+    if (!data || !character || !spellSlots || !Array.isArray(sourceSlots)) return;
+
+    const updatedSourceSlots = sourceSlots.map((existingSlot) =>
+      existingSlot.level === level
+        ? { ...existingSlot, used }
+        : existingSlot
+    );
+
+    this.store.setCharacter({
+      ...data,
+      character: {
+        ...character,
+        spellSlots: {
+          ...spellSlots,
+          [source]: updatedSourceSlots,
+        },
+      },
+    });
+  }
+
   toggleSpellSlot(source: string, slot: { level: number; total: number; used: number }, index: number) {
     const currentUsed = this.spellSlotUsed(source, slot);
     const isCurrentlyUsed = index < currentUsed;
     const newUsed = isCurrentlyUsed ? index : index + 1;
     const key = this.spellSlotKey(source, slot.level);
 
-    slot.used = newUsed;
     this.spellSlotUsedOverrides.update((prev) => ({
       ...prev,
       [key]: newUsed,
     }));
+    this.persistSpellSlotUsed(source, slot.level, newUsed);
   }
 
   addOneSpellSlot(source: string, slot: { level: number; total: number; used: number }) {
@@ -536,11 +623,11 @@ export class SpellsPageComponent {
     const newUsed = Math.min(currentUsed + 1, slot.total);
     const key = this.spellSlotKey(source, slot.level);
 
-    slot.used = newUsed;
     this.spellSlotUsedOverrides.update((prev) => ({
       ...prev,
       [key]: newUsed,
     }));
+    this.persistSpellSlotUsed(source, slot.level, newUsed);
   }
 
   toggleExpanded(id: string) {

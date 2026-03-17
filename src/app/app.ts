@@ -5,7 +5,7 @@ import { ThemeService } from './services/theme.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, NgOptimizedImage],
+  imports: [RouterOutlet, NgOptimizedImage],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush

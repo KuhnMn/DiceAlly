@@ -421,12 +421,13 @@ export class CharacterStorageService {
    * combatActions, conditions, notes, and monsters are empty arrays for compatibility
    */
   createMinimalExport(character: ExportedCharacter): ExportedCharacter {
-    // Helper to convert FeatureUses to MinimalUses (omitting default values)
+    // Helper to convert FeatureUses to MinimalUses
+    // Always include tag (empty string when missing) to avoid exporting empty objects.
     const toMinimalUses = (uses: any): any => {
       if (!uses) return undefined;
       const minimal: any = {};
-      // Omit defaults: tag defaults to undefined, t defaults to 1, u defaults to 0, r defaults to undefined
-      if (uses.tag) minimal.tag = uses.tag;
+      // Keep tag always present for stable minimal payload decoding.
+      minimal.tag = typeof uses.tag === 'string' ? uses.tag : '';
       const total = uses.totalFreeUses ?? 1;
       if (total !== 1) minimal.t = total;
       const used = uses.usedFreeUses ?? 0;
@@ -436,10 +437,11 @@ export class CharacterStorageService {
     };
 
       const toMinimalNotes = (notes: any): any => {
-      if (!notes) return undefined;
+      if (!notes || notes.isEditable === false) return undefined;
+      const noteList = notes.notes ?? [];
+      if (noteList.length === 0) return undefined;
       const minimal: any = {};
       if (notes.tag) minimal.tag = notes.tag;
-      const noteList = notes.notes ?? [];
       if (noteList.length > 0) minimal.n = noteList;
       return Object.keys(minimal).length > 0 ? minimal : undefined;
     };
@@ -447,12 +449,14 @@ export class CharacterStorageService {
     // Helper to convert FeatureUses[] to MinimalUses[]
     const toMinimalUsesList = (usesList?: any[]): any[] | undefined => {
       if (!usesList || usesList.length === 0) return undefined;
-      return usesList.map(toMinimalUses).filter((u) => u !== undefined);
+      const minimalUses = usesList.map(toMinimalUses).filter((u) => u !== undefined);
+      return minimalUses.length > 0 ? minimalUses : undefined;
     };
 
     const toMinimalNotesList = (notesList?: any[]): any[] | undefined => {
       if (!notesList || notesList.length === 0) return undefined;
-      return notesList.map(toMinimalNotes).filter((n) => n !== undefined);
+      const minimalNotes = notesList.map(toMinimalNotes).filter((n) => n !== undefined);
+      return minimalNotes.length > 0 ? minimalNotes : undefined;
     };
 
     // Helper to convert HitDieEntry to MinimalHitDice

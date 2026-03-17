@@ -318,11 +318,26 @@ import { CharacterStore } from '../stores/character.store';
               <!-- Expandable Content -->
               @if (isExpanded('item-' + item.name)) {
                 <div class="mt-3 pt-3 border-t border-outline-variant">
-                  <!-- Bonuses Section -->
+                  
+
+                  <!-- Item Description -->
+                  @if (getItemProp(item, 'entries')) {
+                    <div class="mt-3">
+                      <app-entry-renderer [entries]="getItemEntries(item)"></app-entry-renderer>
+                    </div>
+                  }
+
+                  <!-- Uses Tracking -->
+
+                </div>
+              }
+              <!-- Footer (always visible) -->
+               <!-- Bonuses Section -->
                   @if (hasAnyBonus(item)) {
-                    <div class="mt-2 p-2 bg-blue-container border border-blue rounded-lg">
-                      <h4 class="text-sm font-bold text-on-blue-container mb-2">Bonuses</h4>
-                      <div class="text-sm text-on-blue-container space-y-1">
+                    <div class="mt-4 border-t border-outline-variant pt-4">
+                    <div class="p-2 bg-tertiary-container border border-tertiary rounded-lg">
+                      <h4 class="text-sm font-bold text-on-tertiary-container mb-2">Bonuses</h4>
+                      <div class="text-sm text-on-tertiary-container space-y-1">
                         @if (getItemProp(item, 'bonusWeapon')) {
                           <div>• Weapon: {{ getItemProp(item, 'bonusWeapon') }}</div>
                         }
@@ -349,20 +364,8 @@ import { CharacterStore } from '../stores/character.store';
                         }
                       </div>
                     </div>
-                  }
-
-                  <!-- Item Description -->
-                  @if (getItemProp(item, 'entries')) {
-                    <div class="mt-3">
-                      <app-entry-renderer [entries]="getItemEntries(item)"></app-entry-renderer>
                     </div>
                   }
-
-                  <!-- Uses Tracking -->
-
-                </div>
-              }
-              <!-- Footer (always visible) -->
                   @if (item.uses?.length) {
                     <div class="mt-4 border-t border-outline-variant pt-4">
                       @for (use of item.uses; track use.tag) {

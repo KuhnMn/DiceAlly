@@ -15,16 +15,22 @@ import { FeatureNotes } from '../models/character.model';
             }
             <div class="flex flex-wrap gap-1 items-center">
               @for (note of group.notes; track $index; let j = $index) {
-                <button
-                  type="button"
-                  (click)="removeNote(i, j)"
-                  [attr.aria-label]="note + ', remove note'"
-                  class="px-2 py-1 rounded text-xs bg-tertiary-container text-on-tertiary-container border border-tertiary hover:opacity-75 transition-opacity"
-                >
-                  {{ note }} ✕
-                </button>
+                @if (group.isEditable === true) {
+                  <button
+                    type="button"
+                    (click)="removeNote(i, j)"
+                    [attr.aria-label]="note + ', remove note'"
+                    class="px-2 py-1 rounded text-xs bg-tertiary-container text-on-tertiary-container border border-tertiary hover:opacity-75 transition-opacity"
+                  >
+                    {{ note }} ✕
+                  </button>
+                } @else {
+                  <span class="px-2 py-1 rounded text-xs bg-tertiary-container text-on-tertiary-container border border-tertiary">
+                    {{ note }}
+                  </span>
+                }
               }
-              @if (addingGroupIndex() === i) {
+              @if (group.isEditable === true && addingGroupIndex() === i) {
                 <input
                   #noteInput
                   type="text"
@@ -37,7 +43,7 @@ import { FeatureNotes } from '../models/character.model';
                   (blur)="confirmAdd()"
                   class="px-2 py-1 rounded text-xs bg-surface border border-primary text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
                 />
-              } @else {
+              } @else if (group.isEditable === true) {
                 <button
                   type="button"
                   (click)="startAdding(i)"
@@ -70,12 +76,15 @@ export class FeatureNotesComponent {
       const normalized = (this.notes() ?? []).map((group) => ({
         ...group,
         notes: Array.isArray(group.notes) ? group.notes : [],
+        isEditable: group.isEditable ?? true,
       }));
       this.localNotes.set(normalized);
     });
   }
 
   startAdding(groupIndex: number): void {
+    const group = this.localNotes()[groupIndex];
+    if (!group || group.isEditable !== true) return;
     this.addingGroupIndex.set(groupIndex);
     this.addingText.set('');
     setTimeout(() => this.noteInputRef()?.nativeElement?.focus());
@@ -89,6 +98,11 @@ export class FeatureNotesComponent {
     }
     const groupIndex = this.addingGroupIndex();
     if (groupIndex === null) return;
+    const group = this.localNotes()[groupIndex];
+    if (!group || group.isEditable !== true) {
+      this.cancelAdd();
+      return;
+    }
     const updated = this.localNotes().map((g, i) =>
       i === groupIndex ? { ...g, notes: [...(g.notes ?? []), text] } : g
     );
@@ -104,6 +118,8 @@ export class FeatureNotesComponent {
   }
 
   removeNote(groupIndex: number, noteIndex: number): void {
+    const group = this.localNotes()[groupIndex];
+    if (!group || group.isEditable !== true) return;
     const updated = this.localNotes().map((g, i) => {
       if (i !== groupIndex) return g;
       return { ...g, notes: (g.notes ?? []).filter((_, j) => j !== noteIndex) };

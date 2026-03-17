@@ -245,13 +245,14 @@ export interface FeatureUses {
   tag?: string;
   totalFreeUses?: number;
   usedFreeUses?: number | 0;
-  freeUsesRegainCondition?: string;
+  freeUsesRegainCondition?: string| "LONG_REST";
   userAdded?: boolean;
 }
 
 export interface FeatureNotes {
   tag?: string;
   notes: string[];
+  isEditable?: boolean | true;
 }
 
 export interface AbilityScores {
