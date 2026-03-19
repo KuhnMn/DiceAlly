@@ -427,9 +427,9 @@ export class CharacterStorageService {
       if (!uses) return undefined;
       const minimal: any = {};
       // Keep tag always present for stable minimal payload decoding.
-      minimal.tag = typeof uses.tag === 'string' ? uses.tag : '';
-      const total = uses.totalFreeUses ?? 1;
-      if (total !== 1) minimal.t = total;
+      const tag = typeof uses.tag === 'string' ? uses.tag : '';
+      if (tag !== '') minimal.tag = tag;
+      minimal.t = uses.totalFreeUses ?? 1;
       const used = uses.usedFreeUses ?? 0;
       if (used !== 0) minimal.u = used;
       if (uses.freeUsesRegainCondition && uses.freeUsesRegainCondition !== "LONG_REST") minimal.r = uses.freeUsesRegainCondition;

@@ -106,7 +106,7 @@ import { CharacterStore } from '../stores/character.store';
                       >
                       <div class="text-on-primary-container">/</div>
                       <div class="text-on-primary-container font-bold"
-                      [class.text-teal]="monster.monsterMaxHpOverride !== null"
+                      [class.text-teal]="monster.monsterMaxHpOverride !== undefined"
                       >{{ getEffectiveMonsterMaxHP(monster) }}</div>
                       </div>
                       <div class="flex flex-wrap items-center justify-center gap-3 text-xs text-on-primary-container">
@@ -127,7 +127,7 @@ import { CharacterStore } from '../stores/character.store';
                       <button
                         type="button"
                         class="px-2 py-1 border border-primary rounded-md hover:bg-primary text-on-primary-containerhover:border-surface hover:text-on-primary transition-colors text-xs font-semibold "
-                        [class.border-teal]="monster.monsterMaxHpOverride !== null"
+                        [class.border-teal]="monster.monsterMaxHpOverride !== undefined"
                         (click)="clearMonsterMaxHpOverride(monster)"
                       >
                         Clear
@@ -649,7 +649,7 @@ export class MonstersPageComponent {
   }
 
   clearMonsterMaxHpOverride(monster: Monster) {
-    monster.monsterMaxHpOverride = null;
+    monster.monsterMaxHpOverride = undefined;
     // Adjust current HP if it exceeds base max
     const baseMax = monster.monsterMaxHP ?? 0;
     if (monster.monsterCurrentHP && monster.monsterCurrentHP > baseMax) {

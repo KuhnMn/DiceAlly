@@ -776,7 +776,7 @@ export interface Monster {
   userAdded?: boolean;
   entity?: MonsterEntity;
   monsterTempHP?: number;
-  monsterMaxHpOverride?: number | null;
+  monsterMaxHpOverride?: number;
 }
 
 export interface Note {
