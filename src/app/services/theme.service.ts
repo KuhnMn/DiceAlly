@@ -1,18 +1,21 @@
 import { Injectable, PLATFORM_ID, inject, signal, effect } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
-export type Theme = 'light' | 'dark';
+export type Theme = 'light-mc' | 'dark-mc' | 'light-royal' | 'dark-royal' | 'light-ethereal' | 'dark-ethereal' | 'light-forge' | 'dark-forge' | 'light-glade' | 'dark-glade';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ThemeService {
   private readonly THEME_KEY = 'ally-sheet-theme';
-  private readonly DEFAULT_THEME: Theme = 'light';
+  private readonly DEFAULT_THEME: Theme = 'light-mc';
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
 
   currentTheme = signal<Theme>(this.DEFAULT_THEME);
+  
+  // List of available themes
+    readonly availableThemes: readonly Theme[] = ['light-mc', 'dark-mc', 'light-royal', 'dark-royal', 'light-ethereal', 'dark-ethereal', 'light-forge', 'dark-forge', 'light-glade', 'dark-glade'];
 
   constructor() {
     // Load saved theme preference on browser
@@ -37,8 +40,8 @@ export class ThemeService {
     
     try {
       const stored = localStorage.getItem(this.THEME_KEY);
-      if (stored === 'light' || stored === 'dark') {
-        return stored;
+      if (this.availableThemes.includes(stored as Theme)) {
+        return stored as Theme;
       }
     } catch (e) {
       console.warn('Failed to load theme from storage:', e);
@@ -66,19 +69,42 @@ export class ThemeService {
     
     const html = document.documentElement;
     
-    // Remove both theme classes
-    html.classList.remove('light-theme', 'dark-theme');
+    // Remove all theme classes
+      html.classList.remove('light-theme', 'dark-theme', 'royal-theme', 'ethereal-theme', 'forge-theme', 'glade-theme');
     
-    // Add the appropriate theme class
-    if (theme === 'dark') {
+    // Set data attribute for theme
+    html.setAttribute('data-theme', theme);
+    
+    // Add appropriate theme classes for styling
+    if (theme.startsWith('dark')) {
       html.classList.add('dark-theme');
     } else {
       html.classList.add('light-theme');
     }
+    
+    if (theme.includes('royal')) {
+      html.classList.add('royal-theme');
+      }
+    
+      if (theme.includes('ethereal')) {
+        html.classList.add('ethereal-theme');
+    }
+
+    if (theme.includes('forge')) {
+      html.classList.add('forge-theme');
+    }
+
+    if (theme.includes('glade')) {
+      html.classList.add('glade-theme');
+    }
   }
 
   toggleTheme(): void {
-    this.currentTheme.update(current => current === 'light' ? 'dark' : 'light');
+    this.currentTheme.update(current => {
+      const themeIndex = this.availableThemes.indexOf(current);
+      const nextIndex = (themeIndex + 1) % this.availableThemes.length;
+      return this.availableThemes[nextIndex];
+    });
   }
 
   setTheme(theme: Theme): void {

@@ -169,7 +169,7 @@ import { CharacterStore } from '../stores/character.store';
                       @if (monster.monsterTempHP && monster.monsterTempHP > 0) {
                         <button
                           (click)="clearMonsterTempHP(monster)"
-                          class="px-2 py-1 bg-secondary-container border border-secondary text-on-secondary rounded text-xs font-semibold transition-colors hover:bg-secondary hover:text-on-secondary"
+                          class="px-2 py-1 bg-secondary-container border border-secondary text-on-secondary-container rounded text-xs font-semibold transition-colors hover:bg-secondary hover:text-on-secondary"
                           title="Clear temp HP"
                         >
                           Clear

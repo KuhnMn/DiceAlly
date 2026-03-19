@@ -93,7 +93,7 @@ import { CharacterStore } from '../stores/character.store';
       <!-- Currency Tracker -->
       <div class="mb-6 border-4 border-tertiary rounded-lg p-4 bg-tertiary-container">
         <h3 class="text-lg font-bold mb-3 text-on-tertiary-container">Currency</h3>
-        <div class="flex justify-between gap-6 items-center flex-wrap bg-surface-variant border border-outline-variant rounded-md p-1 px-2">
+        <div class="flex justify-between gap-6 items-center flex-wrap bg-surface-variant border-4 border-outline rounded-md p-1 px-2">
           <div class="flex items-center gap-2  ">
             <label class="text-sm font-semibold text-tertiary w-16">Gold</label>
             <input

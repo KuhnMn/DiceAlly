@@ -6,6 +6,7 @@ import { CharacterStore } from '../stores/character.store';
 import { CharacterStorageService, SavedCharacterMetadata } from '../services/character-storage.service';
 import { TmpfilesService } from '../services/tmpfiles.service';
 import { UnsavedChangesGuard } from '../guards/unsaved-changes.guard';
+import { ThemeService, type Theme } from '../services/theme.service';
 import { ExportOptionsModalComponent } from './export-options-modal.component';
 import type { ExportedCharacter } from '../models/character.model';
 
@@ -18,8 +19,35 @@ import type { ExportedCharacter } from '../models/character.model';
       @let characters = savedCharacters();
       @if (characters.length >= 0) {
         <section class="mb-12">
-          <h2 class="text-3xl font-bold mb-2">Your Characters</h2>
-          <p class="text-on-surface-variant mb-6">Saved locally on this device</p>
+          <div class="flex flex-row justify-between items-start mb-4">
+            <div class="flex flex-col items-start justify-between">
+              <h2 class="text-3xl font-bold mb-2">Your Characters</h2>
+              <p class="text-on-surface-variant mb-6">Saved locally on this device</p>
+            </div>
+            <div class="mb-8 flex justify-end">
+              <label class="text-sm font-medium flex items-center gap-2">
+                <span class="text-on-surface-variant">Theme:</span>
+                <select
+                  [value]="themeService.currentTheme()"
+                  (change)="onThemeChange($event)"
+                  class="px-3 py-2 text-sm font-medium transition-colors rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant cursor-pointer"
+                  title="Select color theme"
+                  aria-label="Select color theme"
+                >
+                  <option value="light-mc">☀️ Light (Monte Carlo)</option>
+                  <option value="dark-mc">🌙 Dark (Monte Carlo)</option>
+                  <option value="light-royal">✨ Light (Royal)</option>
+                  <option value="dark-royal">👑 Dark (Royal)</option>
+                  <option value="light-ethereal">🌌 Light (Ethereal)</option>
+                  <option value="dark-ethereal">💜 Dark (Ethereal)</option>
+                  <option value="light-forge">🔥 Light (Forge)</option>
+                  <option value="dark-forge">⚒️ Dark (Forge)</option>
+                  <option value="light-glade">🌿 Light (Glade)</option>
+                  <option value="dark-glade">🍃 Dark (Glade)</option>
+                </select>
+              </label>
+            </div>
+          </div>
 
           @if (characters.length > 0) {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -195,6 +223,7 @@ export class ImportComponent {
   private tmpfiles = inject(TmpfilesService);
   private router = inject(Router);
   private unsavedChangesGuard = inject(UnsavedChangesGuard);
+  protected themeService = inject(ThemeService);
 
   raw = '';
   importUrl = '';
@@ -254,6 +283,12 @@ export class ImportComponent {
   loadFromText() {
     const result = this.storage.importCharacterFromJson(this.raw);
     this.handleImportResult(result);
+  }
+
+  onThemeChange(event: Event) {
+    const select = event.target as HTMLSelectElement | null;
+    if (!select) return;
+    this.themeService.setTheme(select.value as Theme);
   }
 
   async importFromUrl() {

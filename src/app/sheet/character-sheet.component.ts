@@ -77,13 +77,23 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
             >
               🌙 Long Rest
             </button>
-            <button
-              (click)="themeService.toggleTheme()"
-              class="px-4 py-2 text-sm font-medium transition-colors rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface"
-              title="Toggle theme"
+            <select
+              [value]="themeService.currentTheme()"
+              (change)="onThemeChange($event)"
+              class="px-4 py-2 text-sm font-medium transition-colors rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface cursor-pointer"
+              title="Select color theme"
             >
-              {{ themeService.currentTheme() === 'light' ? '🌙 Dark' : '☀️ Light' }}
-            </button>
+              <option value="light-mc">☀️ Light (Monte Carlo)</option>
+              <option value="dark-mc">🌙 Dark (Monte Carlo)</option>
+              <option value="light-royal">✨ Light (Royal)</option>
+              <option value="dark-royal">👑 Dark (Royal)</option>
+                <option value="light-ethereal">🌌 Light (Ethereal)</option>
+                <option value="dark-ethereal">💜 Dark (Ethereal)</option>
+                <option value="light-forge">🔥 Light (Forge)</option>
+                <option value="dark-forge">⚒️ Dark (Forge)</option>
+                <option value="light-glade">🌿 Light (Glade)</option>
+                <option value="dark-glade">🍃 Dark (Glade)</option>
+            </select>
           </div>
         </div>
 
@@ -371,5 +381,10 @@ export class CharacterSheetComponent {
     this.store.setCharacter(updatedCharacter);
     // Trigger a save update for the rested state
     this.quickSave();
+  }
+
+  onThemeChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    this.themeService.setTheme(target.value as any);
   }
 }
