@@ -102,7 +102,7 @@ import type { ExportedCharacter } from '../models/character.model';
       <!-- Import Section -->
       <section class="border-t-2 border-outline pt-8">
         <h2 class="text-3xl font-bold mb-2">Import Character</h2>
-        <p class="text-on-surface-variant mb-6">Load a character from a JSON file, tmpfiles.org upload, or JSON paste</p>
+        <p class="text-on-surface-variant mb-6">Load a character from a JSON file, temporary share link, or JSON paste</p>
 
         <!-- URL Import -->
         <div class="mb-6">
@@ -113,7 +113,7 @@ import type { ExportedCharacter } from '../models/character.model';
                 [(ngModel)]="importUrl"
                 type="text"
                 (keydown.enter)="importFromUrl()"
-                placeholder="URL or tmpfiles ID (e.g., 26737738)"
+                placeholder="URL or 6-digit share ID"
                 class="flex-1 px-4 py-2 border-2 border-outline-variant rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-surface text-on-surface"
               />
               <button
@@ -128,7 +128,7 @@ import type { ExportedCharacter } from '../models/character.model';
                 }
               </button>
             </div>
-            <p class="text-xs text-on-surface-variant mt-2">Paste a tmpfiles.org share link, or just the tmpfiles file ID (the number from the URL)</p>
+            <p class="text-xs text-on-surface-variant mt-2">Paste a full share link, or just the short share ID from the link</p>
           </label>
         </div>
 
@@ -298,11 +298,11 @@ export class ImportComponent {
     try {
       let jsonContent: string;
 
-      // Check if this is a tmpfiles.org URL
+      // Check if this is a worker-backed temporary share URL.
       if (this.tmpfiles.isTmpfilesUrl(this.importUrl)) {
         const result = await this.tmpfiles.downloadCharacter(this.importUrl);
         if (!result.success) {
-          throw new Error(result.error || 'Failed to download from tmpfiles.org');
+          throw new Error(result.error || 'Failed to download from temporary share storage');
         }
         jsonContent = JSON.stringify(result.character);
       } else {
@@ -324,7 +324,7 @@ export class ImportComponent {
       this.importError.set({
         code: 'UNKNOWN',
         message: isTmpfiles
-          ? `Failed to import from tmpfiles.org: ${message}\n\n💡 Backup option: Click "Copy JSON (Backup)" in the Share modal and paste it below.`
+          ? `Failed to import from share link: ${message}\n\n💡 Backup option: Click "Copy JSON (Backup)" in the Share modal and paste it below.`
           : `Failed to download from URL: ${message}. Make sure the URL is correct and accessible.`,
       });
     } finally {

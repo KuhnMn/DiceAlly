@@ -21,7 +21,8 @@ import { RouterLink } from '@angular/router';
         <h2>2. Teilen und Importieren per Link</h2>
         <p>
           Wenn du die Teilen-Funktion verwendest, werden die von dir ausgewaehlten Daten
-          an tmpfiles.org hochgeladen und beim Import ueber den konfigurierten Cloudflare Worker geladen.
+          an den konfigurierten Cloudflare Worker uebertragen und dort kurzfristig in Cloudflare KV gespeichert.
+          Die Freigabe-Links sind zeitlich begrenzt (aktuell 5 Minuten) und werden danach automatisch ungueltig.
           Dabei koennen technisch notwendige Verbindungsdaten (z. B. IP-Adresse, Zeitstempel) verarbeitet werden.
         </p>
       </section>

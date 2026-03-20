@@ -104,7 +104,7 @@ type ExportMode = 'select' | 'json' | 'share' | 'qr';
           @if (isUploading()) {
             <div class="flex flex-col items-center py-8">
               <div class="animate-spin text-4xl mb-4">⟳</div>
-              <p class="text-on-surface-variant">Uploading to tmpfiles.org...</p>
+              <p class="text-on-surface-variant">Uploading to temporary share storage...</p>
             </div>
           } @else if (shareUrl()) {
             <p class="text-on-surface-variant mb-4">
@@ -123,10 +123,10 @@ type ExportMode = 'select' | 'json' | 'share' | 'qr';
 
             <div class="space-y-2 mb-4">
               <p class="text-xs text-on-surface-variant">
-                <span class="font-semibold">Note:</span> Files expire after 30 days.
+                <span class="font-semibold">Note:</span> Files expire after 5 minutes.
               </p>
               <p class="text-xs text-on-surface-variant">
-                <span class="font-semibold">Tip:</span> You can share just the file ID number for easier import.
+                <span class="font-semibold">Tip:</span> You can share just the 6-digit file ID for easier import.
               </p>
             </div>
 
@@ -256,7 +256,7 @@ export class ExportOptionsModalComponent {
   fileId = computed(() => {
     const url = this.shareUrl();
     if (!url) return null;
-    const match = url.match(/\/dl\/(\d+)\//);
+    const match = url.match(/\/files\/(\d{6}|[a-f0-9]{32})(?:\/)?$/i);
     return match ? match[1] : null;
   });
 

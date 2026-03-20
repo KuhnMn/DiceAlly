@@ -15,124 +15,140 @@ export interface TmpfilesDownloadResult {
 }
 
 /**
- * Service for uploading and downloading character files from tmpfiles.org
- * tmpfiles.org provides temporary file hosting (30 days) without authentication
- * Downloads are proxied through a user-controlled Cloudflare Worker since tmpfiles.org doesn't support CORS
+ * Service for uploading and downloading temporary character files
+ * using a user-controlled Cloudflare Worker + KV storage.
  */
 @Injectable({ providedIn: 'root' })
 export class TmpfilesService {
-  private readonly TMPFILES_API = 'https://tmpfiles.org/api/v1/upload';
-  private readonly TMPFILES_DL = 'https://tmpfiles.org/dl';
-  private readonly TMPFILES_HTTP = 'http://tmpfiles.org';
+  private readonly MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024;
   private readonly runtimeConfig = inject(APP_RUNTIME_CONFIG);
   private readonly CORS_PROXY = this.runtimeConfig.tmpfilesProxyUrl;
   private readonly AUTH_TOKEN = this.runtimeConfig.tmpfilesProxyAuthToken;
   /**
-   * Extract file ID from a tmpfiles.org download URL or just the ID string
-   * Example: https://tmpfiles.org/dl/26737738/character_upload.json -> 26737738
-   * Or if just the ID: 26737738 -> 26737738
+   * Extract file ID from worker download URL or just the ID string.
+   * Example: https://worker.example.workers.dev/files/123456 -> 123456
    */
   extractFileId(input: string): string | null {
-    // Try to extract from full URL
-    const urlMatch = input.match(/tmpfiles\.org\/dl\/(\d+)\//);
-    if (urlMatch) return urlMatch[1];
-    
-    // Try to match just a number (file ID)
-    const idMatch = input.match(/^(\d+)$/);
-    if (idMatch) return idMatch[1];
-    
+    const trimmedInput = input.trim();
+
+    // Accept direct short-form IDs (current: 6 digits, legacy: 32 hex chars).
+    const idMatch = trimmedInput.match(/^(\d{6}|[a-f0-9]{32})$/i);
+    if (idMatch) return idMatch[1].toLowerCase();
+
+    // Accept worker-style links (/files/:id).
+    const urlMatch = trimmedInput.match(/\/files\/(\d{6}|[a-f0-9]{32})(?:\/)?$/i);
+    if (urlMatch) return urlMatch[1].toLowerCase();
+
     return null;
   }
 
   /**
-   * Check if input is a valid tmpfiles.org download link or file ID
+   * Check if input is a valid worker download link or file ID.
    */
   isTmpfilesUrl(input: string): boolean {
     return this.extractFileId(input) !== null;
   }
 
   /**
-   * Build full tmpfiles.org URL from file ID
-   * Example: 26737738 -> https://tmpfiles.org/dl/26737738/character_sync.json
+   * Build full worker download URL from file ID.
    */
   buildTmpfilesUrl(fileId: string): string {
-    return `${this.TMPFILES_DL}/${fileId}/character_sync.json`;
+    return `${this.CORS_PROXY}/files/${fileId}`;
   }
 
   /**
-   * Get the actual download URL from a tmpfiles.org link
-   * The URL contains the file name, we need to use that exact URL
+   * Kept for backward compatibility with callers that expect URL normalization.
    */
   getTmpfilesDownloadUrl(url: string): string {
-    // tmpfiles.org URLs are direct download links, just return as-is
     return url;
   }
 
   /**
-   * Upload character data to tmpfiles.org
-   * Returns the shareable URL
+   * Upload character data to the Cloudflare Worker temporary storage.
    */
   async uploadCharacter(character: ExportedCharacter): Promise<TmpfilesUploadResult> {
     try {
-      const filename = `character_sync.json`;
-
       const jsonContent = JSON.stringify(character);
-      const blob = new Blob([jsonContent], { type: 'application/json' });
-
-      const formData = new FormData();
-      formData.append('file', blob, filename);
-
-      const response = await fetch(this.TMPFILES_API, {
-        method: 'POST',
-        body: formData,
-        // Note: FormData automatically sets the correct Content-Type header
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-
-      console.log('Upload response from tmpfiles.org:', data);
-
-      if (data.status === "success" && data.data?.url) {
+      const payloadSize = new TextEncoder().encode(jsonContent).byteLength;
+      if (payloadSize > this.MAX_UPLOAD_SIZE_BYTES) {
         return {
-          success: true,
-          url: data.data.url.replace(this.TMPFILES_HTTP, this.TMPFILES_DL), // Ensure URL is HTTPS
+          success: false,
+          error: `Character payload exceeds 5MB limit (${this.MAX_UPLOAD_SIZE_BYTES} bytes).`,
         };
-      } else {
-        throw new Error(data.status_txt || 'Unknown upload error');
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      return {
-        success: false,
-        error: `Failed to upload to tmpfiles.org: ${message}`,
-      };
-    }
-  }
 
-  /**
-   * Download character from tmpfiles.org URL or file ID
-   * Uses a CORS proxy to bypass CORS restrictions
-   * Accepts either:
-   * - Full URL: https://tmpfiles.org/dl/26737738/character_sync.json
-   * - File ID: 26737738
-   */
-  async downloadCharacter(input: string): Promise<TmpfilesDownloadResult> {
-    try {
       if (this.CORS_PROXY.includes('REPLACE_WITH_YOUR_WORKER')) {
         return {
           success: false,
-          error: 'Tmpfiles proxy is not configured yet. Deploy cloudflare/tmpfiles-proxy-worker.js and set tmpfilesProxyUrl in public/runtime-config.js.',
+          error: 'Share worker URL is not configured yet. Deploy cloudflare/tmpfiles-proxy-worker.js and set tmpfilesProxyUrl in public/runtime-config.js.',
         };
       }
 
       if (this.AUTH_TOKEN.includes('REPLACE_WITH_YOUR_AUTH_TOKEN')) {
         return {
           success: false,
-          error: 'Tmpfiles proxy auth token is not configured. Set tmpfilesProxyAuthToken in public/runtime-config.js.',
+          error: 'Share worker auth token is not configured. Set tmpfilesProxyAuthToken in public/runtime-config.js.',
+        };
+      }
+
+      const response = await fetch(`${this.CORS_PROXY}/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.AUTH_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: jsonContent,
+      });
+
+      if (!response.ok) {
+        let errorText = `${response.status}: ${response.statusText}`;
+        try {
+          const errorBody = await response.json() as { error?: string };
+          if (errorBody.error) errorText = errorBody.error;
+        } catch {
+          // Fallback to HTTP status text when JSON error body is unavailable.
+        }
+        throw new Error(errorText);
+      }
+
+      const data = await response.json() as {
+        success?: boolean;
+        data?: { url?: string };
+      };
+
+      if (data.success && data.data?.url) {
+        return {
+          success: true,
+          url: data.data.url,
+        };
+      } else {
+        throw new Error('Worker did not return a share URL');
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return {
+        success: false,
+        error: `Failed to upload to temporary share storage: ${message}`,
+      };
+    }
+  }
+
+  /**
+   * Download character from worker URL or file ID.
+   */
+  async downloadCharacter(input: string): Promise<TmpfilesDownloadResult> {
+    try {
+      if (this.CORS_PROXY.includes('REPLACE_WITH_YOUR_WORKER')) {
+        return {
+          success: false,
+          error: 'Share worker URL is not configured yet. Deploy cloudflare/tmpfiles-proxy-worker.js and set tmpfilesProxyUrl in public/runtime-config.js.',
+        };
+      }
+
+      if (this.AUTH_TOKEN.includes('REPLACE_WITH_YOUR_AUTH_TOKEN')) {
+        return {
+          success: false,
+          error: 'Share worker auth token is not configured. Set tmpfilesProxyAuthToken in public/runtime-config.js.',
         };
       }
 
@@ -140,21 +156,24 @@ export class TmpfilesService {
       if (!fileId) {
         return {
           success: false,
-          error: 'Invalid tmpfiles.org URL or ID format. Use just the file ID (e.g., 26737738) or the full URL.',
+          error: 'Invalid share URL or ID format. Use the full share link or the short file ID.',
         };
       }
 
-      // Build the full URL from ID
       const url = this.buildTmpfilesUrl(fileId);
-      
-      // Use Cloudflare Worker to fetch the file with CORS headers
-      const proxiedUrl = `${this.CORS_PROXY}/?url=${encodeURIComponent(url)}`;
-      
-      const response = await fetch(proxiedUrl, {
+
+      const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${this.AUTH_TOKEN}` },
       });
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        let errorText = `${response.status}: ${response.statusText}`;
+        try {
+          const errorBody = await response.json() as { error?: string };
+          if (errorBody.error) errorText = errorBody.error;
+        } catch {
+          // Fallback to HTTP status text when JSON error body is unavailable.
+        }
+        throw new Error(errorText);
       }
 
       const character = await response.json() as ExportedCharacter;
@@ -173,7 +192,7 @@ export class TmpfilesService {
       const message = error instanceof Error ? error.message : 'Unknown error';
       return {
         success: false,
-        error: `Failed to download from tmpfiles.org: ${message}`,
+        error: `Failed to download from temporary share storage: ${message}`,
       };
     }
   }

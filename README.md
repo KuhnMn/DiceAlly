@@ -30,7 +30,7 @@ npm install
 
 ### Runtime Configuration
 
-The app requires a runtime config file for the tmpfiles.org CORS proxy. This file is **not** committed to the repository.
+The app requires a runtime config file for the Cloudflare Worker that handles temporary character sharing. This file is **not** committed to the repository.
 
 Copy the example file:
 
@@ -47,14 +47,32 @@ window.__ALLY_APP_CONFIG__ = {
 };
 ```
 
-#### Setting up the Cloudflare Worker proxy
+#### Setting up the Cloudflare Worker temporary storage
 
-The Worker source is at `cloudflare/tmpfiles-proxy-worker.js`. It proxies requests to `tmpfiles.org` and enforces Bearer token authentication.
+The Worker source is at `cloudflare/tmpfiles-proxy-worker.js`. It stores JSON payloads in Cloudflare KV for 5 minutes and enforces Bearer token authentication.
+
+Create a KV namespace first and keep its ID for the deploy command:
+
+```bash
+npx wrangler kv namespace create TEMP_UPLOADS
+```
+
+Then bind it in your `wrangler.toml`:
+
+```toml
+name = "allysheetviewer-tmpfiles-proxy"
+main = "cloudflare/tmpfiles-proxy-worker.js"
+compatibility_date = "2026-03-20"
+
+[[kv_namespaces]]
+binding = "TEMP_UPLOADS"
+id = "YOUR_NAMESPACE_ID"
+```
 
 Deploy it with:
 
 ```bash
-npx wrangler deploy cloudflare/tmpfiles-proxy-worker.js --name allysheetviewer-tmpfiles-proxy
+npx wrangler deploy
 ```
 
 Store your auth token as a Cloudflare Worker secret:
@@ -64,6 +82,13 @@ npx wrangler secret put AUTH_TOKEN
 ```
 
 Set `tmpfilesProxyUrl` to your deployed Worker URL and `tmpfilesProxyAuthToken` to the same token in `public/runtime-config.js`.
+
+Share-link behavior:
+
+- Uploaded payload max size: 5 MB
+- File lifetime: 5 minutes (300 seconds)
+- Download route format: `/files/{id}`
+- ID format: 6 digits (legacy 32-char IDs are still accepted)
 
 Without this configuration, the share/import-via-link feature will display an error but all other functionality works normally.
 
@@ -75,7 +100,7 @@ npm start
 
 App URL:
 
-- http://localhost:4200
+- <http://localhost:4200>
 
 Build for production:
 
