@@ -22,7 +22,7 @@ type ExportMode = 'select' | 'json' | 'share' | 'qr';
               @if (isUploading()) {
                 Uploading...
               } @else if (shareUrl()) {
-                Share Link Ready
+                Sync Code Ready
               } @else {
                 Upload Failed
               }
@@ -67,10 +67,10 @@ type ExportMode = 'select' | 'json' | 'share' | 'qr';
               class="w-full px-6 py-4 bg-secondary-container text-on-secondary-container font-medium rounded-lg hover:bg-secondary transition-colors text-left"
             >
               <div class="flex items-center">
-                <span class="text-2xl mr-3">🔗</span>
+                <span class="text-2xl mr-3">#</span>
                 <div>
-                  <div class="font-semibold">Share via Link</div>
-                  <div class="text-sm opacity-90">Upload and get shareable URL</div>
+                  <div class="font-semibold">Share via Code Sync</div>
+                  <div class="text-sm opacity-90">Upload to temporary storage</div>
                 </div>
               </div>
             </button>
@@ -108,16 +108,16 @@ type ExportMode = 'select' | 'json' | 'share' | 'qr';
             </div>
           } @else if (shareUrl()) {
             <p class="text-on-surface-variant mb-4">
-              Your character has been uploaded. Share the link or ID below:
+              Your character has been uploaded. Share the Sync Code below:
             </p>
 
-            <div class="mb-4 p-4 bg-surface-container rounded-lg border-2 border-outline-variant">
+            <!--<div class="mb-4 p-4 bg-surface-container rounded-lg border-2 border-outline-variant">
               <p class="text-xs text-on-surface-variant font-semibold mb-2">Share Link</p>
               <p class="text-sm font-mono text-primary break-all">{{ shareUrl() }}</p>
-            </div>
+            </div>-->
 
             <div class="mb-4 p-4 bg-surface-container rounded-lg border-2 border-outline-variant">
-              <p class="text-xs text-on-surface-variant font-semibold mb-2">File ID (Short Form)</p>
+              <p class="text-xs text-on-surface-variant font-semibold mb-2">Sync Code</p>
               <p class="text-sm font-mono text-primary break-all">{{ fileId() }}</p>
             </div>
 
@@ -125,23 +125,20 @@ type ExportMode = 'select' | 'json' | 'share' | 'qr';
               <p class="text-xs text-on-surface-variant">
                 <span class="font-semibold">Note:</span> Files expire after 5 minutes.
               </p>
-              <p class="text-xs text-on-surface-variant">
-                <span class="font-semibold">Tip:</span> You can share just the 6-digit file ID for easier import.
-              </p>
             </div>
 
             <div class="flex flex-col gap-2">
-              <button
+              <!--<button
                 (click)="copyLinkToClipboard()"
                 class="px-4 py-2 bg-primary text-on-primary font-medium rounded-lg hover:bg-primary-container transition-colors"
               >
                 📋 Copy Full Link
-              </button>
+              </button>-->
               <button
                 (click)="copyIdToClipboard()"
                 class="px-4 py-2 bg-secondary-container text-on-secondary-container font-medium rounded-lg hover:bg-secondary transition-colors"
               >
-                📋 Copy File ID
+                📋 Copy Sync Code
               </button>
               <button
                 (click)="close.emit()"

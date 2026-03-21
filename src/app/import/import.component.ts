@@ -102,18 +102,18 @@ import type { ExportedCharacter } from '../models/character.model';
       <!-- Import Section -->
       <section class="border-t-2 border-outline pt-8">
         <h2 class="text-3xl font-bold mb-2">Import Character</h2>
-        <p class="text-on-surface-variant mb-6">Load a character from a JSON file, temporary share link, or JSON paste</p>
+        <p class="text-on-surface-variant mb-6">Load a character from a JSON file, temporary Sync Code, or JSON paste</p>
 
         <!-- URL Import -->
         <div class="mb-6">
           <label class="block">
-            <span class="block text-sm font-medium mb-3">Import from URL or File ID</span>
+            <span class="block text-sm font-medium mb-3">Import Sync Code</span>
             <div class="flex gap-2">
               <input
                 [(ngModel)]="importUrl"
                 type="text"
                 (keydown.enter)="importFromUrl()"
-                placeholder="URL or 6-digit share ID"
+                placeholder="6-digit Sync Code"
                 class="flex-1 px-4 py-2 border-2 border-outline-variant rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-surface text-on-surface"
               />
               <button
@@ -128,7 +128,7 @@ import type { ExportedCharacter } from '../models/character.model';
                 }
               </button>
             </div>
-            <p class="text-xs text-on-surface-variant mt-2">Paste a full share link, or just the short share ID from the link</p>
+            <p class="text-xs text-on-surface-variant mt-2">Paste short sync code, or the full sync URL if provided</p>
           </label>
         </div>
 
