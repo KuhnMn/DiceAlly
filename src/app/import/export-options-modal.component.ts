@@ -225,6 +225,16 @@ type ExportMode = 'select' | 'json' | 'share' | 'qr';
           }
         }
       </div>
+
+      @if (snackbarMessage()) {
+        <div
+          class="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg bg-surface-container text-on-surface shadow-lg border border-outline z-[60]"
+          role="status"
+          aria-live="polite"
+        >
+          {{ snackbarMessage() }}
+        </div>
+      }
     </div>
   `,
 })
@@ -247,6 +257,9 @@ export class ExportOptionsModalComponent {
   qrCodeUrl = signal<string | null>(null);
   qrDataSize = signal<number>(0);
   qrError = signal<string | null>(null);
+  snackbarMessage = signal<string | null>(null);
+
+  private snackbarTimeout: ReturnType<typeof setTimeout> | null = null;
 
   characterName = computed(() => this.character()?.character?.name || 'Unknown');
   characterLevel = computed(() => this.character()?.character?.level || 1);
@@ -359,10 +372,23 @@ export class ExportOptionsModalComponent {
 
     try {
       await navigator.clipboard.writeText(id);
-      alert('✅ File ID copied to clipboard!');
+      this.showSnackbar('Sync code copied to clipboard.');
     } catch (error) {
-      prompt('Copy the file ID below:', id);
+      prompt('Copy the SyncCode below:', id);
     }
+  }
+
+  private showSnackbar(message: string) {
+    this.snackbarMessage.set(message);
+
+    if (this.snackbarTimeout) {
+      clearTimeout(this.snackbarTimeout);
+    }
+
+    this.snackbarTimeout = setTimeout(() => {
+      this.snackbarMessage.set(null);
+      this.snackbarTimeout = null;
+    }, 2500);
   }
 
   resetToSelect() {

@@ -62,7 +62,8 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
               QR Code
             </button>
           </div>
-          <div class="flex gap-2 items-center">
+          <div class="flex gap-2 items-center flex-col sm:gap-2 sm:flex-row justify-start items-start">
+            <div class="flex gap-2 items-center">
             <button
               (click)="performShortRest()"
               class="px-4 py-2 bg-blue-container text-on-blue-container font-medium rounded-lg hover:bg-blue transition-colors text-sm"
@@ -77,10 +78,11 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
             >
               🌙 Long Rest
             </button>
+            </div>
             <select
               [value]="themeService.currentTheme()"
               (change)="onThemeChange($event)"
-              class="px-4 py-2 text-sm font-medium transition-colors rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface cursor-pointer"
+              class="flex items-center px-4 py-2 text-sm font-medium transition-colors rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface cursor-pointer"
               title="Select color theme"
             >
               <option value="light-mc">☀️ Light (Monte Carlo)</option>

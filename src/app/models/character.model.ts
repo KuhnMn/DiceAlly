@@ -281,6 +281,7 @@ export interface SpellClassInfo {
 export interface SpellTime {
   number?: number;
   unit?: string;
+  condition?: string;
 }
 
 export interface SpellRange {

@@ -156,7 +156,8 @@ export class CharacterHelpersService {
       .map((time) => {
         const number = time.number ?? '';
         const unit = time.unit ?? '';
-        return `${number} ${unit}`.trim();
+        const condition = time.condition ? `, ${time.condition}` : '';
+        return `${number} ${unit}${condition}`.trim();
       })
       .filter(Boolean)
       .join(', ');

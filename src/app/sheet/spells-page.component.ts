@@ -14,6 +14,9 @@ type SpellBonusItemOverview = {
   bonusesText: string;
 };
 
+type SpellRitualFilter = 'ALL' | 'RITUAL' | 'NON_RITUAL';
+type SpellLevelFilter = 'ALL' | number;
+
 @Component({
   selector: 'app-spells-page',
   imports: [CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
@@ -109,6 +112,43 @@ type SpellBonusItemOverview = {
             {{ type }}
           </button>
         }
+      </div>
+      <div class="mb-6 flex flex-wrap items-center gap-2">
+        <span class="text-sm font-semibold text-on-surface">Spell Level:</span>
+        @for (levelFilter of spellLevelFilterOptions(); track levelFilter.value) {
+          <button
+            type="button"
+            class="px-3 py-1 text-sm border rounded-full"
+            [class.bg-purple]="spellLevelFilter() === levelFilter.value"
+            [class.text-on-purple]="spellLevelFilter() === levelFilter.value"
+            [class.border-purple]="spellLevelFilter() === levelFilter.value"
+            [class.border-outline-variant]="spellLevelFilter() !== levelFilter.value"
+            [class.bg-surface-container]="spellLevelFilter() !== levelFilter.value"
+            [class.text-on-surface]="spellLevelFilter() !== levelFilter.value"
+            (click)="spellLevelFilter.set(levelFilter.value)"
+          >
+            {{ levelFilter.label }}
+          </button>
+        }
+      </div>
+      <div class="mb-6 flex flex-wrap items-center gap-2">
+        <span class="text-sm font-semibold text-on-surface">Ritual Casting:</span>
+        <button
+          type="button"
+          class="px-3 py-1 text-sm border rounded-full transition-colors"
+          [class.bg-green-container]="spellRitualFilter() === 'RITUAL'"
+          [class.text-on-green-container]="spellRitualFilter() === 'RITUAL'"
+          [class.border-green]="spellRitualFilter() === 'RITUAL'"
+          [class.bg-surface-container]="spellRitualFilter() === 'ALL'"
+          [class.text-on-surface]="spellRitualFilter() === 'ALL'"
+          [class.border-outline-variant]="spellRitualFilter() === 'ALL'"
+          [class.bg-rose-container]="spellRitualFilter() === 'NON_RITUAL'"
+          [class.text-on-rose-container]="spellRitualFilter() === 'NON_RITUAL'"
+          [class.border-rose]="spellRitualFilter() === 'NON_RITUAL'"
+          (click)="cycleSpellRitualFilter()"
+        >
+          Ritual
+        </button>
       </div>
       <div class="mb-6">
         <div class="mb-3">
@@ -286,7 +326,7 @@ type SpellBonusItemOverview = {
 
                       </div>
                     }
-                    @if (hasSpellListType(spell, "PREPARED")) {
+                    @if (spellListTypeFilter() === 'PREPARED') {
                         @if (spell.uses?.length) {
                           <div class="mt-4 border-t border-outline-variant pt-4">
                             @for (use of spell.uses; track use.tag) {
@@ -308,7 +348,7 @@ type SpellBonusItemOverview = {
             </div>
           }
         } @else {
-          <p class="text-on-surface-variant italic">No spells known</p>
+          <p class="text-on-surface-variant italic">No spells for this filter.</p>
         }
       </div>
     </div>
@@ -322,6 +362,8 @@ export class SpellsPageComponent {
   highlightedId = signal<string | null>(null);
 
   spellListTypeFilter = signal<'PREPARED' | 'KNOWN' | 'SPELLBOOK'>('PREPARED');
+  spellRitualFilter = signal<SpellRitualFilter>('ALL');
+  spellLevelFilter = signal<SpellLevelFilter>('ALL');
   spellCastingSourceFilter = signal<string>('ALL');
   expandedItems = signal<Set<string>>(new Set());
 
@@ -340,6 +382,30 @@ export class SpellsPageComponent {
     const spells = this.characterData()?.spells ?? [];
     const sources = new Set(spells.map((spell) => spell.castingSourceName).filter(Boolean) as string[]);
     return ['ALL', ...Array.from(sources).sort()];
+  });
+
+  spellRitualFilterLabel = computed(() => {
+    switch (this.spellRitualFilter()) {
+      case 'RITUAL':
+        return 'On';
+      case 'NON_RITUAL':
+        return 'Off';
+      default:
+        return 'Neutral';
+    }
+  });
+
+  spellLevelFilterOptions = computed(() => {
+    const levels = new Set((this.characterData()?.spells ?? []).map((spell) => spell.entity?.level ?? 0));
+    const sortedLevels = Array.from(levels).sort((a, b) => a - b);
+
+    return [
+      { value: 'ALL' as const, label: 'ALL' },
+      ...sortedLevels.map((level) => ({
+        value: level,
+        label: this.spellLevelHeader(level),
+      })),
+    ];
   });
 
   spellBonusItemsOverview = computed(() => {
@@ -391,11 +457,19 @@ export class SpellsPageComponent {
   spells = computed(() => {
     const spells = this.characterData()?.spells ?? [];
     const listTypeFilter = this.spellListTypeFilter();
+    const ritualFilter = this.spellRitualFilter();
+    const levelFilter = this.spellLevelFilter();
     const sourceFilter = this.spellCastingSourceFilter();
     const filtered = spells.filter((spell) => {
       const matchesListType = spell.listType === listTypeFilter;
+      const isRitual = spell.entity?.meta?.ritual ?? false;
+      const matchesRitual = ritualFilter === 'ALL'
+        || (ritualFilter === 'RITUAL' && isRitual)
+        || (ritualFilter === 'NON_RITUAL' && !isRitual);
+      const spellLevel = spell.entity?.level ?? 0;
+      const matchesLevel = levelFilter === 'ALL' || spellLevel === levelFilter;
       const matchesSource = sourceFilter === 'ALL' || spell.castingSourceName === sourceFilter;
-      return matchesListType && matchesSource;
+      return matchesListType && matchesRitual && matchesLevel && matchesSource;
     });
     return [...filtered].sort((a, b) => {
       // Sort by casting source first
@@ -508,6 +582,12 @@ export class SpellsPageComponent {
 
   spellLevelHeader(level: number): string {
     return level === 0 ? 'Cantrips' : `Level ${level}`;
+  }
+
+  cycleSpellRitualFilter() {
+    const current = this.spellRitualFilter();
+    const next = current === 'ALL' ? 'RITUAL' : current === 'RITUAL' ? 'NON_RITUAL' : 'ALL';
+    this.spellRitualFilter.set(next);
   }
 
   private buildFeatureSourceStats() {

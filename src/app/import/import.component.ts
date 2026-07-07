@@ -19,7 +19,7 @@ import type { ExportedCharacter } from '../models/character.model';
       @let characters = savedCharacters();
       @if (characters.length >= 0) {
         <section class="mb-12">
-          <div class="flex flex-row justify-between items-start mb-4">
+          <div class="flex flex-col sm:flex-row justify-between items-start mb-4">
             <div class="flex flex-col items-start justify-between">
               <h2 class="text-3xl font-bold mb-2">Your Characters</h2>
               <p class="text-on-surface-variant mb-6">Saved locally on this device</p>

@@ -418,13 +418,13 @@ import { get } from 'http';
                     (input)="onMaxHpOverrideInput($any($event.target).value)"
                     (change)="commitMaxHpOverride()"
                     (blur)="commitMaxHpOverride()"
-                    class="w-20 px-2 py-1 border border-outline-variant rounded-md text-center focus:ring-2 focus:ring-teal focus:border-teal"
+                    class="w-20 px-2 py-1 border border-outline-variant rounded-md text-center focus:ring-2 focus:ring-teal focus:border-teal "
                     min="0"
                   />
                 </label>
                 <button
                   type="button"
-                  class="transition-colors duration-300 px-2 py-1 border border-outline-variant rounded-md text-on-surface-variant hover:bg-surface-container"
+                  class="transition-colors px-2 py-1 border border-outline-variant rounded-md text-on-surface-variant hover:bg-surface-container"
                   [class.border-teal]="character()?.maxHpOverride !== null"
                   (click)="clearMaxHpOverride()"
                 >
@@ -434,6 +434,7 @@ import { get } from 'http';
 
               <div class="mt-4">
                 <div class="text-xs text-on-surface-variant uppercase font-semibold mb-1">Temp HP</div>
+                <div class="flex items-center justify-center gap-4">
                 <input
                   type="number"
                   [value]="character()?.tempHp ?? 0"
@@ -441,6 +442,52 @@ import { get } from 'http';
                   class="w-28 text-center text-2xl font-bold text-green border border-outline-variant rounded-lg py-1 focus:ring-2 focus:ring-green focus:border-green pr-2"
                   min="0"
                 />
+                <button
+                  (click)="updateTempHp('0')"
+                  class="transition-colors px-2 py-1 border border-outline-variant rounded-md text-on-surface-variant hover:bg-surface-container"
+                  [class.border-green]="character()?.tempHp !== null && character()?.tempHp !== 0"
+                  title="Clear temp HP"
+                >
+                  Clear
+                </button>
+                </div>
+              </div>
+
+              <div class="mt-6 pt-4 border-t-2 border-outline-variant">
+                <div class="text-xs text-on-surface-variant uppercase font-semibold mb-2">Quick HP Actions</div>
+                <div class="flex flex-col items-center gap-3">
+                  <input
+                    type="number"
+                    [value]="hpAdjustmentInput()"
+                    (input)="hpAdjustmentInput.set($any($event.target).value)"
+                    class="w-40 text-center text-lg font-bold border border-outline-variant rounded-lg py-1 px-2 focus:ring-2 focus:ring-primary focus:border-primary"
+                    min="0"
+                    placeholder="Amount"
+                  />
+                  <div class="flex flex-wrap justify-center gap-2">
+                    <button
+                      type="button"
+                      (click)="applyDamageFromAdjustment()"
+                      class="px-3 py-2 rounded-md border border-outline-variant bg-error-container text-on-error-container font-semibold hover:opacity-90 transition-colors"
+                    >
+                      Deal Damage
+                    </button>
+                    <button
+                      type="button"
+                      (click)="healFromAdjustment()"
+                      class="px-3 py-2 rounded-md border border-outline-variant bg-primary-container text-on-primary-container font-semibold hover:opacity-90 transition-colors"
+                    >
+                      Heal
+                    </button>
+                    <button
+                      type="button"
+                      (click)="setTempHpFromAdjustment()"
+                      class="px-3 py-2 rounded-md border border-outline-variant bg-secondary-container text-on-secondary-container font-semibold hover:opacity-90 transition-colors"
+                    >
+                      Set Temp HP
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <!-- Rest Buttons -->
@@ -769,6 +816,7 @@ export class CharacterInfoPageComponent {
   isEditingProfilePictureUrl = signal(false);
   profilePictureUrlInput = signal('');
   activeConditions = signal<ConditionName[]>([]);
+  hpAdjustmentInput = signal('');
 
   constructor() {
     effect(() => {
@@ -919,6 +967,49 @@ export class CharacterInfoPageComponent {
     char.tempHp = Number.isFinite(numValue) ? numValue : 0;
   }
 
+  applyDamageFromAdjustment() {
+    const amount = this.getHpAdjustmentAmount();
+    const char = this.character();
+    if (!char || amount <= 0) {
+      this.clearHpAdjustmentInput();
+      return;
+    }
+
+    const tempHp = Math.max(0, char.tempHp ?? 0);
+    const currentHp = Math.max(0, char.currentHp ?? 0);
+    const damageToTempHp = Math.min(tempHp, amount);
+    const damageToCurrentHp = amount - damageToTempHp;
+
+    char.tempHp = tempHp - damageToTempHp;
+    char.currentHp = Math.max(0, currentHp - damageToCurrentHp);
+    this.clearHpAdjustmentInput();
+  }
+
+  healFromAdjustment() {
+    const amount = this.getHpAdjustmentAmount();
+    const char = this.character();
+    if (!char || amount <= 0) {
+      this.clearHpAdjustmentInput();
+      return;
+    }
+
+    const currentHp = Math.max(0, char.currentHp ?? 0);
+    char.currentHp = Math.min(this.getEffectiveMaxHp(), currentHp + amount);
+    this.clearHpAdjustmentInput();
+  }
+
+  setTempHpFromAdjustment() {
+    const amount = this.getHpAdjustmentAmount();
+    const char = this.character();
+    if (!char) {
+      this.clearHpAdjustmentInput();
+      return;
+    }
+
+    char.tempHp = amount;
+    this.clearHpAdjustmentInput();
+  }
+
   updateRoundTracker(value: string) {
     const char = this.character();
     if (!char) return;
@@ -977,6 +1068,20 @@ export class CharacterInfoPageComponent {
       char.currentHp = this.getEffectiveMaxHp();
     }
     this.maxHpOverrideInput.set(String(char.maxHp ?? 0));
+  }
+
+  private getHpAdjustmentAmount(): number {
+    const trimmed = this.hpAdjustmentInput().trim();
+    if (!trimmed) return 0;
+
+    const parsed = Number(trimmed);
+    if (!Number.isFinite(parsed)) return 0;
+
+    return Math.max(0, Math.floor(parsed));
+  }
+
+  private clearHpAdjustmentInput() {
+    this.hpAdjustmentInput.set('');
   }
 
   onConditionsChanged(conditions: ConditionName[]) {
