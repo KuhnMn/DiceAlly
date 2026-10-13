@@ -1,0 +1,12 @@
+{
+    "automatedAttempt":  {
+                             "browser":  "Chrome/155.0.8059.40",
+                             "status":  "inconclusive",
+                             "note":  "The initial harness reported an Internal error without a completed import measurement. No automated browser scenario is recorded as passing."
+                         },
+    "mobile":  "deferred",
+    "detailedBrowserMeasurements":  "deferred",
+    "decision":  "Skip further automated browser checking; defer mobile verification and revisit if issues arise.",
+    "evidence":  "User reports checking locally on desktop and prioritizes desktop for now.",
+    "status":  "desktop-accepted-by-user"
+}

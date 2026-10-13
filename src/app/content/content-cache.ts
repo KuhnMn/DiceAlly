@@ -1,0 +1,167 @@
+import { ContentRecord, ContentSource, ImportRevision, sourceIdentity } from './content.model';
+
+export interface ContentCache {
+  stage(revision: ImportRevision): Promise<void>;
+  put(revisionId: string, records: ContentRecord[]): Promise<void>;
+  get(revisionId: string, key: string): Promise<ContentRecord | undefined>;
+  visit(revisionId: string, visitor: (record: ContentRecord) => Promise<void>): Promise<void>;
+  activate(revision: ImportRevision, signal?: AbortSignal): Promise<void>;
+  discard(revisionId: string): Promise<void>;
+}
+function request<T>(value: IDBRequest<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    value.onsuccess = () => resolve(value.result);
+    value.onerror = () => reject(value.error ?? new Error('IndexedDB request failed.'));
+  });
+}
+function complete(tx: IDBTransaction): Promise<void> {
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('Local cache transaction failed.'));
+  });
+}
+export class IndexedDbContentCache implements ContentCache {
+  constructor(private readonly locks = globalThis.navigator?.locks) {}
+  /** One import/cleanup per account across tabs and workers; browser releases locks on termination. */
+  private async exclusive<T>(namespace: string, work: () => Promise<T>): Promise<T> {
+    if (!this.locks) throw new Error('This browser requires Web Locks for safe content imports and cleanup.');
+    return this.locks.request(`ally-content:${namespace}`, { mode: 'exclusive', ifAvailable: true }, async lock => {
+      if (!lock) throw new Error('Content is being imported or managed in another tab. Try again when it finishes.');
+      return work();
+    });
+  }
+  async withImport<T>(namespace: string, work: () => Promise<T>): Promise<T> {
+    return this.exclusive(namespace, async () => { await this.recoverUnlocked(namespace); return work(); });
+  }
+  async recover(namespace: string): Promise<number> {
+    return this.exclusive(namespace, () => this.recoverUnlocked(namespace));
+  }
+  private async recoverUnlocked(namespace: string): Promise<number> {
+    const abandoned = (await this.revisions(namespace)).filter(r => r.revision.status === 'staging' && !r.active);
+    for (const entry of abandoned) await this.remove(entry.revision.id, namespace, true);
+    return abandoned.length;
+  }
+  async revisions(namespace: string): Promise<{ revision: ImportRevision; active: boolean; storedRecords: number }[]> {
+    const db = await this.db();
+    const tx = db.transaction(['revisions', 'active']);
+    const [revisions, pointers] = await Promise.all([
+      request<ImportRevision[]>(tx.objectStore('revisions').getAll()),
+      request<{ revisionId: string }[]>(tx.objectStore('active').getAll()),
+    ]);
+    const active = new Set(pointers.map(p => p.revisionId));
+    return Promise.all(revisions.filter(r => r.namespace === namespace).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(async revision => ({
+      revision, active: active.has(revision.id),
+      storedRecords: await request<number>(db.transaction('records').objectStore('records').index('revision').count(revision.id)),
+    })));
+  }
+  async deleteRevision(namespace: string, revisionId: string): Promise<void> {
+    await this.exclusive(namespace, () => this.remove(revisionId, namespace));
+  }
+  private connection?: Promise<IDBDatabase>;
+  private db(): Promise<IDBDatabase> {
+    return this.connection ??= new Promise((resolve, reject) => {
+      // Retire pre-lock connections before recovery can remove their staging data.
+      const opening = indexedDB.open('ally-content-v1', 3);
+      opening.onupgradeneeded = () => {
+        const db = opening.result;
+        if (!db.objectStoreNames.contains('records')) {
+          const records = db.createObjectStore('records', { keyPath: ['revisionId', 'key'] });
+          records.createIndex('revision', 'revisionId');
+          records.createIndex('category', ['revisionId', 'kind']);
+          db.createObjectStore('revisions', { keyPath: 'id' });
+          db.createObjectStore('active', { keyPath: 'key' });
+        }
+        if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'namespace' });
+      };
+      opening.onsuccess = () => {
+        opening.result.onversionchange = () => { opening.result.close(); this.connection = undefined; };
+        resolve(opening.result);
+      };
+      opening.onerror = () => { this.connection = undefined; reject(opening.error); };
+      opening.onblocked = () => reject(new Error('Close other Ally tabs to upgrade the content cache.'));
+    });
+  }
+  async stage(revision: ImportRevision): Promise<void> {
+    const tx = (await this.db()).transaction('revisions', 'readwrite');
+    const done = complete(tx);
+    tx.objectStore('revisions').add(revision);
+    await done;
+  }
+  async put(revisionId: string, records: ContentRecord[]): Promise<void> {
+    const tx = (await this.db()).transaction('records', 'readwrite');
+    const done = complete(tx);
+    for (const record of records) tx.objectStore('records').put({ ...record, revisionId });
+    await done;
+  }
+  async get(revisionId: string, key: string): Promise<ContentRecord | undefined> {
+    const tx = (await this.db()).transaction('records');
+    return request(tx.objectStore('records').get([revisionId, key]));
+  }
+  async visit(revisionId: string, visitor: (record: ContentRecord) => Promise<void>): Promise<void> {
+    // Page by primary key. Do not hold an IndexedDB cursor transaction open across async linking.
+    let after: string | undefined;
+    for (;;) {
+      const tx = (await this.db()).transaction('records');
+      const range = IDBKeyRange.bound([revisionId, after ?? ''], [revisionId, '\uffff'], after !== undefined);
+      const page = await request<ContentRecord[]>(tx.objectStore('records').getAll(range, 128));
+      if (!page.length) return;
+      for (const record of page) await visitor(record);
+      after = page[page.length - 1].key;
+    }
+  }
+  async activate(revision: ImportRevision, signal?: AbortSignal): Promise<void> {
+    const db = await this.db();
+    signal?.throwIfAborted();
+    const tx = db.transaction(['revisions', 'active'], 'readwrite');
+    const done = complete(tx);
+    const abort = () => tx.abort();
+    signal?.addEventListener('abort', abort, { once: true });
+    tx.objectStore('revisions').put({ ...revision, status: 'ready' });
+    tx.objectStore('active').put({ key: this.activeKey(revision.namespace, revision.source), revisionId: revision.id });
+    try { await done; } finally { signal?.removeEventListener('abort', abort); }
+  }
+  private activeKey(namespace: string, source: ContentSource): string {
+    return JSON.stringify([namespace, sourceIdentity(source), source.branch]);
+  }
+  async active(namespace: string, source: ContentSource): Promise<ImportRevision | undefined> {
+    const db = await this.db();
+    const pointer = await request<{ revisionId: string } | undefined>(db.transaction('active').objectStore('active').get(this.activeKey(namespace, source)));
+    return pointer ? request(db.transaction('revisions').objectStore('revisions').get(pointer.revisionId)) : undefined;
+  }
+  async category(revisionId: string, kind: string, limit = 100): Promise<ContentRecord[]> {
+    const tx = (await this.db()).transaction('records');
+    return request(tx.objectStore('records').index('category').getAll([revisionId, kind], limit));
+  }
+  async saveSource(namespace: string, source: ContentSource): Promise<void> {
+    const tx = (await this.db()).transaction('settings', 'readwrite');
+    const done = complete(tx);
+    tx.objectStore('settings').put({ namespace, source });
+    await done;
+  }
+  async savedSource(namespace: string): Promise<ContentSource | undefined> {
+    const tx = (await this.db()).transaction('settings');
+    const result = await request<{ source: ContentSource } | undefined>(tx.objectStore('settings').get(namespace));
+    return result?.source;
+  }
+  async discard(revisionId: string): Promise<void> {
+    await this.remove(revisionId, undefined, true);
+  }
+  private async remove(revisionId: string, namespace?: string, stagingOnly = false): Promise<void> {
+    const tx = (await this.db()).transaction(['records', 'revisions', 'active'], 'readwrite');
+    const done = complete(tx);
+    const [revision, pointers] = await Promise.all([
+      request<ImportRevision | undefined>(tx.objectStore('revisions').get(revisionId)),
+      request<{ revisionId: string }[]>(tx.objectStore('active').getAll()),
+    ]);
+    if (!revision) { await done; return; }
+    if ((namespace !== undefined && revision.namespace !== namespace) || pointers.some(p => p.revisionId === revisionId)
+      || (stagingOnly && revision.status !== 'staging')) {
+      tx.abort(); await done.catch(() => {});
+      throw new Error('Only inactive content revisions in this account can be removed; discard requires staging content.');
+    }
+    const cursor = tx.objectStore('records').index('revision').openCursor(IDBKeyRange.only(revisionId));
+    cursor.onsuccess = () => { const row = cursor.result; if (row) { row.delete(); row.continue(); } };
+    tx.objectStore('revisions').delete(revisionId);
+    await done;
+  }
+}

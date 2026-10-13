@@ -1,6 +1,6 @@
 # Web-only migration implementation plan
 
-Prepared: 2026-10-14. Status: Milestone 1 source audit and design documents completed; application implementation has not started.
+Prepared: 2026-10-14. Status: Milestones 1 and 2 completed for the current desktop scope. Desktop acceptance is user-reported; automated browser measurements and mobile acceptance are deferred by user decision.
 
 ## Outcome and constraints
 
@@ -70,7 +70,7 @@ Do not assume Android exports contain all editing inputs. Selected class data is
 6. Partition local records by account, source identity, revision, and adapter version. Browser storage is per device; source settings synchronize but the full content cache does not.
 7. Check storage estimates and request persistent browser storage where supported. Handle quota failure and cache eviction through reimport. Never clear unsynchronized characters when clearing content caches.
 8. Keep old revisions required by locally used characters until the user deliberately removes them. Reuse unchanged files where practical and avoid retaining redundant raw JSON indefinitely.
-9. Measure download size, mapped storage size, peak memory, and import/link time on desktop and a representative phone. Tune import batching based on evidence.
+9. Developer probe measurements are recorded. The user accepted their local desktop check for this milestone; detailed browser measurements and physical-phone acceptance are deferred. Revisit performance/mobile issues if encountered.
 
 Initial source support targets public GitHub repositories with the expected structure. Authenticated application access does not make the upstream public repository private. Private-repository credentials and access are a later extension if requested.
 
@@ -160,9 +160,11 @@ Done when every current Android workflow is assigned to a milestone, legacy impo
 
 ### 2. Content import prototype and performance gate
 
+Progress and measured compatibility results are recorded in [Content import prototype](docs/migration/CONTENT_IMPORT_PROTOTYPE.md). The importer, mappings, reference linking, compatibility audit and cache recovery pass their automated checks. Milestone 2 is accepted for desktop based on the user's local check; additional browser measurements and mobile acceptance are deferred, not verified.
+
 Implement configurable source resolution, file discovery, mappings, background processing, staged IndexedDB imports, indexes, and explicit check/reimport controls. No cloud compendium uploads.
 
-Done when a representative full supported dataset imports on desktop/mobile, classes/features/spells link correctly, peak memory/storage/time are measured, and failed/cancelled imports preserve the active cache.
+Accepted for the current desktop scope: supported source probes, mapping/linking audits and automated cache/import tests pass, and the user reports checking locally on desktop. Detailed real-browser performance/failure scenarios and mobile checks are deferred; revisit them when issues arise.
 
 ### 3. Independent rules engine
 
