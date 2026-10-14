@@ -125,6 +125,7 @@ details[open] > .selector-summary .selector-arrow { transform: rotate(90deg); }
   outline-offset: 3px;
 }
 .secondary-button, .action-button {
+  min-height: 2.25rem;
   padding: .5rem 1rem;
   border-radius: .5rem;
   font-size: .875rem;
@@ -132,15 +133,15 @@ details[open] > .selector-summary .selector-arrow { transform: rotate(90deg); }
   transition: background-color .15s, color .15s;
 }
 .secondary-button {
-  border: 2px solid var(--md-sys-color-outline-variant);
-  background: var(--md-sys-color-surface-container);
+  border: 0;
+  background: var(--md-sys-color-surface-container-high);
   color: var(--md-sys-color-on-surface);
 }
 .secondary-button:hover {
-  background: var(--md-sys-color-surface-container-high);
+  background: var(--md-sys-color-surface-container-highest);
 }
 .action-button {
-  border: 2px solid var(--md-sys-color-secondary);
+  border: 0;
   background: var(--md-sys-color-secondary-container);
   color: var(--md-sys-color-on-secondary-container);
 }
@@ -151,7 +152,7 @@ details[open] > .selector-summary .selector-arrow { transform: rotate(90deg); }
 .stepper-button {
   width: 2.5rem;
   height: 2.5rem;
-  border: 2px solid var(--md-sys-color-secondary);
+  border: 0;
   border-radius: .5rem;
   background: var(--md-sys-color-secondary-container);
   color: var(--md-sys-color-on-secondary-container);
