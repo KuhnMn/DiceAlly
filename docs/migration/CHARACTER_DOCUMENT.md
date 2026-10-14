@@ -1,6 +1,6 @@
 # Character document contract v1
 
-Milestone 1 design contract; no production types or database schema are introduced yet. Applies to native web saves and full web exports. Android JSON remains a separate compatibility projection. See [ANDROID_PARITY.md](ANDROID_PARITY.md).
+Milestone 1 design contract, now partially implemented by Milestone 3's `character-document.ts` and `document-operations.ts`. Runtime native validation and pure preview/acceptance exist for supported rule fields; repository persistence, legacy adaptation, inventory/monster models and creator UI remain later work. Android JSON stays a separate compatibility projection. See [ANDROID_PARITY.md](ANDROID_PARITY.md) and [rules progress](RULES_ENGINE.md).
 
 ## Ownership and versions
 

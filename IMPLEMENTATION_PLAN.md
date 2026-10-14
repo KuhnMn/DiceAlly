@@ -168,13 +168,19 @@ Accepted for the current desktop scope: supported source probes, mapping/linking
 
 ### 3. Independent rules engine
 
+Core baseline implemented: [native validation/acceptance, explicit content-update previews, composed rules, species choices, resource/source/action customization, explicit spell casting and health/rest policies](docs/migration/RULES_ENGINE.md). The original core parity/preservation criteria have source-derived synthetic test coverage; this is not complete Android runtime or upstream-mechanic parity. Proceed to Milestone 4 integration rather than extending this milestone indefinitely.
+
 Port level application, multiclass/subclass relations, features, grants, slots, proficiencies, hit dice, and derived values. Introduce provenance and explicit override handling. Reconcile existing web rest/calculation logic with Android reference behavior.
 
 Done when meaningful parity cases cover single/multiclass characters, repeat application, level increases/decreases, subclass changes, manual additions, and preservation of notes/resources. Rules run independently of UI/database code.
 
+Scope review: the rules baseline is ready to exercise in a creator. Full viewer/storage integration and migrated editing fields are Milestone 4 work. Broader automatic prerequisite/proficiency/filter handlers are targeted follow-ups when actual creation examples expose a blocker; unsupported cases must remain visible and have an explicit manual workflow. Do not require complete upstream rules automation before building the creator. Casting/play actions already implemented exceed the minimum creation baseline.
+
 ### 4. Local creator, editor, and content-update preview
 
 Build multi-step creation, drafts, full editing, management parity, and update previews using the local repository. Preserve existing viewer features and Android file import/export. Local workflows in this milestone are development validation; do not publish an ungated application.
+
+Next implementation order: connect the pinned local content cache to the rule index; provide native local draft/save/load without replacing legacy saves; build a vertical creation flow (identity, species, ordered classes/subclass/levels, base abilities, required choices, manual overrides, review); then reopen/edit and project supported native data into the sheet. Resolve document fields needed by that flow, including manual features/spells and inventory, as integration work. Expand to the remaining Android management pages and portable import/export before declaring this milestone complete. Validate representative real selections early rather than adding speculative handlers.
 
 Done when create -> save -> reopen -> edit/level -> export works, manual overrides survive recalculation, legacy imports remain usable, and explicit updates preserve state or request a decision.
 
