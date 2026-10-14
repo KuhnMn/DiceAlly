@@ -34,7 +34,7 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
         <!-- Top Action Bar (Save/Export/Navigation) -->
         <div class="flex gap-2 mb-6 items-center justify-between flex-wrap">
           <div class="flex gap-2 items-center">
-            <a [routerLink]="['/']" class="gap-2 px-4 py-2 bg-surface-container hover:bg-surface-container-high text-surface-container font-medium rounded-lg hover:bg-surface-container-high transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <a [routerLink]="store.nativeCharacterId() ? ['/dev/characters'] : ['/']" class="gap-2 px-4 py-2 bg-surface-container hover:bg-surface-container-high text-surface-container font-medium rounded-lg hover:bg-surface-container-high transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               ← Menu
             </a>
             <button
@@ -230,7 +230,7 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
   `,
 })
 export class CharacterSheetComponent {
-  private store = inject(CharacterStore);
+  protected store = inject(CharacterStore);
   private storage = inject(CharacterStorageService);
   private restService = inject(RestService);
   private unsavedChangesGuard = inject(UnsavedChangesGuard);
@@ -293,12 +293,22 @@ export class CharacterSheetComponent {
     this.quickSave();
   }
 
-  quickSave(): Promise<void> {
+  async quickSave(): Promise<void> {
     const character = this.characterData();
     if (!character) return Promise.resolve();
 
     this.isSaving.set(true);
     this.saveStatus.set(false);
+
+    if (this.store.nativeSave) {
+      try {
+        await this.store.nativeSave(character);
+        this.unsavedChangesGuard.setLastSavedState(character);
+        this.saveStatus.set(true);
+      } catch (error) { alert(`Save failed: ${String(error)}`); }
+      finally { this.isSaving.set(false); }
+      return;
+    }
 
     return new Promise((resolve) => {
       // Simulate async save

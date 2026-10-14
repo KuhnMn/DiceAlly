@@ -604,11 +604,15 @@ export class SpellsPageComponent {
             const mod = this.helpers.modifierNumber(score);
             return {
               ability: ability.toUpperCase(),
-              attack: this.helpers.formatSigned(mod + profBonus),
-              save: 8 + profBonus + mod,
+              attack: this.helpers.formatSigned(source.customToHit ?? mod + profBonus),
+              save: source.customDc ?? 8 + profBonus + mod,
             };
           })
           .filter((entry): entry is { ability: string; attack: string; save: number } => !!entry);
+
+        if (!abilities.length && source.customToHit != null && source.customDc != null) {
+          abilities.push({ ability: 'CUSTOM', attack: this.helpers.formatSigned(source.customToHit), save: source.customDc });
+        }
 
         return {
           name: source.name ?? 'Feature Source',

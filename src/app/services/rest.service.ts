@@ -1,11 +1,16 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { CharacterStore } from '../stores/character.store';
 import { ExportedCharacter } from '../models/character.model';
 
 @Injectable({
   providedIn: 'root',
 })
 export class RestService {
+  private readonly store = inject(CharacterStore);
   performLongRest(character: ExportedCharacter): void {
+    if (this.store.nativeRest && character.character?.characterUuid === this.store.nativeCharacterId()) {
+      Object.assign(character, this.store.nativeRest(character, 'long')); return;
+    }
     if (!character.character) return;
 
     const char = character.character;
@@ -31,6 +36,7 @@ export class RestService {
     // Restore spell slots and uses with LONG_REST
     this.restoreSpellSlots(character, 'LONG_REST');
     this.restoreSpellSlots(character, 'SHORT_REST');
+    this.restoreOneSpellSlot(character);
     this.restoreSpellUses(character, 'LONG_REST');
     this.restoreSpellUses(character, 'SHORT_REST');
     this.restoreSpellUsesOne(character, 'SHORT_REST_ONE');
@@ -40,6 +46,9 @@ export class RestService {
   }
 
   performShortRest(character: ExportedCharacter): void {
+    if (this.store.nativeRest && character.character?.characterUuid === this.store.nativeCharacterId()) {
+      Object.assign(character, this.store.nativeRest(character, 'short')); return;
+    }
     if (!character.character) return;
 
     // Restore feature uses with SHORT_REST condition
@@ -52,6 +61,7 @@ export class RestService {
 
     // Restore spell slots with SHORT_REST
     this.restoreSpellSlots(character, 'SHORT_REST');
+    this.restoreOneSpellSlot(character);
   }
 
   private restoreFeatureUses(
@@ -201,5 +211,10 @@ export class RestService {
         });
       }
     });
+  }
+  private restoreOneSpellSlot(character: ExportedCharacter): void {
+    for (const slots of Object.values(character.character?.spellSlots ?? {})) {
+      for (const slot of slots) if (slot.regainCondition === 'SHORT_REST_ONE') slot.used = Math.max(0, slot.used - 1);
+    }
   }
 }

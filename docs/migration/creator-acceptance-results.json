@@ -1,0 +1,28 @@
+{
+  "commit": "8c026b807fac21862a309379a0c3228a0683198b",
+  "checks": [
+    {
+      "name": "seed real pinned fighter/wizard and materialized dwarf content",
+      "passed": true
+    },
+    {
+      "name": "real Fighter and Dwarf creation resolves choice controls and saves",
+      "passed": true
+    },
+    {
+      "name": "sheet session edits save into native document and reopen",
+      "passed": true
+    },
+    {
+      "name": "multiclass level preview and draft survive browser reload",
+      "passed": true
+    },
+    {
+      "name": "all editor steps render without horizontal overflow",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Headless desktop Chrome; physical phone and interactive visual acceptance remain deferred."
+  ]
+}

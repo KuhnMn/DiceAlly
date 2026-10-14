@@ -226,6 +226,7 @@ export class CharacterHelpersService {
   }
 
   initiative(character: CharacterData | null) {
+    if (character?.initiativeOverride != null) return character.initiativeOverride;
     const dex = character?.abilityScores?.dexterity;
     if (typeof dex !== 'number') return 0;
     const mod = this.modifierNumber(dex);
@@ -407,17 +408,17 @@ export class CharacterHelpersService {
 
     // Check unarmored defense
     if (character.unarmoredDefense) {
+      // Android serializes the selected ability as an enum string. Older web data can be an object.
+      const abilityName = typeof character.unarmoredDefense === 'string'
+        ? character.unarmoredDefense.toLowerCase()
+        : Object.keys(character.unarmoredDefense).find(key =>
+            ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'].includes(key));
       const defenseMod = this.modifierNumber(
-        this.abilityScoreValue(character, character.unarmoredDefense as unknown as string)
+        this.abilityScoreValue(character, abilityName)
       );
       const unarmoredAC = 10 + dexMod + defenseMod;
       if (unarmoredAC > bestArmorAC) {
         bestArmorAC = unarmoredAC;
-        const abilityName = Object.keys(character.unarmoredDefense).find((key) =>
-          ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'].includes(
-            key
-          )
-        );
         bestArmorSource = abilityName
           ? `Unarmored Defense (${abilityName})`
           : 'Unarmored Defense';

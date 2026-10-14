@@ -931,7 +931,7 @@ export class CharacterInfoPageComponent {
   });
 
   customProficiencies = computed(() => {
-    return this.character()?.proficiencies?.custom ?? [];
+    return [...this.character()?.proficiencies?.languages ?? [], ...this.character()?.proficiencies?.custom ?? []];
   });
 
   proficiencyBonus() {

@@ -5,6 +5,8 @@ import { CharacterSheetComponent } from './sheet/character-sheet.component';
 import { canDeactivateCharacterSheet } from './guards/unsaved-changes.guard';
 
 export const routes: Routes = [
+  ...(isDevMode() ? [{ path: 'dev/characters', loadComponent: () => import('./editor/local-editor.component').then(m => m.LocalEditorComponent),
+    canDeactivate: [(component: { canLeave(): boolean }) => component.canLeave()] }] : []),
   ...(isDevMode() ? [{ path: 'dev/content', loadComponent: () => import('./content/content-import.component').then(m => m.ContentImportComponent) }] : []),
 	{ path: '', component: ImportComponent },
 	{ path: 'sheet', component: CharacterSheetComponent, canDeactivate: [canDeactivateCharacterSheet] },

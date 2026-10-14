@@ -132,6 +132,52 @@ export class IndexedDbContentCache implements ContentCache {
     const tx = (await this.db()).transaction('records');
     return request(tx.objectStore('records').index('category').getAll([revisionId, kind], limit));
   }
+  /** Bounded catalog search. Only the requested page of matching records is retained. */
+  async searchCategory(revisionId: string, kinds: readonly string[], search: string, offset = 0, limit = 30, matches?: (record: ContentRecord) => boolean): Promise<{ records: ContentRecord[]; total: number }> {
+    const db = await this.db();
+    const query = search.trim().toLowerCase();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('records');
+      const records: ContentRecord[] = []; let total = 0;
+      const next = (position: number) => {
+        if (position >= kinds.length) return;
+        const cursor = tx.objectStore('records').index('category').openCursor(IDBKeyRange.only([revisionId, kinds[position]]));
+        cursor.onsuccess = () => {
+          const row = cursor.result;
+          if (!row) { next(position + 1); return; }
+          const record = row.value as ContentRecord;
+          const text = [record.name, record.publication, record.data['className'], record.data['subclassShortName'],
+            record.data['level'], record.data['featureType']].join(' ').toLowerCase();
+          if (query.split(/\s+/).every(term => text.includes(term)) && (!matches || matches(record))) {
+            if (total >= offset && records.length < limit) records.push(record);
+            total++;
+          }
+          row.continue();
+        };
+      };
+      next(0);
+      tx.oncomplete = () => resolve({ records, total });
+      tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('Could not search content.'));
+    });
+  }
+  /** Filter the item index as a cursor, retaining only tools instead of loading the item corpus. */
+  async tools(revisionId: string): Promise<ContentRecord[]> {
+    const db = await this.db();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('records');
+      const result: ContentRecord[] = [];
+      const cursor = tx.objectStore('records').index('category').openCursor(IDBKeyRange.only([revisionId, 'item']));
+      cursor.onsuccess = () => {
+        const row = cursor.result;
+        if (!row) return;
+        const record = row.value as ContentRecord;
+        if (['T', 'AT', 'GS', 'INS'].includes(String(record.data['type'] ?? '').split('|')[0])) result.push(record);
+        row.continue();
+      };
+      tx.oncomplete = () => resolve(result.sort((a, b) => a.name.localeCompare(b.name) || a.publication.localeCompare(b.publication)));
+      tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('Could not read tools.'));
+    });
+  }
   async saveSource(namespace: string, source: ContentSource): Promise<void> {
     const tx = (await this.db()).transaction('settings', 'readwrite');
     const done = complete(tx);

@@ -335,6 +335,7 @@ export class ImportComponent {
   loadCharacter(characterId: string) {
     const character = this.storage.loadCharacter(characterId);
     if (character) {
+      this.store.clearNativeContext();
       this.store.setCharacter(character);
       // Mark the loaded character as "saved" so no warning on navigation
       this.unsavedChangesGuard.setLastSavedState(character);
@@ -380,6 +381,7 @@ export class ImportComponent {
       this.pendingImport.set(null);
       const character = this.storage.loadCharacter(result.characterId!);
       if (character) {
+        this.store.clearNativeContext();
         this.store.setCharacter(character);
         // Mark the loaded character as "saved" so no warning on navigation
         this.unsavedChangesGuard.setLastSavedState(character);

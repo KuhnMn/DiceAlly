@@ -1,0 +1,101 @@
+<section class="editor-card feature-editor">
+  <h2>Features</h2>
+  <nav class="flex flex-wrap gap-2 mb-4" aria-label="Feature types">
+    @for (type of types; track type.value) {
+      <button type="button" class="px-3 py-1 rounded-full border text-sm transition-colors" [class.bg-secondary-container]="selectedType === type.value" [class.text-on-secondary-container]="selectedType === type.value" [class.border-secondary]="selectedType === type.value" [class.border-outline-variant]="selectedType !== type.value" [attr.aria-pressed]="selectedType === type.value" (click)="setType(type.value)">{{ type.label }}</button>
+    }
+  </nav>
+  <div class="mb-3">
+    <div class="flex justify-between items-center gap-2 mb-2"><span class="text-sm font-semibold">Source</span><button type="button" class="secondary-button !py-1 !text-xs" (click)="openSources.emit()">Feature Sources</button></div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+      <button type="button" class="border-2 rounded-lg p-2 text-sm font-semibold transition-colors" [class.bg-blue-container]="sourceFilter === 'ALL'" [class.border-blue]="sourceFilter === 'ALL'" [class.text-on-blue-container]="sourceFilter === 'ALL'" [class.border-outline-variant]="sourceFilter !== 'ALL'" [class.bg-surface-container]="sourceFilter !== 'ALL'" [attr.aria-pressed]="sourceFilter === 'ALL'" (click)="sourceFilter = 'ALL'">ALL</button>
+      @for (source of sources; track source) {
+        <button type="button" class="border-2 rounded-lg p-2 text-center text-sm break-words transition-colors" [class.bg-blue-container]="sourceFilter === source.name" [class.border-blue]="sourceFilter === source.name" [class.text-on-blue-container]="sourceFilter === source.name" [class.border-outline-variant]="sourceFilter !== source.name" [class.bg-surface-container]="sourceFilter !== source.name" [attr.aria-pressed]="sourceFilter === source.name" (click)="sourceFilter = source.name!">
+          <span class="font-semibold">{{ source.name }}</span>
+          @for (stat of sourceStats(source); track stat.ability) {
+            <div class="text-xs mt-2"><span class="font-semibold">{{ stat.ability }}</span><div class="flex justify-center gap-4 mt-1"><div>Attack<div class="text-tertiary font-semibold">{{ stat.attack }}</div></div><div>Save DC<div class="text-primary font-semibold">{{ displayDc(stat.save) }}</div></div></div></div>
+          }
+        </button>
+      }
+      @if (unassignedFeatures) { <button type="button" class="border-2 rounded-lg p-2 text-sm" [class.bg-blue-container]="sourceFilter === ''" [class.border-blue]="sourceFilter === ''" [class.text-on-blue-container]="sourceFilter === ''" [class.border-outline-variant]="sourceFilter !== ''" [class.bg-surface-container]="sourceFilter !== ''" (click)="sourceFilter = ''">Unassigned</button> }
+    </div>
+  </div>
+  <div class="space-y-2">
+    @for (feature of selected; track feature; let i = $index) {
+      <article class="feature-card rounded-lg border-2 border-secondary bg-surface-container p-2.5">
+        <div class="flex items-start gap-2">
+          <button type="button" class="flex-1 min-w-0 text-left" [attr.aria-expanded]="expanded.has(feature)" (click)="toggle(feature)">
+            <span class="text-sm font-semibold">{{ feature.name }}</span>
+            <span class="block text-xs text-on-surface-variant mt-0.5">{{ feature.source }} · {{ feature.featureSourceName || 'Unassigned' }}
+              @if (feature.featureEntity?.className) { · {{ feature.featureEntity?.className }} @if (feature.featureEntity?.subclassShortName) { / {{ feature.featureEntity?.subclassShortName }} } · Level {{ feature.featureEntity?.level }} }
+            </span>
+          </button>
+          <button type="button" class="secondary-button !py-1 !px-2 !text-xs" (click)="toggle(feature)">{{ expanded.has(feature) ? 'Close' : 'Edit' }}</button>
+          <button type="button" class="secondary-button !py-1 !px-2 !text-xs" [attr.aria-label]="'Remove ' + feature.name" (click)="remove(feature)">×</button>
+        </div>
+        @if (!expanded.has(feature) && (feature.notes?.length || feature.uses?.length)) { <p class="text-xs text-on-surface-variant mt-1">{{ feature.notes?.length || 0 }} note groups · {{ feature.uses?.length || 0 }} use trackers</p> }
+        @if (expanded.has(feature)) {
+          <div class="mt-3 pt-3 border-t border-outline-variant space-y-3">
+            <label><span class="field-label">Feature source</span><select class="editor-input" [name]="'feature-source-' + i" [ngModel]="feature.featureSourceName ?? ''" (ngModelChange)="feature.featureSourceName = $event || undefined; change()"><option value="">Unassigned</option>@if (feature.featureSourceName && !hasSource(feature.featureSourceName)) { <option [value]="feature.featureSourceName">{{ feature.featureSourceName }}</option> }@for (source of sources; track source) { <option [value]="source.name">{{ source.name }}</option> }</select></label>
+            <details class="description-panel !mt-5 text-sm"><summary class="description-toggle"><span class="description-arrow" aria-hidden="true">▸</span>Description</summary><div class="p-3"><app-entry-renderer [entries]="entries(feature)" /></div></details>
+            <div class="feature-section">
+              <div class="flex items-center justify-between mb-2"><h3 class="font-semibold">Notes</h3><button type="button" class="secondary-button !py-1 !px-2 !text-xs" (click)="addNote(feature)">Add Heading</button></div>
+              <div class="space-y-2">@for (group of feature.notes ?? []; track group; let n = $index) {
+                <div class="note-group rounded border border-tertiary p-2">
+                  <div class="flex gap-2 mb-1"><label class="flex-1 min-w-0"><span class="sr-only">Note label</span><input class="editor-input" [name]="'note-label-' + i + '-' + n" [(ngModel)]="group.tag" (ngModelChange)="change()" placeholder="Notes" /></label><button type="button" class="secondary-button !py-1 !px-2 !text-xs" aria-label="Remove note group" (click)="removeNote(feature, n)">×</button></div>
+                  <label class="flex items-center gap-2 text-xs text-on-surface-variant mb-2"><input type="checkbox" [name]="'note-editable-' + i + '-' + n" [ngModel]="group.isEditable ?? true" (ngModelChange)="group.isEditable = $event; change()" />Editable on the character sheet</label>
+                  <div class="flex flex-wrap items-center gap-1">
+                    @for (note of group.notes; track $index; let e = $index) {
+                      <span class="inline-flex max-w-full rounded border border-tertiary bg-tertiary-container text-on-tertiary-container text-xs">
+                        <button type="button" class="px-2 py-1 whitespace-pre-wrap break-words text-left min-w-0" [attr.aria-label]="'Edit note: ' + note" (click)="editNoteEntry(group, e)">{{ note }}</button>
+                        <button type="button" class="px-1.5 py-1 shrink-0 hover:opacity-75" [attr.aria-label]="'Remove note: ' + note" (click)="removeNoteEntry(group, e)">×</button>
+                      </span>
+                    }
+                    @if (editingNoteGroup !== group) { <button type="button" class="px-2 py-1 rounded text-xs font-semibold bg-surface-container text-on-surface-variant border border-outline-variant hover:bg-surface-container-high" (click)="addNoteEntry(group)">+ Add Entry</button> }
+                  </div>
+                  @if (editingNoteGroup === group) {
+                    <div class="mt-2 space-y-1">
+                      <label><span class="sr-only">{{ group.tag || 'Notes' }} note text</span><textarea #noteEditor class="editor-input resize-y" [name]="'note-draft-' + i + '-' + n" rows="2" [(ngModel)]="noteDraft" placeholder="Add your note…" (blur)="editingNoteGroup === group && commitNote()" (keydown)="noteKeydown($event)"></textarea></label>
+                      <div class="flex gap-1"><button type="button" class="secondary-button !py-1 !px-2 !text-xs" [disabled]="!noteDraft.trim()" (mousedown)="$event.preventDefault()" (click)="commitNote()">Save Entry</button><button type="button" class="secondary-button !py-1 !px-2 !text-xs" (mousedown)="$event.preventDefault()" (click)="cancelNote()">Cancel</button></div>
+                    </div>
+                  }
+                </div>
+              }</div>
+            </div>
+            <div class="feature-section">
+              <div class="flex items-center justify-between mb-2"><h3 class="font-semibold">Uses</h3><button type="button" class="secondary-button !py-1 !px-2 !text-xs" (click)="addUses(feature)">Add Uses</button></div>
+              <div class="space-y-2">@for (uses of feature.uses ?? []; track uses; let u = $index) {
+                <div class="rounded border border-outline-variant bg-surface-container-lowest p-2">
+                  <div class="flex items-end flex-wrap gap-2">
+                    <label class="flex-1 min-w-24"><span class="field-label">Label</span><input class="editor-input" [name]="'uses-label-' + i + '-' + u" [(ngModel)]="uses.tag" (ngModelChange)="change()" placeholder="Uses" /></label>
+                    <label class="w-20"><span class="field-label">Total</span><input class="editor-input text-center" [name]="'uses-total-' + i + '-' + u" type="number" min="0" required step="1" [(ngModel)]="uses.totalFreeUses" (ngModelChange)="change()" /></label>
+                    <label class="flex-1 min-w-32"><span class="field-label">Recovery</span><select class="editor-input" [name]="'uses-recovery-' + i + '-' + u" [ngModel]="uses.freeUsesRegainCondition || 'LONG_REST'" (ngModelChange)="uses.freeUsesRegainCondition = $event; change()">@for (option of recoveryOptions; track option.value) { <option [value]="option.value">{{ option.label }}</option> }</select></label>
+                    <button type="button" class="secondary-button !py-1 !px-2 !text-xs" aria-label="Remove use tracker" (click)="removeUses(feature, u)">×</button>
+                  </div>
+                  @if ((uses.usedFreeUses ?? 0) > (uses.totalFreeUses ?? 1)) { <p class="text-xs text-on-surface-variant mt-1">The existing used count exceeds this total and will be kept unchanged.</p> }
+                </div>
+              }</div>
+            </div>
+          </div>
+        }
+      </article>
+    } @empty { <p class="text-sm text-on-surface-variant py-2">No features of this type selected for this source.</p> }
+  </div>
+  <details class="mt-4 rounded-lg border-2 border-secondary bg-surface-container p-2.5">
+    <summary class="cursor-pointer text-sm font-semibold text-secondary">Add Features</summary>
+    <div class="mt-3 space-y-3">
+      <label><span class="field-label">Add to source</span><select class="editor-input" name="add-feature-source" [ngModel]="targetSource || ''" (ngModelChange)="selectedSource = $event"><option value="">Unassigned</option>@for (source of sources; track source) { <option [value]="source.name">{{ source.name }}</option> }</select></label>
+      <div class="flex items-center gap-2"><label class="flex-1 min-w-0"><span class="sr-only">Search features</span><input class="editor-input" name="feature-search" [(ngModel)]="search" (ngModelChange)="searchChanged()" placeholder="Search name, class or publication…" /></label><button type="button" class="secondary-button" [disabled]="loading()" (click)="refreshContent()">Refresh</button></div>
+      @if (message()) { <p role="status" class="text-sm text-on-surface-variant">{{ message() }} <a routerLink="/dev/content" class="text-primary underline">Content imports</a></p> }
+      @if (loading()) { <p role="status" class="text-xs text-on-surface-variant">Searching…</p> }
+      <div class="max-h-72 overflow-y-auto space-y-1">@for (record of results(); track record.key) {
+        <div class="rounded border border-outline-variant p-2">
+          <div class="flex justify-between gap-2"><div class="min-w-0"><p class="font-semibold text-sm">{{ record.name }}</p><p class="text-xs text-on-surface-variant">{{ qualifier(record) }}</p></div><button type="button" class="secondary-button !py-1 !px-2 !text-xs" [disabled]="loading() || isSelected(record)" (click)="add(record)">{{ isSelected(record) ? 'Added' : 'Add' }}</button></div>
+          <details class="description-panel mt-2 text-xs"><summary class="description-toggle"><span class="description-arrow" aria-hidden="true">▸</span>Description</summary><div class="p-2"><app-entry-renderer [entries]="$any(record.data['entries'] ?? [])" /></div></details>
+        </div>
+      }</div>
+      @if (revision()) { <div class="flex flex-wrap items-center justify-between gap-2 text-xs"><span>{{ total() }} matches</span><div class="flex gap-2"><button type="button" class="secondary-button !py-1" [disabled]="loading() || offset === 0" (click)="nextPage(-1)">Previous</button><button type="button" class="secondary-button !py-1" [disabled]="loading() || offset + pageSize >= total()" (click)="nextPage(1)">Next</button></div></div> }
+      <details><summary class="cursor-pointer text-sm text-primary">Add Custom Feature</summary><div class="mt-2 space-y-2"><label><span class="field-label">Name</span><input class="editor-input" name="custom-feature-name" [(ngModel)]="customName" /></label><label><span class="field-label">Description</span><textarea class="editor-input" name="custom-feature-description" rows="2" [(ngModel)]="customDescription"></textarea></label><button type="button" class="action-button" [disabled]="!customName.trim()" (click)="addCustom()">Add</button></div></details>
+    </div>
+  </details>
+</section>

@@ -1,0 +1,31 @@
+{
+  "checks": [
+    {
+      "name": "manual Basic Info saves without a content import and reopens after reload",
+      "passed": true
+    },
+    {
+      "name": "calculated AC and unarmored defense controls update without runtime errors",
+      "passed": true
+    },
+    {
+      "name": "portrait file upload persists inline and can be removed",
+      "passed": true
+    },
+    {
+      "name": "Ability Scores inputs, page navigation, save and reopened AC use the same character",
+      "passed": true
+    },
+    {
+      "name": "Hit Dice add, merge, usage and reopened persistence work",
+      "passed": true
+    },
+    {
+      "name": "all pages fit light and dark desktop and narrow layouts",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Headless Chrome viewport checks; physical-device acceptance remains deferred."
+  ]
+}

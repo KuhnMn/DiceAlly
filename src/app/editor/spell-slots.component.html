@@ -1,0 +1,31 @@
+<section class="editor-card spell-slot-editor">
+  <h2>Spell Slots</h2>
+  @if (error) { <p role="alert" class="text-sm text-error mb-3">{{ error }}</p> }
+  <div class="rounded-lg border-2 border-secondary bg-surface-container p-2.5 mb-3">
+    <h3 class="font-semibold mb-2">Add Spell Slots</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <label><span class="field-label">Source</span><select class="editor-input" name="new-slot-source" [ngModel]="selectedSource || sources[0]?.name" (ngModelChange)="selectedSource = $event">@for (source of sources; track source) { <option [value]="source.name">{{ source.name }}</option> }</select></label>
+      <label><span class="field-label">Recovery</span><select class="editor-input" name="new-slot-recovery" [(ngModel)]="recovery">@for (option of recoveryOptions; track option.value) { <option [value]="option.value">{{ option.label }}</option> }</select></label>
+      <label><span class="field-label">Spell level</span><input class="editor-input" name="new-slot-level" type="number" min="1" max="9" step="1" [(ngModel)]="level" /></label>
+      <label><span class="field-label">Total</span><input class="editor-input" name="new-slot-total" type="number" min="1" step="1" [(ngModel)]="total" /></label>
+    </div>
+    <div class="flex justify-end mt-2"><button type="button" class="action-button" (click)="add()">Add</button></div>
+  </div>
+  <div class="space-y-3">
+    @for (source of sources; track source) {
+      <div><h3 class="font-semibold mb-2">{{ source.name }}</h3>
+        <div class="space-y-2">@for (slot of slots(source.name!); track slot; let i = $index) {
+          <div class="rounded-lg border-2 border-outline-variant bg-surface-container p-2.5 space-y-2">
+            <div class="flex items-center justify-between gap-3"><h3 class="font-semibold">Level {{ slot.level }}</h3><button type="button" class="secondary-button !py-1 !px-2 !text-xs" (click)="remove(source.name!, i)">Remove</button></div>
+            <div class="flex flex-wrap items-center justify-between gap-3"><label [for]="'slot-total-' + source.name + '-' + i" class="text-sm">Total</label><div class="flex items-center gap-2"><button type="button" class="stepper-button" [attr.aria-label]="'Decrease ' + source.name + ' level ' + slot.level + ' total'" (click)="adjust(slot, -1)">−</button><input [id]="'slot-total-' + source.name + '-' + i" [name]="'slot-total-' + source.name + '-' + i" class="editor-input !w-24 text-center" type="number" min="0" required step="1" [(ngModel)]="slot.total" (ngModelChange)="change()" /><button type="button" class="stepper-button" [attr.aria-label]="'Increase ' + source.name + ' level ' + slot.level + ' total'" (click)="adjust(slot, 1)">+</button></div></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <label><span class="field-label">Recovery</span><select class="editor-input" [name]="'slot-recovery-' + source.name + '-' + i" [ngModel]="slot.regainCondition || 'LONG_REST'" (ngModelChange)="slot.regainCondition = $event; change()">@for (option of recoveryOptions; track option.value) { <option [value]="option.value">{{ option.label }}</option> }</select></label>
+              <label><span class="field-label">Source</span><select class="editor-input" [value]="source.name" (change)="move(source.name!, i, $event)">@for (target of sources; track target) { <option [value]="target.name">{{ target.name }}</option> }</select></label>
+            </div>
+          </div>
+        } @empty { <p class="text-sm text-on-surface-variant">No spell slots for this source.</p> }</div>
+      </div>
+    }
+  </div>
+  @if (retainedSources.length) { <p class="text-sm text-on-surface-variant mt-4">Slots for removed or noncasting sources are retained: {{ retainedSources.join(', ') }}.</p> }
+</section>

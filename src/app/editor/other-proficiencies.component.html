@@ -1,0 +1,64 @@
+<div class="space-y-4">
+  @if (panel() === 'proficiencies') {
+  <section class="editor-card">
+    <h2>Combat Proficiencies</h2>
+    <div class="space-y-3">@for (option of combatOptions; track option.key) {
+      <label class="flex items-center gap-3 text-sm"><input type="checkbox" [name]="option.key" [ngModel]="combatValue(option.key)" (ngModelChange)="setCombat(option.key, $event)" />{{ option.label }}</label>
+    }</div>
+  </section>
+  <section class="editor-card">
+    <h2>Advantage / Disadvantage</h2>
+    <div class="space-y-2">@for (entry of advantages; track $index; let i = $index) {
+      <div class="advantage-entry rounded-lg border-2 border-outline-variant bg-surface-container p-2.5">
+        <div class="flex flex-wrap justify-between items-center gap-2 mb-2"><label class="flex items-center gap-2 text-xs"><input type="checkbox" [name]="'disadvantage-' + i" [(ngModel)]="entry.isDisadvantage" (ngModelChange)="change()" />Disadvantage</label><button type="button" class="secondary-button !py-1 !px-2 !text-xs" (click)="removeAdvantage(i)">Remove</button></div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <label><span class="field-label">Roll type</span><select class="editor-input" [name]="'advantage-type-' + i" [(ngModel)]="entry.aType" (ngModelChange)="change()">@for (type of advantageTypes; track type.value) { <option [value]="type.value">{{ type.label }}</option> }</select></label>
+          <label><span class="field-label">Applies to</span><input class="editor-input" [name]="'advantage-target-' + i" [(ngModel)]="entry.appliesTo" (ngModelChange)="change()" placeholder="e.g., Perception or poison saves" /></label>
+          <label><span class="field-label">Condition</span><input class="editor-input" [name]="'advantage-condition-' + i" [(ngModel)]="entry.condition" (ngModelChange)="change()" placeholder="e.g., While in dim light" /></label>
+        </div>
+      </div>
+    } @empty { <p class="text-sm text-on-surface-variant">No advantage or disadvantage entries.</p> }</div>
+    <button type="button" class="action-button mt-3" (click)="addAdvantage()">Add Entry</button>
+  </section>
+  <section class="editor-card">
+    <div class="flex flex-wrap items-start justify-between gap-2"><h2>Tool Proficiencies</h2><button type="button" class="secondary-button" [disabled]="loadingTools()" (click)="loadTools()">{{ loadingTools() ? 'Loading…' : 'Refresh tools' }}</button></div>
+    @if (toolMessage()) { <p class="text-sm text-on-surface-variant mb-3" role="status">{{ toolMessage() }} <a routerLink="/dev/content" class="text-primary underline">Content imports</a></p> }
+    @if (tools().length) {
+      <div #toolPicker class="relative" (keydown)="toolMenuKeydown($event)">
+        <button #toolTrigger type="button" class="editor-input flex justify-between items-center text-left" aria-haspopup="dialog" [attr.aria-expanded]="toolMenuOpen" (click)="toggleToolMenu()">Select a tool <span aria-hidden="true">▾</span></button>
+        @if (toolMenuOpen) {
+          <div role="dialog" aria-label="Select tool proficiency" class="absolute z-20 top-full left-0 right-0 mt-1 rounded-lg border-2 border-outline-variant bg-surface shadow-lg p-2">
+            <label class="block mb-2"><span class="sr-only">Search tools</span><input #toolSearchInput class="editor-input" name="tool-search" [(ngModel)]="toolSearch" placeholder="Search tools…" (keydown.enter)="$event.preventDefault()" /></label>
+            <div class="max-h-60 overflow-y-auto space-y-1">
+              @for (tool of filteredTools; track tool.key) { <button type="button" data-tool-option class="w-full text-left text-sm rounded px-3 py-2 hover:bg-secondary-container hover:text-on-secondary-container focus:bg-secondary-container focus:text-on-secondary-container" (click)="chooseTool(tool.key)">{{ tool.name }} <span class="text-xs">({{ tool.publication }})</span></button> }
+              @empty { <p class="text-sm text-on-surface-variant p-2">No matching tools.</p> }
+            </div>
+          </div>
+        }
+      </div>
+    }
+    <div class="flex flex-wrap gap-2 mt-3">@for (name of toolNames; track name) { <button type="button" class="rounded-full border border-secondary px-3 py-1 text-sm bg-secondary-container text-on-secondary-container hover:bg-secondary hover:text-on-secondary transition-colors" [attr.aria-label]="'Remove tool ' + name" (click)="removeTool(name)">{{ name }} <span aria-hidden="true">×</span></button> }</div>
+  </section>
+  <section class="editor-card">
+    <h2>Languages</h2>
+    <div class="flex gap-2"><label class="flex-1 min-w-0"><span class="sr-only">Language</span><input class="editor-input" name="new-language" [(ngModel)]="languageInput" placeholder="Add a language" (keydown.enter)="$event.preventDefault(); addLanguage()" /></label><button type="button" class="action-button" [disabled]="!languageInput.trim()" (click)="addLanguage()">Add</button></div>
+    <div class="flex flex-wrap gap-2 mt-3">@for (language of languages; track $index; let i = $index) { <button type="button" class="rounded-full border border-secondary px-3 py-1 text-sm bg-secondary-container text-on-secondary-container hover:bg-secondary hover:text-on-secondary transition-colors" [attr.aria-label]="'Remove language ' + language" (click)="removeLanguage(i)">{{ language }} <span aria-hidden="true">×</span></button> }</div>
+  </section>
+  }
+  @if (panel() === 'sources') {
+  <section class="editor-card">
+    <h2>Feature Sources</h2>
+    @if (sourceMessage()) { <p role="alert" class="text-sm text-error mb-3">{{ sourceMessage() }}</p> }
+    <div class="space-y-3">@for (source of sources; track source; let i = $index) {
+      <div class="rounded-lg border-2 border-outline-variant bg-surface-container p-3 space-y-3">
+        <div class="flex flex-wrap items-end gap-2"><label class="flex-1 min-w-32"><span class="field-label">Source name</span><input class="editor-input" [name]="'source-name-' + i" [value]="source.name ?? ''" (change)="renameSource(source, $event)" /></label><button type="button" class="secondary-button" (click)="removeSource(i)">Remove</button></div>
+        <div class="flex flex-wrap gap-4 text-sm"><label class="flex items-center gap-2"><input type="checkbox" [name]="'source-general-' + i" [(ngModel)]="source.isGeneralFeatureSource" (ngModelChange)="change()" />General Features</label><label class="flex items-center gap-2"><input type="checkbox" [name]="'source-casting-' + i" [(ngModel)]="source.isSpellcastingSource" (ngModelChange)="change()" />Spellcasting</label></div>
+        <div><p class="field-label">Associated abilities</p><div class="flex flex-wrap gap-3 text-sm">@for (ability of sourceAbilities; track ability.key) { <label class="flex items-center gap-1.5"><input type="checkbox" [name]="'source-' + i + '-' + ability.key" [ngModel]="source[ability.key] ?? false" (ngModelChange)="setSourceAbility(source, ability.key, $event)" />{{ ability.label }}</label> }</div></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><label><span class="field-label">Custom attack bonus</span><input class="editor-input" [name]="'source-attack-' + i" type="number" step="1" [(ngModel)]="source.customToHit" (ngModelChange)="change()" placeholder="Calculate from abilities" /></label><label><span class="field-label">Custom save DC</span><input class="editor-input" [name]="'source-dc-' + i" type="number" step="1" [(ngModel)]="source.customDc" (ngModelChange)="change()" placeholder="Calculate from abilities" /></label></div>
+        @if (source.isSpellcastingSource) { <label class="flex items-center gap-2 text-sm"><input type="checkbox" [name]="'source-spellbook-' + i" [(ngModel)]="source.useSpellbook" (ngModelChange)="change()" />Use Spellbook</label> }
+      </div>
+    } @empty { <p class="text-sm text-on-surface-variant">No feature sources added yet.</p> }</div>
+    <button type="button" class="action-button mt-4" (click)="addSource()">Add Source</button>
+  </section>
+  }
+</div>

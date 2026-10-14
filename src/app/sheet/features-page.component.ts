@@ -257,10 +257,10 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
                 }
                     @if (feature.uses?.length) {
                       <div class="mt-4 border-t border-outline-variant pt-4">
-                        @for (use of feature.uses; track use.tag) {
+                        @for (use of feature.uses; track use) {
                           <app-feature-uses
                             [uses]="use"
-                            (usesUpdated)="updateFeatureUses(feature, $event)"
+                            (usesUpdated)="use.usedFreeUses = $event.usedFreeUses"
                           />
                         }
                       </div>
@@ -422,11 +422,15 @@ export class FeaturesPageComponent {
             const mod = this.helpers.modifierNumber(score);
             return {
               ability: ability.toUpperCase(),
-              attack: this.helpers.formatSigned(mod + profBonus),
-              save: 8 + profBonus + mod,
+              attack: this.helpers.formatSigned(source.customToHit ?? mod + profBonus),
+              save: source.customDc ?? 8 + profBonus + mod,
             };
           })
           .filter((entry): entry is { ability: string; attack: string; save: number } => !!entry);
+
+        if (!abilities.length && source.customToHit != null && source.customDc != null) {
+          abilities.push({ ability: 'CUSTOM', attack: this.helpers.formatSigned(source.customToHit), save: source.customDc });
+        }
 
         return {
           name: source.name ?? 'Feature Source',

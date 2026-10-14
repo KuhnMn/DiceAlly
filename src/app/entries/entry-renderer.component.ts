@@ -270,7 +270,7 @@ export class EntryRendererComponent {
   }
 
   fallbackText(entry: Entry) {
-    return JSON.stringify(entry, null, 2);
+    return typeof entry === 'string' ? entry : JSON.stringify(entry, null, 2);
   }
 
   private readonly tagRegex = /\{@(\w*)\s*([^}]*)\}/g;

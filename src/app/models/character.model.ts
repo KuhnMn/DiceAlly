@@ -529,6 +529,8 @@ export interface DisplayItem {
 }
 
 export interface SpellEntryFull {
+  editorId?: string;
+  contentReference?: { key: string; sourceIdentity: string; revisionId: string; commit: string };
   name: string;
   source?: string;
   castingSourceName?: string;
@@ -540,6 +542,8 @@ export interface SpellEntryFull {
 }
 
 export interface FeatureEntryFull {
+  editorId?: string;
+  contentReference?: { key: string; sourceIdentity: string; revisionId: string; commit: string };
   name: string;
   source?: string;
   featureSourceName?: string;
@@ -574,6 +578,9 @@ export interface Species {
 }
 
 export interface FeatureSource {
+  id?: string;
+  customDc?: number | null;
+  customToHit?: number | null;
   name?: string;
   usesStrength?: boolean;
   usesDexterity?: boolean;
@@ -650,6 +657,7 @@ export interface CombatAction {
 }
 
 export interface Proficiencies {
+  languages?: string[];
   savingThrows?: string[];
   skills?: Record<string, string>;
   tools?: Record<string, number> | Record<string, unknown>;
@@ -663,6 +671,7 @@ export interface Proficiencies {
 }
 
 export interface CharacterData {
+  initiativeOverride?: number | null;
   name?: string;
   level?: number;
   description?: string;
@@ -685,7 +694,7 @@ export interface CharacterData {
   resistances?: string[];
   senses?: Record<string, number> | Record<string, unknown>;
   calculateAC?: boolean;
-  unarmoredDefense?: AbilityScores | null;
+  unarmoredDefense?: string | AbilityScores | null;
   characterUuid?: string;
   deathSavesSuccesses?: number;
   deathSavesFailures?: number;
