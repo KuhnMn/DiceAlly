@@ -4,6 +4,7 @@ import { ADAPTER_VERSION, ContentRecord, ContentSource, entityKey, ImportDiagnos
 import { discoverFiles, FetchContent, fetchContent, rawUrl, resolveCommit } from './github-source';
 import { materializeContent } from './content-materializer';
 import { buildReferenceIndex, linkContent } from './content-linker';
+import { mergeSpellMemberships } from './spell-membership';
 
 export interface ImportOptions {
   namespace: string;
@@ -143,7 +144,8 @@ export async function importContent(cache: ContentCache, options: ImportOptions,
       if (record.kind === 'spell') {
         const publication = object(sources[record.publication]);
         const memberships = object(publication?.[record.name]);
-        if (memberships) await cache.put(revision.id, [{ ...record, data: { ...record.data, classes: memberships } }]);
+        if (memberships || record.data['classes']) await cache.put(revision.id, [{ ...record,
+          data: { ...record.data, classes: mergeSpellMemberships(record.data['classes'], memberships) } }]);
       }
       if (++linked % 128 === 0) report('link', linked, count * 3, record.file);
     });

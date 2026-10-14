@@ -3,6 +3,7 @@ import { featureReference, mapContent } from './content-adapter';
 import { importContent } from './content-importer';
 import { ContentRecord, DEFAULT_CONTENT_SOURCE, entityKey, ImportRevision } from './content.model';
 import { discoverFiles, FetchContent, ROOT_FILES } from './github-source';
+import { spellClassMemberships } from './spell-membership';
 
 class MemoryCache implements ContentCache {
   revisions = new Map<string, Map<string, ContentRecord>>();
@@ -27,6 +28,30 @@ function fixture(overrides: Record<string, unknown> = {}, urls: string[] = []): 
   };
 }
 describe('Content importer', () => {
+  it('merges sources.json class lists with inline memberships, scoped to source book and spell name', async () => {
+    const cache = new MemoryCache();
+    const revision = await importContent(cache, { namespace: 'one', source: DEFAULT_CONTENT_SOURCE }, fixture({
+      'spells/spells-test.json': { spell: [
+        { name: 'Shield', source: 'TEST', level: 1 },
+        { name: 'Shield', source: 'OTHER', level: 1 },
+        { name: 'Minor Lifesteal', source: 'ValdaSpire24', level: 0, classes: {
+          fromClassList: [{ name: 'Wizard', source: 'XPHB' }, { name: 'Witch', source: 'ValdaWitch' }],
+        } },
+      ] },
+      'spells/sources.json': {
+        _meta: {},
+        TEST: { Shield: { class: [{ name: 'Wizard', source: 'XPHB' }], classVariant: [{ name: 'Sorcerer', source: 'XPHB' }] } },
+        OTHER: { Shield: { class: [{ name: 'Bard', source: 'XPHB' }] } },
+        ValdaSpire24: { 'Minor Lifesteal': { class: [{ name: 'Wizard', source: 'XPHB' }, { name: 'Necromancer', source: 'ValdaNecromancer' }] } },
+      },
+    }));
+    const membership = async (name: string, source: string) => spellClassMemberships(
+      (await cache.get(revision.id, entityKey('spell', { name, source })))!.data['classes']);
+    expect((await membership('Shield', 'TEST')).map(entry => entry.name)).toEqual(['Wizard', 'Sorcerer']);
+    expect((await membership('Shield', 'OTHER')).map(entry => entry.name)).toEqual(['Bard']);
+    expect((await membership('Minor Lifesteal', 'ValdaSpire24')).map(entry => entry.name).sort()).toEqual(['Necromancer', 'Witch', 'Wizard']);
+  });
+
   it('does not activate content with a missing fixed spell grant', async () => {
     const cache = new MemoryCache();
     await expect(importContent(cache, { namespace: 'one', source: DEFAULT_CONTENT_SOURCE }, fixture({

@@ -1,46 +1,32 @@
-import { ContentRecord, object } from '../content/content.model';
+import { ContentRecord } from '../content/content.model';
+import { spellClassMemberships } from '../content/spell-membership';
 import { SpellEntryFull, SpellClassInfo, SpellEntity } from '../models/character.model';
 
 export type SpellList = 'KNOWN' | 'SPELLBOOK' | 'PREPARED';
 export interface SpellCatalogFilter {
   search: string;
-  className: string;
-  maximumLevel: number;
-  publication: string;
+  classes: string[];
+  levels: number[];
 }
 
 /** The import uses upstream membership objects; Android exports use a flat class list. */
 export function spellClasses(data: Record<string, unknown>): SpellClassInfo[] {
-  const classes = data['classes'];
-  const membership = object(classes);
-  const values = Array.isArray(classes) ? classes : [
-    ...(Array.isArray(membership?.['fromClassList']) ? membership['fromClassList'] : []),
-    ...(Array.isArray(membership?.['fromClassListVariant']) ? membership['fromClassListVariant'] : []),
-  ];
-  const result = new Map<string, SpellClassInfo>();
-  for (const value of values) {
-    const entry = object(value);
-    if (typeof entry?.['name'] !== 'string') continue;
-    const name = entry['name'];
-    const source = typeof entry['source'] === 'string' ? entry['source'] : '';
-    result.set(JSON.stringify([name, source]), { name, source });
-  }
-  return [...result.values()];
+  return spellClassMemberships(data['classes']);
 }
 
 export function matchesSpell(record: ContentRecord, filter: SpellCatalogFilter): boolean {
   if (record.kind !== 'spell') return false;
   const level = record.data['level'];
-  if (typeof level !== 'number' || level > filter.maximumLevel) return false;
-  if (filter.publication && record.publication !== filter.publication) return false;
-  if (filter.className && !spellClasses(record.data).some(entry => entry.name.toLowerCase() === filter.className.toLowerCase())) return false;
+  if (typeof level !== 'number' || (filter.levels.length && !filter.levels.includes(level))) return false;
+  const classes = filter.classes.map(name => name.toLowerCase());
+  if (classes.length && !spellClasses(record.data).some(entry => classes.includes(entry.name.toLowerCase()))) return false;
   const text = `${record.name} ${record.publication}`.toLowerCase();
   return filter.search.trim().toLowerCase().split(/\s+/).every(term => text.includes(term));
 }
 
 /** List membership is scoped to a casting source, never just to the spell's name. */
 export function spellIdentity(spell: SpellEntryFull): string {
-  return JSON.stringify([spell.contentReference?.key ?? [spell.name, spell.source ?? ''], spell.castingSourceName ?? '']);
+  return JSON.stringify([spell.name, spell.source ?? '', spell.castingSourceName ?? '']);
 }
 
 export function spellSnapshot(record: ContentRecord): SpellEntity {

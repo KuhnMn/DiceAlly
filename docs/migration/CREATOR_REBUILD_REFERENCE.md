@@ -144,3 +144,51 @@ Selected entries use compact expandable rows with source assignment, self-contai
 The local catalog offers type-specific search by name, class/subclass, level or publication, bounded to 30 results per page, description previews, and addition to a general feature source or Unassigned. Stable content keys include class/subclass qualifiers; duplicate additions are blocked for the same content/source. Selected entity data and exact revision metadata are stored with the character; the full library is not copied. Selected descriptions/notes/uses remain editable if the cache is missing. Custom features of each type can also be created locally. No class-level/prerequisite limits are imposed on manual selection.
 
 Automated tests cover category/source identity, catalog pagination, notes/multiple trackers and counters across save/reopen, absent-cache editing, custom entries, and rest recovery. The Spells editor remains the next iteration; it is not included in this feature-management change.
+
+## Spells editor implementation (2026-10-14)
+
+Spells now follows Features in the creator and uses the same compact cards, description controls and layered note/use panels. Casting-source cards use the sheet's purple palette and show ability attack/save values. The editor follows Android's `SpellManagementScreen.kt` and `SpellManagementViewModel.kt`: Known is the available spell list, Spellbook is enabled per casting source, and preparing creates a separate Prepared entry without consuming Known or Spellbook. Known entries cannot be removed while prepared; removing a spellbook entry preserves preparation. All memberships are scoped to the spell, publication and casting source.
+
+The catalog supports class spell list, maximum spell level (including cantrips), publication and name filters, with 30 results per page. Add All Matching to Known adds every matching page, skips spells already available for the chosen casting source and commits only after the complete catalog read succeeds. Class options come from the imported spell membership data, including variant class lists. No character-level limits are imposed. Custom spells can be added without an import.
+
+Prepared entries support multiple named note headings, multiple entries under each heading, the Editable on the character sheet checkbox, and multiple use trackers with the same four recovery conditions as spell slots. Each membership stores its own notes/uses and embedded spell description; preparing does not share mutable arrays with Known or Spellbook. Spell snapshots and exact content revision references survive save/reopen without access to the catalog.
+
+The existing web playing-sheet restriction is retained: spells with use trackers remain prepared during play. The sheet now checks the Prepared entry even when accessed from Known or Spellbook, and applies the restriction only to the matching casting source. The creator can still unprepare these spells, with confirmation when removing their notes/use settings. Identical spells from different sources have independent preparation and expansion, and duplicate tracker labels do not merge usage counters.
+
+Automated tests cover bulk filtering across pages, duplicate/source/publication handling, failed bulk reads, Known/Spellbook/Prepared transitions, independent annotations, persistence, offline display, recovery conditions and the playing-sheet preparation lock. Browser appearance has not been rechecked in this iteration.
+
+### Shared Source Books filter and spell membership correction
+
+Source Book is the user-facing name for a content record's `source` (internally `publication`). A shared, multi-select Source Books control above the creator tabs now filters the feature, spell and tool catalogs together. Its selection is a local browsing preference remembered across visits, separate from character data. No selection includes all books. Filtering never hides or removes entries already added to the character; bulk spell additions use the same selected books. The spell-specific Publication dropdown has been removed.
+
+`spells/sources.json` stores memberships under `class` and `classVariant`, unlike inline spell definitions which use `classes.fromClassList` and `classes.fromClassListVariant`. Both formats and flat Android class lists are now accepted, including in previously cached imports. New imports merge overlay and inline memberships, deduplicate classes, and scope each lookup to both source book and spell name. Homebrew memberships embedded in a spell definition are preserved. Adapter version 7 records this import correction. The future homebrew import UI remains outside this change.
+
+### Multi-select spell filters
+
+Class spell lists and spell levels are independent multi-select filters. A spell matches any selected class AND any selected level, combined with the global Source Books filter and text search. Wizard + Artificer with Cantrips + 1 + 9 is a valid selection; shared spells are added only once. All clears the respective restriction. The existing Known/Spellbook/Prepared lists also support selecting multiple display levels. Selecting levels 0 through 3 still provides the earlier “level 3 or lower” workflow.
+
+Early development imports may be corrected directly rather than gaining migration machinery. New imports store a single canonical class-membership object and discard the external `class`/`classVariant` aliases after merging them. The flat spell class list in live-viewer character JSON remains supported, as do inline memberships in upstream/homebrew spell definitions.
+
+### Separate catalog workspace
+
+Features and Spells now show the character's existing entries as their primary content, with a prominent Add button in each tab header. Browsing and adding happen in a shared modal catalog window, rather than in an expandable panel below the existing entries. It becomes a full-screen workspace on small screens; the title and Done action stay fixed while the catalog scrolls. Source Books is available inside the window, using the same global preference. Feature-type navigation, source assignment, custom entries, spell multi-selection and bulk addition remain available.
+
+The window stays open for multiple additions and shows how many were added during the current visit. Done returns to the character without clearing searches or selections. Escape or the backdrop also closes it; closing is temporarily disabled while a bulk addition completes. Keyboard focus is contained by Angular CDK and restored on close, background scrolling is blocked, and Enter in a search field cannot submit the surrounding character-save form. Added entries remain pending character edits and use the existing Save workflow.
+
+### Consolidated creator navigation
+
+The creator now has six stable tabs: Basic Info, Ability Scores, Proficiencies, Feature Sources, Features and Spells. Hit Dice sits inside Basic Info. Skills, Saving Throws and Other Proficiencies share the Proficiencies tab, with separate bordered sections; Skills and Saving Throws sit side by side on wide screens. Spell Slots is a section under Feature Sources, displayed when a casting source or saved slot entries exist. Existing slots remain editable after removing their source. Adding a casting source no longer inserts a tab or shifts navigation indices. Features and Spells retain their separate catalog windows.
+
+Ordering refinement: Hit Dice immediately follows Combat Stats, before Armor Class. The combined tab is labeled Proficiencies & More, with a Languages & Advantages subtitle. Its sections run Skills / Saving Throws, Combat Proficiencies, Tool Proficiencies, Languages, then Advantage / Disadvantage, keeping the proficiency settings together.
+
+Features and Spells now share one Features & Spells tab, reducing navigation to five tabs. They remain separate stacked sections, each with its own filters, annotations and Add dialog.
+
+All sections on Proficiencies & More now use the same responsive layout: two columns on large screens, one on smaller screens. Combat, Tools, Languages and Advantages follow the Skills/Saving Throws grid instead of reverting to full-width cards.
+
+The proficiency sections now share one flowing column layout rather than fixed grid rows. Cards stay intact and pack vertically into two balanced columns on large screens, retaining a single column on smaller screens. Reading order runs down each column.
+
+The flowing columns were replaced with a responsive masonry grid: each card reserves its measured height, and subsequent cards fill the earliest available space in either column. ResizeObserver updates placement when widths or editable content change. Small screens keep the normal single-column order.
+
+### Narrow-screen layout audit
+
+`scripts/creator-layout-acceptance.mjs` checks all five pages and both catalog windows at 320, 390, 768 and 1100px in light and dark themes, using long feature/source/spell/language/note names. It additionally checks that ability steppers and proficiency-row contents do not overlap. Browser results are recorded in `creator-layout-results.json`. The audit found and fixed narrow-screen overflow: ability steppers use explicit compact grid columns, proficiency labels wrap within smaller bonus columns, and long card text and source-book labels wrap. Physical-device and on-screen keyboard checks remain deferred.

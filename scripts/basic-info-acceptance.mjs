@@ -103,39 +103,39 @@ try {
     assert.equal(await evaluate(session, 'c.character.maxHp'), 32);
   });
   await check('Hit Dice add, merge, usage and reopened persistence work', async () => {
-    await evaluate(session, `document.querySelectorAll('nav[aria-label="Character editor pages"] button')[2].click();`);
+    await evaluate(session, `document.querySelectorAll('nav[aria-label="Character editor pages"] button')[0].click();`);
     await delay(100);
     await evaluate(session, `c.hitDiceTotal = 3; c.hitDiceType = 'd8'; c.addHitDice(); c.hitDice[0].used = 1;
       c.hitDiceTotal = 2; c.hitDiceType = 'd8'; c.addHitDice(); c.hitDiceType = 'd10'; c.addHitDice();
-      await c.save(); c.open(c.entries().find(e=>e.id===c.character.characterUuid)); c.setPage(2);`);
+      await c.save(); c.open(c.entries().find(e=>e.id===c.character.characterUuid)); c.setPage(0);`);
     assert.deepEqual(await evaluate(session, 'c.hitDice.map(d=>({type:d.dieType,total:d.total,used:d.used}))'), [
       { type: 'd8', total: 5, used: 1 }, { type: 'd10', total: 1, used: 0 },
     ]);
   });
   await check('Skill Proficiencies stores expertise and negative bonuses through real controls', async () => {
-    await evaluate(session, `document.querySelectorAll('nav[aria-label="Character editor pages"] button')[3].click();`);
+    await evaluate(session, `document.querySelectorAll('nav[aria-label="Character editor pages"] button')[2].click();`);
     await delay(100);
     await evaluate(session, `const icon=document.querySelector('#skill-PERCEPTION'); icon.click(); icon.click(); icon.click();
       const bonus=document.querySelector('#skill-bonus-PERCEPTION'); bonus.value='-1'; bonus.dispatchEvent(new Event('input',{bubbles:true}));`);
     await delay(100);
     assert.equal(await evaluate(session, `c.skillTotal('PERCEPTION','wis')`), '+7');
-    await evaluate(session, `await c.save(); c.open(c.entries().find(e=>e.id===c.character.characterUuid)); c.setPage(3);`);
+    await evaluate(session, `await c.save(); c.open(c.entries().find(e=>e.id===c.character.characterUuid)); c.setPage(2);`);
     assert.equal(await evaluate(session, `c.skillLevel('PERCEPTION')`), 'EXPERTISE');
     assert.equal(await evaluate(session, `c.skillBonus('PERCEPTION')`), -1);
   });
   await check('Saving Throws toggles full proficiency and persists a signed bonus', async () => {
-    await evaluate(session, `document.querySelectorAll('nav[aria-label="Character editor pages"] button')[4].click();`);
+    await evaluate(session, `document.querySelectorAll('nav[aria-label="Character editor pages"] button')[2].click();`);
     await delay(100);
     await evaluate(session, `document.querySelector('#save-wis').click();
       const bonus=document.querySelector('#save-bonus-wis'); bonus.value='-2'; bonus.dispatchEvent(new Event('input',{bubbles:true}));`);
     await delay(100);
     assert.equal(await evaluate(session, `c.saveTotal('wisdom')`), '+4');
-    await evaluate(session, `await c.save(); c.open(c.entries().find(e=>e.id===c.character.characterUuid)); c.setPage(4);`);
+    await evaluate(session, `await c.save(); c.open(c.entries().find(e=>e.id===c.character.characterUuid)); c.setPage(2);`);
     assert.equal(await evaluate(session, `c.saveProficient('wis')`), true);
     assert.equal(await evaluate(session, `c.saveBonus('wis')`), -2);
   });
   await check('Other Proficiencies persists flags, languages, advantages and sources', async () => {
-    await evaluate(session, `c.setPage(5); ng.applyChanges(c);`); await delay(100);
+    await evaluate(session, `c.setPage(2); ng.applyChanges(c);`); await delay(100);
     await evaluate(session, `globalThis.other = ng.getComponent(document.querySelector('app-other-proficiencies'));
       other.setCombat('simpleWeapons',true); other.setCombat('initiative',true);
       other.languageInput='Elvish'; other.addLanguage();
@@ -148,15 +148,15 @@ try {
     assert.equal(await evaluate(session, `c.character.featureSources[0].usesIntelligence`), true);
   });
   await check('Spell Slots appears for casting sources and preserves authored slots', async () => {
-    assert.equal(await evaluate(session, `c.pages.includes('Spell Slots')`), true);
-    await evaluate(session, `c.setPage(7); ng.applyChanges(c);`); await delay(100);
+    assert.equal(await evaluate(session, `c.hasCastingSources`), true);
+    await evaluate(session, `c.setPage(3); ng.applyChanges(c);`); await delay(100);
     await evaluate(session, `globalThis.slots = ng.getComponent(document.querySelector('app-editor-spell-slots'));
       slots.total=3; slots.recovery='SHORT_REST_ONE'; slots.add(); await c.save();
       c.open(c.entries().find(e=>e.id===c.character.characterUuid));`);
     assert.equal(await evaluate(session, `Object.values(c.character.spellSlots)[0][0].regainCondition`), 'SHORT_REST_ONE');
   });
   await check('Features separates types and persists notes and tracking without needing content', async () => {
-    await evaluate(session, `c.setPage(c.pages.indexOf('Features')); ng.applyChanges(c);`); await delay(100);
+    await evaluate(session, `c.setPage(c.pages.indexOf('Features & Spells')); ng.applyChanges(c);`); await delay(100);
     await evaluate(session, `globalThis.features=ng.getComponent(document.querySelector('app-editor-features'));
       features.selectedType='FEAT'; features.customName='Browser custom feat'; features.customDescription='Selected text'; features.addCustom();
       const feature=c.sheet.features[0]; features.addNote(feature); features.setNoteEntry(feature.notes[0],0,'Keep this note');
@@ -172,7 +172,7 @@ try {
       for (const theme of ['light-mc', 'dark-mc']) {
         await evaluate(session, `ng.getComponent(document.querySelector('app-root')).themeService.currentTheme.set('${theme}');`);
         await delay(100);
-        for (const page of [0, 1, 2, 3, 4, 5, 6, 7, 8]) {
+        for (const page of [0, 1, 2, 3, 4]) {
           await evaluate(session, `c.setPage(${page}); ng.applyChanges(c);`);
           const size = await evaluate(session, `({width:document.documentElement.clientWidth, scroll:document.documentElement.scrollWidth})`);
           assert(size.scroll <= size.width + 1, `Overflow at ${width}, ${theme}, page ${page}`);

@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { IndexedDbContentCache } from '../content/content-cache';
@@ -8,6 +8,9 @@ import { CharacterHelpersService } from '../sheet/character-helpers.service';
 import { DEFENSE_ABILITIES } from './basic-info';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { EntryAnnotationsEditor } from './entry-annotations-editor';
+import { SourceBookFilterService } from './source-book-filter.service';
+import { SourceBookFilterComponent } from './source-book-filter.component';
+import { CatalogDialogComponent } from './catalog-dialog.component';
 
 type FeatureType = 'CLASS_FEATURE' | 'FEAT' | 'OPTIONAL_FEATURE';
 export const FEATURE_TYPES: { value: FeatureType; label: string; kinds: string[] }[] = [
@@ -17,7 +20,7 @@ export const FEATURE_TYPES: { value: FeatureType; label: string; kinds: string[]
 ];
 
 @Component({
-  selector: 'app-editor-features', imports: [FormsModule, RouterLink, EntryRendererComponent],
+  selector: 'app-editor-features', imports: [FormsModule, RouterLink, EntryRendererComponent, CatalogDialogComponent, SourceBookFilterComponent],
   templateUrl: './features-editor.component.html', styleUrl: './local-editor.component.css',
 })
 export class FeaturesEditorComponent extends EntryAnnotationsEditor implements OnInit, OnDestroy {
@@ -32,7 +35,10 @@ export class FeaturesEditorComponent extends EntryAnnotationsEditor implements O
   readonly revision = signal<ImportRevision | null>(null);
   private readonly cache = new IndexedDbContentCache();
   private readonly helpers = inject(CharacterHelpersService);
+  private readonly sourceBooks = inject(SourceBookFilterService);
+  private readonly view = inject(ChangeDetectorRef);
   private request = 0;
+  private refreshRequest = 0;
   private searchTimer?: ReturnType<typeof setTimeout>;
   selectedType: FeatureType = 'CLASS_FEATURE';
   selectedSource: string | undefined;
@@ -42,7 +48,19 @@ export class FeaturesEditorComponent extends EntryAnnotationsEditor implements O
   readonly pageSize = 30;
   customName = '';
   customDescription = '';
+  catalogOpen = false;
+  catalogAdded = 0;
   readonly expanded = new Set<FeatureEntryFull>();
+
+  constructor() {
+    super();
+    let initial = true;
+    effect(() => {
+      this.sourceBooks.selected();
+      if (initial) { initial = false; return; }
+      untracked(() => this.searchChanged());
+    });
+  }
 
   get sources() { return (this.sheet().character?.featureSources ?? []).filter(source => source.isGeneralFeatureSource && source.name); }
   get targetSource() { return this.selectedSource === undefined ? this.sources[0]?.name : this.selectedSource || undefined; }
@@ -73,30 +91,36 @@ export class FeaturesEditorComponent extends EntryAnnotationsEditor implements O
   qualifier(record: ContentRecord): string {
     return [record.data['className'], record.data['subclassShortName'], record.data['level'] != null ? `Level ${record.data['level']}` : '', record.publication].filter(Boolean).join(' · ');
   }
-  change() { this.edited.emit(); }
+  change() { this.view.markForCheck(); this.edited.emit(); }
+  openCatalog() {
+    if (this.sourceFilter !== 'ALL') this.selectedSource = this.sourceFilter;
+    this.catalogAdded = 0; this.catalogOpen = true;
+  }
   toggle(feature: FeatureEntryFull) { this.expanded.has(feature) ? this.expanded.delete(feature) : this.expanded.add(feature); }
   async ngOnInit() { await this.refreshContent(); }
-  ngOnDestroy() { clearTimeout(this.searchTimer); this.request++; }
+  ngOnDestroy() { clearTimeout(this.searchTimer); this.request++; this.refreshRequest++; }
   async refreshContent() {
-    const request = ++this.request;
+    const request = ++this.refreshRequest;
     try {
       const source = await this.cache.savedSource('development-local');
       const revision = source ? await this.cache.active('development-local', source)
         : (await this.cache.revisions('development-local')).find(row => row.active && row.revision.status === 'ready')?.revision;
-      if (request !== this.request) return;
+      if (request !== this.refreshRequest) return;
       this.revision.set(revision ?? null);
       if (!revision) { this.results.set([]); this.total.set(0); this.loading.set(false); this.message.set('Import content to browse features. Selected features, notes and uses remain editable.'); return; }
       this.offset = 0; await this.searchContent();
-    } catch (error) { if (request === this.request) this.message.set(String(error)); }
+    } catch (error) { if (request === this.refreshRequest) this.message.set(String(error)); }
   }
-  setType(type: FeatureType) { clearTimeout(this.searchTimer); this.selectedType = type; this.offset = 0; this.search = ''; this.results.set([]); this.total.set(0); void this.searchContent(); }
+  setType(type: FeatureType) { clearTimeout(this.searchTimer); this.selectedType = type; this.view.markForCheck(); this.offset = 0; this.search = ''; this.results.set([]); this.total.set(0); void this.searchContent(); }
   searchChanged() { clearTimeout(this.searchTimer); this.offset = 0; this.request++; this.results.set([]); this.searchTimer = setTimeout(() => void this.searchContent(), 200); }
   async searchContent() {
     const revision = this.revision(); if (!revision) return;
     const request = ++this.request; this.loading.set(true);
     try {
       const kinds = this.types.find(type => type.value === this.selectedType)!.kinds;
-      const page = await this.cache.searchCategory(revision.id, kinds, this.search, this.offset, this.pageSize);
+      const books = this.sourceBooks.selected();
+      const page = await this.cache.searchCategory(revision.id, kinds, this.search, this.offset, this.pageSize,
+        record => this.sourceBooks.allows(record.publication, books));
       if (request !== this.request) return;
       this.results.set(page.records); this.total.set(page.total); this.message.set('');
     } catch (error) { if (request === this.request) this.message.set(String(error)); }
@@ -122,7 +146,7 @@ export class FeaturesEditorComponent extends EntryAnnotationsEditor implements O
     if (this.selectedType === 'FEAT') feature.featEntity = snapshot as unknown as FeatEntity;
     else if (this.selectedType === 'OPTIONAL_FEATURE') feature.optionalFeatureEntity = snapshot as unknown as OptionalFeatureEntity;
     else feature.featureEntity = snapshot as unknown as FeatureEntity;
-    (this.sheet().features ??= []).push(feature); this.change();
+    (this.sheet().features ??= []).push(feature); this.catalogAdded++; this.change();
   }
   addCustom() {
     const name = this.customName.trim(); if (!name) return;
@@ -133,6 +157,7 @@ export class FeaturesEditorComponent extends EntryAnnotationsEditor implements O
     else if (this.selectedType === 'OPTIONAL_FEATURE') feature.optionalFeatureEntity = { ...data, featureType: [] };
     else feature.featureEntity = { ...data, level: 0, className: '', classSource: '' };
     (this.sheet().features ??= []).push(feature); this.expanded.add(feature);
+    this.catalogAdded++;
     this.customName = ''; this.customDescription = ''; this.change();
   }
   remove(feature: FeatureEntryFull) {

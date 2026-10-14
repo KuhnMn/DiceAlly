@@ -1,9 +1,10 @@
-import { Component, ElementRef, HostListener, OnInit, ViewChild, input, output, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ExportedCharacter, FeatureSource } from '../models/character.model';
 import { IndexedDbContentCache } from '../content/content-cache';
 import { ContentRecord, ImportRevision } from '../content/content.model';
+import { SourceBookFilterService } from './source-book-filter.service';
 
 @Component({
   selector: 'app-other-proficiencies', imports: [FormsModule, RouterLink],
@@ -19,6 +20,7 @@ export class OtherProficienciesComponent implements OnInit {
   readonly sourceMessage = signal('');
   readonly revision = signal<ImportRevision | null>(null);
   private readonly cache = new IndexedDbContentCache();
+  private readonly sourceBooks = inject(SourceBookFilterService);
   selectedTool = '';
   toolSearch = '';
   toolMenuOpen = false;
@@ -51,7 +53,7 @@ export class OtherProficienciesComponent implements OnInit {
   get sources() { return this.character.featureSources ?? []; }
   get filteredTools() {
     const query = this.toolSearch.toLowerCase().trim();
-    return this.tools().filter(tool => `${tool.name} ${tool.publication}`.toLowerCase().includes(query));
+    return this.tools().filter(tool => this.sourceBooks.allows(tool.publication) && `${tool.name} ${tool.publication}`.toLowerCase().includes(query));
   }
   change() { this.edited.emit(); }
   combatValue(key: 'simpleWeapons' | 'martialWeapons' | 'initiative') { return this.character.proficiencies?.[key] ?? false; }

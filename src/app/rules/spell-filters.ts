@@ -1,4 +1,5 @@
 import { ContentRecord, normalize, object, string } from '../content/content.model';
+import { spellClassMemberships } from '../content/spell-membership';
 /** AND between clauses, OR between semicolon values. Only audited upstream fields are supported. */
 export function filterSpells(query: unknown, records: ReadonlyMap<string, ContentRecord>): ContentRecord[] {
   if (typeof query !== 'string' || query.length > 4096) throw new Error('Invalid spell filter expression.');
@@ -20,9 +21,7 @@ export function filterSpells(query: unknown, records: ReadonlyMap<string, Conten
         case 'components & miscellaneous': return object(record.data['meta'])?.['ritual'] === true;
         case 'spell attack': return Array.isArray(record.data['spellAttack']) && record.data['spellAttack'].some(v => values.includes(normalize(string(v))));
         case 'class': {
-          const classes = object(record.data['classes']);
-          return ['fromClassList','fromClassListVariant'].some(field => Array.isArray(classes?.[field])
-            && (classes[field] as unknown[]).some(v => values.includes(normalize(string(object(v)?.['name'])))));
+          return spellClassMemberships(record.data['classes']).some(entry => values.includes(normalize(entry.name)));
         }
         default: return false;
       }

@@ -8,7 +8,7 @@ export interface ContentSource {
 export const DEFAULT_CONTENT_SOURCE: ContentSource = {
   owner: '5etools-mirror-3', repository: '5etools-src', branch: 'main', directory: 'data',
 };
-export const ADAPTER_VERSION = 6;
+export const ADAPTER_VERSION = 7;
 export interface ContentLink {
   role: string;
   target: string;

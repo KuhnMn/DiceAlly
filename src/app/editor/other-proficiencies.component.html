@@ -1,24 +1,10 @@
-<div class="space-y-4">
+<div [class]="panel() === 'proficiencies' ? 'proficiency-sections' : 'space-y-4'">
   @if (panel() === 'proficiencies') {
   <section class="editor-card">
     <h2>Combat Proficiencies</h2>
     <div class="space-y-3">@for (option of combatOptions; track option.key) {
       <label class="flex items-center gap-3 text-sm"><input type="checkbox" [name]="option.key" [ngModel]="combatValue(option.key)" (ngModelChange)="setCombat(option.key, $event)" />{{ option.label }}</label>
     }</div>
-  </section>
-  <section class="editor-card">
-    <h2>Advantage / Disadvantage</h2>
-    <div class="space-y-2">@for (entry of advantages; track $index; let i = $index) {
-      <div class="advantage-entry rounded-lg border-2 border-outline-variant bg-surface-container p-2.5">
-        <div class="flex flex-wrap justify-between items-center gap-2 mb-2"><label class="flex items-center gap-2 text-xs"><input type="checkbox" [name]="'disadvantage-' + i" [(ngModel)]="entry.isDisadvantage" (ngModelChange)="change()" />Disadvantage</label><button type="button" class="secondary-button !py-1 !px-2 !text-xs" (click)="removeAdvantage(i)">Remove</button></div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <label><span class="field-label">Roll type</span><select class="editor-input" [name]="'advantage-type-' + i" [(ngModel)]="entry.aType" (ngModelChange)="change()">@for (type of advantageTypes; track type.value) { <option [value]="type.value">{{ type.label }}</option> }</select></label>
-          <label><span class="field-label">Applies to</span><input class="editor-input" [name]="'advantage-target-' + i" [(ngModel)]="entry.appliesTo" (ngModelChange)="change()" placeholder="e.g., Perception or poison saves" /></label>
-          <label><span class="field-label">Condition</span><input class="editor-input" [name]="'advantage-condition-' + i" [(ngModel)]="entry.condition" (ngModelChange)="change()" placeholder="e.g., While in dim light" /></label>
-        </div>
-      </div>
-    } @empty { <p class="text-sm text-on-surface-variant">No advantage or disadvantage entries.</p> }</div>
-    <button type="button" class="action-button mt-3" (click)="addAdvantage()">Add Entry</button>
   </section>
   <section class="editor-card">
     <div class="flex flex-wrap items-start justify-between gap-2"><h2>Tool Proficiencies</h2><button type="button" class="secondary-button" [disabled]="loadingTools()" (click)="loadTools()">{{ loadingTools() ? 'Loading…' : 'Refresh tools' }}</button></div>
@@ -43,6 +29,20 @@
     <h2>Languages</h2>
     <div class="flex gap-2"><label class="flex-1 min-w-0"><span class="sr-only">Language</span><input class="editor-input" name="new-language" [(ngModel)]="languageInput" placeholder="Add a language" (keydown.enter)="$event.preventDefault(); addLanguage()" /></label><button type="button" class="action-button" [disabled]="!languageInput.trim()" (click)="addLanguage()">Add</button></div>
     <div class="flex flex-wrap gap-2 mt-3">@for (language of languages; track $index; let i = $index) { <button type="button" class="rounded-full border border-secondary px-3 py-1 text-sm bg-secondary-container text-on-secondary-container hover:bg-secondary hover:text-on-secondary transition-colors" [attr.aria-label]="'Remove language ' + language" (click)="removeLanguage(i)">{{ language }} <span aria-hidden="true">×</span></button> }</div>
+  </section>
+  <section class="editor-card">
+    <h2>Advantage / Disadvantage</h2>
+    <div class="space-y-2">@for (entry of advantages; track $index; let i = $index) {
+      <div class="advantage-entry rounded-lg border-2 border-outline-variant bg-surface-container p-2.5">
+        <div class="flex flex-wrap justify-between items-center gap-2 mb-2"><label class="flex items-center gap-2 text-xs"><input type="checkbox" [name]="'disadvantage-' + i" [(ngModel)]="entry.isDisadvantage" (ngModelChange)="change()" />Disadvantage</label><button type="button" class="secondary-button !py-1 !px-2 !text-xs" (click)="removeAdvantage(i)">Remove</button></div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <label><span class="field-label">Roll type</span><select class="editor-input" [name]="'advantage-type-' + i" [(ngModel)]="entry.aType" (ngModelChange)="change()">@for (type of advantageTypes; track type.value) { <option [value]="type.value">{{ type.label }}</option> }</select></label>
+          <label><span class="field-label">Applies to</span><input class="editor-input" [name]="'advantage-target-' + i" [(ngModel)]="entry.appliesTo" (ngModelChange)="change()" placeholder="e.g., Perception or poison saves" /></label>
+          <label><span class="field-label">Condition</span><input class="editor-input" [name]="'advantage-condition-' + i" [(ngModel)]="entry.condition" (ngModelChange)="change()" placeholder="e.g., While in dim light" /></label>
+        </div>
+      </div>
+    } @empty { <p class="text-sm text-on-surface-variant">No advantage or disadvantage entries.</p> }</div>
+    <button type="button" class="action-button mt-3" (click)="addAdvantage()">Add Entry</button>
   </section>
   }
   @if (panel() === 'sources') {

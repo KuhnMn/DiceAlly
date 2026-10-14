@@ -10,14 +10,19 @@ import { RestService } from '../services/rest.service';
 describe('Spell Slots editor', () => {
   beforeEach(() => TestBed.configureTestingModule({ imports: [SpellSlotsComponent, LocalEditorComponent], providers: [provideRouter([])] }));
 
-  it('only offers the page when a spellcasting source exists', async () => {
+  it('offers slots inside Feature Sources when casting sources or existing slots exist', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
     const editor = fixture.componentInstance;
-    expect(editor.pages).not.toContain('Spell Slots');
+    expect(editor.pages).toEqual(['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Features & Spells']);
+    expect(editor.hasCastingSources).toBe(false);
     editor.character.featureSources = [{ name: 'Wizard', isSpellcastingSource: true }];
-    expect(editor.pages).toContain('Spell Slots');
+    expect(editor.hasCastingSources).toBe(true);
     editor.character.featureSources[0].isSpellcastingSource = false;
-    expect(editor.pages).not.toContain('Spell Slots');
+    expect(editor.hasCastingSources).toBe(false);
+    editor.character.spellSlots = { Wizard: [{ level: 1, total: 2, used: 0 }] };
+    expect(editor.hasSpellSlots).toBe(true);
+    editor.setPage(3); fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('app-editor-spell-slots')).not.toBeNull();
   });
 
   it('adds, merges, moves and saves totals without resetting usage', async () => {

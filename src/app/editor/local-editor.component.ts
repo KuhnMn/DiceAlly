@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ExportedCharacter, AbilityScores, HitDieEntry } from '../models/character.model';
@@ -10,14 +10,18 @@ import { DEFENSE_ABILITIES, emptyBasicCharacter, validateBasicInfo } from './bas
 import { OtherProficienciesComponent } from './other-proficiencies.component';
 import { SpellSlotsComponent } from './spell-slots.component';
 import { FeaturesEditorComponent } from './features-editor.component';
+import { SpellsEditorComponent } from './spells-editor.component';
+import { SourceBookFilterComponent } from './source-book-filter.component';
+import { MasonryCardsDirective } from './masonry-cards.directive';
 
 @Component({
   selector: 'app-local-editor',
-  imports: [FormsModule, RouterLink, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent],
+  imports: [FormsModule, RouterLink, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, MasonryCardsDirective],
   templateUrl: './local-editor.component.html',
   styleUrl: './local-editor.component.css',
 })
 export class LocalEditorComponent implements OnInit {
+  private readonly view = inject(ChangeDetectorRef);
   private readonly repository = new BasicInfoRepository();
   private readonly helpers = inject(CharacterHelpersService);
   private readonly legacyStorage = inject(CharacterStorageService);
@@ -26,8 +30,9 @@ export class LocalEditorComponent implements OnInit {
   readonly message = signal('');
   readonly error = signal('');
   readonly defenseAbilities = DEFENSE_ABILITIES;
-  private readonly basePages = ['Basic Info', 'Ability Scores', 'Hit Dice', 'Skill Proficiencies', 'Saving Throws', 'Other Proficiencies', 'Feature Sources'];
-  get pages() { return [...this.basePages, ...(this.character.featureSources?.some(source => source.isSpellcastingSource && source.name?.trim()) ? ['Spell Slots'] : []), 'Features']; }
+  readonly pages = ['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Features & Spells'];
+  get hasCastingSources() { return this.character.featureSources?.some(source => source.isSpellcastingSource && source.name?.trim()) ?? false; }
+  get hasSpellSlots() { return Object.values(this.character.spellSlots ?? {}).some(slots => slots.length > 0); }
   readonly savingThrows = DEFENSE_ABILITIES.map(ability => ({ ...ability, abbreviation: ability.key.slice(0, 3) }));
   readonly skills = this.helpers.skillDefinitions.map(skill => ({ ...skill, key: skill.name.toUpperCase().replace(/\s+/g, '_') }));
   readonly proficiencyLevels = [
@@ -134,6 +139,7 @@ export class LocalEditorComponent implements OnInit {
   }
   setPage(page: number) {
     this.page = page;
+    this.view.markForCheck();
     this.message.set(''); this.error.set('');
   }
   private normalizeAbilities() {
@@ -155,7 +161,7 @@ export class LocalEditorComponent implements OnInit {
     catch (error) { this.error.set(String(error)); }
   }
 
-  changed() { this.message.set(''); this.error.set(''); }
+  changed() { this.view.markForCheck(); this.message.set(''); this.error.set(''); }
   canLeave() { return !this.unsaved || confirm('You have unsaved changes. Leave without saving?'); }
   @HostListener('window:beforeunload', ['$event']) beforeUnload(event: BeforeUnloadEvent) {
     if (this.unsaved) { event.preventDefault(); event.returnValue = ''; }
@@ -166,6 +172,7 @@ export class LocalEditorComponent implements OnInit {
     if (!this.canLeave()) return;
     this.portraitRequest++;
     this.sheet = emptyBasicCharacter(); this.version = 0;
+    this.view.markForCheck();
     this.savedState = canonicalDocument(this.sheet);
     this.resetInputs(); this.libraryOpen = false;
   }
@@ -179,6 +186,7 @@ export class LocalEditorComponent implements OnInit {
     this.character.speeds.walk ??= 30;
     this.normalizeAbilities();
     this.version = entry.version;
+    this.view.markForCheck();
     this.savedState = canonicalDocument(this.sheet);
     this.resetInputs(); this.libraryOpen = false;
     this.message.set('Character loaded.');
@@ -200,6 +208,7 @@ export class LocalEditorComponent implements OnInit {
       this.character.armorClassOverride = null;
       this.character.maxHpOverride = null;
       this.version = await this.repository.save(this.sheet, this.version);
+      this.view.markForCheck();
       this.savedState = canonicalDocument(this.sheet);
       await this.refreshLibrary();
       this.message.set('Character saved on this device.');

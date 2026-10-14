@@ -9,6 +9,23 @@ import { CharacterHelpersService } from '../sheet/character-helpers.service';
 describe('Basic Info editor', () => {
   beforeEach(() => TestBed.configureTestingModule({ imports: [LocalEditorComponent], providers: [provideRouter([])] }));
 
+  it('groups the editor into five stable tabs with related sections together', async () => {
+    const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
+    const editor = fixture.componentInstance;
+    expect(fixture.nativeElement.querySelectorAll('nav[aria-label="Character editor pages"] button')).toHaveLength(5);
+    expect(fixture.nativeElement.querySelector('#new-hit-dice-total')).not.toBeNull();
+    editor.setPage(2); fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('#skill-PERCEPTION')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('#save-wis')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('app-other-proficiencies')).not.toBeNull();
+    editor.setPage(4); fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('app-editor-features')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('app-editor-spells')).not.toBeNull();
+    const pages = [...editor.pages];
+    editor.character.featureSources = [{ name: 'Wizard', isSpellcastingSource: true }];
+    expect(editor.pages).toEqual(pages);
+  });
+
   it('toggles full saving throw proficiency and preserves signed bonuses and other pages', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
     const editor = fixture.componentInstance;
@@ -17,7 +34,7 @@ describe('Basic Info editor', () => {
     editor.setSaveBonus('wis', -1); expect(editor.saveTotal('wisdom')).toBe('+2');
     editor.toggleSaveProficiency('wis'); expect(editor.saveTotal('wisdom')).toBe('+5');
     editor.toggleSaveProficiency('wis'); expect(editor.saveProficient('wis')).toBe(false);
-    editor.toggleSaveProficiency('wis'); editor.setPage(4);
+    editor.toggleSaveProficiency('wis'); editor.setPage(2);
     fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
     expect(fixture.nativeElement.querySelectorAll('button[id^="save-"]').length).toBe(6);
     await editor.save(); expect(editor.error()).toBe('');
@@ -33,7 +50,7 @@ describe('Basic Info editor', () => {
     await fixture.whenStable();
     const page = fixture.nativeElement as HTMLElement;
     expect([...page.querySelectorAll('h2')].map(h => h.textContent?.trim())).toEqual([
-      'Basic Information', 'Portrait', 'Combat Stats', 'Armor Class', 'General Stats',
+      'Basic Information', 'Portrait', 'Combat Stats', 'Hit Dice', 'Armor Class', 'General Stats',
     ]);
     expect(page.querySelector('#speed-walk')).toBeTruthy();
     expect(page.textContent).not.toMatch(/grant|preview|structured editing/i);
@@ -133,7 +150,7 @@ describe('Basic Info editor', () => {
     const fixture = TestBed.createComponent(LocalEditorComponent);
     await fixture.whenStable();
     const editor = fixture.componentInstance;
-    editor.character.name = 'Hit dice test'; editor.setPage(2);
+    editor.character.name = 'Hit dice test'; editor.setPage(0);
     editor.hitDiceTotal = 3; editor.hitDiceType = 'd8'; editor.addHitDice();
     editor.hitDice[0].used = 2;
     editor.hitDiceTotal = 2; editor.hitDiceType = 'D8'; editor.addHitDice();
@@ -171,7 +188,7 @@ describe('Basic Info editor', () => {
       editor.setSkillLevel('STEALTH', rank);
       expect(editor.skillTotal('STEALTH', 'dex')).toBe(total);
     }
-    editor.setPage(3); fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
+    editor.setPage(2); fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
     expect(fixture.nativeElement.querySelectorAll('button[id^="skill-"]').length).toBe(18);
     editor.cycleSkillLevel('STEALTH'); expect(editor.skillLevel('STEALTH')).toBe('NONE');
     editor.cycleSkillLevel('STEALTH'); expect(editor.skillLevel('STEALTH')).toBe('HALF');

@@ -6,6 +6,7 @@ import { FeatureNotesComponent } from './feature-notes.component';
 import { CharacterHelpersService } from './character-helpers.service';
 import { ExportedCharacter, FeatureNotes } from '../models/character.model';
 import { CharacterStore } from '../stores/character.store';
+import { preparationLocked, spellIdentity } from '../editor/spell-selection';
 
 type SpellBonusItemOverview = {
   key: string;
@@ -226,13 +227,13 @@ type SpellLevelFilter = 'ALL' | number;
                 {{ spellLevelHeader(levelGroup.level) }}
               </h4>
               <div class="space-y-4">
-                @for (spell of levelGroup.spells; track spell.name) {
+                @for (spell of levelGroup.spells; track spell) {
                   <div class="border-2 border-purple rounded-lg p-4 bg-surface-container" [attr.id]="'spell-' + helpers.sourceId(spell.name + '-' + (spell.source ?? ''))" [class.flash-highlight]="highlightedId() === ('spell-' + helpers.sourceId(spell.name + '-' + (spell.source ?? '')))">
                     <!-- Header (always visible, clickable) -->
                     <button
                       type="button"
                       class="w-full text-left hover:bg-surface-container-low transition-colors rounded p-2 -m-2"
-                      (click)="toggleExpanded('spell-' + spell.name)"
+                      (click)="toggleExpanded(spellExpansionId(spell))"
                     >
                       <div class="flex flex-wrap items-center justify-between gap-2 w-full">
                         <div class="flex flex-wrap items-center gap-2">
@@ -248,11 +249,13 @@ type SpellLevelFilter = 'ALL' | number;
                           }
                           <!-- Interactive List Type Tags -->
                           <div class="flex gap-1 flex-wrap">
-                            @for (type of availableListTypes(); track type) {
+                            @for (type of listTypesForSpell(spell); track type) {
                               @if (type === 'PREPARED') {
                                 <button
                                   type="button"
                                   (click)="togglePreparedSpell(spell, $event)"
+                                  [disabled]="isPreparationLocked(spell)"
+                                  [attr.aria-label]="isPreparationLocked(spell) ? spell.name + ' stays prepared because it has use trackers' : (hasSpellListType(spell, 'PREPARED') ? 'Unprepare ' : 'Prepare ') + spell.name"
                                   [class.bg-blue-container]="hasSpellListType(spell, type)"
                                   [class.text-on-blue-container]="hasSpellListType(spell, type)"
                                   [class.bg-blue]="!hasSpellListType(spell, type)"
@@ -275,7 +278,7 @@ type SpellLevelFilter = 'ALL' | number;
                             }
                           </div>
                         </div>
-                        <span class="text-xl text-purple font-bold">{{ isExpanded('spell-' + spell.name) ? '−' : '+' }}</span>
+                        <span class="text-xl text-purple font-bold">{{ isExpanded(spellExpansionId(spell)) ? '−' : '+' }}</span>
                       </div>
                     </button>
 
@@ -306,7 +309,7 @@ type SpellLevelFilter = 'ALL' | number;
                     </div>
 
                     <!-- Expandable Content -->
-                    @if (isExpanded('spell-' + spell.name)) {
+                    @if (isExpanded(spellExpansionId(spell))) {
                       <div class="mt-3 pt-3 border-t border-outline-variant">
                         @if (spell.entity?.entries?.length) {
                           <div>
@@ -329,10 +332,10 @@ type SpellLevelFilter = 'ALL' | number;
                     @if (spellListTypeFilter() === 'PREPARED') {
                         @if (spell.uses?.length) {
                           <div class="mt-4 border-t border-outline-variant pt-4">
-                            @for (use of spell.uses; track use.tag) {
+                            @for (use of spell.uses; track use) {
                               <app-feature-uses 
                                 [uses]="use"
-                                (usesUpdated)="updateSpellUses(spell, $event)"
+                                (usesUpdated)="use.usedFreeUses = $event.usedFreeUses"
                               />
                             }
                           </div>
@@ -527,8 +530,10 @@ export class SpellsPageComponent {
   }
 
   private spellKey(spell: any): string {
-    return spell.name + ':' + (spell.source ?? '');
+    return spellIdentity(spell);
   }
+
+  spellExpansionId(spell: any): string { return 'spell-' + this.spellKey(spell); }
 
   getSpellListTypes(spell: any): string[] {
     const allSpells = this.characterData()?.spells ?? [];
@@ -544,10 +549,10 @@ export class SpellsPageComponent {
   togglePreparedSpell(spell: any, event: Event) {
     event.stopPropagation();
     
-    const allSpells = this.characterData()?.spells ?? [];
+    const allSpells = [...this.characterData()?.spells ?? []];
     const key = this.spellKey(spell);
     const isPrepared = this.hasSpellListType(spell, 'PREPARED');
-    if (this.hasUses(spell)) {
+    if (this.isPreparationLocked(spell)) {
       return; // Don't allow toggling if the spell has uses (e.g., limited daily casts)
     }
     if (isPrepared) {
@@ -558,7 +563,7 @@ export class SpellsPageComponent {
       }
     } else {
       // Add a PREPARED version by copying the current spell
-      const preparedSpell = { ...spell, listType: 'PREPARED' };
+      const preparedSpell = { ...structuredClone(spell), editorId: crypto.randomUUID(), listType: 'PREPARED' };
       allSpells.push(preparedSpell);
     }
     
@@ -579,6 +584,15 @@ export class SpellsPageComponent {
     types.push('PREPARED');
     return types;
   });
+
+  listTypesForSpell(spell: any): Array<'KNOWN' | 'SPELLBOOK' | 'PREPARED'> {
+    const source = this.character()?.featureSources?.find(source => source.name === spell.castingSourceName);
+    return source?.useSpellbook || this.hasSpellListType(spell, 'SPELLBOOK') ? ['KNOWN', 'SPELLBOOK', 'PREPARED'] : ['KNOWN', 'PREPARED'];
+  }
+
+  isPreparationLocked(spell: any): boolean {
+    return preparationLocked(spell, this.characterData()?.spells ?? []);
+  }
 
   spellLevelHeader(level: number): string {
     return level === 0 ? 'Cantrips' : `Level ${level}`;
@@ -747,7 +761,7 @@ export class SpellsPageComponent {
   }
 
   determineIconForSpell(spell: any): string {
-    if (this.hasUses(spell)) {
+    if (this.isPreparationLocked(spell)) {
       return '🔒';
     }
     if (this.hasSpellListType(spell, 'PREPARED')) {
