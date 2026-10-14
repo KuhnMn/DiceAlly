@@ -13,9 +13,10 @@ import { A11yModule } from '@angular/cdk/a11y';
       cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
       <header class="catalog-header">
         <div><h2>{{ title() }}</h2><p>{{ subtitle() }}</p></div>
-        <button type="button" class="secondary-button" [disabled]="closeDisabled()" (click)="close()">Done</button>
+        <button type="button" class="secondary-button" [disabled]="closeDisabled()" (click)="close()">{{ closeLabel() }}</button>
       </header>
       <div class="catalog-body feature-editor"><ng-content /></div>
+      <div class="catalog-footer"><ng-content select="[catalog-footer]" /></div>
     </section>
   `,
   styleUrl: './local-editor.component.css',
@@ -27,6 +28,7 @@ import { A11yModule } from '@angular/cdk/a11y';
     .catalog-header h2 { font-size: 1.125rem; font-weight: 700; color: var(--md-sys-color-primary); }
     .catalog-header p { font-size: .75rem; color: var(--md-sys-color-on-surface-variant); margin-top: .25rem; }
     .catalog-body { padding: 1rem; overflow-y: auto; overscroll-behavior: contain; }
+    .catalog-footer:not(:empty) { padding: .75rem 1rem; border-top: 2px solid var(--md-sys-color-outline-variant); background: var(--md-sys-color-surface-container); }
     @media (max-width: 600px) {
       :host { padding: 0; }
       .catalog-window { width: 100%; max-height: 100dvh; height: 100dvh; border-radius: 0; }
@@ -35,6 +37,7 @@ import { A11yModule } from '@angular/cdk/a11y';
 })
 export class CatalogDialogComponent implements OnInit, OnDestroy {
   readonly title = input.required<string>();
+  readonly closeLabel = input('Done');
   readonly subtitle = input('Add entries, then return to your character.');
   readonly closeDisabled = input(false);
   readonly closed = output<void>();

@@ -1,0 +1,187 @@
+import 'fake-indexeddb/auto';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { mapContent } from '../content/content-adapter';
+import { ADAPTER_VERSION, DEFAULT_CONTENT_SOURCE, ImportRevision, sourceIdentity } from '../content/content.model';
+import { IndexedDbContentCache } from '../content/content-cache';
+import { emptyBasicCharacter, validateBasicInfo } from './basic-info';
+import { BasicInfoRepository } from './basic-info-repository';
+import { WizardState } from './wizard-prefill';
+import { matchesSubclass, previewClassWizard } from './class-wizard-preview';
+import { ClassWizardComponent } from './class-wizard.component';
+
+function fixture() {
+  const source = { ...DEFAULT_CONTENT_SOURCE, owner: 'class-wizard-test' };
+  const revision: ImportRevision = { id: crypto.randomUUID(), namespace: 'development-local', source,
+    sourceIdentity: sourceIdentity(source), commit: 'd'.repeat(40), adapterVersion: ADAPTER_VERSION, status: 'ready',
+    createdAt: new Date().toISOString(), files: [], diagnostics: [], metrics: { bytes: 0, records: 12, elapsedMs: 0, mappedBytes: 0 } };
+  const records = mapContent({
+    class: [
+      { name: 'Mage', source: 'TEST', hd: { number: 1, faces: 6 }, casterProgression: 'full', spellcastingAbility: 'int',
+        proficiency: ['int', 'wis'], startingProficiencies: { weapons: ['simple'], skills: [{ choose: { from: ['arcana', 'history'], count: 1 } }] },
+        classFeatures: ['Gift|Mage|TEST|1', 'Greater Gift|Mage|TEST|3'] },
+      { name: 'Fighter', source: 'TEST', hd: { number: 1, faces: 10 }, proficiency: ['str', 'con'],
+        multiclassing: { proficienciesGained: { weapons: ['martial'], armor: ['light'] } }, classFeatures: ['Training|Fighter|TEST|1'] },
+      { name: 'Pact', source: 'TEST', hd: { number: 1, faces: 8 }, casterProgression: 'pact', spellcastingAbility: 'cha', classFeatures: [] },
+    ],
+    subclass: [{ name: 'School', shortName: 'School', source: 'TEST', className: 'Mage', classSource: 'TEST',
+      subclassFeatures: ['School Gift|Mage|TEST|School|TEST|3'], additionalSpells: [{ ability: 'int', innate: { '3': { daily: { '1': ['Shield|TEST'] } } } }] }],
+    classFeature: [
+      { name: 'Gift', source: 'TEST', className: 'Mage', classSource: 'TEST', level: 1, entries: ['Gift description'] },
+      { name: 'Greater Gift', source: 'TEST', className: 'Mage', classSource: 'TEST', level: 3 },
+      { name: 'Training', source: 'TEST', className: 'Fighter', classSource: 'TEST', level: 1 },
+    ],
+    subclassFeature: [{ name: 'School Gift', source: 'TEST', className: 'Mage', classSource: 'TEST', subclassShortName: 'School', subclassSource: 'TEST', level: 3 }],
+    spell: ['Shield', 'Spark'].map((name, position) => ({ name, source: 'TEST', level: position === 0 ? 1 : 0, school: 'A', entries: ['Spell description'], classes: { fromClassList: [{ name: 'Mage', source: 'TEST' }] } })),
+    race: [{ name: 'Elf', source: 'TEST', speed: 25, darkvision: 60, languageProficiencies: [{ elvish: true }], entries: ['Species description'] }],
+  }, 'wizard-fixture.json').records;
+  // Materialized species are what the importer provides to the creator.
+  records.push({ key: 'species-test', kind: 'species', name: 'Elf', publication: 'TEST', file: 'species.json', links: [],
+    data: { name: 'Elf', source: 'TEST', speed: { walk: { number: 25 } }, darkvision: 60, languageProficiencies: [{ elvish: true }], entries: ['Species description'] } });
+  const find = (kind: string, name: string) => records.find(record => record.kind === kind && record.name === name)!;
+  const state: WizardState = { revisionId: revision.id, classes: [
+    { selectionId: 'mage', classKey: find('class', 'Mage').key, subclassKey: find('subclass', 'School').key, level: 3, spellList: 'Mage', useSpellbook: true },
+    { selectionId: 'fighter', classKey: find('class', 'Fighter').key, level: 1 },
+  ], answers: {}, options: {}, baseline: {}, protectedKeys: [] };
+  const index = new Map(records.map(record => [record.key, record]));
+  const sheet = emptyBasicCharacter(); sheet.character!.abilityScores!.constitution = 14;
+  return { revision, records, find, state, index, sheet };
+}
+
+describe('Optional class wizard prefill', () => {
+  beforeEach(() => { localStorage.removeItem('ally-creator-source-books'); TestBed.configureTestingModule({ providers: [provideRouter([])] }); });
+
+  it('prefills ordered multiclass HP, proficiencies, sources, features, known spells and daily casting', async () => {
+    const f = fixture();
+    const initial = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+    expect(initial.errors).toEqual([]); expect(initial.unresolved).toHaveLength(1);
+    const skill = initial.choices.find(choice => choice.label === 'skill proficiencies')!;
+    f.state.answers[skill.id] = ['arcana'];
+    const result = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+    expect(result.errors).toEqual([]); expect(result.warnings).toEqual([]); expect(result.unresolved).toEqual([]);
+    expect(result.sheet.character!.level).toBe(4); expect(result.sheet.character!.maxHp).toBe(28);
+    expect(result.sheet.character!.hitDice).toEqual([{ dieType: 'd6', total: 3, used: 0, userAdded: false }, { dieType: 'd10', total: 1, used: 0, userAdded: false }]);
+    expect(result.sheet.character!.proficiencies!.savingThrows).toEqual(['INT', 'WIS']);
+    expect(result.sheet.character!.proficiencies!.skills!['ARCANA']).toBe('PROFICIENT');
+    expect(result.sheet.character!.proficiencies!.martialWeapons).toBe(true);
+    expect(result.sheet.features).toHaveLength(4);
+    expect(result.sheet.character!.spellSlots!['Mage (TEST)'].map(slot => slot.total)).toEqual([4, 2]);
+    expect(result.sheet.spells!.some(spell => spell.name === 'Spark' && spell.listType === 'KNOWN')).toBe(true);
+    expect(result.sheet.spells!.find(spell => spell.listType === 'PREPARED')!.uses![0].freeUsesRegainCondition).toBe('LONG_REST');
+    expect(f.sheet.features).toBeUndefined(); validateBasicInfo(result.sheet);
+    const repository = new BasicInfoRepository(); await repository.save(result.sheet, 0);
+    const saved = (await repository.list()).find(entry => entry.id === result.sheet.character!.characterUuid)!.sheet;
+    expect(saved.creatorWizard!.classes).toEqual(f.state.classes);
+    expect(saved.features![0].contentReference!.commit).toBe(f.revision.commit);
+  });
+
+  it('repeats without duplication and preserves manual HP, deletions, source names, notes and used counters', () => {
+    const f = fixture(); const first = previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet;
+    const repeated = previewClassWizard(first, first.creatorWizard!, f.revision, f.index);
+    expect(repeated.changes).toEqual([]); expect(repeated.sheet.features).toHaveLength(4);
+    first.character!.maxHp = 123;
+    first.character!.featureSources![0].customDc = 19;
+    first.features![0].notes = [{ tag: 'Tactics', notes: ['Keep me'], isEditable: false }];
+    const removedId = first.features![1].editorId; first.features!.splice(1, 1);
+    (first.character!.hitDice as { used: number }[])[0].used = 2;
+    first.character!.spellSlots!['Mage (TEST)'][0].used = 2;
+    const nextState = structuredClone(first.creatorWizard!); nextState.classes[0].level = 4;
+    const next = previewClassWizard(first, nextState, f.revision, f.index).sheet;
+    expect(next.character!.maxHp).toBe(123); expect(next.character!.level).toBe(5);
+    expect(next.character!.featureSources![0].customDc).toBe(19);
+    expect(next.features!.find(feature => feature.editorId === removedId)).toBeUndefined();
+    expect(next.features![0].notes![0]).toEqual({ tag: 'Tactics', notes: ['Keep me'], isEditable: false });
+    expect((next.character!.hitDice as { total: number; used: number }[])[0]).toMatchObject({ total: 4, used: 2 });
+    expect(next.character!.spellSlots!['Mage (TEST)'][0].used).toBe(2);
+  });
+
+  it('removes obsolete automatic entries but retains annotated features and their source', () => {
+    const f = fixture(); const first = previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet;
+    const subclassFeature = first.features!.find(feature => feature.name === 'School Gift')!;
+    subclassFeature.notes = [{ tag: 'Keep', notes: ['My note'] }];
+    const state = structuredClone(first.creatorWizard!); state.classes[0].subclassKey = undefined; state.classes[0].level = 1;
+    const next = previewClassWizard(first, state, f.revision, f.index).sheet;
+    expect(next.features!.some(feature => feature.name === 'Greater Gift')).toBe(false);
+    expect(next.features!.some(feature => feature.name === 'School Gift')).toBe(true);
+    expect(next.character!.featureSources!.some(source => source.name === subclassFeature.featureSourceName)).toBe(true);
+  });
+
+  it('handles species prefill and keeps existing manual fields without imposing class limits on ordinary editing', () => {
+    const f = fixture(); f.state.speciesKey = 'species-test';
+    f.sheet.character!.level = 25; f.sheet.character!.maxHp = 55;
+    f.sheet.character!.proficiencies = { languages: ['Common'], skills: { ARCANA: 'EXPERTISE' } };
+    const result = previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet;
+    expect(result.character!.level).toBe(25); expect(result.character!.maxHp).toBe(55);
+    expect(result.character!.speeds!.walk).toBe(25); expect(result.character!.senses!['darkvision']).toBe(60);
+    expect(result.character!.proficiencies!.languages).toEqual(['Common', 'elvish']);
+    expect(result.character!.proficiencies!.skills!['ARCANA']).toBe('EXPERTISE');
+    expect(result.species!.name).toBe('Elf'); validateBasicInfo(result);
+    result.character!.speeds!.walk = 50;
+    expect(previewClassWizard(result, result.creatorWizard!, f.revision, f.index).sheet.character!.speeds!.walk).toBe(50);
+  });
+
+  it('fills the chosen species casting ability into its source and preserves species annotations', () => {
+    const f = fixture(); const species = f.index.get('species-test')!;
+    species.data['additionalSpells'] = [{ ability: { choose: ['int', 'wis', 'cha'] }, innate: { '1': ['Spark|TEST'] } }];
+    f.state.speciesKey = species.key;
+    f.state.answers[`ability:wizard-species:${species.key}`] = ['wis'];
+    const first = previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet;
+    expect(first.character!.featureSources!.find(source => source.name === 'Elf (TEST)')).toMatchObject({ isSpellcastingSource: true, usesWisdom: true });
+    first.species!.notes = [{ tag: 'Traits', notes: ['Keep the trait note'], isEditable: false }];
+    first.species!.uses = [{ tag: 'Trait', totalFreeUses: 2, usedFreeUses: 1, freeUsesRegainCondition: 'SHORT_REST_ONE' }];
+    const next = previewClassWizard(first, first.creatorWizard!, f.revision, f.index).sheet;
+    expect(next.species!.notes).toEqual(first.species!.notes); expect(next.species!.uses).toEqual(first.species!.uses);
+    const state = structuredClone(next.creatorWizard!); state.speciesKey = undefined;
+    const removed = previewClassWizard(next, state, f.revision, f.index).sheet;
+    expect(removed.species!.notes![0].notes).toEqual(['Keep the trait note']);
+    expect(removed.character!.speeds!.walk).toBe(30); validateBasicInfo(removed);
+  });
+
+  it('rejects mismatched subclasses and calculates pact and pooled multiclass slots', () => {
+    const f = fixture(); const subclass = f.find('subclass', 'School');
+    expect(matchesSubclass(subclass, f.find('class', 'Fighter').key)).toBe(false);
+    f.state.classes[1].subclassKey = subclass.key;
+    expect(previewClassWizard(f.sheet, f.state, f.revision, f.index).errors.length).toBeGreaterThan(0);
+    f.state.classes[1] = { selectionId: 'pact', classKey: f.find('class', 'Pact').key, level: 3 };
+    const pact = previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet;
+    expect(pact.character!.spellSlots!['Pact (TEST)'][0]).toMatchObject({ level: 2, total: 2, regainCondition: 'SHORT_REST' });
+    const secondMage = { ...f.find('class', 'Mage'), key: 'second-mage', name: 'Second Mage',
+      data: { ...f.find('class', 'Mage').data, name: 'Second Mage', classFeatures: [] } };
+    f.index.set(secondMage.key, secondMage);
+    f.state.classes[1] = { selectionId: 'second', classKey: secondMage.key, level: 1 };
+    const combined = previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet;
+    expect(combined.character!.spellSlots!['Shared Spellcasting'].map(slot => slot.total)).toEqual([4, 3]);
+  });
+
+  it('honors unchecked sections and retains consumed resources when their class is removed', () => {
+    const f = fixture(); f.state.options = { features: false, spells: false, proficiencies: false };
+    const hpOnly = previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet;
+    expect(hpOnly.character!.maxHp).toBe(28); expect(hpOnly.features).toBeUndefined();
+    expect(hpOnly.character!.featureSources).toBeUndefined(); expect(hpOnly.spells).toBeUndefined();
+    f.state.options = {};
+    const first = previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet;
+    (first.character!.hitDice as { used: number }[])[0].used = 1;
+    first.character!.spellSlots!['Mage (TEST)'][0].used = 1;
+    const state = structuredClone(first.creatorWizard!); state.classes.shift();
+    const next = previewClassWizard(first, state, f.revision, f.index).sheet;
+    expect((next.character!.hitDice as { dieType: string; used: number }[]).find(die => die.dieType === 'd6')!.used).toBe(1);
+    expect(next.character!.spellSlots!['Mage (TEST)'][0].used).toBe(1);
+    expect(next.character!.featureSources!.some(source => source.name === 'Mage (TEST)')).toBe(true);
+  });
+
+  it('loads the pinned local library, restricts subclass choices, reviews and applies a detached draft', async () => {
+    const f = fixture(); const cache = new IndexedDbContentCache();
+    await cache.stage({ ...f.revision, status: 'staging' }); await cache.put(f.revision.id, f.records); await cache.activate(f.revision);
+    await cache.saveSource('development-local', f.revision.source);
+    const component = TestBed.createComponent(ClassWizardComponent); component.componentRef.setInput('sheet', f.sheet);
+    await component.whenStable(); await component.componentInstance.loadContent();
+    const wizard = component.componentInstance; wizard.addClass(); wizard.selectClass(wizard.state.classes[0], f.find('class', 'Mage').key);
+    expect(wizard.subclasses(wizard.state.classes[0]).map(record => record.name)).toEqual(['School']);
+    wizard.advance(); expect(wizard.stage).toBe(1);
+    const choice = wizard.proposal()!.choices.find(choice => choice.label === 'skill proficiencies')!;
+    wizard.toggleChoice(choice, 'arcana'); wizard.advance(); expect(wizard.stage).toBe(2);
+    let applied = f.sheet; wizard.applied.subscribe(value => applied = value); wizard.apply();
+    expect(applied.character!.level).toBe(1); expect(applied.character!.maxHp).toBe(8);
+    expect(f.sheet.character!.maxHp).toBe(0);
+  });
+});

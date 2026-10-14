@@ -19,6 +19,7 @@ describe('Basic Info editor', () => {
     expect(fixture.nativeElement.querySelector('#save-wis')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('app-other-proficiencies')).not.toBeNull();
     editor.setPage(4); fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('app-editor-species')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('app-editor-features')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('app-editor-spells')).not.toBeNull();
     const pages = [...editor.pages];

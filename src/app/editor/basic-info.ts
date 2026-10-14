@@ -50,7 +50,7 @@ export function validateBasicInfo(sheet: ExportedCharacter): void {
       integer(die.used, `${die.dieType} used`);
     }
   }
-  for (const feature of [...sheet.features ?? [], ...sheet.spells ?? []]) {
+  for (const feature of [...sheet.features ?? [], ...sheet.spells ?? [], ...(sheet.species ? [sheet.species] : [])]) {
     for (const usage of feature.uses ?? []) {
       integer(usage.totalFreeUses ?? 1, `${feature.name} uses`);
       integer(usage.usedFreeUses ?? 0, `${feature.name} used count`);

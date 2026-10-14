@@ -110,10 +110,10 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
           }
               @if (species()?.uses?.length) {
                 <div class="mt-4 border-t border-outline-variant pt-4">
-                  @for (use of species()?.uses ?? []; track use.tag) {
+                  @for (use of species()?.uses ?? []; track use) {
                     <app-feature-uses 
                       [uses]="use"
-                      (usesUpdated)="updateSpeciesUses($event)"
+                      (usesUpdated)="use.usedFreeUses = $event.usedFreeUses"
                     />
                   }
                 </div>

@@ -570,6 +570,8 @@ export interface InventoryItem {
 }
 
 export interface Species {
+  userAdded?: boolean;
+  contentReference?: { key: string; sourceIdentity: string; revisionId: string; commit: string };
   name?: string;
   source?: string;
   uses?: FeatureUses[];
@@ -800,6 +802,15 @@ export interface Note {
 export type ConditionName = string;
 
 export interface ExportedCharacter {
+  creatorWizard?: {
+    revisionId: string;
+    classes: { selectionId: string; classKey: string; subclassKey?: string; level: number; spellList?: string; useSpellbook?: boolean }[];
+    speciesKey?: string;
+    answers: Record<string, string[]>;
+    options: Record<string, boolean>;
+    baseline: Record<string, { value: unknown; scope: string; label: string }>;
+    protectedKeys: string[];
+  };
   installationId?: string;
   portaitUrl?: string | null;
   character?: CharacterData;

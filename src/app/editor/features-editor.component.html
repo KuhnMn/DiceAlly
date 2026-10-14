@@ -110,3 +110,6 @@
     </app-catalog-dialog>
   }
 </section>
+@if (pendingRemoval; as feature) {
+  <app-remove-entry-dialog [name]="feature.name" (cancelled)="pendingRemoval = undefined" (confirmed)="confirmRemoval()" />
+}

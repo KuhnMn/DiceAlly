@@ -7,11 +7,13 @@
         <p class="text-xs font-semibold uppercase text-on-surface-variant mt-1">{{ pages[page] }}</p>
       </div>
     </div>
-    <div class="flex gap-2">
+    <div class="flex flex-wrap gap-2">
+      <button type="button" class="action-button" [disabled]="busy()" aria-haspopup="dialog" (click)="wizardOpen = true">Class Wizard</button>
       <button type="button" class="secondary-button" [disabled]="busy()" (click)="libraryOpen = !libraryOpen" [attr.aria-expanded]="libraryOpen">Characters</button>
       <button type="submit" form="basic-info" [disabled]="busy()" class="action-button">{{ busy() ? 'Saving…' : 'Save' }}</button>
     </div>
   </header>
+  @if (wizardOpen) { <app-class-wizard [sheet]="sheet" (applied)="applyWizard($event)" (closed)="wizardOpen = false" /> }
 
   <app-source-book-filter />
 
@@ -244,6 +246,7 @@
           <app-editor-spell-slots [sheet]="sheet" (edited)="changed()" />
         }
       } @else if (pages[page] === 'Features & Spells') {
+        <app-editor-species [sheet]="sheet" (edited)="changed()" />
         <app-editor-features [sheet]="sheet" (edited)="changed()" (openSources)="setPage(3)" />
         <app-editor-spells [sheet]="sheet" (edited)="changed()" (openSources)="setPage(3)" />
       }

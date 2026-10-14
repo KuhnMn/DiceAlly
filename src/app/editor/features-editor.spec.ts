@@ -29,6 +29,26 @@ async function catalog() {
 describe('Feature editor', () => {
   beforeEach(() => TestBed.configureTestingModule({ imports: [FeaturesEditorComponent], providers: [provideRouter([])] }));
 
+  it('keeps annotated features until removal is confirmed in the themed dialog', async () => {
+    const fixture = TestBed.createComponent(FeaturesEditorComponent);
+    const sheet = emptyBasicCharacter();
+    fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
+    const editor = fixture.componentInstance;
+    editor.customName = 'Tracked feature'; editor.addCustom();
+    const feature = sheet.features![0]; editor.addNote(feature);
+    editor.remove(feature); await fixture.whenStable();
+    expect(sheet.features).toContain(feature);
+    const dialog = fixture.nativeElement.querySelector('[role="alertdialog"]');
+    expect(dialog.textContent).toContain('Tracked feature');
+    dialog.querySelector('footer button').click(); await fixture.whenStable();
+    expect(editor.pendingRemoval).toBeUndefined();
+    expect(sheet.features).toContain(feature);
+    editor.remove(feature); await fixture.whenStable();
+    fixture.nativeElement.querySelector('.remove-button').click(); await fixture.whenStable();
+    expect(sheet.features).not.toContain(feature);
+    expect(fixture.nativeElement.querySelector('[role="alertdialog"]')).toBeNull();
+  });
+
   it('renders plain descriptions without JSON quotes and keeps separate entries under a heading', async () => {
     const renderer = TestBed.createComponent(EntryRendererComponent);
     renderer.componentRef.setInput('entries', ['Plain description']); await renderer.whenStable();

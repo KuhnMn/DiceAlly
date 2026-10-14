@@ -192,3 +192,7 @@ The flowing columns were replaced with a responsive masonry grid: each card rese
 ### Narrow-screen layout audit
 
 `scripts/creator-layout-acceptance.mjs` checks all five pages and both catalog windows at 320, 390, 768 and 1100px in light and dark themes, using long feature/source/spell/language/note names. It additionally checks that ability steppers and proficiency-row contents do not overlap. Browser results are recorded in `creator-layout-results.json`. The audit found and fixed narrow-screen overflow: ability steppers use explicit compact grid columns, proficiency labels wrap within smaller bonus columns, and long card text and source-book labels wrap. Physical-device and on-screen keyboard checks remain deferred.
+
+## Class Wizard implementation (2026-10-14)
+
+The persistent Class Wizard button opens Classes & Species, Choices, and Review in a responsive dialog. Ordered class/subclass selections prefill supported fields and class spell lists without making normal editing depend on rules. Applying modifies the draft; Save persists it. Manual edits, deletions, notes and usage survive repeated prefills and level changes. Species is optional. Missing imports and unsupported options have explicit manual workflows. See [Class Wizard](CLASS_WIZARD.md) for behavior, limits and validation.

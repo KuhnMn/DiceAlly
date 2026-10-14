@@ -11,6 +11,7 @@ import { EntryAnnotationsEditor } from './entry-annotations-editor';
 import { SourceBookFilterService } from './source-book-filter.service';
 import { SourceBookFilterComponent } from './source-book-filter.component';
 import { CatalogDialogComponent } from './catalog-dialog.component';
+import { RemoveEntryDialogComponent } from './remove-entry-dialog.component';
 
 type FeatureType = 'CLASS_FEATURE' | 'FEAT' | 'OPTIONAL_FEATURE';
 export const FEATURE_TYPES: { value: FeatureType; label: string; kinds: string[] }[] = [
@@ -20,7 +21,7 @@ export const FEATURE_TYPES: { value: FeatureType; label: string; kinds: string[]
 ];
 
 @Component({
-  selector: 'app-editor-features', imports: [FormsModule, RouterLink, EntryRendererComponent, CatalogDialogComponent, SourceBookFilterComponent],
+  selector: 'app-editor-features', imports: [FormsModule, RouterLink, EntryRendererComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent],
   templateUrl: './features-editor.component.html', styleUrl: './local-editor.component.css',
 })
 export class FeaturesEditorComponent extends EntryAnnotationsEditor implements OnInit, OnDestroy {
@@ -51,6 +52,7 @@ export class FeaturesEditorComponent extends EntryAnnotationsEditor implements O
   catalogOpen = false;
   catalogAdded = 0;
   readonly expanded = new Set<FeatureEntryFull>();
+  pendingRemoval?: FeatureEntryFull;
 
   constructor() {
     super();
@@ -161,8 +163,17 @@ export class FeaturesEditorComponent extends EntryAnnotationsEditor implements O
     this.customName = ''; this.customDescription = ''; this.change();
   }
   remove(feature: FeatureEntryFull) {
-    if (((feature.notes?.length ?? 0) || (feature.uses?.length ?? 0)) && !confirm(`Remove ${feature.name} and its notes/use settings?`)) return;
-    this.sheet().features!.splice(this.sheet().features!.indexOf(feature), 1); this.expanded.delete(feature); this.change();
+    if (feature.notes?.length || feature.uses?.length) { this.pendingRemoval = feature; this.view.markForCheck(); return; }
+    this.deleteFeature(feature);
+  }
+  confirmRemoval() {
+    const feature = this.pendingRemoval; this.pendingRemoval = undefined;
+    if (feature) this.deleteFeature(feature);
+  }
+  private deleteFeature(feature: FeatureEntryFull) {
+    const index = this.sheet().features?.indexOf(feature) ?? -1;
+    if (index < 0) return;
+    this.sheet().features!.splice(index, 1); this.expanded.delete(feature); this.change();
   }
 
 }

@@ -1,0 +1,115 @@
+{
+  "checks": [
+    {
+      "name": "class selection, exact subclass and skill choices produce a review",
+      "passed": true
+    },
+    {
+      "name": "320px light-mc wizard step 0: fits",
+      "passed": true
+    },
+    {
+      "name": "320px light-mc wizard step 1: fits",
+      "passed": true
+    },
+    {
+      "name": "320px light-mc wizard step 2: fits",
+      "passed": true
+    },
+    {
+      "name": "320px dark-mc wizard step 0: fits",
+      "passed": true
+    },
+    {
+      "name": "320px dark-mc wizard step 1: fits",
+      "passed": true
+    },
+    {
+      "name": "320px dark-mc wizard step 2: fits",
+      "passed": true
+    },
+    {
+      "name": "390px light-mc wizard step 0: fits",
+      "passed": true
+    },
+    {
+      "name": "390px light-mc wizard step 1: fits",
+      "passed": true
+    },
+    {
+      "name": "390px light-mc wizard step 2: fits",
+      "passed": true
+    },
+    {
+      "name": "390px dark-mc wizard step 0: fits",
+      "passed": true
+    },
+    {
+      "name": "390px dark-mc wizard step 1: fits",
+      "passed": true
+    },
+    {
+      "name": "390px dark-mc wizard step 2: fits",
+      "passed": true
+    },
+    {
+      "name": "768px light-mc wizard step 0: fits",
+      "passed": true
+    },
+    {
+      "name": "768px light-mc wizard step 1: fits",
+      "passed": true
+    },
+    {
+      "name": "768px light-mc wizard step 2: fits",
+      "passed": true
+    },
+    {
+      "name": "768px dark-mc wizard step 0: fits",
+      "passed": true
+    },
+    {
+      "name": "768px dark-mc wizard step 1: fits",
+      "passed": true
+    },
+    {
+      "name": "768px dark-mc wizard step 2: fits",
+      "passed": true
+    },
+    {
+      "name": "1100px light-mc wizard step 0: fits",
+      "passed": true
+    },
+    {
+      "name": "1100px light-mc wizard step 1: fits",
+      "passed": true
+    },
+    {
+      "name": "1100px light-mc wizard step 2: fits",
+      "passed": true
+    },
+    {
+      "name": "1100px dark-mc wizard step 0: fits",
+      "passed": true
+    },
+    {
+      "name": "1100px dark-mc wizard step 1: fits",
+      "passed": true
+    },
+    {
+      "name": "1100px dark-mc wizard step 2: fits",
+      "passed": true
+    },
+    {
+      "name": "apply, save and reopen keep self-contained wizard data",
+      "passed": true
+    },
+    {
+      "name": "reopening and increasing level preserves manual HP, notes and used hit dice",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Headless Chrome viewport checks; physical-device acceptance remains deferred."
+  ]
+}

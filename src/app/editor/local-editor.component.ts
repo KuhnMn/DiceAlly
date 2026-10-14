@@ -13,10 +13,12 @@ import { FeaturesEditorComponent } from './features-editor.component';
 import { SpellsEditorComponent } from './spells-editor.component';
 import { SourceBookFilterComponent } from './source-book-filter.component';
 import { MasonryCardsDirective } from './masonry-cards.directive';
+import { ClassWizardComponent } from './class-wizard.component';
+import { SpeciesEditorComponent } from './species-editor.component';
 
 @Component({
   selector: 'app-local-editor',
-  imports: [FormsModule, RouterLink, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, MasonryCardsDirective],
+  imports: [FormsModule, RouterLink, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, MasonryCardsDirective, ClassWizardComponent, SpeciesEditorComponent],
   templateUrl: './local-editor.component.html',
   styleUrl: './local-editor.component.css',
 })
@@ -51,6 +53,11 @@ export class LocalEditorComponent implements OnInit {
   sheet = emptyBasicCharacter();
   version = 0;
   libraryOpen = false;
+  wizardOpen = false;
+  applyWizard(sheet: ExportedCharacter) {
+    this.sheet = sheet; this.wizardOpen = false; this.changed();
+    this.message.set('Wizard prefill applied. Review your character and save when ready.');
+  }
   resistanceInput = '';
   senseName = '';
   senseRange: number | null = 60;

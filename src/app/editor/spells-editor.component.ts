@@ -12,10 +12,11 @@ import { SpellCatalogFilter, SpellList, matchesSpell, spellClasses, spellIdentit
 import { SourceBookFilterService } from './source-book-filter.service';
 import { SourceBookFilterComponent } from './source-book-filter.component';
 import { CatalogDialogComponent } from './catalog-dialog.component';
+import { RemoveEntryDialogComponent } from './remove-entry-dialog.component';
 
 @Component({
   selector: 'app-editor-spells',
-  imports: [FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent],
+  imports: [FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent],
   templateUrl: './spells-editor.component.html',
   styleUrl: './local-editor.component.css',
 })
@@ -52,6 +53,7 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
   customDescription = '';
   catalogOpen = false;
   catalogAdded = 0;
+  pendingRemoval?: SpellEntryFull;
 
   openCatalog() { this.catalogAdded = 0; this.catalogOpen = true; }
 
@@ -124,7 +126,14 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
   remove(spell: SpellEntryFull) {
     // Android retains a known entry while its prepared version exists.
     if (spell.listType === 'KNOWN' && this.hasList(spell, 'PREPARED')) return;
-    if ((spell.notes?.length || spell.uses?.length) && !confirm(`Remove ${spell.name} from ${spell.listType?.toLowerCase()} and delete its notes/use settings?`)) return;
+    if (spell.notes?.length || spell.uses?.length) { this.pendingRemoval = spell; this.view.markForCheck(); return; }
+    this.deleteSpell(spell);
+  }
+  confirmRemoval() {
+    const spell = this.pendingRemoval; this.pendingRemoval = undefined;
+    if (spell && !(spell.listType === 'KNOWN' && this.hasList(spell, 'PREPARED'))) this.deleteSpell(spell);
+  }
+  private deleteSpell(spell: SpellEntryFull) {
     const index = this.spells.indexOf(spell);
     if (index < 0) return;
     this.spells.splice(index, 1); this.expanded.delete(spell); this.change();
