@@ -31,6 +31,8 @@ yarn-error.log
 
 # Miscellaneous
 /.angular/cache
+# Downloaded acceptance fixture; keep third-party book data out of the repository.
+/.angular/valda-homebrew.json
 .sass-cache/
 /connect.lock
 /coverage

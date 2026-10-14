@@ -191,7 +191,8 @@ export function generateVariant(base: ContentRecord, variant: ContentRecord, war
 }
 
 export async function materializeContent(cache: ContentCache, revisionId: string, diagnostics: ImportDiagnostic[], signal?: AbortSignal,
-  progress?: (processed: number, added: number, file: string) => void): Promise<{ added: number }> {
+  progress?: (processed: number, added: number, file: string) => void,
+  shouldProcess: (record: ContentRecord) => boolean = () => true): Promise<{ added: number }> {
   let added = 0, processed = 0;
   const bases: ContentRecord[] = [];
   const metadata = new Map<string, ContentRecord>();
@@ -210,6 +211,7 @@ export async function materializeContent(cache: ContentCache, revisionId: string
   });
   await cache.visit(revisionId, async record => {
     signal?.throwIfAborted();
+    if (!shouldProcess(record)) return;
     try {
       if (record.kind === 'race') await add(derived(record, 'species', JSON.stringify(['species', record.key]), normalizeSpecies(record.data),
         'species', [{ role: 'species-definition', target: record.key }]));
@@ -270,7 +272,7 @@ export async function materializeContent(cache: ContentCache, revisionId: string
   };
   await cache.visit(revisionId, async record => {
     signal?.throwIfAborted();
-    if (record.kind !== 'item') return;
+    if (record.kind !== 'item' || !shouldProcess(record)) return;
     try {
       const derivedBase = record.derivation?.inputs.find(link => link.role === 'base-item');
       let base = derivedBase ? await cache.get(revisionId, derivedBase.target) : undefined;

@@ -1,0 +1,31 @@
+{
+  "checks": [
+    {
+      "name": "imports the actual Valda collection through the upload UI and worker while retaining core content",
+      "passed": true
+    },
+    {
+      "name": "reimport is idempotent and malformed files leave the active library intact",
+      "passed": true
+    },
+    {
+      "name": "320px homebrew controls fit",
+      "passed": true
+    },
+    {
+      "name": "390px homebrew controls fit",
+      "passed": true
+    },
+    {
+      "name": "1100px homebrew controls fit",
+      "passed": true
+    },
+    {
+      "name": "homebrew spell filters and copied spells remain available in the creator",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Headless Chrome viewport checks; physical-device acceptance remains deferred."
+  ]
+}

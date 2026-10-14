@@ -27,6 +27,8 @@ export interface ContentRecord {
   data: JsonObject;
   links: ContentLink[];
   derivation?: { operation: 'species' | 'subrace' | 'base-item' | 'item-group' | 'magicvariant'; inputs: ContentLink[]; version: number };
+  /** Conflicting definitions inside one homebrew file remain separately selectable. */
+  homebrewVariant?: { originalKey: string; number: number };
 }
 export interface ImportDiagnostic {
   severity: 'error' | 'warning';
@@ -54,6 +56,17 @@ export interface ImportRevision {
   files: string[];
   diagnostics: ImportDiagnostic[];
   metrics: { bytes: number; records: number; elapsedMs: number; mappedBytes: number };
+  /** Only explicitly selected files; raw definitions are retained for safe reimport/materialization. */
+  homebrewFiles?: HomebrewFile[];
+}
+export interface HomebrewFile {
+  id: string;
+  name: string;
+  url?: string;
+  digest: string;
+  importedAt: string;
+  sources: string[];
+  document: JsonObject;
 }
 export function object(value: unknown): JsonObject | undefined {
   return value !== null && typeof value === 'object' && !Array.isArray(value)

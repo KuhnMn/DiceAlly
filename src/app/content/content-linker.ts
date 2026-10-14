@@ -19,6 +19,7 @@ export class ContentReferenceIndex {
   add(record: ContentRecord): void {
     this.keys.add(record.key);
     this.alias(record.kind, record.name, record.publication, record.key);
+    if (record.homebrewVariant) this.alias(record.kind, string(record.data['name']), record.publication, record.key);
     if (record.kind === 'magicvariant') this.alias('item', record.name, record.publication, record.key);
     if (record.kind === 'item' && record.derivation?.operation === 'magicvariant') {
       this.alias('item', record.name, string(record.data['variantSource']), record.key);
