@@ -1,5 +1,5 @@
 import { ContentRecord, ImportRevision, entityKey, normalize, object, string } from '../content/content.model';
-import { ExportedCharacter, FeatureEntity, FeatureSource, OptionalFeatureEntity, SpeciesEntity, SpellEntryFull } from '../models/character.model';
+import { ExportedCharacter, FeatureSource, SpellEntryFull } from '../models/character.model';
 import { ContentRulesIndex, deriveClassFeatures } from '../rules/feature-rules';
 import { deriveLevelRules } from '../rules/level-rules';
 import { deriveProficiencyGrants } from '../rules/proficiency-rules';
@@ -8,7 +8,10 @@ import { deriveSpellGrants, SpellGrantOwner } from '../rules/spell-rules';
 import { deriveSpecies } from '../rules/species-rules';
 import { DEFENSE_ABILITIES } from './basic-info';
 import { spellClasses, spellSnapshot } from './spell-selection';
-import { PrefillValue, WizardState, contentReference, mergeWizardPrefill } from './wizard-prefill';
+import { PrefillValue, WizardState, mergeWizardPrefill } from './wizard-prefill';
+import { averageClassHp, contentReference, sourceAbilityFlags, speciesSnapshot, spellUseTrackers } from './editor-content-helpers';
+import { isCompleteSelection } from '../rules/spell-choice';
+import { createFeatureEntry } from './feature-selection';
 
 export interface WizardChoice { id: string; label: string; count: number; candidates: { value: string; label: string }[]; }
 export const WIZARD_SECTIONS = [
@@ -20,6 +23,11 @@ export function matchesSubclass(record: ContentRecord, classKey: string) {
   return record.kind === 'subclass' && entityKey('class', { name: record.data['className'], source: record.data['classSource'] }) === classKey;
 }
 
+/**
+ * Build a detached proposal in four passes: classes/resources, features/species,
+ * proficiency and spell choices, then merge with the sheet's manual edits.
+ * Rules read structured imported data; they do not interpret description text.
+ */
 export function previewClassWizard(sheet: ExportedCharacter, state: WizardState, revision: ImportRevision,
   records: ReadonlyMap<string, ContentRecord>, sourceBooks: readonly string[] = []) {
   const index: ContentRulesIndex = { records, sourceIdentity: revision.sourceIdentity, revisionId: revision.id };
@@ -32,11 +40,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
   const owners: { owner: SpellGrantOwner; label: string; source: string }[] = [];
   const spells = new Map<string, SpellEntryFull>();
   const reference = (record: ContentRecord) => contentReference(record, revision);
-  const abilities = (record: ContentRecord, fallback = '') => {
-    const ability = string(record.data['spellcastingAbility'], fallback);
-    const primary = JSON.stringify(record.data['primaryAbility'] ?? '').toLowerCase();
-    return Object.fromEntries(DEFENSE_ABILITIES.map(entry => [`uses${entry.label}`, ability ? ability === entry.key.slice(0, 3) : primary.includes(entry.key.slice(0, 3))]));
-  };
+  // Stable IDs let later wizard runs update their own entries without claiming manual ones.
   const source = (id: string, name: string, data: Partial<FeatureSource>, scope = 'sources') => {
     const existing = sheet.character?.featureSources?.find(entry => entry.id === id);
     const label = existing?.name || name;
@@ -51,6 +55,8 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     spells.set(id, entry);
   };
   const addOwner = (selectionId: string, record: ContentRecord, level: number, castingSource: string, fallback: string, maxSpellLevel: number) => {
+    // A class, subclass, feature or species can independently define additionalSpells.
+    // Register its ability/block choices now; resolve actual spell choices in pass 3.
     if (record.data['additionalSpells'] == null) return;
     const blocks = record.data['additionalSpells'];
     const blockId = `blocks:${selectionId}:${record.key}`;
@@ -80,6 +86,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
       }
     }
   };
+  // 1. Classes determine sources, average HP, hit dice and available spell levels.
   let maxHp = 0;
   const conModifier = Math.floor(((sheet.character?.abilityScores?.constitution ?? 10) - 10) / 2);
   const normalCasters = features.classInputs.filter(entry => entry.caster !== 'none' && entry.caster !== 'pact');
@@ -92,7 +99,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     const parentId = JSON.stringify(['wizard-source', revision.sourceIdentity, selection.selectionId, parent.key]);
     const parentName = source(parentId, `${parent.name} (${parent.publication})`, {
       isGeneralFeatureSource: true, isSpellcastingSource: castingRecord === parent && classInput.caster !== 'none',
-      useSpellbook: selection.useSpellbook ?? false, ...abilities(parent),
+      useSpellbook: selection.useSpellbook ?? false, ...sourceAbilityFlags(parent),
     });
     sourceNames.set(`${selection.selectionId}:${parent.key}`, parentName);
     let castingSource = parentName;
@@ -100,7 +107,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
       const name = source(JSON.stringify(['wizard-source', revision.sourceIdentity, selection.selectionId, subclass.key]),
         `${subclass.name} (${subclass.publication})`, { isGeneralFeatureSource: true,
           isSpellcastingSource: castingRecord === subclass || subclass.data['additionalSpells'] != null,
-          useSpellbook: castingRecord === subclass && (selection.useSpellbook ?? false), ...abilities(subclass, castingAbility) });
+          useSpellbook: castingRecord === subclass && (selection.useSpellbook ?? false), ...sourceAbilityFlags(subclass, castingAbility) });
       sourceNames.set(`${selection.selectionId}:${subclass.key}`, name);
       if (castingRecord === subclass) castingSource = name;
     }
@@ -108,8 +115,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
       applyHp: false, applyHitDice: false, manualPools: [] }, { currentHp: 0, annotations: {}, resources: {} });
     const maxSpellLevel = Math.max(0, ...singleLevel.pools.filter(pool => pool.kind === 'spell-slots').map(pool => pool.rank));
     spellLevels.set(selection.selectionId, maxSpellLevel);
-    maxHp += (position === 0 ? classInput.hitDie + conModifier : 0)
-      + (Math.ceil((classInput.hitDie + 1) / 2) + conModifier) * (selection.level - (position === 0 ? 1 : 0));
+    maxHp += averageClassHp(classInput.hitDie, selection.level, conModifier, position === 0);
     for (const owner of [parent, ...(subclass ? [subclass] : [])]) {
       addOwner(selection.selectionId, owner, selection.level, sourceNames.get(`${selection.selectionId}:${owner.key}`)!, castingAbility, maxSpellLevel);
     }
@@ -138,13 +144,14 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
       }
     }
   }
+  // 2. Copy feature/species snapshots and register any spell definitions they own.
   for (const instance of features.instances) {
     const record = instance.snapshot; const grant = instance.grants[0];
     const sourceName = sourceNames.get(`${grant.selectionId}:${grant.ownerKey}`)!;
     const id = JSON.stringify(['wizard-feature', revision.sourceIdentity, grant.selectionId, record.key]);
-    put('features', record.name, ['features', id], { editorId: id, name: record.name, source: record.publication,
-      featureSourceName: sourceName, featureType: 'CLASS_FEATURE', userAdded: false, notes: [], uses: [],
-      featureEntity: structuredClone(record.data) as unknown as FeatureEntity, contentReference: reference(record) });
+    put('features', record.name, ['features', id], createFeatureEntry(record, revision, {
+      editorId: id, sourceName, userAdded: false,
+    }));
     const selection = state.classes.find(entry => entry.selectionId === grant.selectionId)!;
     addOwner(grant.selectionId, record, selection.level, sourceName,
       string(records.get(selection.classKey)?.data['spellcastingAbility']), spellLevels.get(grant.selectionId) ?? 0);
@@ -162,9 +169,9 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
       const record = candidates.find(entry => entry.key === key); if (!record) continue;
       const id = JSON.stringify(['wizard-optional', revision.sourceIdentity, slot.selectionId, slot.id, key]);
       const sourceName = sourceNames.get(`${slot.selectionId}:${slot.ownerKey}`)!;
-      put('features', record.name, ['features', id], { editorId: id, name: record.name, source: record.publication,
-        featureType: 'OPTIONAL_FEATURE', featureSourceName: sourceName, userAdded: false, notes: [], uses: [],
-        optionalFeatureEntity: structuredClone(record.data) as unknown as OptionalFeatureEntity, contentReference: reference(record) });
+      put('features', record.name, ['features', id], createFeatureEntry(record, revision, {
+        editorId: id, sourceName, userAdded: false,
+      }));
       addOwner(slot.selectionId, record, state.classes.find(entry => entry.selectionId === slot.selectionId)!.level, sourceName, '', spellLevels.get(slot.selectionId) ?? 0);
     }
   }
@@ -174,11 +181,8 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     else {
       const species = deriveSpecies({ id: 'wizard-species', key: record.key }, index);
       warnings.push(...species.diagnostics);
-      const snapshot = structuredClone(record.data);
-      const speed = object(snapshot['speed']);
-      if (speed) snapshot['speed'] = Object.fromEntries(Object.entries(speed).map(([mode, value]) => [mode, object(value)?.['number'] ?? value]));
       put('species', `${record.name} species`, ['species'], { name: record.name, source: record.publication,
-        userAdded: false, contentReference: reference(record), entity: snapshot as unknown as SpeciesEntity, notes: [], uses: [] });
+        userAdded: false, contentReference: reference(record), entity: speciesSnapshot(record), notes: [], uses: [] });
       for (const contribution of species.generated) {
         const value = object(contribution.value);
         if (contribution.field === 'speed') put('species', `${value!['mode']} speed`, ['character', 'speeds', String(value!['mode'])], value!['number']);
@@ -191,6 +195,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
       if (record.data['ability']) warnings.push('Species ability-score options remain editable on Ability Scores; this prefill preserves your current scores.');
     }
   }
+  // 3. Rule handlers expose candidates and validate answers before producing sheet entries.
   const proficiencies = deriveProficiencyGrants(state.classes, index, state.answers, state.speciesKey);
   warnings.push(...proficiencies.diagnostics.filter(message => !message.startsWith('Select ')));
   choices.push(...proficiencies.choices.map(choice => ({ id: choice.id, label: `${choice.kind} proficiencies`, count: choice.count,
@@ -221,12 +226,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
       candidates: choice.candidates.map(value => ({ value, label: `${records.get(value)?.name} (${records.get(value)?.publication})` })) })));
     for (const expanded of result.expanded) addSpell(records.get(expanded.contentKey)!, sourceName);
     for (const instance of result.instances) {
-      const uses = instance.grants.flatMap(grant => {
-        const frequency = grant.usage['frequency'];
-        if (frequency !== 'daily' && frequency !== 'rest') return [];
-        return [{ tag: `${label} ${frequency}`, totalFreeUses: parseInt(String(grant.usage['count']), 10), usedFreeUses: 0,
-          freeUsesRegainCondition: frequency === 'rest' ? 'SHORT_REST' : 'LONG_REST', userAdded: false }];
-      });
+      const uses = spellUseTrackers(instance.grants, label);
       addSpell(instance.snapshot, sourceName);
       if (instance.list !== 'known') addSpell(instance.snapshot, sourceName, 'PREPARED', uses);
     }
@@ -235,8 +235,9 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
   const uniqueChoices = [...new Map(choices.map(choice => [choice.id, choice])).values()];
   const unresolved = uniqueChoices.filter(choice => {
     const answer = state.answers[choice.id] ?? [];
-    return answer.length !== choice.count || answer.some(value => !choice.candidates.some(candidate => candidate.value === value));
+    return !isCompleteSelection(answer, choice.count, choice.candidates.map(candidate => candidate.value));
   });
+  // 4. Reconcile with the last baseline. Manual changes and annotations take precedence.
   const proposal = mergeWizardPrefill(sheet, state, values);
   return { ...proposal, errors: [...new Set(errors)], warnings: [...new Set(warnings)], choices: uniqueChoices, unresolved,
     summary: { level: state.classes.reduce((sum, entry) => sum + entry.level, 0), maxHp: Math.max(0, maxHp),

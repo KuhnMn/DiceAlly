@@ -32,6 +32,18 @@ async function evaluate(session, expression) {
   if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description ?? result.exceptionDetails.text);
   return result.result.value;
 }
+async function verifySourceBooks(session, selector, width, capture = false) {
+  await until(() => evaluate(session, `!ng.getComponent(document.querySelector('${selector}')).loading()`));
+  await evaluate(session, `(()=>{const e=document.querySelector('${selector}');ng.getComponent(e).books.set(['PHB','XPHB','SourceBookWithAVeryLongLabelWithoutSpaces']);e.querySelector('summary').click();ng.applyChanges(ng.getComponent(e));})()`);
+  const box = await evaluate(session, `(()=>{const e=document.querySelector('${selector} details');const r=e.getBoundingClientRect();return {width:e.clientWidth,scroll:e.scrollWidth,left:r.left,right:r.right};})()`);
+  assert(box.scroll<=box.width+1 && box.left>=-1 && box.right<=width+1, JSON.stringify(box));
+  if (capture) {
+    const clip = await evaluate(session, `(()=>{const r=document.querySelector('${selector}').getBoundingClientRect();return {x:r.x,y:r.y+scrollY,width:r.width,height:r.height,scale:1};})()`);
+    const screenshot = await send('Page.captureScreenshot', {format:'png',captureBeyondViewport:true,clip}, session);
+    await writeFile('.angular/source-book-filter-mobile.png', Buffer.from(screenshot.data,'base64'));
+  }
+  await evaluate(session, `document.querySelector('${selector} summary').click();`);
+}
 const report = { checks: [], limitations: ['Headless Chrome viewport checks; physical-device acceptance remains deferred.'] };
 async function check(name, work) { await work(); report.checks.push({ name, passed: true }); console.log(`PASS ${name}`); }
 try {
@@ -52,7 +64,12 @@ try {
   await until(() => evaluate(session, `!!globalThis.ng && !!document.querySelector('app-local-editor')`));
   await evaluate(session, `globalThis.c = ng.getComponent(document.querySelector('app-local-editor'));
     globalThis.input = (selector, value) => { const field = document.querySelector(selector); if(!field) throw new Error('Missing input '+selector);
-      field.value = value; field.dispatchEvent(new Event(field.tagName === 'SELECT' ? 'change' : 'input', {bubbles:true})); };`);
+      field.value = value; field.dispatchEvent(new Event(field.tagName === 'SELECT' ? 'change' : 'input', {bubbles:true})); };
+    globalThis.expandEntries = () => {
+      const feature=ng.getComponent(document.querySelector('app-editor-features'));feature.expanded.add(c.sheet.features[0]);ng.applyChanges(feature);
+      const species=ng.getComponent(document.querySelector('app-editor-species'));species.expanded=true;ng.applyChanges(species);
+      const spell=ng.getComponent(document.querySelector('app-editor-spells'));spell.list='PREPARED';spell.expanded.add(c.sheet.spells.find(entry=>entry.listType==='PREPARED'));ng.applyChanges(spell);
+    };`);
 
   await evaluate(session, `
     c.character.featureSources = [{name:'WizardWithAnExtremelyLongCastingSourceNameWithoutSpaces',isGeneralFeatureSource:true,isSpellcastingSource:true,useSpellbook:true,usesIntelligence:true}];
@@ -64,7 +81,12 @@ try {
     c.setPage(4); ng.applyChanges(c);
     const feature = ng.getComponent(document.querySelector('app-editor-features'));
     feature.customName='AFeatureWithAVeryLongNameWithoutAnySpacesToTestWrapping'; feature.addCustom();
-    feature.addNote(c.sheet.features[0]); feature.setNoteEntry(c.sheet.features[0].notes[0],0,'ALongNoteEntryWithoutAnySpacesThatShouldWrapInsideItsCard'); feature.addUses(c.sheet.features[0]);
+    c.sheet.features[0].notes=[{tag:'Notes',notes:['ALongNoteEntryWithoutAnySpacesThatShouldWrapInsideItsCard'],isEditable:true}];
+    c.sheet.features[0].uses=[{tag:'Uses',totalFreeUses:3,usedFreeUses:0,freeUsesRegainCondition:'LONG_REST'}];
+    const species = ng.getComponent(document.querySelector('app-editor-species'));
+    species.customName='ASpeciesWithAVeryLongNameWithoutSpacesToTestWrapping'; species.addCustom();
+    c.sheet.species.notes=[{tag:'Traits',notes:['ALongSpeciesNoteWithoutSpacesThatShouldWrap'],isEditable:true}];
+    c.sheet.species.uses=[{tag:'Trait',totalFreeUses:3,usedFreeUses:0,freeUsesRegainCondition:'SHORT_REST_ONE'}];
     const spell = ng.getComponent(document.querySelector('app-editor-spells'));
     spell.customName='ASpellWithAVeryLongNameWithoutAnySpacesToTestWrapping'; spell.addCustom();
     spell.addToList(c.sheet.spells[0],'PREPARED'); spell.list='PREPARED'; spell.toggle(c.sheet.spells[1]);
@@ -77,7 +99,7 @@ try {
       await evaluate(session, `ng.getComponent(document.querySelector('app-root')).themeService.currentTheme.set('${theme}');`);
       for (let page=0;page<5;page++) {
         await check(`${width}px ${theme} page ${page}: no horizontal overflow`, async () => {
-          await evaluate(session, `c.setPage(${page}); ng.applyChanges(c);`); await delay(150);
+          await evaluate(session, `c.setPage(${page}); ng.applyChanges(c);${page===4?'expandEntries();':''}`); await delay(150);
           const geometry = await evaluate(session, `({width:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth, offenders:Array.from(document.querySelectorAll('main *')).filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.right>innerWidth+1}).slice(0,5).map(e=>e.tagName+'.'+e.className)})`);
           assert(geometry.scroll<=geometry.width+1, JSON.stringify(geometry));
           if (page <= 3) {
@@ -88,17 +110,74 @@ try {
             })`);
             assert.deepEqual(overlaps, [], 'Controls or proficiency text overlap: '+JSON.stringify(overlaps));
           }
-          if (width === 320 && theme === 'light-mc' && (page === 1 || page === 2)) {
+          if (width === 320 && theme === 'light-mc' && (page === 1 || page === 2 || page === 4)) {
             const screenshot = await send('Page.captureScreenshot', {format:'png',captureBeyondViewport:true}, session);
             await writeFile(`.angular/creator-mobile-${page}.png`, Buffer.from(screenshot.data,'base64'));
+            if (page === 4) {
+              const clip = await evaluate(session, `(()=>{const r=document.querySelector('app-feature-source-picker').getBoundingClientRect();return {x:r.x,y:r.y+scrollY,width:r.width,height:r.height,scale:1};})()`);
+              const picker = await send('Page.captureScreenshot', {format:'png',captureBeyondViewport:true,clip}, session);
+              await writeFile('.angular/source-picker-mobile.png', Buffer.from(picker.data,'base64'));
+            }
           }
         });
       }
-      for (const selector of ['app-editor-features','app-editor-spells']) {
+      await check(`${width}px ${theme}: expanded Source Books fits`, async () => {
+        await verifySourceBooks(session, 'main > app-source-book-filter', width, width===320 && theme==='light-mc');
+      });
+      await check(`${width}px ${theme}: searchable tools dropdown fits and closes`, async () => {
+        await evaluate(session, `c.setPage(2); ng.applyChanges(c);`);
+        await until(() => evaluate(session, `!ng.getComponent(document.querySelector('app-other-proficiencies')).loadingTools()`));
+        await evaluate(session, `ng.getComponent(document.querySelector('app-other-proficiencies')).tools.set([{key:'layout-tool',kind:'item',name:'ToolWithAVeryLongNameWithoutSpaces',publication:'TEST',data:{type:'T'},file:'layout.json',links:[]}]);ng.applyChanges(c);document.querySelector('app-other-proficiencies app-searchable-select button').click();`);
+        await delay(100);
+        const boxes = await evaluate(session, `Array.from(document.querySelectorAll('app-other-proficiencies [role=dialog]')).map(e=>({width:e.clientWidth,scroll:e.scrollWidth,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right}))`);
+        assert.equal(boxes.length, 1);
+        for (const box of boxes) assert(box.scroll <= box.width + 1 && box.left >= -1 && box.right <= width + 1, JSON.stringify(boxes));
+        await evaluate(session, `document.querySelector('app-other-proficiencies input[type=search]').dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true})); c.setPage(4); ng.applyChanges(c);`);
+        assert.equal(await evaluate(session, `!!document.querySelector('app-other-proficiencies [role=dialog]')`), false);
+      });
+      await check(`${width}px ${theme}: annotated removal fits and Escape cancels`, async () => {
+        await evaluate(session, `ng.getComponent(document.querySelector('app-editor-features')).remove(c.sheet.features[0]); ng.applyChanges(c);`);
+        await delay(100);
+        const box = await evaluate(session, `(()=>{const e=document.querySelector('[role=alertdialog]'); const r=e.getBoundingClientRect();return {width:e.clientWidth,scroll:e.scrollWidth,left:r.left,right:r.right,focus:document.activeElement.textContent.trim()};})()`);
+        assert(box.scroll <= box.width + 1 && box.left >= -1 && box.right <= width + 1, JSON.stringify(box));
+        assert.equal(box.focus, 'Cancel');
+        assert.equal(await evaluate(session, 'document.body.style.overflow'), 'hidden');
+        await evaluate(session, `document.querySelector('[role=alertdialog]').dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));`);
+        await delay(50);
+        assert.equal(await evaluate(session, `!!document.querySelector('[role=alertdialog]')`), false);
+        assert.equal(await evaluate(session, 'c.sheet.features.length'), 1);
+        assert.notEqual(await evaluate(session, 'document.body.style.overflow'), 'hidden');
+      });
+      await check(`${width}px ${theme}: source assignment dropdowns fit on features and spell slots`, async () => {
+        for (const page of [3, 4]) {
+          await evaluate(session, `c.setPage(${page}); ng.applyChanges(c);${page===4?'expandEntries();':''}`);
+          const count = await evaluate(session, `Array.from(document.querySelectorAll('app-feature-source-picker')).filter(e=>ng.getComponent(e).mode()==='dropdown').length`);
+          assert(count > 0);
+          for (let index = 0; index < count; index++) {
+            await evaluate(session, `Array.from(document.querySelectorAll('app-feature-source-picker')).filter(e=>ng.getComponent(e).mode()==='dropdown')[${index}].querySelector('button').click();`);
+            await delay(50);
+            const box = await evaluate(session, `(()=>{const e=document.querySelector('app-feature-source-picker [role=dialog]');const r=e.getBoundingClientRect();return {width:e.clientWidth,scroll:e.scrollWidth,left:r.left,right:r.right};})()`);
+            assert(box.scroll<=box.width+1 && box.left>=-1 && box.right<=width+1, JSON.stringify(box));
+            await evaluate(session, `document.querySelector('app-feature-source-picker input').dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));`);
+            await delay(25);
+          }
+        }
+      });
+      for (const selector of ['app-editor-species','app-editor-features','app-editor-spells']) {
         await check(`${width}px ${theme} ${selector}: catalog fits and closes`, async () => {
           await evaluate(session, `ng.getComponent(document.querySelector('${selector}')).openCatalog(); ng.applyChanges(c);`); await delay(150);
+          await verifySourceBooks(session, 'app-catalog-dialog app-source-book-filter', width);
           const geometry=await evaluate(session, `Array.from(document.querySelectorAll('[role=dialog], .catalog-body')).map(e=>({width:e.clientWidth,scroll:e.scrollWidth,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right}))`);
           for(const box of geometry) assert(box.scroll<=box.width+1&&box.left>=-1&&box.right<=width+1,JSON.stringify(geometry));
+          if (selector !== 'app-editor-species') {
+            await evaluate(session, `document.querySelector('app-catalog-dialog app-feature-source-picker button').click();`);
+            await delay(50);
+            const box = await evaluate(session, `(()=>{const e=document.querySelector('app-catalog-dialog app-feature-source-picker [role=dialog]');const r=e.getBoundingClientRect();return {width:e.clientWidth,scroll:e.scrollWidth,left:r.left,right:r.right};})()`);
+            assert(box.scroll<=box.width+1 && box.left>=-1 && box.right<=width+1, JSON.stringify(box));
+            await evaluate(session, `document.querySelector('app-catalog-dialog app-feature-source-picker input').dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));`);
+            await delay(25);
+            assert.equal(await evaluate(session, `!!document.querySelector('app-catalog-dialog')`),true);
+          }
           await evaluate(session, `document.querySelector('[role=dialog]').dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));`); await delay(50);
           assert.equal(await evaluate(session, `!!document.querySelector('[role=dialog]')`),false);
         });

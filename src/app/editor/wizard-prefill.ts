@@ -1,4 +1,3 @@
-import { ContentRecord, ImportRevision } from '../content/content.model';
 import { ExportedCharacter, FeatureEntryFull, SpellEntryFull } from '../models/character.model';
 import { emptyBasicCharacter } from './basic-info';
 
@@ -6,10 +5,6 @@ export type WizardState = NonNullable<ExportedCharacter['creatorWizard']>;
 export type WizardClass = WizardState['classes'][number];
 export interface PrefillValue { path: string[]; value: unknown; scope: string; label: string; }
 export interface PrefillChange { label: string; action: 'Fill' | 'Update' | 'Remove' | 'Keep'; }
-
-export function contentReference(record: ContentRecord, revision: ImportRevision) {
-  return { key: record.key, sourceIdentity: revision.sourceIdentity, revisionId: revision.id, commit: revision.commit };
-}
 
 type MutableObject = Record<string, unknown>;
 function objectAt(sheet: ExportedCharacter, path: string[], create = false): MutableObject | undefined {

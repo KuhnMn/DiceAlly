@@ -4,7 +4,7 @@ The Class Wizard button is available from every creator tab at `/dev/characters`
 
 ## Workflow
 
-1. Select ordered classes, levels, matching subclasses and optionally a materialized species from the local import. The first class determines first-level HP and starting proficiencies. Source Books restricts catalog choices, without discarding selections already made.
+1. Select ordered classes, levels, matching subclasses and optionally a materialized species from the local import. Search lives inside each selection dropdown. The first class determines first-level HP and starting proficiencies. Source Books restricts catalog choices, without discarding selections already made.
 2. Select the sections to prefill and answer proficiency, optional-feature and additional-spell choices. Class spell lists can populate Known through each class's available spell level. Wizard classes default to using a spellbook; this remains editable. Unsupported or incomplete options require explicitly choosing to finish them manually.
 3. Review what will be filled, updated, removed or kept. Apply updates the draft atomically; Save persists it. Cancel does not apply selections.
 
@@ -15,7 +15,10 @@ The Class Wizard button is available from every creator tab at `/dev/characters`
 - Multiclass slots are pooled under Shared Spellcasting; pact slots remain source-specific and recover on a short rest. Ordinary spell slots recover on a long rest. Limited daily/rest spell casts use the existing trackers and preparation lock.
 - Each known, prepared and spellbook membership remains independent. Normal spellbook and preparation choices continue in the spell editor; the wizard does not automatically prepare the entire class spell list.
 - First application preserves existing nondefault sheet values. Subsequent applications compare each value with its last generated baseline. Manual changes, manual deletions, unrelated records and annotated removed features remain protected. Session HP and used counters are never reset. Edited or still-linked sources remain available.
-- Generated entities contain snapshots and exact content references. Wizard selections and their prefill baseline save with the character. Reopening prefers the original cached revision; using a different revision requires an explicit choice if the original is unavailable. Missing content does not prevent normal character editing.
+- Generated entities contain snapshots and exact content references. Wizard selections and their prefill baseline save with the character. Reopening prefers the original cached revision; Current Import lets the user explicitly choose another revision. Missing content does not prevent normal character editing.
+- Species occupies its own single-selection section above Features and Spells, with grouped notes and use trackers. Chosen species casting abilities populate its feature source. Reapplying the wizard preserves species annotations.
+
+See [CREATOR_CODE_GUIDE.md](CREATOR_CODE_GUIDE.md) for a code map and the complete Arcana Domain two-Wizard-cantrip example.
 
 ## Limits and manual completion
 

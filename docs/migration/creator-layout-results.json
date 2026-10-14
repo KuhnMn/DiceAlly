@@ -21,6 +21,26 @@
       "passed": true
     },
     {
+      "name": "320px light-mc: expanded Source Books fits",
+      "passed": true
+    },
+    {
+      "name": "320px light-mc: searchable tools dropdown fits and closes",
+      "passed": true
+    },
+    {
+      "name": "320px light-mc: annotated removal fits and Escape cancels",
+      "passed": true
+    },
+    {
+      "name": "320px light-mc: source assignment dropdowns fit on features and spell slots",
+      "passed": true
+    },
+    {
+      "name": "320px light-mc app-editor-species: catalog fits and closes",
+      "passed": true
+    },
+    {
       "name": "320px light-mc app-editor-features: catalog fits and closes",
       "passed": true
     },
@@ -46,6 +66,26 @@
     },
     {
       "name": "320px dark-mc page 4: no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "320px dark-mc: expanded Source Books fits",
+      "passed": true
+    },
+    {
+      "name": "320px dark-mc: searchable tools dropdown fits and closes",
+      "passed": true
+    },
+    {
+      "name": "320px dark-mc: annotated removal fits and Escape cancels",
+      "passed": true
+    },
+    {
+      "name": "320px dark-mc: source assignment dropdowns fit on features and spell slots",
+      "passed": true
+    },
+    {
+      "name": "320px dark-mc app-editor-species: catalog fits and closes",
       "passed": true
     },
     {
@@ -77,6 +117,26 @@
       "passed": true
     },
     {
+      "name": "390px light-mc: expanded Source Books fits",
+      "passed": true
+    },
+    {
+      "name": "390px light-mc: searchable tools dropdown fits and closes",
+      "passed": true
+    },
+    {
+      "name": "390px light-mc: annotated removal fits and Escape cancels",
+      "passed": true
+    },
+    {
+      "name": "390px light-mc: source assignment dropdowns fit on features and spell slots",
+      "passed": true
+    },
+    {
+      "name": "390px light-mc app-editor-species: catalog fits and closes",
+      "passed": true
+    },
+    {
       "name": "390px light-mc app-editor-features: catalog fits and closes",
       "passed": true
     },
@@ -102,6 +162,26 @@
     },
     {
       "name": "390px dark-mc page 4: no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "390px dark-mc: expanded Source Books fits",
+      "passed": true
+    },
+    {
+      "name": "390px dark-mc: searchable tools dropdown fits and closes",
+      "passed": true
+    },
+    {
+      "name": "390px dark-mc: annotated removal fits and Escape cancels",
+      "passed": true
+    },
+    {
+      "name": "390px dark-mc: source assignment dropdowns fit on features and spell slots",
+      "passed": true
+    },
+    {
+      "name": "390px dark-mc app-editor-species: catalog fits and closes",
       "passed": true
     },
     {
@@ -133,6 +213,26 @@
       "passed": true
     },
     {
+      "name": "768px light-mc: expanded Source Books fits",
+      "passed": true
+    },
+    {
+      "name": "768px light-mc: searchable tools dropdown fits and closes",
+      "passed": true
+    },
+    {
+      "name": "768px light-mc: annotated removal fits and Escape cancels",
+      "passed": true
+    },
+    {
+      "name": "768px light-mc: source assignment dropdowns fit on features and spell slots",
+      "passed": true
+    },
+    {
+      "name": "768px light-mc app-editor-species: catalog fits and closes",
+      "passed": true
+    },
+    {
       "name": "768px light-mc app-editor-features: catalog fits and closes",
       "passed": true
     },
@@ -158,6 +258,26 @@
     },
     {
       "name": "768px dark-mc page 4: no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "768px dark-mc: expanded Source Books fits",
+      "passed": true
+    },
+    {
+      "name": "768px dark-mc: searchable tools dropdown fits and closes",
+      "passed": true
+    },
+    {
+      "name": "768px dark-mc: annotated removal fits and Escape cancels",
+      "passed": true
+    },
+    {
+      "name": "768px dark-mc: source assignment dropdowns fit on features and spell slots",
+      "passed": true
+    },
+    {
+      "name": "768px dark-mc app-editor-species: catalog fits and closes",
       "passed": true
     },
     {
@@ -189,6 +309,26 @@
       "passed": true
     },
     {
+      "name": "1100px light-mc: expanded Source Books fits",
+      "passed": true
+    },
+    {
+      "name": "1100px light-mc: searchable tools dropdown fits and closes",
+      "passed": true
+    },
+    {
+      "name": "1100px light-mc: annotated removal fits and Escape cancels",
+      "passed": true
+    },
+    {
+      "name": "1100px light-mc: source assignment dropdowns fit on features and spell slots",
+      "passed": true
+    },
+    {
+      "name": "1100px light-mc app-editor-species: catalog fits and closes",
+      "passed": true
+    },
+    {
       "name": "1100px light-mc app-editor-features: catalog fits and closes",
       "passed": true
     },
@@ -214,6 +354,26 @@
     },
     {
       "name": "1100px dark-mc page 4: no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "1100px dark-mc: expanded Source Books fits",
+      "passed": true
+    },
+    {
+      "name": "1100px dark-mc: searchable tools dropdown fits and closes",
+      "passed": true
+    },
+    {
+      "name": "1100px dark-mc: annotated removal fits and Escape cancels",
+      "passed": true
+    },
+    {
+      "name": "1100px dark-mc: source assignment dropdowns fit on features and spell slots",
+      "passed": true
+    },
+    {
+      "name": "1100px dark-mc app-editor-species: catalog fits and closes",
       "passed": true
     },
     {

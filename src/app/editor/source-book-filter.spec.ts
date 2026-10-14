@@ -44,12 +44,12 @@ describe('Shared creator Source Books filter', () => {
     await features.componentInstance.searchContent(); await spells.componentInstance.searchContent();
     expect(features.componentInstance.results().map(record => record.publication)).toEqual(['XPHB']);
     expect(spells.componentInstance.results().map(record => record.publication)).toEqual(['XPHB']);
-    expect(tools.componentInstance.filteredTools.map(record => record.publication)).toEqual(['XPHB']);
+    expect(tools.componentInstance.availableTools.map(record => record.publication)).toEqual(['XPHB']);
     expect(features.componentInstance.selected).toHaveLength(2); expect(spells.componentInstance.selected).toHaveLength(2);
     expect(new SourceBookFilterService().selected()).toEqual(['XPHB']);
     filter.setSelection([]); await features.whenStable(); await spells.whenStable();
     await features.componentInstance.searchContent(); await spells.componentInstance.searchContent();
     expect(features.componentInstance.total()).toBe(2); expect(spells.componentInstance.total()).toBe(2);
-    expect(tools.componentInstance.filteredTools).toHaveLength(2);
+    expect(tools.componentInstance.availableTools).toHaveLength(2);
   });
 });

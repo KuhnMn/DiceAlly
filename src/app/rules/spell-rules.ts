@@ -1,6 +1,6 @@
 import { ContentRecord, entityKey, JsonObject, object, string } from '../content/content.model';
 import { ContentRulesIndex } from './feature-rules';
-import { filterSpells } from './spell-filters';
+import { describeSpellChoice, isCompleteSelection, isSpellRequirementMet, spellChoiceQuery } from './spell-choice';
 
 export interface SpellGrantOwner {
   selectionId: string;
@@ -124,38 +124,31 @@ export function deriveSpellGrants(owners: SpellGrantOwner[], index: ContentRules
         const data = object(value);
         if (!data) throw new Error(`Invalid spell grant at ${path}`);
         if (data['all'] !== undefined || data['choose'] !== undefined) {
-          const choose = object(data['choose']);
-          const query = data['all'] ?? (choose?.['from'] === undefined ? data['choose'] : undefined);
-          const id = JSON.stringify(['spell-choice',sourceId,list,path]);
-          if (query !== undefined) {
-            let candidates: string[];
-            try { candidates = filterSpells(query,index.records).map(record => record.key); }
-            catch (error) {
-              choices.push({ id, count: Number(data['count'] ?? 1), candidates: [], query: structuredClone(query) }); throw error;
-            }
-            if (!candidates.length) throw new Error(`No spells match the filter at ${path}.`);
-            if (data['all'] !== undefined) {
-              candidates.forEach(key => add(key,list,`${path}.all`,usage)); return;
-            }
-            const count = Number(data['count'] ?? choose?.['count'] ?? 1);
-            if (!Number.isInteger(count) || count < 1 || count > candidates.length) throw new Error('Invalid filtered spell choice count.');
-            choices.push({ id,count,candidates,query: structuredClone(query) });
-            const answer = Object.hasOwn(answers,id) ? answers[id] : [];
-            if (answer.length !== count || new Set(answer).size !== count || answer.some(key => !candidates.includes(key))) throw new Error(`Select ${count} filtered spell(s) at ${path}.`);
-            answer.forEach(key => add(key,list,`${path}.choice`,usage)); return;
+          const id = JSON.stringify(['spell-choice', sourceId, list, path]);
+          let definition;
+          try {
+            definition = describeSpellChoice(data, index.records, keyFor);
+          } catch (error) {
+            // Keep unsupported filters visible so the editor can offer manual completion.
+            const query = spellChoiceQuery(data);
+            if (query !== undefined) choices.push({ id, count: Number(data['count'] ?? 1), candidates: [], query });
+            throw error;
           }
-          if (!Array.isArray(choose?.['from']) || choose['from'].some(v => typeof v !== 'string')) throw new Error('Invalid explicit spell choices.');
-          const candidates = [...new Set((choose['from'] as string[]).map(keyFor))];
-          const count = Number(choose['count'] ?? data['count'] ?? 1);
-          if (!Number.isInteger(count) || count < 1 || count > candidates.length) throw new Error('Invalid spell choice count.');
-          choices.push({ id,count,candidates });
-          const answer = Object.hasOwn(answers,id) ? answers[id] : [];
-          if (answer.length !== count || new Set(answer).size !== count || answer.some(key => !candidates.includes(key))) throw new Error(`Select ${count} valid spell(s) at ${path}.`);
-          answer.forEach(key => add(key,list,`${path}.choice`,usage)); return;
+          const { count, candidates, query, all } = definition;
+          if (all) {
+            candidates.forEach(key => add(key, list, `${path}.all`, usage)); return;
+          }
+          choices.push({ id, count, candidates, ...(query !== undefined ? { query } : {}) });
+          const answer = answers[id] ?? [];
+          if (!isCompleteSelection(answer, count, candidates)) throw new Error(`Select ${count} valid spell(s) at ${path}.`);
+          answer.forEach(key => add(key, list, `${path}.choice`, usage)); return;
         }
         if (data['spell'] !== undefined) { walk(data['spell'],list,`${path}.spell`,{ ...usage, casts: data['casts'] }); return; }
         for (const [frequency, child] of Object.entries(data)) {
-          if (['will','ritual','constant'].includes(frequency)) walk(child,list,`${path}.${frequency}`,{ ...usage, frequency });
+          // Upstream uses '_' to group spells with no special use/recovery limit.
+          // Arcana Domain's two Wizard cantrips live in known.1._.
+          if (frequency === '_') walk(child, list, `${path}._`, usage);
+          else if (['will','ritual','constant'].includes(frequency)) walk(child,list,`${path}.${frequency}`,{ ...usage, frequency });
           else if (['daily','rest','resource'].includes(frequency)) {
             const counts = object(child); if (!counts) throw new Error(`Invalid spell frequency: ${frequency}`);
             for (const [count, spells] of Object.entries(counts)) {
@@ -171,14 +164,9 @@ export function deriveSpellGrants(owners: SpellGrantOwner[], index: ContentRules
         if (!levels) { diagnostics.push(`Invalid ${list} level map.`); continue; }
         for (const [requirement, value] of Object.entries(levels)) {
           try {
-            let applicable: boolean;
-            if (requirement === '_') applicable = true;
-            else if (/^\d+$/.test(requirement)) applicable = owner.level >= Number(requirement);
-            else if (/^s\d+$/.test(requirement)) {
-              if (owner.maxSpellLevel === undefined) throw new Error('Spell-level eligibility input is required.');
-              applicable = owner.maxSpellLevel >= Number(requirement.slice(1));
-            } else throw new Error(`Unsupported spell eligibility: ${requirement}`);
-            if (applicable) walk(value,list,`additionalSpells[${position}].${list}.${requirement}`,{});
+            if (isSpellRequirementMet(requirement, owner.level, owner.maxSpellLevel)) {
+              walk(value, list, `additionalSpells[${position}].${list}.${requirement}`, {});
+            }
           } catch (error) { diagnostics.push(String(error)); }
         }
       }

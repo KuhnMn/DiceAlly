@@ -79,9 +79,9 @@ try {
   assert.equal(await evaluate(session, `ng.getComponent(document.querySelector('app-class-wizard')).error()`), '');
   await evaluate(session, `globalThis.w=ng.getComponent(document.querySelector('app-class-wizard'));w.addClass();ng.applyChanges(w);`);
   await until(() => evaluate(session, `!!document.querySelector('#wizard-class-0')`));
-  await evaluate(session, `input('#wizard-class-0',classKey);ng.applyChanges(w);`);
+  await evaluate(session, `document.querySelector('#wizard-class-0 button').click();ng.applyChanges(w);Array.from(document.querySelectorAll('#wizard-class-0 [role=option]')).find(button=>button.dataset.value===classKey).click();ng.applyChanges(w);`);
   await until(() => evaluate(session, `!!document.querySelector('#wizard-subclass-0')`));
-  await evaluate(session, `input('#wizard-level-0','3');input('#wizard-subclass-0',subKey);ng.applyChanges(w);`);
+  await evaluate(session, `input('#wizard-level-0','3');document.querySelector('#wizard-subclass-0 button').click();ng.applyChanges(w);Array.from(document.querySelectorAll('#wizard-subclass-0 [role=option]')).find(button=>button.dataset.value===subKey).click();ng.applyChanges(w);`);
   await check('class selection, exact subclass and skill choices produce a review',async()=>{
     await evaluate(session, `w.advance();ng.applyChanges(w);const choice=w.proposal().choices.find(choice=>choice.label==='skill proficiencies');w.toggleChoice(choice,'arcana');w.advance();ng.applyChanges(w);`);
     assert.equal(await evaluate(session,'w.stage'),2); assert.deepEqual(await evaluate(session,'w.proposal().errors'),[]);

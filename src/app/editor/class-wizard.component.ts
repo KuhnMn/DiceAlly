@@ -12,6 +12,7 @@ import { WIZARD_SECTIONS, WizardChoice, matchesSubclass, previewClassWizard } fr
 import { spellClasses } from './spell-selection';
 import { validateBasicInfo } from './basic-info';
 import { SearchableSelectComponent, SelectOption } from './searchable-select.component';
+import { activeContentRevision } from './active-content-revision';
 
 @Component({
   selector: 'app-class-wizard',
@@ -55,9 +56,7 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
     try {
       const revisions = await this.cache.revisions('development-local');
       const pinned = useCurrent ? undefined : revisions.find(entry => entry.revision.id === this.state.revisionId && entry.revision.status === 'ready')?.revision;
-      const source = await this.cache.savedSource('development-local');
-      const revision = pinned ?? (source ? await this.cache.active('development-local', source)
-        : revisions.find(entry => entry.active && entry.revision.status === 'ready')?.revision);
+      const revision = pinned ?? await activeContentRevision(this.cache);
       if (!revision) { this.error.set('Import content to use the wizard. Your current character stays editable.'); return; }
       const kinds = new Set(['class', 'subclass', 'classFeature', 'subclassFeature', 'optionalfeature', 'species', 'spell']);
       await this.cache.visit(revision.id, async record => { if (!this.destroyed && kinds.has(record.kind)) this.records.set(record.key, record); });

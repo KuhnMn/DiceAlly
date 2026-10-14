@@ -1,13 +1,15 @@
-import { Component, ElementRef, HostListener, OnInit, ViewChild, inject, input, output, signal } from '@angular/core';
+import { Component, OnInit, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ExportedCharacter, FeatureSource } from '../models/character.model';
 import { IndexedDbContentCache } from '../content/content-cache';
 import { ContentRecord, ImportRevision } from '../content/content.model';
 import { SourceBookFilterService } from './source-book-filter.service';
+import { activeContentRevision } from './active-content-revision';
+import { SearchableSelectComponent, SelectOption } from './searchable-select.component';
 
 @Component({
-  selector: 'app-other-proficiencies', imports: [FormsModule, RouterLink],
+  selector: 'app-other-proficiencies', imports: [FormsModule, RouterLink, SearchableSelectComponent],
   templateUrl: './other-proficiencies.component.html', styleUrl: './local-editor.component.css',
 })
 export class OtherProficienciesComponent implements OnInit {
@@ -21,14 +23,6 @@ export class OtherProficienciesComponent implements OnInit {
   readonly revision = signal<ImportRevision | null>(null);
   private readonly cache = new IndexedDbContentCache();
   private readonly sourceBooks = inject(SourceBookFilterService);
-  selectedTool = '';
-  toolSearch = '';
-  toolMenuOpen = false;
-  @ViewChild('toolPicker') private toolPicker?: ElementRef<HTMLElement>;
-  @ViewChild('toolTrigger') private toolTrigger?: ElementRef<HTMLButtonElement>;
-  @ViewChild('toolSearchInput') set toolSearchInput(element: ElementRef<HTMLInputElement> | undefined) {
-    element?.nativeElement.focus();
-  }
   languageInput = '';
   readonly combatOptions = [
     { key: 'simpleWeapons', label: 'Simple Weapons' },
@@ -51,9 +45,11 @@ export class OtherProficienciesComponent implements OnInit {
   get languages() { return this.character.proficiencies?.languages ?? []; }
   get toolNames() { return Object.keys(this.character.proficiencies?.tools ?? {}); }
   get sources() { return this.character.featureSources ?? []; }
-  get filteredTools() {
-    const query = this.toolSearch.toLowerCase().trim();
-    return this.tools().filter(tool => this.sourceBooks.allows(tool.publication) && `${tool.name} ${tool.publication}`.toLowerCase().includes(query));
+  get availableTools() {
+    return this.tools().filter(tool => this.sourceBooks.allows(tool.publication));
+  }
+  get toolChoices(): SelectOption[] {
+    return this.availableTools.map(tool => ({ value: tool.key, label: `${tool.name} (${tool.publication})` }));
   }
   change() { this.edited.emit(); }
   combatValue(key: 'simpleWeapons' | 'martialWeapons' | 'initiative') { return this.character.proficiencies?.[key] ?? false; }
@@ -73,31 +69,10 @@ export class OtherProficienciesComponent implements OnInit {
   }
   removeLanguage(index: number) { this.character.proficiencies!.languages!.splice(index, 1); this.change(); }
   async ngOnInit() { if (this.panel() === 'proficiencies') await this.loadTools(); }
-  toggleToolMenu() { this.toolMenuOpen = !this.toolMenuOpen; if (this.toolMenuOpen) this.toolSearch = ''; }
-  chooseTool(key: string) {
-    this.selectedTool = key; this.addTool(); this.toolMenuOpen = false;
-    this.toolTrigger?.nativeElement.focus();
-  }
-  @HostListener('document:click', ['$event']) outsideToolPicker(event: MouseEvent) {
-    if (this.toolMenuOpen && !this.toolPicker?.nativeElement.contains(event.target as Node)) this.toolMenuOpen = false;
-  }
-  toolMenuKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape') {
-      event.preventDefault(); event.stopPropagation(); this.toolMenuOpen = false; this.toolTrigger?.nativeElement.focus();
-    } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      const options = Array.from(this.toolPicker?.nativeElement.querySelectorAll<HTMLButtonElement>('[data-tool-option]') ?? []);
-      const current = options.indexOf(event.target as HTMLButtonElement);
-      const next = event.key === 'ArrowDown' ? Math.min(current + 1, options.length - 1) : Math.max(current - 1, 0);
-      options[next]?.focus();
-    }
-  }
   async loadTools() {
     this.loadingTools.set(true); this.toolMessage.set('');
     try {
-      const configured = await this.cache.savedSource('development-local');
-      const revision = configured ? await this.cache.active('development-local', configured)
-        : (await this.cache.revisions('development-local')).find(entry => entry.active && entry.revision.status === 'ready')?.revision;
+      const revision = await activeContentRevision(this.cache);
       this.revision.set(revision ?? null);
       this.tools.set(revision ? await this.cache.tools(revision.id) : []);
       if (!revision) this.toolMessage.set('Import content to select tools from your library. Existing proficiencies are kept.');
@@ -105,13 +80,13 @@ export class OtherProficienciesComponent implements OnInit {
     } catch (error) { this.toolMessage.set(String(error)); }
     finally { this.loadingTools.set(false); }
   }
-  addTool() {
-    const tool = this.tools().find(tool => tool.key === this.selectedTool);
+  addTool(key: string) {
+    const tool = this.tools().find(tool => tool.key === key);
     const revision = this.revision(); if (!tool || !revision) return;
     const tools = (this.character.proficiencies ??= {}).tools ??= {};
     tools[`${tool.name} (${tool.publication})`] = { contentKey: tool.key, sourceIdentity: revision.sourceIdentity,
       revisionId: revision.id, snapshot: structuredClone(tool) };
-    this.selectedTool = ''; this.change();
+    this.change();
   }
   removeTool(name: string) { delete this.character.proficiencies!.tools![name]; this.change(); }
   addSource() {

@@ -6,6 +6,8 @@ import { LocalEditorComponent } from './local-editor.component';
 import { emptyBasicCharacter } from './basic-info';
 import { BasicInfoRepository } from './basic-info-repository';
 import { RestService } from '../services/rest.service';
+import { By } from '@angular/platform-browser';
+import { FeatureSourcePickerComponent } from './feature-source-picker.component';
 
 describe('Spell Slots editor', () => {
   beforeEach(() => TestBed.configureTestingModule({ imports: [SpellSlotsComponent, LocalEditorComponent], providers: [provideRouter([])] }));
@@ -36,9 +38,7 @@ describe('Spell Slots editor', () => {
     editor.recovery = 'SHORT_REST_ONE'; editor.add(); expect(editor.error).toMatch(/recovery/);
     editor.slots('Wizard')[0].regainCondition = 'SHORT_REST_ONE'; editor.add();
     expect(editor.slots('Wizard')[0].used).toBe(2);
-    const select = document.createElement('select'); select.add(new Option('Cleric', 'Cleric')); select.value = 'Cleric';
-    const event = new Event('change'); Object.defineProperty(event, 'target', { value: select });
-    editor.move('Wizard', 0, event);
+    editor.move('Wizard', 0, 'Cleric');
     expect(editor.slots('Wizard')).toEqual([]); expect(editor.slots('Cleric')[0].used).toBe(2);
     const repository = new BasicInfoRepository(); await repository.save(sheet, 0);
     const saved = (await repository.list()).find(entry => entry.id === sheet.character!.characterUuid)!;
@@ -58,5 +58,23 @@ describe('Spell Slots editor', () => {
     expect(sheet.character!.spellSlots['Wizard'].map(slot => slot.used)).toEqual([0, 2, 3, 3]);
     rest.performLongRest(sheet);
     expect(sheet.character!.spellSlots['Wizard'].map(slot => slot.used)).toEqual([0, 1, 0, 3]);
+  });
+
+  it('keeps the source picker and used counts unchanged when a move would collide', async () => {
+    const fixture = TestBed.createComponent(SpellSlotsComponent); const sheet = emptyBasicCharacter();
+    sheet.character!.featureSources = [{ name: 'Wizard', isSpellcastingSource: true }, { name: 'Cleric', isSpellcastingSource: true }];
+    sheet.character!.spellSlots = {
+      Wizard: [{ level: 1, total: 3, used: 2 }],
+      Cleric: [{ level: 1, total: 2, used: 1 }],
+    };
+    fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
+    const pickers = fixture.debugElement.queryAll(By.directive(FeatureSourcePickerComponent));
+    const wizardPicker = pickers[1].componentInstance as FeatureSourcePickerComponent;
+    expect(wizardPicker.value()).toBe('Wizard');
+    wizardPicker.selected.emit('Cleric'); await fixture.whenStable();
+    expect(fixture.componentInstance.error).toContain('already has slots');
+    expect(wizardPicker.value()).toBe('Wizard');
+    expect(sheet.character!.spellSlots['Wizard'][0].used).toBe(2);
+    expect(sheet.character!.spellSlots['Cleric'][0].used).toBe(1);
   });
 });

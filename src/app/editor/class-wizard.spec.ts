@@ -51,6 +51,44 @@ function fixture() {
 describe('Optional class wizard prefill', () => {
   beforeEach(() => { localStorage.removeItem('ally-creator-source-books'); TestBed.configureTestingModule({ providers: [provideRouter([])] }); });
 
+  it('reads Arcana Domain’s structured rule for exactly two Wizard cantrips', () => {
+    const f = fixture();
+    // This additionalSpells shape is taken from class-cleric.json (Arcana Domain, SCAG).
+    const records = mapContent({
+      class: [{ name: 'Cleric', source: 'PHB', hd: { number: 1, faces: 8 },
+        casterProgression: 'full', spellcastingAbility: 'wis', classFeatures: [] }],
+      subclass: [{ name: 'Arcana Domain', shortName: 'Arcana', source: 'SCAG',
+        className: 'Cleric', classSource: 'PHB', subclassFeatures: [],
+        additionalSpells: [{ known: { '1': { '_': [{ choose: 'level=0|class=Wizard', count: 2 }] } } }] }],
+      spell: [
+        { name: 'Light', source: 'PHB', level: 0, classes: { fromClassList: [{ name: 'Wizard', source: 'PHB' }] } },
+        { name: 'Mage Hand', source: 'PHB', level: 0, classes: { fromClassList: [{ name: 'Wizard', source: 'PHB' }] } },
+        { name: 'Fire Bolt', source: 'PHB', level: 0, classes: { fromClassList: [{ name: 'Wizard', source: 'PHB' }] } },
+        { name: 'Shield', source: 'PHB', level: 1, classes: { fromClassList: [{ name: 'Wizard', source: 'PHB' }] } },
+        { name: 'Guidance', source: 'PHB', level: 0, classes: { fromClassList: [{ name: 'Cleric', source: 'PHB' }] } },
+      ],
+    }, 'arcana-domain.json').records;
+    const index = new Map(records.map(record => [record.key, record]));
+    f.state.classes = [{ selectionId: 'cleric', level: 1,
+      classKey: records.find(record => record.kind === 'class')!.key,
+      subclassKey: records.find(record => record.kind === 'subclass')!.key }];
+    const first = previewClassWizard(f.sheet, f.state, f.revision, index);
+    expect(first.errors).toEqual([]); expect(first.warnings).toEqual([]);
+    const choice = first.choices.find(choice => choice.label === 'Arcana Domain: spells')!;
+    expect(choice.count).toBe(2);
+    expect(choice.candidates.map(candidate => index.get(candidate.value)!.name).sort()).toEqual(['Fire Bolt', 'Light', 'Mage Hand']);
+    f.state.answers[choice.id] = [choice.candidates[0].value];
+    expect(previewClassWizard(f.sheet, f.state, f.revision, index).unresolved).toHaveLength(1);
+    f.state.answers[choice.id] = [choice.candidates[0].value, choice.candidates[0].value];
+    expect(previewClassWizard(f.sheet, f.state, f.revision, index).unresolved).toHaveLength(1);
+    f.state.answers[choice.id] = choice.candidates.slice(0, 2).map(candidate => candidate.value);
+    const result = previewClassWizard(f.sheet, f.state, f.revision, index);
+    expect(result.unresolved).toEqual([]);
+    expect(result.sheet.spells).toHaveLength(2);
+    expect(result.sheet.spells!.every(spell => spell.listType === 'KNOWN' && spell.castingSourceName === 'Arcana Domain (SCAG)')).toBe(true);
+    expect(result.sheet.character!.featureSources!.find(source => source.name === 'Arcana Domain (SCAG)')!.usesWisdom).toBe(true);
+  });
+
   it('prefills ordered multiclass HP, proficiencies, sources, features, known spells and daily casting', async () => {
     const f = fixture();
     const initial = previewClassWizard(f.sheet, f.state, f.revision, f.index);

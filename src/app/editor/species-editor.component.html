@@ -4,11 +4,11 @@
     <button type="button" class="action-button" aria-haspopup="dialog" (click)="openCatalog()">{{ selected ? 'Change Species' : '+ Select Species' }}</button>
   </div>
   @if (selected; as species) {
-    <article class="rounded-lg border-2 border-secondary bg-surface-container p-2.5">
+    <article class="rounded-lg border-2 border-rose bg-surface-container p-2.5">
       <div class="flex flex-wrap items-start gap-2">
         <button type="button" class="flex-1 min-w-0 text-left" [attr.aria-expanded]="expanded" (click)="expanded = !expanded"><span class="text-sm font-semibold">{{ species.name }}</span><span class="block text-xs text-on-surface-variant mt-0.5">{{ species.source }}</span></button>
-        <button type="button" class="secondary-button !py-1 !px-2 !text-xs" (click)="expanded = !expanded">{{ expanded ? 'Close' : 'Edit' }}</button>
-        <button type="button" class="secondary-button !py-1 !px-2 !text-xs" aria-label="Remove species" (click)="remove()">×</button>
+        <button type="button" class="secondary-button compact-button" (click)="expanded = !expanded">{{ expanded ? 'Close' : 'Edit' }}</button>
+        <button type="button" class="secondary-button compact-button icon-button" aria-label="Remove species" (click)="remove()">×</button>
       </div>
       @if (!expanded && (species.notes?.length || species.uses?.length)) { <p class="text-xs text-on-surface-variant mt-1">{{ species.notes?.length || 0 }} note groups · {{ species.uses?.length || 0 }} use trackers</p> }
       @if (expanded) {
@@ -27,12 +27,15 @@
       @if (loading()) { <p role="status" class="text-xs text-on-surface-variant mb-2">Searching…</p> }
       <div class="space-y-2">@for (record of results(); track record.key) {
         <article class="rounded border border-outline-variant p-2">
-          <div class="flex justify-between gap-2"><div class="min-w-0"><p class="font-semibold text-sm">{{ record.name }}</p><p class="text-xs text-on-surface-variant">{{ record.publication }}</p></div><button type="button" class="secondary-button !py-1 !px-2 !text-xs" [disabled]="isSelected(record)" (click)="select(record)">{{ isSelected(record) ? 'Selected' : 'Select' }}</button></div>
+          <div class="flex justify-between gap-2"><div class="min-w-0"><p class="font-semibold text-sm">{{ record.name }}</p><p class="text-xs text-on-surface-variant">{{ record.publication }}</p></div><button type="button" class="secondary-button compact-button" [disabled]="isSelected(record)" (click)="select(record)">{{ isSelected(record) ? 'Selected' : 'Select' }}</button></div>
           <details class="description-panel mt-2 text-sm"><summary class="description-toggle"><span class="description-arrow" aria-hidden="true">▸</span>Species Abilities</summary><div class="p-2"><app-entry-renderer [entries]="$any(record.data['entries'] ?? [])" /></div></details>
         </article>
       }</div>
-      @if (revision()) { <div class="flex flex-wrap justify-between items-center gap-2 mt-3 text-xs"><span>{{ total() }} matches</span><div class="flex gap-2"><button type="button" class="secondary-button !py-1" [disabled]="loading() || offset === 0" (click)="nextPage(-1)">Previous</button><button type="button" class="secondary-button !py-1" [disabled]="loading() || offset + pageSize >= total()" (click)="nextPage(1)">Next</button></div></div> }
+      @if (revision()) { <div class="flex flex-wrap justify-between items-center gap-2 mt-3 text-xs"><span>{{ total() }} matches</span><div class="flex gap-2"><button type="button" class="secondary-button compact-button" [disabled]="loading() || offset === 0" (click)="nextPage(-1)">Previous</button><button type="button" class="secondary-button compact-button" [disabled]="loading() || offset + pageSize >= total()" (click)="nextPage(1)">Next</button></div></div> }
       <details class="mt-4"><summary class="cursor-pointer text-sm text-primary">Create Custom Species</summary><div class="space-y-2 mt-2"><label><span class="field-label">Name</span><input class="editor-input" name="custom-species-name" [(ngModel)]="customName" /></label><label><span class="field-label">Abilities / Description</span><textarea class="editor-input" name="custom-species-description" rows="3" [(ngModel)]="customDescription"></textarea></label><button type="button" class="action-button" [disabled]="!customName.trim()" (click)="addCustom()">Select Species</button></div></details>
     </app-catalog-dialog>
   }
 </section>
+@if (pendingChange; as change) {
+  <app-remove-entry-dialog [name]="change.name" [action]="change.action" (cancelled)="pendingChange = undefined" (confirmed)="confirmChange()" />
+}

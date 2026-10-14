@@ -1,6 +1,6 @@
 import { Component, HostListener, OnDestroy, OnInit, inject, input, output } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
 import { A11yModule } from '@angular/cdk/a11y';
+import { DialogScrollLockService } from './dialog-scroll-lock.service';
 
 /** Catalog workspace shared by feature and spell editors. */
 @Component({
@@ -41,14 +41,12 @@ export class CatalogDialogComponent implements OnInit, OnDestroy {
   readonly subtitle = input('Add entries, then return to your character.');
   readonly closeDisabled = input(false);
   readonly closed = output<void>();
-  private readonly document = inject(DOCUMENT);
-  private previousOverflow = '';
+  private readonly scrollLock = inject(DialogScrollLockService);
 
   ngOnInit() {
-    this.previousOverflow = this.document.body.style.overflow;
-    this.document.body.style.overflow = 'hidden';
+    this.scrollLock.lock();
   }
-  ngOnDestroy() { this.document.body.style.overflow = this.previousOverflow; }
+  ngOnDestroy() { this.scrollLock.unlock(); }
   close() { if (!this.closeDisabled()) this.closed.emit(); }
 
   @HostListener('keydown', ['$event']) keydown(event: KeyboardEvent) {

@@ -11,16 +11,16 @@
     @if (stage === 0) {
       <app-source-book-filter />
       <p class="text-xs text-on-surface-variant mb-3">The first class determines starting proficiencies and first-level HP. Later levels use average HP plus your current Constitution modifier.</p>
-      <div class="flex justify-end mb-3"><button type="button" class="secondary-button !py-1 !text-xs" (click)="loadContent(true)">Current Import</button></div>
+      <div class="flex justify-end mb-3"><button type="button" class="secondary-button compact-button" (click)="loadContent(true)">Current Import</button></div>
       <div class="space-y-3">
         @for (selection of state.classes; track selection.selectionId; let position = $index) {
           <article class="rounded-lg border-2 border-outline-variant bg-surface-container p-3">
             <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
               <h3 class="font-semibold">{{ position === 0 ? 'Starting Class' : 'Additional Class' }}</h3>
               <div class="flex gap-1">
-                <button type="button" class="secondary-button !py-1 !px-2" [disabled]="position === 0" aria-label="Move class earlier" (click)="moveClass(position, -1)">↑</button>
-                <button type="button" class="secondary-button !py-1 !px-2" [disabled]="position === state.classes.length - 1" aria-label="Move class later" (click)="moveClass(position, 1)">↓</button>
-                <button type="button" class="secondary-button !py-1 !px-2 !text-xs" (click)="removeClass(position)">Remove</button>
+                <button type="button" class="secondary-button compact-button" [disabled]="position === 0" aria-label="Move class earlier" (click)="moveClass(position, -1)">↑</button>
+                <button type="button" class="secondary-button compact-button" [disabled]="position === state.classes.length - 1" aria-label="Move class later" (click)="moveClass(position, 1)">↓</button>
+                <button type="button" class="secondary-button compact-button" (click)="removeClass(position)">Remove</button>
               </div>
             </div>
             <div class="grid grid-cols-[minmax(0,1fr)_4.5rem] gap-2">

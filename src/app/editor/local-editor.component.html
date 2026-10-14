@@ -25,7 +25,7 @@
 
   @if (libraryOpen) {
     <section class="editor-card mb-5" aria-label="Saved characters">
-      <div class="flex justify-between gap-3 items-center"><h2>Characters on this device</h2><button class="secondary-button" [disabled]="busy()" (click)="newCharacter()">New character</button></div>
+      <div class="flex justify-between gap-3 items-center"><h2>Characters on this device</h2><button class="secondary-button" [disabled]="busy()" (click)="newCharacter()">New Character</button></div>
       <div class="grid gap-2">
         @for (entry of entries(); track entry.id) {
           <button class="secondary-button text-left" [disabled]="busy()" (click)="open(entry)">{{ entry.sheet.character?.name || 'Unnamed character' }} <span class="text-on-surface-variant">· Level {{ entry.sheet.character?.level }}</span></button>
@@ -160,7 +160,7 @@
           <div class="space-y-2 mt-3">@for (sense of senses; track sense[0]) {
             <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg border-2 border-outline-variant bg-surface-container p-3">
               <label [for]="'sense-' + sense[0]" class="flex-1 min-w-0 break-words">{{ sense[0] }}</label>
-              <div class="flex items-center gap-2"><input [id]="'sense-' + sense[0]" [name]="'sense-' + sense[0]" type="number" required min="0" step="1" class="editor-input !w-24" [ngModel]="sense[1]" (ngModelChange)="updateSense(sense[0], $event)" /><span class="text-sm">ft</span><button type="button" class="secondary-button" [attr.aria-label]="'Remove sense ' + sense[0]" (click)="removeSense(sense[0])">×</button></div>
+              <div class="flex items-center gap-2"><input [id]="'sense-' + sense[0]" [name]="'sense-' + sense[0]" type="number" required min="0" step="1" class="editor-input !w-24" [ngModel]="sense[1]" (ngModelChange)="updateSense(sense[0], $event)" /><span class="text-sm">ft</span><button type="button" class="secondary-button icon-button" [attr.aria-label]="'Remove sense ' + sense[0]" (click)="removeSense(sense[0])">×</button></div>
             </div>
           }</div>
         </div>
@@ -255,7 +255,7 @@
         <div class="flex flex-wrap gap-2 items-center">
           @if (page > 0) { <button type="button" class="secondary-button" (click)="setPage(page - 1)">← Previous</button> }
           @if (page < pages.length - 1) { <button type="button" class="secondary-button" (click)="setPage(page + 1)">Next →</button> }
-        <button type="submit" [disabled]="busy()" class="action-button">{{ busy() ? 'Saving…' : 'Save character' }}</button>
+        <button type="submit" [disabled]="busy()" class="action-button">{{ busy() ? 'Saving…' : 'Save Character' }}</button>
         </div>
       </footer>
     </fieldset>

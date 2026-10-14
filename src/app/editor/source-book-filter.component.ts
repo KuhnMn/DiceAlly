@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { IndexedDbContentCache } from '../content/content-cache';
 import { SourceBookFilterService } from './source-book-filter.service';
+import { activeContentRevision } from './active-content-revision';
 
 @Component({
   selector: 'app-source-book-filter',
@@ -28,9 +29,7 @@ export class SourceBookFilterComponent implements OnInit {
   private async loadBooks() {
     this.loading.set(true); this.error.set('');
     try {
-      const source = await this.cache.savedSource('development-local');
-      const revision = source ? await this.cache.active('development-local', source)
-        : (await this.cache.revisions('development-local')).find(row => row.active && row.revision.status === 'ready')?.revision;
+      const revision = await activeContentRevision(this.cache);
       const books = new Set<string>();
       if (revision) await this.cache.visit(revision.id, async record => { if (record.publication) books.add(record.publication); });
       this.books.set([...books].sort());

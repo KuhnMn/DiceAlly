@@ -2,6 +2,15 @@ import 'fake-indexeddb/auto';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { FeaturesEditorComponent } from './features-editor.component';
+import { EntryAnnotationsEditor } from './entry-annotations-editor';
+import { By } from '@angular/platform-browser';
+import { FeatureSourcePickerComponent } from './feature-source-picker.component';
+
+function annotationEditor(editor: FeaturesEditorComponent) {
+  return new class extends EntryAnnotationsEditor {
+    change() { editor.change(); }
+  }();
+}
 import { BasicInfoRepository } from './basic-info-repository';
 import { emptyBasicCharacter } from './basic-info';
 import { IndexedDbContentCache } from '../content/content-cache';
@@ -33,9 +42,9 @@ describe('Feature editor', () => {
     const fixture = TestBed.createComponent(FeaturesEditorComponent);
     const sheet = emptyBasicCharacter();
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
-    const editor = fixture.componentInstance;
+    const editor = fixture.componentInstance; const notes = annotationEditor(editor);
     editor.customName = 'Tracked feature'; editor.addCustom();
-    const feature = sheet.features![0]; editor.addNote(feature);
+    const feature = sheet.features![0]; notes.addNote(feature);
     editor.remove(feature); await fixture.whenStable();
     expect(sheet.features).toContain(feature);
     const dialog = fixture.nativeElement.querySelector('[role="alertdialog"]');
@@ -56,16 +65,17 @@ describe('Feature editor', () => {
     const fixture = TestBed.createComponent(FeaturesEditorComponent); const sheet = emptyBasicCharacter();
     sheet.character!.abilityScores!.intelligence = 16;
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
-    const editor = fixture.componentInstance;
-    expect(editor.sourceStats({ usesIntelligence: true })).toEqual([{ ability: 'INT', attack: '+5', save: 13 }]);
-    expect(editor.sourceStats({ customDc: 17, customToHit: -1 })).toEqual([{ ability: 'CUSTOM', attack: '-1', save: 17 }]);
-    editor.customName = 'Notes test'; editor.addCustom(); const feature = sheet.features![0]; editor.addNote(feature);
+    const editor = fixture.componentInstance; const notes = annotationEditor(editor);
+    const picker = fixture.debugElement.query(By.directive(FeatureSourcePickerComponent)).componentInstance as FeatureSourcePickerComponent;
+    expect(picker.stats({ usesIntelligence: true })).toEqual([{ ability: 'INT', attack: '+5', save: 13 }]);
+    expect(picker.stats({ customDc: 17, customToHit: -1 })).toEqual([{ ability: 'CUSTOM', attack: '-1', save: 17 }]);
+    editor.customName = 'Notes test'; editor.addCustom(); const feature = sheet.features![0]; notes.addNote(feature);
     const group = feature.notes![0]; group.tag = 'Tactics';
-    editor.setNoteEntry(group, 0, 'First entry\nwith a second line'); editor.addNoteEntry(group); editor.setNoteEntry(group, 1, 'Second entry');
+    notes.setNoteEntry(group, 0, 'First entry\nwith a second line'); notes.addNoteEntry(group); notes.setNoteEntry(group, 1, 'Second entry');
     expect(group.notes).toEqual(['First entry\nwith a second line', 'Second entry']);
-    editor.removeNoteEntry(group, 0); expect(group.notes).toEqual(['Second entry']); expect(group.tag).toBe('Tactics');
+    notes.removeNoteEntry(group, 0); expect(group.notes).toEqual(['Second entry']); expect(group.tag).toBe('Tactics');
     group.isEditable = false;
-    editor.addNoteEntry(group); editor.noteDraft = 'Third entry'; editor.commitNote();
+    notes.addNoteEntry(group); notes.noteDraft = 'Third entry'; notes.commitNote();
     expect(group.notes).toEqual(['Second entry', 'Third entry']); expect(group.isEditable).toBe(false);
     const repository = new BasicInfoRepository(); await repository.save(sheet, 0);
     expect((await repository.list()).find(entry => entry.id === sheet.character!.characterUuid)!.sheet.features![0].notes![0].isEditable).toBe(false);
@@ -79,7 +89,7 @@ describe('Feature editor', () => {
     expect(fighter.total).toBe(2);
     const fixture = TestBed.createComponent(FeaturesEditorComponent); const sheet = emptyBasicCharacter();
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
-    const editor = fixture.componentInstance; await editor.refreshContent();
+    const editor = fixture.componentInstance; const notes = annotationEditor(editor); await editor.refreshContent();
     const classes = data.records.filter(r => r.kind === 'classFeature');
     for (const record of classes) editor.add(record);
     editor.add(classes[0]); expect(sheet.features).toHaveLength(2);
@@ -94,11 +104,11 @@ describe('Feature editor', () => {
   it('retains snapshots, editable notes and multiple independent uses through save and missing cache', async () => {
     const data = await catalog(); const sheet = emptyBasicCharacter();
     const fixture = TestBed.createComponent(FeaturesEditorComponent); fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
-    const editor = fixture.componentInstance; await editor.refreshContent(); editor.add(data.records.find(r => r.kind === 'classFeature')!);
-    const feature = sheet.features![0]; editor.addNote(feature); editor.setNoteEntry(feature.notes![0], 0, 'Remember this');
-    editor.addNoteEntry(feature.notes![0]); editor.setNoteEntry(feature.notes![0], 1, 'Second note');
+    const editor = fixture.componentInstance; const notes = annotationEditor(editor); await editor.refreshContent(); editor.add(data.records.find(r => r.kind === 'classFeature')!);
+    const feature = sheet.features![0]; notes.addNote(feature); notes.setNoteEntry(feature.notes![0], 0, 'Remember this');
+    notes.addNoteEntry(feature.notes![0]); notes.setNoteEntry(feature.notes![0], 1, 'Second note');
     for (const recovery of ['SHORT_REST', 'SHORT_REST_ONE', 'LONG_REST', 'MANUAL']) {
-      editor.addUses(feature); const use = feature.uses!.at(-1)!;
+      notes.addUses(feature); const use = feature.uses!.at(-1)!;
       use.totalFreeUses = 3; use.usedFreeUses = 2; use.freeUsesRegainCondition = recovery;
     }
     feature.uses![0].totalFreeUses = 1;
@@ -109,7 +119,7 @@ describe('Feature editor', () => {
     expect(saved.features![0].featureEntity!.entries).toEqual(['Selected description']);
     editor.revision.set(null); fixture.componentRef.setInput('sheet', saved); await fixture.whenStable();
     expect(editor.selected[0].notes![0].notes[0]).toBe('Remember this');
-    editor.addNote(editor.selected[0]); editor.addUses(editor.selected[0]);
+    notes.addNote(editor.selected[0]); notes.addUses(editor.selected[0]);
     expect(saved.features![0].notes).toHaveLength(2);
   });
 
@@ -117,10 +127,10 @@ describe('Feature editor', () => {
     const fixture = TestBed.createComponent(FeaturesEditorComponent); const sheet = emptyBasicCharacter();
     sheet.character!.featureSources = [{ name: 'General', isGeneralFeatureSource: true }];
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
-    const editor = fixture.componentInstance; editor.selectedSource = ''; editor.selectedType = 'FEAT';
+    const editor = fixture.componentInstance; const notes = annotationEditor(editor); editor.selectedSource = ''; editor.selectedType = 'FEAT';
     editor.customName = 'Custom feat'; editor.customDescription = 'Private description'; editor.addCustom();
     const feature = sheet.features![0]; expect(feature.featureSourceName).toBeUndefined();
-    editor.addUses(feature); feature.uses![0].totalFreeUses = 3; feature.uses![0].usedFreeUses = 3;
+    notes.addUses(feature); feature.uses![0].totalFreeUses = 3; feature.uses![0].usedFreeUses = 3;
     feature.uses![0].freeUsesRegainCondition = 'SHORT_REST_ONE';
     TestBed.inject(RestService).performShortRest(sheet); expect(feature.uses![0].usedFreeUses).toBe(2);
     feature.uses![0].freeUsesRegainCondition = 'MANUAL';

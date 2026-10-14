@@ -2,19 +2,17 @@ import { Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ExportedCharacter, SpellSlot } from '../models/character.model';
 
-export const SLOT_RECOVERY = [
-  { value: 'SHORT_REST', label: 'Short Rest' }, { value: 'SHORT_REST_ONE', label: 'Short Rest +1' },
-  { value: 'LONG_REST', label: 'Long Rest' }, { value: 'MANUAL', label: 'Manual Only' },
-] as const;
+import { RECOVERY_OPTIONS } from './recovery-options';
+import { FeatureSourcePickerComponent } from './feature-source-picker.component';
 
 @Component({
-  selector: 'app-editor-spell-slots', imports: [FormsModule],
+  selector: 'app-editor-spell-slots', imports: [FormsModule, FeatureSourcePickerComponent],
   templateUrl: './spell-slots.component.html', styleUrl: './local-editor.component.css',
 })
 export class SpellSlotsComponent {
   readonly sheet = input.required<ExportedCharacter>();
   readonly edited = output<void>();
-  readonly recoveryOptions = SLOT_RECOVERY;
+  readonly recoveryOptions = RECOVERY_OPTIONS;
   selectedSource = '';
   level: number | null = 1;
   total: number | null = 1;
@@ -43,12 +41,11 @@ export class SpellSlotsComponent {
   }
   adjust(slot: SpellSlot, amount: number) { slot.total = Math.max(0, slot.total + amount); this.change(); }
   remove(source: string, index: number) { this.character.spellSlots![source].splice(index, 1); this.change(); }
-  move(from: string, index: number, event: Event) {
-    const field = event.target as HTMLSelectElement; const to = field.value;
+  move(from: string, index: number, to: string) {
     if (from === to) return;
     const slot = this.slots(from)[index];
     if (!this.sources.some(source => source.name === to) || this.slots(to).some(other => other.level === slot.level)) {
-      field.value = from; this.error = 'The target source already has slots at this level. Choose another source.'; return;
+      this.error = 'The target source already has slots at this level. Choose another source.'; return;
     }
     const groups = this.character.spellSlots!;
     if (!Object.hasOwn(groups, to)) Object.defineProperty(groups, to, { value: [], enumerable: true, writable: true, configurable: true });

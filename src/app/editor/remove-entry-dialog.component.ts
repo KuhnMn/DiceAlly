@@ -1,5 +1,6 @@
-import { Component, HostListener, input, output } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, inject, input, output } from '@angular/core';
 import { A11yModule } from '@angular/cdk/a11y';
+import { DialogScrollLockService } from './dialog-scroll-lock.service';
 
 /** Confirm deletion without leaving the editor's visual and keyboard conventions. */
 @Component({
@@ -9,11 +10,11 @@ import { A11yModule } from '@angular/cdk/a11y';
     <button class="backdrop" type="button" tabindex="-1" aria-label="Cancel removal" (click)="cancelled.emit()"></button>
     <section role="alertdialog" aria-modal="true" aria-labelledby="remove-entry-title" aria-describedby="remove-entry-message"
       cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
-      <h2 id="remove-entry-title">Remove {{ name() }}?</h2>
-      <p id="remove-entry-message">Its notes and use settings will also be deleted.</p>
+      <h2 id="remove-entry-title">{{ action() }} {{ name() }}?</h2>
+      <p id="remove-entry-message">{{ message() }}</p>
       <footer>
         <button type="button" class="secondary-button" cdkFocusInitial (click)="cancelled.emit()">Cancel</button>
-        <button type="button" class="secondary-button remove-button" (click)="confirmed.emit()">Remove</button>
+        <button type="button" class="secondary-button remove-button" (click)="confirmed.emit()">{{ action() }}</button>
       </footer>
     </section>
   `,
@@ -29,10 +30,16 @@ import { A11yModule } from '@angular/cdk/a11y';
     .remove-button:hover { background: var(--md-sys-color-error); color: var(--md-sys-color-on-error); }
   `],
 })
-export class RemoveEntryDialogComponent {
+export class RemoveEntryDialogComponent implements OnInit, OnDestroy {
   readonly name = input.required<string>();
+  readonly action = input('Remove');
+  readonly message = input('Its notes and use settings will also be deleted.');
   readonly confirmed = output<void>();
   readonly cancelled = output<void>();
+  private readonly scrollLock = inject(DialogScrollLockService);
+
+  ngOnInit() { this.scrollLock.lock(); }
+  ngOnDestroy() { this.scrollLock.unlock(); }
 
   @HostListener('keydown', ['$event']) keydown(event: KeyboardEvent) {
     if (event.key === 'Escape') {
