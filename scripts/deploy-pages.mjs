@@ -27,8 +27,8 @@ if (config.siteUrl !== `https://${domain}` && config.siteUrl !== `https://${doma
 }
 
 run('node_modules/@angular/cli/bin/ng.js', ['build', '--configuration=production', '--base-href=/', '--output-path=dist/dice-ally-pages']);
-// Keep the original site's source redirect unchanged. Only the dedicated new-site artifact uses /.
-const redirect = readFileSync(new URL('../public/404.html', import.meta.url), 'utf8').replaceAll('/AllySheetViewer', '');
+// The source fallback targets the custom domain root, including builds published without this script.
+const redirect = readFileSync(new URL('../public/404.html', import.meta.url), 'utf8');
 writeFileSync(new URL(`../${output}/404.html`, import.meta.url), redirect);
 writeFileSync(new URL(`../${output}/CNAME`, import.meta.url), `${domain}\n`);
 writeFileSync(new URL(`../${output}/.nojekyll`, import.meta.url), '');

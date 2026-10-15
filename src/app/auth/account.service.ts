@@ -75,5 +75,9 @@ export class AccountService {
   }
   async signOut() {
     if (this.auth) await signOut(this.auth);
+    this.approved.set(false);
+    this.user.set(null);
+    this.loading.set(false);
+    this.error.set('');
   }
 }

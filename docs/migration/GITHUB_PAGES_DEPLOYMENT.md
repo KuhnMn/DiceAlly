@@ -30,7 +30,7 @@ Use this command for subsequent releases. GitHub authentication and push permiss
 prepared build. Run `npm run deploy:prepare` first; prefer `npm run deploy` to avoid stale assets.
 
 Deployment builds use `/` as the base URL. The script fixes the new build's 404 redirect
-and creates CNAME/.nojekyll files without editing the original public redirect. This lets
+and creates CNAME/.nojekyll files. The public redirect targets the custom domain root too. This lets
 direct character/editor links recover correctly on the custom domain.
 
 The build contains public Firebase web configuration, but not `.env` or admin credentials.

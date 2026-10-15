@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AccountService } from './account.service';
+import { signInErrorMessage } from './auth-error';
 
 @Component({
   selector: 'app-login',
@@ -59,7 +60,7 @@ export class LoginComponent {
     this.busy.set(true);
     this.message.set('');
     try { await this.account.signIn(this.email, this.password); this.password = ''; }
-    catch { this.message.set('Sign-in failed. Check your email and password, then try again.'); }
+    catch (error) { this.message.set(signInErrorMessage(error)); }
     finally { this.busy.set(false); }
   }
   async reset() {
