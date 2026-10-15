@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Redirecting...</title>
+  <meta http-equiv="refresh" content="0; url=/AllySheetViewer/">
+  <script>
+    (function () {
+      var repoBase = '/AllySheetViewer';
+      var location = window.location;
+      var path = location.pathname.replace(repoBase, '').replace(/^\//, '');
+      var query = location.search ? location.search.slice(1) : '';
+      var redirect = repoBase + '/?p=' + encodeURIComponent(path) + '&q=' + encodeURIComponent(query) + location.hash;
+      location.replace(redirect);
+    })();
+  </script>
+</head>
+<body>
+  Redirecting...
+</body>
+</html>
