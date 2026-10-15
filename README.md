@@ -11,7 +11,7 @@ The project focuses on practical in-session usage: quick lookup, notes, feature 
 - Import and export workflow with modal-based options
 - Local persistence through storage services
 - Theme support and responsive layout for desktop and mobile
-- QR code and share modal utilities for easy transfer scenarios
+- JSON export and temporary share codes for character transfers
 
 ## Tech Stack
 

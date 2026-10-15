@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 import { SpellSlotsComponent } from './spell-slots.component';
 import { LocalEditorComponent } from './local-editor.component';
 import { emptyBasicCharacter } from './basic-info';
-import { BasicInfoRepository } from './basic-info-repository';
+import { IndexedDbCharacterRepository } from '../characters/indexeddb-character-repository';
 import { RestService } from '../services/rest.service';
 import { By } from '@angular/platform-browser';
 import { FeatureSourcePickerComponent } from './feature-source-picker.component';
@@ -15,7 +15,7 @@ describe('Spell Slots editor', () => {
   it('offers slots inside Feature Sources when casting sources or existing slots exist', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
     const editor = fixture.componentInstance;
-    expect(editor.pages).toEqual(['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Features & Spells']);
+    expect(editor.pages).toEqual(['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Features & Spells', 'Monsters']);
     expect(editor.hasCastingSources).toBe(false);
     editor.character.featureSources = [{ name: 'Wizard', isSpellcastingSource: true }];
     expect(editor.hasCastingSources).toBe(true);
@@ -40,7 +40,7 @@ describe('Spell Slots editor', () => {
     expect(editor.slots('Wizard')[0].used).toBe(2);
     editor.move('Wizard', 0, 'Cleric');
     expect(editor.slots('Wizard')).toEqual([]); expect(editor.slots('Cleric')[0].used).toBe(2);
-    const repository = new BasicInfoRepository(); await repository.save(sheet, 0);
+    const repository = new IndexedDbCharacterRepository(); await repository.save(sheet, 0);
     const saved = (await repository.list()).find(entry => entry.id === sheet.character!.characterUuid)!;
     expect(saved.sheet.character!.spellSlots!['Cleric'][0]).toMatchObject({ total: 5, used: 2, regainCondition: 'SHORT_REST_ONE' });
     editor.remove('Cleric', 0); expect(editor.slots('Cleric')).toEqual([]);

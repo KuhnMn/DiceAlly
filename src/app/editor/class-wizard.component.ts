@@ -1,4 +1,8 @@
-import { Component, OnDestroy, OnInit, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { UiIconComponent } from '../ui-icon.component';
+import { groupWizardReview } from './wizard-review';
+import { isCompleteSelection } from '../rules/spell-choice';
+import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
+import { Component, OnDestroy, OnInit, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { IndexedDbContentCache } from '../content/content-cache';
@@ -16,7 +20,7 @@ import { activeContentRevision } from './active-content-revision';
 
 @Component({
   selector: 'app-class-wizard',
-  imports: [FormsModule, RouterLink, CatalogDialogComponent, SourceBookFilterComponent, SearchableSelectComponent],
+  imports: [UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, SourceBookFilterComponent, SearchableSelectComponent, CapitalizeFirstPipe],
   templateUrl: './class-wizard.component.html',
   styleUrl: './local-editor.component.css',
 })
@@ -28,16 +32,20 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
   readonly error = signal('');
   readonly revision = signal<ImportRevision | null>(null);
   readonly proposal = signal<ReturnType<typeof previewClassWizard> | null>(null);
+  readonly reviewItems = computed(() => {
+    const proposal = this.proposal();
+    return proposal ? groupWizardReview(proposal.changes, this.sheet(), proposal.sheet) : [];
+  });
   readonly sections = WIZARD_SECTIONS;
   readonly sourceBooks = inject(SourceBookFilterService);
   private readonly cache = new IndexedDbContentCache();
   readonly records = new Map<string, ContentRecord>();
-  state: WizardState = { revisionId: '', classes: [], answers: {}, options: {}, baseline: {}, protectedKeys: [] };
+  state: WizardState = { revisionId: '', classes: [], answers: {}, options: {}, baseline: [], protectedPaths: [] };
   stage = 0;
   choiceSearch: Record<string, string> = {};
   leaveManual = false;
   differentRevision = false;
-  acceptRevision = false;
+  savedRevisionAvailable = false;
   private destroyed = false;
 
   constructor() {
@@ -55,7 +63,11 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
     this.loading.set(true); this.error.set(''); this.records.clear();
     try {
       const revisions = await this.cache.revisions('development-local');
-      const pinned = useCurrent ? undefined : revisions.find(entry => entry.revision.id === this.state.revisionId && entry.revision.status === 'ready')?.revision;
+      // The sheet holds the saved selection; state.revisionId changes when previewing another library.
+      const savedRevisionId = this.sheet().creatorWizard?.revisionId;
+      const saved = revisions.find(entry => entry.revision.id === savedRevisionId && entry.revision.status === 'ready')?.revision;
+      this.savedRevisionAvailable = !!saved;
+      const pinned = useCurrent ? undefined : saved;
       const revision = pinned ?? await activeContentRevision(this.cache);
       if (!revision) { this.error.set('Import content to use the wizard. Your current character stays editable.'); return; }
       const kinds = new Set(['class', 'subclass', 'classFeature', 'subclassFeature', 'optionalfeature', 'species', 'spell']);
@@ -127,8 +139,11 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
     try { this.proposal.set(previewClassWizard(this.sheet(), this.state, revision, this.records, this.sourceBooks.selected())); this.error.set(''); }
     catch (error) { this.proposal.set(null); this.error.set(error instanceof Error ? error.message : String(error)); }
   }
+  choiceComplete(choice: WizardChoice) {
+    return isCompleteSelection(this.state.answers[choice.id] ?? [], choice.count, choice.candidates.map(candidate => candidate.value));
+  }
   choices(choice: WizardChoice) {
-    const query = normalize(this.choiceSearch[choice.id] ?? '');
+    const query = choice.searchable === false ? '' : normalize(this.choiceSearch[choice.id] ?? '');
     return choice.candidates.filter(candidate => normalize(candidate.label).includes(query) || this.state.answers[choice.id]?.includes(candidate.value));
   }
   friendlyMessage(message: string) {
@@ -142,7 +157,7 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
       : choice.count === 1 ? [value] : current.length < choice.count ? [...current, value] : current;
     this.rebuild();
   }
-  get canSelect() { return !!this.proposal() && !this.proposal()!.errors.length && (!this.differentRevision || this.acceptRevision); }
+  get canSelect() { return !!this.proposal() && !this.proposal()!.errors.length; }
   get canReview() { return this.canSelect && (this.leaveManual || (!this.proposal()!.unresolved.length && !this.proposal()!.warnings.length)); }
   advance() { this.rebuild(); if (this.stage === 0 && this.canSelect) this.stage = 1; else if (this.stage === 1 && this.canReview) this.stage = 2; }
   apply() {

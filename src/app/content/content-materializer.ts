@@ -186,8 +186,12 @@ export function generateVariant(base: ContentRecord, variant: ContentRecord, war
   for (const field of ['namePrefix', 'nameSuffix', 'nameRemove', 'propertyAdd', 'propertyRemove', 'masteryAdd', 'masteryRemove', 'weightExpression', 'valueExpression', 'weightMult', 'valueMult']) {
     if (!pendingExpressions.has(field)) delete data[field];
   }
-  return derived(variant, 'item', JSON.stringify(['generated-item', base.key, variant.key, MATERIALIZER_VERSION]), data,
+  const generated = derived(variant, 'item', JSON.stringify(['generated-item', base.key, variant.key, MATERIALIZER_VERSION]), data,
     'magicvariant', [{ role: 'base-item', target: base.key }, { role: 'magic-variant', target: variant.key }]);
+  // A core recipe applied to a homebrew weapon still depends on that homebrew file.
+  // Keep its origin so missing external definitions receive the same treatment as the base item.
+  if (base.file.startsWith('homebrew/') && !variant.file.startsWith('homebrew/')) generated.file = base.file;
+  return generated;
 }
 
 export async function materializeContent(cache: ContentCache, revisionId: string, diagnostics: ImportDiagnostic[], signal?: AbortSignal,
@@ -244,7 +248,16 @@ export async function materializeContent(cache: ContentCache, revisionId: string
         signal?.throwIfAborted();
         if (!variantMatches(base.data, record.data)) continue;
         if (++generated > MAX_GENERATED_VARIANTS) throw new Error('Magic variant expansion exceeds the 50,000-record limit.');
-        batch.push(generateVariant(base, record, message => diagnostics.push({ severity: 'warning', file: record.file, record: record.key, message })));
+        try {
+          batch.push(generateVariant(base, record, message => diagnostics.push({ severity: 'warning', file: record.file, record: record.key, message })));
+        } catch (error) {
+          signal?.throwIfAborted();
+          // An incomplete homebrew base cannot invalidate every core item using this recipe.
+          // Skip this combination, retain the base, and report exactly which weapon needs fixing.
+          const homebrewBase = base.file.startsWith('homebrew/');
+          diagnostics.push({ severity: homebrewBase ? 'warning' : 'error', file: homebrewBase ? base.file : record.file,
+            record: base.key, message: `${base.name} + ${record.name}: ${String(error)}` });
+        }
       }
       for (let index = 0; index < batch.length; index += 128) {
         await cache.put(revisionId, batch.slice(index, index + 128));

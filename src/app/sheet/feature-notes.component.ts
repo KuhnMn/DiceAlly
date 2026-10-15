@@ -1,8 +1,10 @@
+import { UiIconComponent } from '../ui-icon.component';
 import { Component, ChangeDetectionStrategy, input, output, signal, effect, viewChild, ElementRef } from '@angular/core';
 import { FeatureNotes } from '../models/character.model';
 
 @Component({
   selector: 'app-feature-notes',
+  imports: [UiIconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (localNotes().length > 0) {
@@ -22,7 +24,7 @@ import { FeatureNotes } from '../models/character.model';
                     [attr.aria-label]="note + ', remove note'"
                     class="px-2 py-1 rounded text-xs bg-tertiary-container text-on-tertiary-container border border-tertiary hover:opacity-75 transition-opacity"
                   >
-                    {{ note }} ✕
+                    {{ note }} <app-ui-icon name="close" />
                   </button>
                 } @else {
                   <span class="px-2 py-1 rounded text-xs bg-tertiary-container text-on-tertiary-container border border-tertiary">

@@ -50,13 +50,17 @@ export function validateBasicInfo(sheet: ExportedCharacter): void {
       integer(die.used, `${die.dieType} used`);
     }
   }
-  for (const feature of [...sheet.features ?? [], ...sheet.spells ?? [], ...(sheet.species ? [sheet.species] : [])]) {
+  for (const feature of [...sheet.features ?? [], ...sheet.spells ?? [], ...sheet.monsters ?? [], ...(sheet.species ? [sheet.species] : [])]) {
     for (const usage of feature.uses ?? []) {
       integer(usage.totalFreeUses ?? 1, `${feature.name} uses`);
       integer(usage.usedFreeUses ?? 0, `${feature.name} used count`);
       if (usage.freeUsesRegainCondition && !['SHORT_REST', 'SHORT_REST_ONE', 'LONG_REST', 'MANUAL'].includes(usage.freeUsesRegainCondition)) throw new Error(`Unknown recovery setting for ${feature.name}.`);
     }
     for (const group of feature.notes ?? []) if (!Array.isArray(group.notes) || group.notes.some(note => typeof note !== 'string')) throw new Error(`Invalid notes for ${feature.name}.`);
+  }
+  for (const monster of sheet.monsters ?? []) {
+    if (monster.monsterMaxHP != null) integer(monster.monsterMaxHP, `${monster.name ?? 'Monster'} maximum HP`);
+    if (monster.monsterMaxHpOverride != null) integer(monster.monsterMaxHpOverride, `${monster.name ?? 'Monster'} maximum HP`);
   }
   for (const [mode, speed] of Object.entries(character.speeds ?? {})) {
     if (speed != null) integer(speed, `${mode} speed`);

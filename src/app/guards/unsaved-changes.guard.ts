@@ -1,3 +1,4 @@
+import { AppDialogService } from '../services/app-dialog.service';
 import { Injectable, inject } from '@angular/core';
 import { CanDeactivateFn } from '@angular/router';
 import { CharacterStore } from '../stores/character.store';
@@ -34,7 +35,7 @@ export const canDeactivateCharacterSheet: CanDeactivateFn<any> = (component) => 
 
   // Check if there are unsaved changes
   if (guard.hasUnsavedChanges(characterData)) {
-    return confirm(
+    return inject(AppDialogService).confirm(
       'You have unsaved changes. If you navigate away, these changes will be lost.\n\nAre you sure you want to leave?'
     );
   }

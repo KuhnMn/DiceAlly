@@ -1,42 +1,32 @@
 <main class="max-w-[1000px] mx-auto p-4 my-6 text-on-surface">
-  <header class="flex flex-wrap items-center justify-between gap-4 mb-5">
-    <div class="flex items-center gap-3">
-      <a routerLink="/" class="secondary-button" aria-label="Back to characters">←</a>
+  <header class="flex flex-wrap items-center justify-between gap-2 sm:gap-4 mb-4">
+    <div class="flex items-center gap-2 min-w-0">
+      <a routerLink="/" class="secondary-button" aria-label="Back to characters"><app-ui-icon name="left" /></a>
       <div>
-        <h1 class="text-2xl font-bold">{{ version ? 'Edit Character' : 'Create Character' }}</h1>
+        <h1 class="text-lg sm:text-2xl font-bold">{{ version ? 'Edit Character' : 'Create Character' }}</h1>
         <p class="text-xs font-semibold uppercase text-on-surface-variant mt-1">{{ pages[page] }}</p>
       </div>
     </div>
-    <div class="flex flex-wrap gap-2">
-      <button type="button" class="action-button" [disabled]="busy()" aria-haspopup="dialog" (click)="wizardOpen = true">Class Wizard</button>
-      <button type="button" class="secondary-button" [disabled]="busy()" (click)="libraryOpen = !libraryOpen" [attr.aria-expanded]="libraryOpen">Characters</button>
-      <button type="submit" form="basic-info" [disabled]="busy()" class="action-button">{{ busy() ? 'Saving…' : 'Save' }}</button>
+    <div class="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:flex-wrap">
+      <button type="button" class="action-button wizard-button justify-center !min-h-10 !px-3 !text-sm" [disabled]="busy()" aria-haspopup="dialog" (click)="wizardOpen = true">
+        <app-ui-icon name="wand" class="text-lg" />
+        Class Wizard
+      </button>
+      <app-theme-picker class="min-w-0 sm:order-last sm:w-44" />
+      <button type="submit" form="basic-info" [disabled]="busy()" class="action-button justify-center !min-h-10 !px-3 !text-sm"><app-ui-icon [name]="busy() ? 'loader' : 'save'" [class.animate-spin]="busy()" />{{ busy() ? 'Saving…' : 'Save' }}</button>
+      <button type="button" class="action-button justify-center !min-h-10 !px-3 !text-sm" [disabled]="busy()" (click)="viewSheet()"><app-ui-icon name="save" />Save &amp; View</button>
     </div>
   </header>
   @if (wizardOpen) { <app-class-wizard [sheet]="sheet" (applied)="applyWizard($event)" (closed)="wizardOpen = false" /> }
 
   <app-source-book-filter />
 
-  <nav class="flex flex-wrap mb-5 border-b-2 border-outline-variant" aria-label="Character editor pages">
+  <nav [appScrollableTabs]="page" class="mb-5 sm:border-b-2 border-outline-variant" aria-label="Character editor pages">
     @for (title of pages; track title; let i = $index) {
-      <button type="button" class="basis-1/2 sm:basis-0 grow px-3 py-3 text-sm font-semibold border-b-4 -mb-0.5 transition-colors hover:bg-surface-container" [class.border-primary]="page === i" [class.text-primary]="page === i" [class.border-transparent]="page !== i" [class.text-on-surface-variant]="page !== i" [attr.aria-current]="page === i ? 'page' : null" (click)="setPage(i)">{{ title }}@if (title === 'Proficiencies & More') { <span class="block text-[10px] font-normal mt-1">Languages &amp; Advantages</span> }</button>
+      <button type="button" class="px-3 py-3 text-sm font-semibold border-b-4 -mb-0.5 transition-colors hover:bg-surface-container" [class.border-primary]="page === i" [class.text-primary]="page === i" [class.border-transparent]="page !== i" [class.text-on-surface-variant]="page !== i" [attr.aria-current]="page === i ? 'page' : null" (click)="setPage(i)">{{ title }}@if (title === 'Proficiencies & More') { <span class="block text-[10px] font-normal mt-1">Languages &amp; Advantages</span> }</button>
     }
   </nav>
 
-  @if (libraryOpen) {
-    <section class="editor-card mb-5" aria-label="Saved characters">
-      <div class="flex justify-between gap-3 items-center"><h2>Characters on this device</h2><button class="secondary-button" [disabled]="busy()" (click)="newCharacter()">New Character</button></div>
-      <div class="grid gap-2">
-        @for (entry of entries(); track entry.id) {
-          <button class="secondary-button text-left" [disabled]="busy()" (click)="open(entry)">{{ entry.sheet.character?.name || 'Unnamed character' }} <span class="text-on-surface-variant">· Level {{ entry.sheet.character?.level }}</span></button>
-        } @empty { <p class="text-on-surface-variant">No characters saved in this editor yet.</p> }
-        @if (legacyEntries.length) {
-          <h3 class="font-medium mt-4">Copy an existing character into the editor</h3>
-          @for (entry of legacyEntries; track entry.characterId) { <button class="secondary-button text-left" [disabled]="busy()" (click)="importLegacy(entry.characterId)">{{ entry.name }}</button> }
-        }
-      </div>
-    </section>
-  }
   @if (message()) { <p role="status" class="mb-4 rounded-lg border-2 border-secondary bg-secondary-container text-on-secondary-container p-3">{{ message() }}</p> }
   @if (error()) { <p role="alert" class="mb-4 rounded-lg border-2 border-error bg-error-container text-on-error-container p-3">{{ error() }}</p> }
 
@@ -78,9 +68,9 @@
             <div class="stepper-field flex items-center justify-between gap-3 py-3">
               <label [for]="field.key" class="font-medium">{{ field.label }}</label>
               <div class="stat-stepper">
-                <button type="button" class="stepper-button" [attr.aria-label]="'Decrease ' + field.label" (click)="adjust(field.key, -1)">−</button>
+                <button type="button" class="stepper-button" [attr.aria-label]="'Decrease ' + field.label" (click)="adjust(field.key, -1)"><app-ui-icon name="minus" /></button>
                 <input [id]="field.key" [name]="field.key" type="number" required [min]="field.minimum" step="1" class="editor-input text-center" [(ngModel)]="character[field.key]" (ngModelChange)="changed()" />
-                <button type="button" class="stepper-button" [attr.aria-label]="'Increase ' + field.label" (click)="adjust(field.key, 1)">+</button>
+                <button type="button" class="stepper-button" [attr.aria-label]="'Increase ' + field.label" (click)="adjust(field.key, 1)"><app-ui-icon name="plus" /></button>
               </div>
             </div>
           }
@@ -103,9 +93,9 @@
                   <div class="stepper-field flex flex-wrap items-center justify-between gap-3">
                     <label [for]="'hit-dice-total-' + i" class="text-sm font-medium">Total</label>
                     <div class="stat-stepper">
-                      <button type="button" class="stepper-button" [attr.aria-label]="'Decrease ' + die.dieType + ' total'" (click)="adjustHitDice(i, -1)">−</button>
+                      <button type="button" class="stepper-button" [attr.aria-label]="'Decrease ' + die.dieType + ' total'" (click)="adjustHitDice(i, -1)"><app-ui-icon name="minus" /></button>
                       <input [id]="'hit-dice-total-' + i" [name]="'hit-dice-total-' + i" type="number" required min="0" step="1" class="editor-input text-center" [(ngModel)]="die.total" (ngModelChange)="changed()" />
-                      <button type="button" class="stepper-button" [attr.aria-label]="'Increase ' + die.dieType + ' total'" (click)="adjustHitDice(i, 1)">+</button>
+                      <button type="button" class="stepper-button" [attr.aria-label]="'Increase ' + die.dieType + ' total'" (click)="adjustHitDice(i, 1)"><app-ui-icon name="plus" /></button>
                     </div>
                   </div>
                 </div>
@@ -129,9 +119,9 @@
         <label class="flex items-center justify-between gap-4"><span class="font-medium">Calculate Automatically</span><input name="calculate-ac" type="checkbox" [ngModel]="character.calculateAC" (ngModelChange)="setAutomaticAc($event)" /></label>
         @if (!character.calculateAC) {
           <div class="stepper-field flex flex-wrap items-center justify-between gap-3 mt-4"><label for="manual-ac" class="font-medium">Armor Class</label>
-            <div class="stat-stepper"><button type="button" class="stepper-button" aria-label="Decrease Armor Class" (click)="adjust('armorClass', -1)">−</button>
+            <div class="stat-stepper"><button type="button" class="stepper-button" aria-label="Decrease Armor Class" (click)="adjust('armorClass', -1)"><app-ui-icon name="minus" /></button>
               <input id="manual-ac" name="armor-class" type="number" required min="0" step="1" class="editor-input text-center" [(ngModel)]="character.armorClass" (ngModelChange)="changed()" />
-              <button type="button" class="stepper-button" aria-label="Increase Armor Class" (click)="adjust('armorClass', 1)">+</button></div>
+              <button type="button" class="stepper-button" aria-label="Increase Armor Class" (click)="adjust('armorClass', 1)"><app-ui-icon name="plus" /></button></div>
           </div>
         } @else {
           <div class="mt-4 rounded-lg border-2 border-secondary bg-secondary-container text-on-secondary-container p-3 flex items-center justify-between gap-3"><div><p class="text-xs uppercase font-semibold">Calculated AC</p><p class="text-sm mt-1">{{ calculatedAc.source }}</p></div><strong class="text-2xl">{{ calculatedAc.ac }}</strong></div>
@@ -148,7 +138,7 @@
         <div>
           <h3 class="font-semibold mb-3">Resistances</h3>
           <div class="flex gap-2"><label class="flex-1 min-w-0"><span class="sr-only">Add Resistance</span><input name="resistance" class="editor-input" [(ngModel)]="resistanceInput" placeholder="Add resistance" (keydown.enter)="$event.preventDefault(); addResistance()" /></label><button type="button" class="secondary-button" (click)="addResistance()" [disabled]="!resistanceInput.trim()">Add</button></div>
-          <div class="flex flex-wrap gap-2 mt-3">@for (resistance of resistances; track $index; let i = $index) { <button type="button" class="rounded-full border border-secondary px-3 py-1.5 text-sm bg-secondary-container text-on-secondary-container hover:bg-secondary hover:text-on-secondary transition-colors" [attr.aria-label]="'Remove resistance ' + resistance" (click)="removeResistance(i)">{{ resistance }} <span aria-hidden="true" class="ml-2">×</span></button> }</div>
+          <div class="flex flex-wrap gap-2 mt-3">@for (resistance of resistances; track $index; let i = $index) { <button type="button" class="rounded-full border border-secondary px-3 py-1.5 text-sm bg-secondary-container text-on-secondary-container hover:bg-secondary hover:text-on-secondary transition-colors" [attr.aria-label]="'Remove resistance ' + resistance" (click)="removeResistance(i)">{{ resistance }} <span aria-hidden="true" class="ml-2"><app-ui-icon name="close" /></span></button> }</div>
         </div>
         <div>
           <h3 class="font-semibold mb-3">Senses</h3>
@@ -160,7 +150,7 @@
           <div class="space-y-2 mt-3">@for (sense of senses; track sense[0]) {
             <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg border-2 border-outline-variant bg-surface-container p-3">
               <label [for]="'sense-' + sense[0]" class="flex-1 min-w-0 break-words">{{ sense[0] }}</label>
-              <div class="flex items-center gap-2"><input [id]="'sense-' + sense[0]" [name]="'sense-' + sense[0]" type="number" required min="0" step="1" class="editor-input !w-24" [ngModel]="sense[1]" (ngModelChange)="updateSense(sense[0], $event)" /><span class="text-sm">ft</span><button type="button" class="secondary-button icon-button" [attr.aria-label]="'Remove sense ' + sense[0]" (click)="removeSense(sense[0])">×</button></div>
+              <div class="flex items-center gap-2"><input [id]="'sense-' + sense[0]" [name]="'sense-' + sense[0]" type="number" required min="0" step="1" class="editor-input !w-24" [ngModel]="sense[1]" (ngModelChange)="updateSense(sense[0], $event)" /><span class="text-sm">ft</span><button type="button" class="secondary-button icon-button" [attr.aria-label]="'Remove sense ' + sense[0]" (click)="removeSense(sense[0])"><app-ui-icon name="close" /></button></div>
             </div>
           }</div>
         </div>
@@ -183,9 +173,9 @@
                   <p class="text-xs text-on-surface-variant mt-1">Modifier <span class="font-semibold text-secondary">{{ abilityModifier(ability.key) }}</span></p>
                 </div>
                 <div class="stat-stepper">
-                  <button type="button" class="stepper-button" [attr.aria-label]="'Decrease ' + ability.label" (click)="adjustAbility(ability.key, -1)">−</button>
+                  <button type="button" class="stepper-button" [attr.aria-label]="'Decrease ' + ability.label" (click)="adjustAbility(ability.key, -1)"><app-ui-icon name="minus" /></button>
                   <input [id]="'ability-' + ability.key" [name]="'ability-' + ability.key" type="number" required min="0" step="1" class="editor-input text-center" [(ngModel)]="abilityScores[ability.key]" (ngModelChange)="changed()" />
-                  <button type="button" class="stepper-button" [attr.aria-label]="'Increase ' + ability.label" (click)="adjustAbility(ability.key, 1)">+</button>
+                  <button type="button" class="stepper-button" [attr.aria-label]="'Increase ' + ability.label" (click)="adjustAbility(ability.key, 1)"><app-ui-icon name="plus" /></button>
                 </div>
               </div>
             }
@@ -196,7 +186,7 @@
         <div class="proficiency-layout" appMasonryCards>
         <section class="editor-card">
           <h2>Skill Proficiencies</h2>
-          <p class="text-xs text-on-surface-variant mb-4">Click the proficiency icon to cycle: None → Half → Full → Expertise.</p>
+          <p class="text-xs text-on-surface-variant mb-4">Click the proficiency icon to cycle: None <app-ui-icon name="right" /> Half <app-ui-icon name="right" /> Full <app-ui-icon name="right" /> Expertise.</p>
           <div class="flex flex-wrap gap-x-4 gap-y-2 text-xs mb-4 pb-3 border-b-2 border-outline-variant">
             <span>○ None</span><span class="text-secondary">◐ Half</span><span class="text-primary">● Full</span><span class="text-tertiary">✪ Expertise</span>
           </div>
@@ -250,11 +240,14 @@
         <app-editor-features [sheet]="sheet" (edited)="changed()" (openSources)="setPage(3)" />
         <app-editor-spells [sheet]="sheet" (edited)="changed()" (openSources)="setPage(3)" />
       }
+      @if (pages[page] === 'Monsters') {
+        <app-editor-monsters [sheet]="sheet" (edited)="changed()" />
+      }
       <footer class="flex flex-wrap items-center justify-between gap-3 pt-2 pb-4">
         <p class="text-sm text-on-surface-variant">{{ unsaved ? 'Unsaved changes' : version ? 'Saved on this device' : pages[page] }}</p>
         <div class="flex flex-wrap gap-2 items-center">
-          @if (page > 0) { <button type="button" class="secondary-button" (click)="setPage(page - 1)">← Previous</button> }
-          @if (page < pages.length - 1) { <button type="button" class="secondary-button" (click)="setPage(page + 1)">Next →</button> }
+          @if (page > 0) { <button type="button" class="secondary-button" (click)="setPage(page - 1)"><app-ui-icon name="left" /> Previous</button> }
+          @if (page < pages.length - 1) { <button type="button" class="secondary-button" (click)="setPage(page + 1)">Next <app-ui-icon name="right" /></button> }
         <button type="submit" [disabled]="busy()" class="action-button">{{ busy() ? 'Saving…' : 'Save Character' }}</button>
         </div>
       </footer>

@@ -14,7 +14,7 @@
                 (ngModelChange)="change()" placeholder="Notes" />
             </label>
             <button type="button" class="secondary-button icon-button" aria-label="Remove note group"
-              (click)="removeNote(entry(), n)">×</button>
+              (click)="removeNote(entry(), n)"><app-ui-icon name="close" /></button>
           </div>
           <label class="flex items-center gap-2 text-xs text-on-surface-variant mb-2">
             <input type="checkbox" [name]="'note-editable-' + i + '-' + n" [ngModel]="group.isEditable ?? true"
@@ -27,7 +27,7 @@
                 <button type="button" class="px-2 py-1 whitespace-pre-wrap break-words text-left min-w-0"
                   [attr.aria-label]="'Edit note: ' + note" (click)="editNoteEntry(group, e)">{{ note }}</button>
                 <button type="button" class="icon-button" [attr.aria-label]="'Remove note: ' + note"
-                  (click)="removeNoteEntry(group, e)">×</button>
+                  (click)="removeNoteEntry(group, e)"><app-ui-icon name="close" /></button>
               </span>
             }
             @if (editingNoteGroup !== group) {
@@ -85,7 +85,7 @@
               </select>
             </label>
             <button type="button" class="secondary-button icon-button" aria-label="Remove use tracker"
-              (click)="removeUses(entry(), u)">×</button>
+              (click)="removeUses(entry(), u)"><app-ui-icon name="close" /></button>
           </div>
           @if ((uses.usedFreeUses ?? 0) > (uses.totalFreeUses ?? 1)) {
             <p class="text-xs text-on-surface-variant mt-1">The existing used count exceeds this total and will be kept unchanged.</p>

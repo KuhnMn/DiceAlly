@@ -1,11 +1,14 @@
-import { Component, inject, signal } from '@angular/core';
+import { UiIconComponent } from '../ui-icon.component';
+import { ThemePickerComponent } from '../theme-picker.component';
+import { ScrollableTabsDirective } from '../scrollable-tabs.directive';
+import { AppDialogService } from '../services/app-dialog.service';
+import { Component, inject, signal, isDevMode } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
+import { CharacterLibraryService } from '../characters/character-library.service';
 import { CharacterStore } from '../stores/character.store';
-import { CharacterStorageService } from '../services/character-storage.service';
 import { RestService } from '../services/rest.service';
 import { UnsavedChangesGuard } from '../guards/unsaved-changes.guard';
-import { ThemeService } from '../services/theme.service';
 import { ExportedCharacter } from '../models/character.model';
 import { CharacterInfoPageComponent } from './character-info-page.component';
 import { FeaturesPageComponent } from './features-page.component';
@@ -13,11 +16,12 @@ import { SpellsPageComponent } from './spells-page.component';
 import { EquipmentPageComponent } from './equipment-page.component';
 import { MonstersPageComponent } from './monsters-page.component';
 import { NotesPageComponent } from './notes-page.component';
-import { QRCodeModalComponent } from './qr-code-modal.component';
 
 @Component({
   selector: 'app-character-sheet',
-  imports: [
+  imports: [UiIconComponent, 
+    ThemePickerComponent,
+    ScrollableTabsDirective,
     CommonModule,
     RouterModule,
     CharacterInfoPageComponent,
@@ -26,84 +30,75 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
     EquipmentPageComponent,
     MonstersPageComponent,
     NotesPageComponent,
-    QRCodeModalComponent,
   ],
   template: `
     <main class="max-w-[1200px] mx-auto my-6 p-4">
       @if (characterData()) {
-        <!-- Top Action Bar (Save/Export/Navigation) -->
-        <div class="flex gap-2 mb-6 items-center justify-between flex-wrap">
-          <div class="flex gap-2 items-center">
-            <a [routerLink]="store.nativeCharacterId() ? ['/dev/characters'] : ['/']" class="gap-2 px-4 py-2 bg-surface-container hover:bg-surface-container-high text-surface-container font-medium rounded-lg hover:bg-surface-container-high transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-              ← Menu
-            </a>
-            <button
-              (click)="quickSave()"
-              class="flex items-center gap-2 px-4 py-2 bg-secondary-container text-on-secondary-container font-medium rounded-lg hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              [disabled]="isSaving()"
-            >
-              @if (isSaving()) {
-                <span class="inline-block animate-spin">⟳</span>
-              } @else {
-                <span>💾</span>
-              }
-              {{ saveStatus() ? 'Saved!' : 'Quick Save' }}
-            </button>
-            <button
-              (click)="generateQRCode()"
-              [disabled]="isGeneratingQR()"
-              class="flex items-center gap-2 px-4 py-2 bg-primary-container text-on-primary-container font-medium rounded-lg hover:bg-primary transition-colors disabled:opacity-50"
-            >
-              @if (isGeneratingQR()) {
-                <span class="inline-block animate-spin">⟳</span>
-              } @else {
-                <span>📱</span>
-              }
-              QR Code
+        <header class="flex items-center gap-2 min-w-0 mb-3">
+          <a routerLink="/" aria-label="Back to characters"
+            class="min-h-10 min-w-10 inline-flex items-center justify-center shrink-0 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high focus-visible:outline-2 focus-visible:outline-primary">
+            <app-ui-icon name="left" />
+          </a>
+          <div class="min-w-0">
+            <h1 class="text-lg sm:text-2xl font-bold">Character Sheet</h1>
+            <p class="text-xs text-on-surface-variant break-words">{{ characterData()?.character?.name || 'Unnamed Character' }}</p>
+          </div>
+        </header>
+        <!-- Top Action Bar -->
+        <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:flex sm:flex-wrap items-center gap-2 mb-4">
+          <div class="flex items-center gap-1.5 min-w-0 sm:mr-auto">
+            <button type="button" (click)="quickSave()" [disabled]="isSaving()"
+              class="min-h-10 flex-1 sm:flex-none whitespace-nowrap rounded-lg bg-secondary-container text-on-secondary-container px-3 py-2 text-sm font-semibold disabled:opacity-50">
+              <span aria-hidden="true" class="inline-block mr-1" [class.animate-spin]="isSaving()"><app-ui-icon [name]="isSaving() ? 'loader' : 'save'" /></span>
+              {{ isSaving() ? 'Saving…' : saveStatus() ? 'Saved!' : 'Quick Save' }}
             </button>
           </div>
-          <div class="flex gap-2 items-center flex-col sm:gap-2 sm:flex-row justify-start items-start">
-            <div class="flex gap-2 items-center">
+          <app-theme-picker class="min-w-0 sm:order-last sm:w-44" />
+          <div class="col-span-2 flex gap-2 sm:col-span-1">
+            @if (creatorAvailable) {
+              <button type="button" (click)="editCharacter()" [disabled]="isSaving()"
+                class="min-h-10 flex-1 sm:flex-none rounded-lg bg-primary-container text-on-primary-container px-3 py-2 text-sm font-semibold hover:brightness-110 disabled:opacity-50"
+                title="Save Changes and Open the Character Editor">
+                <span aria-hidden="true"><app-ui-icon name="edit" /></span> Edit
+              </button>
+            }
             <button
               (click)="performShortRest()"
-              class="px-4 py-2 bg-blue-container text-on-blue-container font-medium rounded-lg hover:bg-blue transition-colors text-sm"
+              class="min-h-10 flex-1 sm:flex-none px-3 py-2 bg-blue-container text-on-blue-container font-medium rounded-lg hover:brightness-110 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:brightness-95 transition-all text-sm"
               title="Rest for 1 hour - restores SHORT_REST resources"
             >
-              😴 Short Rest
+              <app-ui-icon name="rest" /> Short Rest
             </button>
             <button
               (click)="performLongRest()"
-              class="px-4 py-2 bg-purple-container text-on-purple-container font-medium rounded-lg hover:bg-purple transition-colors text-sm"
+              class="min-h-10 flex-1 sm:flex-none px-3 py-2 bg-purple-container text-on-purple-container font-medium rounded-lg hover:brightness-110 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:brightness-95 transition-all text-sm"
               title="Rest for 8 hours - restores LONG_REST resources and heals to full"
             >
-              🌙 Long Rest
+              <app-ui-icon name="moon" /> Long Rest
             </button>
-            </div>
-            <select
-              [value]="themeService.currentTheme()"
-              (change)="onThemeChange($event)"
-              class="flex items-center px-4 py-2 text-sm font-medium transition-colors rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface cursor-pointer"
-              title="Select color theme"
-            >
-              <option value="light-mc">☀️ Light (Monte Carlo)</option>
-              <option value="dark-mc">🌙 Dark (Monte Carlo)</option>
-              <option value="light-royal">✨ Light (Royal)</option>
-              <option value="dark-royal">👑 Dark (Royal)</option>
-                <option value="light-ethereal">🌌 Light (Ethereal)</option>
-                <option value="dark-ethereal">💜 Dark (Ethereal)</option>
-                <option value="light-forge">🔥 Light (Forge)</option>
-                <option value="dark-forge">⚒️ Dark (Forge)</option>
-                <option value="light-glade">🌿 Light (Glade)</option>
-                <option value="dark-glade">🍃 Dark (Glade)</option>
-            </select>
           </div>
         </div>
 
+        @if (restService.report(); as report) {
+          <section class="mb-4 rounded-lg bg-secondary-container text-on-secondary-container p-3" role="status" aria-live="polite">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="font-semibold text-sm">{{ report.title }}</h2>
+              <button type="button" class="rounded px-2 py-1 hover:bg-surface-container focus-visible:outline-2" aria-label="Dismiss rest report" (click)="restService.report.set(null)">Dismiss</button>
+            </div>
+            @if (report.changes.length) {
+              <ul class="mt-1 list-disc pl-5 text-sm space-y-1 max-h-48 overflow-y-auto">
+                @for (change of report.changes; track $index) { <li>{{ change }}</li> }
+              </ul>
+            } @else { <p class="text-sm mt-1">No resources needed restoring.</p> }
+          </section>
+        }
+
         <!-- Page Navigation Tabs -->
-        <nav class="flex flex-wrap-reverse flex-row-reverse justify-between mb-6 items-center">
+        <nav [appScrollableTabs]="currentPage()" class="justify-between mb-6 items-stretch" aria-label="Character sheet pages">
           <button
             (click)="currentPage.set(1)"
-            class="px-6 py-3 font-semibold transition-colors flex-auto order-6 border-b-2 border-outline"
+            [attr.aria-current]="currentPage() === 1 ? 'page' : null"
+            class="px-6 py-3 font-semibold transition-colors flex-auto border-b-2 border-outline"
             [class.border-b-4]="currentPage() === 1"
             [class.border-primary]="currentPage() === 1"
             [class.text-primary]="currentPage() === 1"
@@ -115,7 +110,7 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
             </span>
             
             <div 
-            class="border-1 px-1 border-primary rounded-xl bg-primary-container text-center content-center overflow-hidden transition-all duration-350 ease-in"
+            class="hidden sm:block border-1 px-1 border-primary rounded-xl bg-primary-container text-center content-center overflow-hidden transition-all duration-350 ease-in"
             [class.opacity-0]="!characterData()?.character?.name || currentPage() === 1"
             [class.opacity-100]="characterData()?.character?.name && currentPage() !== 1"
             [class.max-w-0]="!characterData()?.character?.name || currentPage() === 1"
@@ -132,7 +127,8 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
           </button>
           <button
             (click)="currentPage.set(2)"
-            class="px-6 py-3 font-semibold transition-colors flex-auto order-4 border-b-2 border-outline"
+            [attr.aria-current]="currentPage() === 2 ? 'page' : null"
+            class="px-6 py-3 font-semibold transition-colors flex-auto border-b-2 border-outline"
             [class.border-b-4]="currentPage() === 2"
             [class.border-primary]="currentPage() === 2"
             [class.text-primary]="currentPage() === 2"
@@ -142,7 +138,8 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
           </button>
           <button
             (click)="currentPage.set(3)"
-            class="px-6 py-3 font-semibold transition-colors flex-auto order-3 border-b-2 border-outline"
+            [attr.aria-current]="currentPage() === 3 ? 'page' : null"
+            class="px-6 py-3 font-semibold transition-colors flex-auto border-b-2 border-outline"
             [class.border-b-4]="currentPage() === 3"
             [class.border-primary]="currentPage() === 3"
             [class.text-primary]="currentPage() === 3"
@@ -152,7 +149,8 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
           </button>
           <button
             (click)="currentPage.set(4)"
-            class="px-6 py-3 font-semibold transition-colors flex-auto order-2 border-b-2 border-outline"
+            [attr.aria-current]="currentPage() === 4 ? 'page' : null"
+            class="px-6 py-3 font-semibold transition-colors flex-auto border-b-2 border-outline"
             [class.border-b-4]="currentPage() === 4"
             [class.border-primary]="currentPage() === 4"
             [class.text-primary]="currentPage() === 4"
@@ -162,7 +160,8 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
           </button>
           <button
             (click)="currentPage.set(5)"
-            class="px-6 py-3 font-semibold transition-colors flex-auto order-1 border-b-2 border-outline"
+            [attr.aria-current]="currentPage() === 5 ? 'page' : null"
+            class="px-6 py-3 font-semibold transition-colors flex-auto border-b-2 border-outline"
             [class.border-b-4]="currentPage() === 5"
             [class.border-primary]="currentPage() === 5"
             [class.text-primary]="currentPage() === 5"
@@ -172,7 +171,8 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
           </button>
           <button
             (click)="currentPage.set(6)"
-            class="px-6 py-3 font-semibold transition-colors flex-auto order-0 border-b-2 border-outline"
+            [attr.aria-current]="currentPage() === 6 ? 'page' : null"
+            class="px-6 py-3 font-semibold transition-colors flex-auto border-b-2 border-outline"
             [class.border-b-4]="currentPage() === 6"
             [class.border-primary]="currentPage() === 6"
             [class.text-primary]="currentPage() === 6"
@@ -215,38 +215,32 @@ import { QRCodeModalComponent } from './qr-code-modal.component';
         </p>
       }
 
-      <!-- QR Code Modal -->
-      @if (qrCodeUrl()) {
-        <div class="transition-opacity duration-300">
-          <app-qr-code-modal
-            [character]="characterData()"
-            [qrCodeUrl]="qrCodeUrl()"
-            [jsonSize]="qrJsonSize()"
-            (close)="closeQRCode()"
-          />
-        </div>
-      }
     </main>
   `,
 })
 export class CharacterSheetComponent {
+  private readonly dialogs = inject(AppDialogService);
   protected store = inject(CharacterStore);
-  private storage = inject(CharacterStorageService);
-  private restService = inject(RestService);
+  private library = inject(CharacterLibraryService);
+  private router = inject(Router);
+  readonly creatorAvailable = isDevMode();
+  private fallbackVersion?: Promise<number>;
+  protected restService = inject(RestService);
   private unsavedChangesGuard = inject(UnsavedChangesGuard);
-  protected themeService = inject(ThemeService);
 
   characterData = this.store.characterData;
   currentPage = signal(1);
   isSaving = signal(false);
   saveStatus = signal(false);
-  qrCodeUrl = signal<string | null>(null);
-  isGeneratingQR = signal(false);
-  qrJsonSize = signal(0);
 
   constructor() {
+    this.restService.report.set(null);
     // Track the initial state as "saved"
     const initialData = this.characterData();
+    if (initialData && !this.store.nativeSave && initialData.character?.characterUuid) {
+      // Capture the loaded revision before the user edits, rather than accepting a newer version at save time.
+      this.fallbackVersion = this.library.get(initialData.character.characterUuid).then(record => record?.version ?? 0);
+    }
     if (initialData) {
       this.unsavedChangesGuard.setLastSavedState(initialData);
     }
@@ -293,76 +287,33 @@ export class CharacterSheetComponent {
     this.quickSave();
   }
 
-  async quickSave(): Promise<void> {
-    const character = this.characterData();
-    if (!character) return Promise.resolve();
+  async editCharacter() {
+    await this.quickSave();
+    const id = this.store.nativeCharacterId() ?? this.characterData()?.character?.characterUuid;
+    if (this.saveStatus() && id) await this.router.navigate(['/characters', id, 'edit']);
+  }
 
+  async quickSave(): Promise<void> {
+    const data = this.characterData();
+    if (!data || this.isSaving()) return;
+    const character = structuredClone(data);
     this.isSaving.set(true);
     this.saveStatus.set(false);
-
-    if (this.store.nativeSave) {
-      try {
-        await this.store.nativeSave(character);
-        this.unsavedChangesGuard.setLastSavedState(character);
-        this.saveStatus.set(true);
-      } catch (error) { alert(`Save failed: ${String(error)}`); }
-      finally { this.isSaving.set(false); }
-      return;
-    }
-
-    return new Promise((resolve) => {
-      // Simulate async save
-      setTimeout(() => {
-        const result = this.storage.saveCharacter(character);
-        if (result.success) {
-          // Mark this state as saved
-          this.unsavedChangesGuard.setLastSavedState(character);
-          this.saveStatus.set(true);
-          // Clear "Saved!" message after 2 seconds
-          setTimeout(() => {
-            this.saveStatus.set(false);
-          }, 2000);
-        } else {
-          alert(`Save failed: ${result.error?.message}`);
-        }
-        this.isSaving.set(false);
-        resolve();
-      }, 300);
-    });
-  }
-
-  async generateQRCode() {
-    await this.quickSave();
-    const character = this.characterData();
-    if (!character) {
-      alert('No character loaded');
-      return;
-    }
-
-    this.isGeneratingQR.set(true);
     try {
-      // Get the JSON size first
-      const jsonString = this.storage.getMinimalExportJson(character);
-      console.log(`QR Code JSON size: ${jsonString.length} bytes`);
-      console.log(`JSON preview:`, jsonString.substring(0, 200));
-
-      const qrUrl = await this.storage.generateQRCode(character);
-      
-      this.qrCodeUrl.set(qrUrl);
-      this.qrJsonSize.set(jsonString.length);
-      console.log('QR Code generated successfully');
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      alert(`Failed to generate QR code:\n\n${msg}\n\nTry using "Export" from the character overview instead.`);
-      console.error('QR code generation error:', error);
-    } finally {
-      this.isGeneratingQR.set(false);
-    }
-  }
-
-  closeQRCode() {
-    this.qrCodeUrl.set(null);
-    this.qrJsonSize.set(0);
+      if (this.store.nativeSave) {
+        await this.store.nativeSave(character);
+      } else {
+        // Sheets opened in memory also write to the shared library.
+        const id = character.character?.characterUuid;
+        if (!id) throw new Error('Character ID is missing.');
+        this.fallbackVersion ??= this.library.get(id).then(record => record?.version ?? 0);
+        const version = await this.library.save(character, await this.fallbackVersion);
+        this.fallbackVersion = Promise.resolve(version);
+      }
+      this.unsavedChangesGuard.setLastSavedState(character);
+      this.saveStatus.set(true);
+    } catch (error) { void this.dialogs.alert('Save failed: ' + String(error)); }
+    finally { this.isSaving.set(false); }
   }
 
   performShortRest() {
@@ -395,8 +346,5 @@ export class CharacterSheetComponent {
     this.quickSave();
   }
 
-  onThemeChange(event: Event) {
-    const target = event.target as HTMLSelectElement;
-    this.themeService.setTheme(target.value as any);
-  }
+
 }

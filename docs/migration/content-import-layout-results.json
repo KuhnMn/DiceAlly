@@ -1,0 +1,32 @@
+{
+  "checks": [
+    {
+      "name": "Game data link is grouped with Create Character",
+      "passed": true
+    },
+    {
+      "name": "Import layout fits 320px",
+      "passed": true
+    },
+    {
+      "name": "Import layout fits 390px",
+      "passed": true
+    },
+    {
+      "name": "Import layout fits 1000px",
+      "passed": true
+    },
+    {
+      "name": "Status bar stays visible while scrolling on mobile",
+      "passed": true
+    },
+    {
+      "name": "Theme colors reach inputs and action buttons",
+      "passed": true
+    },
+    {
+      "name": "Old content URL redirects to the integrated page",
+      "passed": true
+    }
+  ]
+}

@@ -6,20 +6,20 @@
   </nav>
   @if (loading()) { <p role="status" class="text-sm">Loading your imported class library…</p> }
   @if (error()) { <p role="alert" class="rounded border border-error bg-error-container text-on-error-container p-3 text-sm mb-3">{{ error() }}</p> }
-  @if (!revision() && !loading()) { <a routerLink="/dev/content" class="text-primary underline" (click)="closed.emit()">Open content imports</a> }
+  @if (!revision() && !loading()) { <a routerLink="/content" class="text-primary underline" (click)="closed.emit()">Open content imports</a> }
   @if (revision() && !loading()) {
     @if (stage === 0) {
       <app-source-book-filter />
       <p class="text-xs text-on-surface-variant mb-3">The first class determines starting proficiencies and first-level HP. Later levels use average HP plus your current Constitution modifier.</p>
-      <div class="flex justify-end mb-3"><button type="button" class="secondary-button compact-button" (click)="loadContent(true)">Current Import</button></div>
+      <div class="flex justify-end mb-3"><button type="button" class="secondary-button compact-button" (click)="loadContent(true)">Use Current Library</button></div>
       <div class="space-y-3">
         @for (selection of state.classes; track selection.selectionId; let position = $index) {
           <article class="rounded-lg border-2 border-outline-variant bg-surface-container p-3">
             <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
               <h3 class="font-semibold">{{ position === 0 ? 'Starting Class' : 'Additional Class' }}</h3>
               <div class="flex gap-1">
-                <button type="button" class="secondary-button compact-button" [disabled]="position === 0" aria-label="Move class earlier" (click)="moveClass(position, -1)">↑</button>
-                <button type="button" class="secondary-button compact-button" [disabled]="position === state.classes.length - 1" aria-label="Move class later" (click)="moveClass(position, 1)">↓</button>
+                <button type="button" class="secondary-button compact-button" [disabled]="position === 0" aria-label="Move class earlier" (click)="moveClass(position, -1)"><app-ui-icon name="up" /></button>
+                <button type="button" class="secondary-button compact-button" [disabled]="position === state.classes.length - 1" aria-label="Move class later" (click)="moveClass(position, 1)"><app-ui-icon name="down" /></button>
                 <button type="button" class="secondary-button compact-button" (click)="removeClass(position)">Remove</button>
               </div>
             </div>
@@ -45,7 +45,16 @@
           <label><span class="field-label">Species</span><app-searchable-select label="Species" [options]="speciesChoices" [value]="state.speciesKey ?? ''" (selected)="state.speciesKey = $event || undefined; rebuild()" /></label>
         </div>
       </details>
-      @if (differentRevision) { <label class="flex items-start gap-2 text-sm mt-3"><input type="checkbox" name="wizard-accept-revision" [(ngModel)]="acceptRevision" />Use this imported revision instead of the saved wizard revision.</label> }
+      @if (differentRevision) {
+        <div class="rounded-lg border border-outline-variant bg-surface-container p-3 text-sm mt-3 space-y-2">
+          <p>This preview uses your current rules library instead of the library saved with this character. Applying the prefill saves this library selection. Your character stays unchanged until you apply.</p>
+          @if (savedRevisionAvailable) {
+            <button type="button" class="secondary-button compact-button" (click)="loadContent()">Use Saved Library</button>
+          } @else {
+            <p class="text-on-surface-variant">The saved library is no longer installed on this device. You can use the current library, or close the wizard to keep your character as it is.</p>
+          }
+        </div>
+      }
       @for (message of proposal()?.errors ?? []; track message) { <p role="alert" class="text-sm text-error mt-2">{{ friendlyMessage(message) }}</p> }
     } @else if (stage === 1) {
       <h3 class="font-semibold mb-2">Choose what to prefill</h3>
@@ -54,10 +63,10 @@
       }</div>
       <div class="space-y-3">@for (choice of proposal()?.choices ?? []; track choice.id; let position = $index) {
         <section class="rounded-lg border-2 border-outline-variant bg-surface-container p-3">
-          <div class="flex flex-wrap justify-between gap-2 text-sm mb-2"><h3 class="font-semibold capitalize">{{ choice.label }}</h3><span class="text-xs text-on-surface-variant">{{ state.answers[choice.id]?.length ?? 0 }} / {{ choice.count }}</span></div>
-          @if (choice.candidates.length > 12) { <input class="editor-input mb-2" [name]="'wizard-choice-search-' + position" [(ngModel)]="choiceSearch[choice.id]" placeholder="Search options…" [attr.aria-label]="'Search ' + choice.label" /> }
+          <div class="flex flex-wrap justify-between gap-2 text-sm mb-2"><h3 class="font-semibold capitalize">{{ choice.label }}</h3><span class="text-xs" [class.text-primary]="choiceComplete(choice)" [class.text-on-surface-variant]="!choiceComplete(choice)">@if (choiceComplete(choice)) { Finished &middot; }{{ state.answers[choice.id]?.length ?? 0 }} / {{ choice.count }}</span></div>
+          @if (choice.searchable !== false && choice.candidates.length > 12) { <input class="editor-input mb-2" [name]="'wizard-choice-search-' + position" [(ngModel)]="choiceSearch[choice.id]" placeholder="Search options…" [attr.aria-label]="'Search ' + choice.label" /> }
           <div class="flex flex-wrap gap-1 max-h-48 overflow-y-auto">@for (candidate of choices(choice); track candidate.value) {
-            <button type="button" class="spell-filter-chip text-left" [class.spell-filter-active]="state.answers[choice.id]?.includes(candidate.value)" [attr.aria-pressed]="!!state.answers[choice.id]?.includes(candidate.value)" [disabled]="choice.count > 1 && (state.answers[choice.id]?.length ?? 0) >= choice.count && !state.answers[choice.id]?.includes(candidate.value)" (click)="toggleChoice(choice, candidate.value)">{{ candidate.label }}</button>
+            <button type="button" class="spell-filter-chip text-left" [class.spell-filter-active]="state.answers[choice.id]?.includes(candidate.value)" [attr.aria-pressed]="!!state.answers[choice.id]?.includes(candidate.value)" [disabled]="choice.count > 1 && (state.answers[choice.id]?.length ?? 0) >= choice.count && !state.answers[choice.id]?.includes(candidate.value)" (click)="toggleChoice(choice, candidate.value)">{{ candidate.label | capitalizeFirst }}</button>
           } @empty { <p class="text-xs text-on-surface-variant">No matching options. You can finish this selection manually.</p> }</div>
         </section>
       } @empty { <p class="text-sm text-on-surface-variant">No additional selections are needed.</p> }</div>
@@ -79,8 +88,17 @@
       </div>
       <p class="text-xs text-on-surface-variant mb-3">After prefill: sheet level {{ proposal()?.sheet?.character?.level }}, maximum HP {{ proposal()?.sheet?.character?.maxHp }}.</p>
       <p class="text-sm mb-3">Manual changes, notes and used counters are preserved. This updates your draft; use Save afterward.</p>
-      <div class="max-h-80 overflow-y-auto space-y-1">@for (change of proposal()?.changes ?? []; track $index) {
-        <div class="flex justify-between gap-3 rounded border border-outline-variant px-2 py-1 text-xs"><span class="min-w-0 break-words">{{ change.label }}</span><strong class="shrink-0" [class.text-secondary]="change.action === 'Keep'">{{ change.action === 'Keep' ? 'Keep your edit' : change.action }}</strong></div>
+      <div class="max-h-80 overflow-y-auto space-y-1">@for (change of reviewItems(); track $index) {
+        @if (change.entries; as entries) {
+          <details class="rounded border border-outline-variant bg-surface-container text-xs">
+            <summary class="cursor-pointer px-2 py-2"><span class="font-medium">{{ change.label }}</span><strong class="ml-2">{{ change.action }}</strong></summary>
+            <div class="border-t border-outline-variant px-2 py-1 space-y-1">@for (entry of entries; track $index) {
+              <p class="break-words">{{ entry.label }}</p>
+            }</div>
+          </details>
+        } @else {
+          <div class="flex justify-between gap-3 rounded border border-outline-variant px-2 py-1 text-xs"><span class="min-w-0 break-words">{{ change.label }}</span><strong class="shrink-0" [class.text-secondary]="change.action === 'Keep'">{{ change.action === 'Keep' ? 'Keep your edit' : change.action }}</strong></div>
+        }
       } @empty { <p class="text-sm text-on-surface-variant">Your character already matches this prefill.</p> }</div>
     }
   }

@@ -1,3 +1,5 @@
+import { UiIconComponent } from '../ui-icon.component';
+import { newEditorId } from './editor-identity';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, effect, inject, input, output, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -15,7 +17,7 @@ import { CatalogQuery, EditorCatalog } from './editor-catalog';
 import { FEATURE_TYPES, FeatureType, createFeatureEntry, featureEntries, featureTypeOf } from './feature-selection';
 
 @Component({
-  selector: 'app-editor-features', imports: [FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
+  selector: 'app-editor-features', imports: [UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
   templateUrl: './features-editor.component.html', styleUrl: './local-editor.component.css',
 })
 export class FeaturesEditorComponent implements OnInit, OnDestroy {
@@ -42,6 +44,7 @@ export class FeaturesEditorComponent implements OnInit, OnDestroy {
   customName = '';
   customDescription = '';
   catalogOpen = false;
+  listVisible = true;
   catalogAdded = 0;
   readonly expanded = new Set<FeatureEntryFull>();
   pendingRemoval?: FeatureEntryFull;
@@ -116,7 +119,7 @@ export class FeaturesEditorComponent implements OnInit, OnDestroy {
   addCustom() {
     const name = this.customName.trim(); if (!name) return;
     const data = { name, source: 'Custom', entries: this.customDescription ? [{ text: this.customDescription }] : [] };
-    const feature: FeatureEntryFull = { editorId: crypto.randomUUID(), name, source: 'Custom', featureType: this.selectedType,
+    const feature: FeatureEntryFull = { editorId: newEditorId(), name, source: 'Custom', featureType: this.selectedType,
       featureSourceName: this.targetSource, userAdded: true, notes: [], uses: [] };
     if (this.selectedType === 'FEAT') feature.featEntity = data;
     else if (this.selectedType === 'OPTIONAL_FEATURE') feature.optionalFeatureEntity = { ...data, featureType: [] };

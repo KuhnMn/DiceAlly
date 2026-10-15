@@ -47,7 +47,7 @@ try {
     clearTimeout(entry.timer); pending.delete(message.id);
     message.error ? entry.reject(new Error(message.error.message)) : entry.resolve(message.result);
   });
-  const { targetId } = await send('Target.createTarget', { url: `${origin}/dev/content` });
+  const { targetId } = await send('Target.createTarget', { url: `${origin}/content` });
   const { sessionId: session } = await send('Target.attachToTarget', { targetId, flatten: true });
   await until(()=>evaluate(session, `!!globalThis.ng && !!document.querySelector('app-content-import') && !ng.getComponent(document.querySelector('app-content-import')).busy()`));
   await evaluate(session, `globalThis.i=ng.getComponent(document.querySelector('app-content-import'));
@@ -93,7 +93,7 @@ try {
     assert(geometry.scroll<=geometry.width+1,JSON.stringify(geometry));
   });
   await check('homebrew spell filters and copied spells remain available in the creator',async()=>{
-    await send('Page.navigate',{url:`${origin}/dev/characters`},session);
+    await send('Page.navigate',{url:`${origin}/characters/new`},session);
     await until(()=>evaluate(session,`!!document.querySelector('app-local-editor')`));
     await evaluate(session,`globalThis.c=ng.getComponent(document.querySelector('app-local-editor'));c.setPage(4);ng.applyChanges(c);`);
     await until(()=>evaluate(session,`!!document.querySelector('app-editor-spells') && !ng.getComponent(document.querySelector('app-editor-spells')).loading()`));

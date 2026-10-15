@@ -1,7 +1,10 @@
 <section class="editor-card feature-editor">
   <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
     <div><h2 class="!mb-0">Spells</h2><p class="text-xs text-on-surface-variant mt-1">Manage the entries on your character.</p></div>
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="button" class="secondary-button compact-button" [attr.aria-expanded]="listVisible" aria-controls="added-spells" (click)="listVisible = !listVisible">{{ listVisible ? 'Hide List' : 'Show List' }} ({{ selected.length }})</button>
     <button type="button" class="action-button" aria-haspopup="dialog" (click)="openCatalog()">+ Add Spells</button>
+    </div>
   </div>
   <nav class="flex flex-wrap gap-2 mb-4" aria-label="Spell lists">
     @for (type of lists; track type) {
@@ -19,7 +22,7 @@
     }
   </nav>
   <p class="text-xs text-on-surface-variant mb-3">Known spells are your available spell list. Preparing a spell or adding it to a spellbook keeps it in Known.</p>
-  <div class="space-y-2">
+  <div id="added-spells" class="space-y-2" [hidden]="!listVisible">
     @for (spell of selected; track spell) {
       <article class="feature-card rounded-lg border-2 border-purple bg-surface-container p-2.5">
         <div class="flex items-start flex-wrap gap-2">
@@ -34,9 +37,9 @@
             <button type="button" class="action-button !py-1 !px-2 !text-xs" [disabled]="hasList(spell, 'PREPARED')" (click)="addToList(spell, 'PREPARED')">{{ hasList(spell, 'PREPARED') ? 'Prepared' : 'Prepare' }}</button>
           }
           <button type="button" class="secondary-button compact-button" (click)="toggle(spell)">{{ expanded.has(spell) ? 'Close' : list === 'PREPARED' ? 'Edit' : 'Details' }}</button>
-          <button type="button" class="secondary-button compact-button" [disabled]="list === 'KNOWN' && hasList(spell, 'PREPARED')" [attr.aria-label]="(list === 'PREPARED' ? 'Unprepare ' : 'Remove ') + spell.name" [title]="list === 'KNOWN' && hasList(spell, 'PREPARED') ? 'Unprepare this spell before removing it from Known' : ''" (click)="remove(spell)">{{ list === 'PREPARED' ? 'Unprepare' : '×' }}</button>
+          <button type="button" class="secondary-button compact-button" [disabled]="list === 'KNOWN' && hasList(spell, 'PREPARED')" [attr.aria-label]="(list === 'PREPARED' ? 'Unprepare ' : 'Remove ') + spell.name" [title]="list === 'KNOWN' && hasList(spell, 'PREPARED') ? 'Unprepare this spell before removing it from Known' : ''" (click)="remove(spell)">@if (list === 'PREPARED') { Unprepare } @else { <app-ui-icon name="close" /> }</button>
         </div>
-        @if (list === 'PREPARED' && spell.uses?.length) { <p class="text-xs text-on-surface-variant mt-2">🔒 Use trackers keep this spell prepared during play. You can unprepare it here.</p> }
+        @if (list === 'PREPARED' && spell.uses?.length) { <p class="text-xs text-on-surface-variant mt-2"><app-ui-icon name="lock" /> Use trackers keep this spell prepared during play. You can unprepare it here.</p> }
         @if (!expanded.has(spell) && list === 'PREPARED' && (spell.notes?.length || spell.uses?.length)) { <p class="text-xs text-on-surface-variant mt-1">{{ spell.notes?.length || 0 }} note groups · {{ spell.uses?.length || 0 }} use trackers</p> }
         @if (expanded.has(spell)) {
           <div class="mt-3 pt-3 border-t border-outline-variant space-y-3">
@@ -46,7 +49,7 @@
               @if (spell.entity?.components) { <span>Components: {{ helpers.spellComponentsLabel(spell.entity?.components ?? null) }}</span> }
               @if (spell.entity?.duration?.length) { <span>Duration: {{ helpers.spellDurationLabel(spell.entity?.duration ?? []) }}</span> }
             </div>
-            <details class="description-panel !mt-5 text-sm"><summary class="description-toggle"><span class="description-arrow" aria-hidden="true">▸</span>Description</summary>
+            <details class="description-panel !mt-5 text-sm"><summary class="description-toggle"><span class="description-arrow" aria-hidden="true"><app-ui-icon name="chevron" /></span>Description</summary>
               <div class="p-3"><app-entry-renderer [entries]="spell.entity?.entries ?? []" />
                 @for (higher of spell.entity?.entriesHigherLevel ?? []; track $index) { <div class="mt-3 pt-2 border-t border-outline-variant"><p class="font-semibold mb-1">At Higher Levels</p><app-entry-renderer [entries]="higher.entries ?? []" /></div> }
               </div>
@@ -88,13 +91,13 @@
       <p class="text-xs text-on-surface-variant">Matches any selected class and any selected level. All includes every option.</p>
       <div class="flex items-center gap-2"><label class="flex-1 min-w-0"><span class="sr-only">Search spells</span><input class="editor-input" name="spell-search" [(ngModel)]="filter.search" (ngModelChange)="filterChanged()" placeholder="Search name or source book…" [disabled]="adding()" /></label><button type="button" class="secondary-button" [disabled]="loading() || adding()" (click)="refreshContent()">Refresh</button></div>
       <div class="flex flex-wrap items-center justify-between gap-2"><span class="text-xs text-on-surface-variant">{{ total() }} matching spells · bulk additions include every page</span><button type="button" class="action-button !py-1.5 !text-sm" [disabled]="loading() || adding() || !revision() || !total()" (click)="addMatching()">{{ adding() ? 'Adding…' : 'Add All Matching to Known' }}</button></div>
-      @if (message()) { <p role="status" class="text-sm text-on-surface-variant">{{ message() }} @if (!revision()) { <a routerLink="/dev/content" class="text-primary underline">Content imports</a> }</p> }
+      @if (message()) { <p role="status" class="text-sm text-on-surface-variant">{{ message() }} @if (!revision()) { <a routerLink="/content" class="text-primary underline">Content imports</a> }</p> }
       @if (loading()) { <p role="status" class="text-xs text-on-surface-variant">Searching…</p> }
       <div class="space-y-1">
         @for (record of results(); track record.key) {
           <div class="rounded border border-outline-variant p-2">
             <div class="flex justify-between gap-2"><div class="min-w-0"><p class="font-semibold text-sm">{{ record.name }}</p><p class="text-xs text-on-surface-variant">{{ record.data['level'] === 0 ? 'Cantrip' : 'Level ' + record.data['level'] }} · {{ record.publication }}</p></div><button type="button" class="secondary-button compact-button" [disabled]="loading() || adding() || isAdded(record)" (click)="add(record)">{{ isAdded(record) ? 'Added' : 'Add' }}</button></div>
-            <details class="description-panel mt-2"><summary class="description-toggle"><span class="description-arrow" aria-hidden="true">▸</span>Description</summary><div class="p-2 text-sm"><app-entry-renderer [entries]="$any(record.data['entries'] ?? [])" /></div></details>
+            <details class="description-panel mt-2"><summary class="description-toggle"><span class="description-arrow" aria-hidden="true"><app-ui-icon name="chevron" /></span>Description</summary><div class="p-2 text-sm"><app-entry-renderer [entries]="$any(record.data['entries'] ?? [])" /></div></details>
           </div>
         }
       </div>

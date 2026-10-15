@@ -1,3 +1,6 @@
+import { UiIconComponent } from '../ui-icon.component';
+import { copySpellToList } from './spell-selection';
+import { newEditorId } from './editor-identity';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -18,7 +21,7 @@ import { contentReference } from './editor-content-helpers';
 
 @Component({
   selector: 'app-editor-spells',
-  imports: [FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
+  imports: [UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
   templateUrl: './spells-editor.component.html',
   styleUrl: './local-editor.component.css',
 })
@@ -53,6 +56,7 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
   customLevel = 0;
   customDescription = '';
   catalogOpen = false;
+  listVisible = true;
   catalogAdded = 0;
   pendingRemoval?: SpellEntryFull;
 
@@ -108,8 +112,7 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
   toggle(spell: SpellEntryFull) { this.expanded.has(spell) ? this.expanded.delete(spell) : this.expanded.add(spell); }
   addToList(spell: SpellEntryFull, list: SpellList) {
     if (this.hasList(spell, list) || (list === 'SPELLBOOK' && !this.usesSpellbook(spell))) return;
-    const copy = structuredClone(spell);
-    copy.editorId = crypto.randomUUID(); copy.listType = list;
+    const copy = copySpellToList(spell, list);
     (this.sheet().spells ??= []).push(copy); this.change();
   }
   remove(spell: SpellEntryFull) {
@@ -132,7 +135,7 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
       && (spell.contentReference?.key === record.key || (!spell.contentReference && spell.name === record.name && spell.source === record.publication)));
   }
   private entry(record: ContentRecord, revision: ImportRevision, source: string | undefined): SpellEntryFull {
-    return { editorId: crypto.randomUUID(), name: record.name, source: record.publication, castingSourceName: source,
+    return { editorId: newEditorId(), name: record.name, source: record.publication, castingSourceName: source,
       listType: 'KNOWN', userAdded: true, notes: [], uses: [], entity: spellSnapshot(record),
       contentReference: contentReference(record, revision) };
   }
@@ -162,7 +165,7 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
   addCustom() {
     const name = this.customName.trim();
     if (!name || !Number.isInteger(this.customLevel) || this.customLevel < 0 || this.customLevel > 9) return;
-    const spell: SpellEntryFull = { editorId: crypto.randomUUID(), name, source: 'Custom', castingSourceName: this.targetSource,
+    const spell: SpellEntryFull = { editorId: newEditorId(), name, source: 'Custom', castingSourceName: this.targetSource,
       listType: 'KNOWN', userAdded: true, notes: [], uses: [], entity: { name, source: 'Custom', level: this.customLevel,
         school: '', time: [], range: {}, components: {}, duration: [], entries: this.customDescription ? [{ text: this.customDescription }] : [] } };
     (this.sheet().spells ??= []).push(spell); this.catalogAdded++; this.customName = ''; this.customDescription = ''; this.change();

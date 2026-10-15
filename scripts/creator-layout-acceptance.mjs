@@ -59,7 +59,7 @@ try {
     clearTimeout(entry.timer); pending.delete(message.id);
     message.error ? entry.reject(new Error(message.error.message)) : entry.resolve(message.result);
   });
-  const { targetId } = await send('Target.createTarget', { url: `${origin}/dev/characters` });
+  const { targetId } = await send('Target.createTarget', { url: `${origin}/characters/new` });
   const { sessionId: session } = await send('Target.attachToTarget', { targetId, flatten: true });
   await until(() => evaluate(session, `!!globalThis.ng && !!document.querySelector('app-local-editor')`));
   await evaluate(session, `globalThis.c = ng.getComponent(document.querySelector('app-local-editor'));

@@ -1,5 +1,6 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { CharacterStore } from '../stores/character.store';
+import { summarizeRest } from './rest-report';
 import { ExportedCharacter } from '../models/character.model';
 
 @Injectable({
@@ -7,7 +8,25 @@ import { ExportedCharacter } from '../models/character.model';
 })
 export class RestService {
   private readonly store = inject(CharacterStore);
+  readonly report = signal<{ title: string; changes: string[] } | null>(null);
+
   performLongRest(character: ExportedCharacter): void {
+    this.performRest(character, 'long');
+  }
+
+  performShortRest(character: ExportedCharacter): void {
+    this.performRest(character, 'short');
+  }
+
+  private performRest(character: ExportedCharacter, type: 'short' | 'long'): void {
+    const before = structuredClone(character);
+    if (type === 'long') this.applyLongRest(character);
+    else this.applyShortRest(character);
+    this.report.set({ title: type === 'long' ? 'Long Rest Complete' : 'Short Rest Complete',
+      changes: summarizeRest(before, character) });
+  }
+
+  private applyLongRest(character: ExportedCharacter): void {
     if (this.store.nativeRest && character.character?.characterUuid === this.store.nativeCharacterId()) {
       Object.assign(character, this.store.nativeRest(character, 'long')); return;
     }
@@ -45,7 +64,7 @@ export class RestService {
     char.tempHp = 0;
   }
 
-  performShortRest(character: ExportedCharacter): void {
+  private applyShortRest(character: ExportedCharacter): void {
     if (this.store.nativeRest && character.character?.characterUuid === this.store.nativeCharacterId()) {
       Object.assign(character, this.store.nativeRest(character, 'short')); return;
     }
@@ -68,9 +87,9 @@ export class RestService {
     character: ExportedCharacter,
     condition: 'LONG_REST' | 'SHORT_REST'
   ): void {
-    // Restore uses in features
-    if (character.features) {
-      character.features.forEach((feature) => {
+    // Features and companions share the same use/recovery settings.
+    if (character.features || character.monsters) {
+      [...character.features ?? [], ...character.monsters ?? []].forEach((feature) => {
         if (feature.uses) {
           feature.uses.forEach((use) => {
             const useCondition = use.freeUsesRegainCondition || 'LONG_REST';
@@ -113,8 +132,8 @@ export class RestService {
   ): void {
     // Restore ONE use for SHORT_REST_ONE features
     // First in features
-    if (character.features) {
-      character.features.forEach((feature) => {
+    if (character.features || character.monsters) {
+      [...character.features ?? [], ...character.monsters ?? []].forEach((feature) => {
         if (feature.uses) {
           feature.uses.forEach((use) => {
             if (use.freeUsesRegainCondition === condition) {

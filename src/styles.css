@@ -1021,3 +1021,25 @@ body {
 .border-purple { border-color: var(--md-extended-color-custom-color5-color); }
 .hover\:bg-purple-container:hover { background-color: var(--md-extended-color-custom-color5-color-container); }
 
+.page-tabs {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--md-sys-color-primary) 45%, var(--md-sys-color-outline-variant)) transparent;
+}
+.page-tabs::-webkit-scrollbar { height: 4px; }
+.page-tabs::-webkit-scrollbar-track { background: transparent; }
+.page-tabs::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--md-sys-color-primary) 45%, var(--md-sys-color-outline-variant));
+}
+.page-tabs::-webkit-scrollbar-thumb:hover { background: var(--md-sys-color-primary); }
+.page-tabs::-webkit-scrollbar-corner { background: transparent; }
+/* Theme colors use CSS variables rather than Tailwind color tokens. */
+@variant max-sm {
+  .page-tabs > button {
+    background-color: var(--md-sys-color-surface-container);
+  }
+  .page-tabs > button[aria-current='page'] {
+    background-color: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+  }
+}

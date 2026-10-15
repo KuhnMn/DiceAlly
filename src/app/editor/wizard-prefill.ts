@@ -1,10 +1,12 @@
+import { comparableWizardValue, wizardFingerprint } from './wizard-fingerprint';
+import { createWizardBaseline, readWizardBookkeeping } from './wizard-bookkeeping';
 import { ExportedCharacter, FeatureEntryFull, SpellEntryFull } from '../models/character.model';
 import { emptyBasicCharacter } from './basic-info';
 
 export type WizardState = NonNullable<ExportedCharacter['creatorWizard']>;
 export type WizardClass = WizardState['classes'][number];
 export interface PrefillValue { path: string[]; value: unknown; scope: string; label: string; }
-export interface PrefillChange { label: string; action: 'Fill' | 'Update' | 'Remove' | 'Keep'; }
+export interface PrefillChange { path: string[]; label: string; action: 'Fill' | 'Update' | 'Remove' | 'Keep'; }
 
 type MutableObject = Record<string, unknown>;
 function objectAt(sheet: ExportedCharacter, path: string[], create = false): MutableObject | undefined {
@@ -17,13 +19,7 @@ function objectAt(sheet: ExportedCharacter, path: string[], create = false): Mut
   return current;
 }
 function same(left: unknown, right: unknown): boolean {
-  const comparable = (value: unknown): unknown => {
-    if (Array.isArray(value)) return value.map(comparable);
-    if (!value || typeof value !== 'object') return value;
-    return Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'used' && key !== 'usedFreeUses')
-      .sort(([a], [b]) => a.localeCompare(b)).map(([key, entry]) => [key, comparable(entry)]));
-  };
-  return JSON.stringify(comparable(left)) === JSON.stringify(comparable(right));
+  return JSON.stringify(comparableWizardValue(left)) === JSON.stringify(comparableWizardValue(right));
 }
 function collection(sheet: ExportedCharacter, path: string[], create = false): { list: unknown[]; index: number } | undefined {
   const [kind, id, level] = path;
@@ -35,7 +31,7 @@ function collection(sheet: ExportedCharacter, path: string[], create = false): {
   } else if (kind === 'sources') {
     list = sheet.character?.featureSources;
     if (!list && create) list = sheet.character!.featureSources = [];
-    index = list?.findIndex(entry => (entry as { id?: string }).id === id) ?? -1;
+    index = list?.findIndex(entry => (entry as { editorId?: string }).editorId === id) ?? -1;
   } else if (kind === 'dice') {
     list = Array.isArray(sheet.character?.hitDice) ? sheet.character.hitDice : undefined;
     if (!list && create) list = sheet.character!.hitDice = [];
@@ -74,7 +70,14 @@ function write(sheet: ExportedCharacter, path: string[], value: unknown) {
   }
   const group = collection(sheet, path, value !== undefined);
   if (!group) return;
-  if (value === undefined) { if (group.index >= 0) group.list.splice(group.index, 1); }
+  if (value === undefined) {
+    if (group.index >= 0) group.list.splice(group.index, 1);
+    // Removing the final generated level must also remove its now-empty source bucket.
+    if (path[0] === 'slots' && group.list.length === 0) {
+      delete sheet.character!.spellSlots![path[1]];
+      if (!Object.keys(sheet.character!.spellSlots!).length) delete sheet.character!.spellSlots;
+    }
+  }
   else if (group.index < 0) group.list.push(structuredClone(value));
   else group.list[group.index] = structuredClone(value);
 }
@@ -85,7 +88,7 @@ function collision(sheet: ExportedCharacter, entry: PrefillValue): boolean {
     && (feature.contentReference?.key ?? '') === (value.contentReference?.key ?? ''));
   if (entry.path[0] === 'spells') return (sheet.spells ?? []).some(spell => spell.editorId !== value.editorId
     && spell.name === value.name && spell.source === value.source && spell.castingSourceName === value.castingSourceName && spell.listType === value.listType);
-  if (entry.path[0] === 'sources') return (sheet.character?.featureSources ?? []).some(source => source.id !== (entry.value as { id: string }).id
+  if (entry.path[0] === 'sources') return (sheet.character?.featureSources ?? []).some(source => source.editorId !== (entry.value as { editorId: string }).editorId
     && source.name === (entry.value as { name: string }).name);
   return false;
 }
@@ -97,9 +100,10 @@ function hasAnnotations(value: unknown): boolean {
 /** Detached, repeatable prefill. Manual changes and removals become protected values. */
 export function mergeWizardPrefill(original: ExportedCharacter, state: WizardState, values: PrefillValue[]) {
   const sheet = structuredClone(original);
-  const previous = original.creatorWizard?.baseline ?? {};
+  const bookkeeping = readWizardBookkeeping(original.creatorWizard ?? {});
+  const previous = Object.fromEntries(bookkeeping.baseline.map(entry => [JSON.stringify(entry.path), entry]));
   const baseline = structuredClone(previous);
-  const protectedKeys = new Set(original.creatorWizard?.protectedKeys ?? []);
+  const protectedKeys = new Set(bookkeeping.protectedPaths.map(path => JSON.stringify(path)));
   const changes: PrefillChange[] = [];
   const defaults = emptyBasicCharacter();
   const enabled = (scope: string) => scope === 'sources'
@@ -109,15 +113,12 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
   for (const [key, entry] of desired) {
     const current = read(sheet, entry.path);
     const old = previous[key];
-    // Notes are independent of generated feature descriptions; usage counters are session state.
-    const compare = (value: unknown) => {
-      if (!value || !['features', 'spells', 'species'].includes(entry.path[0])) return value;
-      const copy = { ...value as MutableObject }; delete copy['notes']; delete copy['uses']; return copy;
-    };
-    const manuallyChanged = old ? !same(compare(current), compare(old.value))
+    // Compare definition-only fingerprints here; notes and trackers are preserved separately.
+    const excludesAnnotations = ['features', 'spells', 'species'].includes(entry.path[0]);
+    const manuallyChanged = old ? wizardFingerprint(current, excludesAnnotations) !== (old.editFingerprint ?? old.fingerprint)
       : current !== undefined && !same(current, read(defaults, entry.path));
     if (protectedKeys.has(key) || manuallyChanged || collision(sheet, entry)) {
-      protectedKeys.add(key); changes.push({ label: entry.label, action: 'Keep' });
+      protectedKeys.add(key); changes.push({ path: entry.path, label: entry.label, action: 'Keep' });
     } else {
       let proposed = structuredClone(entry.value);
       if (current && typeof current === 'object' && proposed && typeof proposed === 'object') {
@@ -128,10 +129,10 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
           if (Array.isArray(existing['uses']) && existing['uses'].length) next['uses'] = structuredClone(existing['uses']);
         }
       }
-      if (!same(current, proposed)) changes.push({ label: entry.label, action: current === undefined ? 'Fill' : 'Update' });
+      if (!same(current, proposed)) changes.push({ path: entry.path, label: entry.label, action: current === undefined ? 'Fill' : 'Update' });
       write(sheet, entry.path, proposed);
     }
-    baseline[key] = { value: structuredClone(entry.value), scope: entry.scope, label: entry.label };
+    baseline[key] = createWizardBaseline({ path: [...entry.path], value: entry.value, scope: entry.scope, label: entry.label });
   }
   // Remove untouched obsolete entries first; retain annotated entries and their sources.
   const obsolete = Object.entries(previous).filter(([key, entry]) => !desired.has(key) && enabled(entry.scope))
@@ -141,14 +142,15 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
     const source = current as { name?: string } | undefined;
     const stillLinked = path[0] === 'sources' && source?.name && (sheet.features?.some(feature => feature.featureSourceName === source.name)
       || sheet.spells?.some(spell => spell.castingSourceName === source.name) || sheet.character?.spellSlots?.[source.name]?.length);
-    if (current !== undefined && (protectedKeys.has(key) || !same(current, entry.value) || hasAnnotations(current) || stillLinked)) {
-      protectedKeys.add(key); changes.push({ label: entry.label, action: 'Keep' });
+    if (current !== undefined && (protectedKeys.has(key) || wizardFingerprint(current) !== entry.fingerprint || hasAnnotations(current) || stillLinked)) {
+      protectedKeys.add(key); changes.push({ path, label: entry.label, action: 'Keep' });
     } else {
-      if (current !== undefined) changes.push({ label: entry.label, action: 'Remove' });
+      if (current !== undefined) changes.push({ path, label: entry.label, action: 'Remove' });
       // Required basic values (such as Walk speed) return to their editor defaults.
       write(sheet, path, read(defaults, path)); delete baseline[key];
     }
   }
-  sheet.creatorWizard = { ...structuredClone(state), baseline, protectedKeys: [...protectedKeys] };
+  sheet.creatorWizard = { ...structuredClone(state), baseline: Object.values(baseline),
+    protectedPaths: [...protectedKeys].map(key => JSON.parse(key) as string[]) };
   return { sheet, changes };
 }

@@ -1,8 +1,9 @@
 // Read-only upstream probe. No downloaded content is written to disk.
 // This measures the adapter in Node, not browser IndexedDB or mobile performance.
 import { build } from 'esbuild';
-const result = await build({ entryPoints: ['src/app/content/content-importer.ts'], bundle: true, write: false, format: 'esm', platform: 'node' });
-const { importContent } = await import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString('base64')}`);
+import { readFile } from 'node:fs/promises';
+const result = await build({ stdin: { contents: "export { importContent } from './src/app/content/content-importer'; export { readHomebrewFile } from './src/app/content/homebrew-package';", resolveDir: process.cwd() }, bundle: true, write: false, format: 'esm', platform: 'node' });
+const { importContent, readHomebrewFile } = await import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString('base64')}`);
 if (process.argv.includes('--inspect-mapping')) {
   const revision = '8c026b807fac21862a309379a0c3228a0683198b';
   for (const file of ['races.json', 'items-base.json', 'magicvariants.json']) {
@@ -35,6 +36,7 @@ const cache = {
 let lastProgress;
 try {
   const revision = await importContent(cache, {
+    homebrewFiles: process.argv.includes('--homebrew') ? [await readHomebrewFile(JSON.parse(await readFile(process.argv[process.argv.indexOf('--homebrew') + 1], 'utf8')), 'probe-homebrew.json')] : [],
     namespace: 'probe', source: { owner: '5etools-mirror-3', repository: '5etools-src', branch: 'main', directory: 'data' },
     progress(p) {
       lastProgress = p; maxHeap = Math.max(maxHeap, process.memoryUsage().heapUsed);
@@ -59,6 +61,7 @@ try {
   }
   console.log(JSON.stringify({ status: 'blocked', message: error.message, commit: error.revision?.commit, metrics: error.revision?.metrics, lastProgress,
     diagnosticCount: error.diagnostics?.length ?? 0,
+    errors: (error.diagnostics ?? []).filter(d => d.severity === 'error'),
     groups: Object.values((error.diagnostics ?? []).reduce((groups, d) => {
       const key = d.message.startsWith('Unresolved') ? d.message.split(':')[0] : d.message.startsWith('Error: Copy base') ? 'Copy base missing' : d.message;
       groups[key] ??= { message: key, count: 0, sample: d }; groups[key].count++; return groups;

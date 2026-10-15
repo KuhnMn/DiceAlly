@@ -1,0 +1,146 @@
+<main class="max-w-[1000px] mx-auto my-6 p-4 text-on-surface">
+  <header class="flex items-start gap-3 mb-5">
+    <a routerLink="/" class="secondary-button shrink-0" aria-label="Back to characters"><app-ui-icon name="left" /></a>
+    <div class="min-w-0">
+      <h1 class="text-2xl font-bold">Game Data</h1>
+      <p class="text-sm text-on-surface-variant mt-1">Manage the classes, species, features, and spells available in the creator.</p>
+      <p class="text-xs text-on-surface-variant mt-2">Stored on this device · Development preview</p>
+    </div>
+  </header>
+
+  <section class="import-status-bar mb-4" aria-label="Import status" [attr.aria-busy]="importing()">
+    <div class="flex items-center gap-3">
+      <span class="status-indicator shrink-0" [class.status-indicator-active]="busy()" aria-hidden="true"></span>
+      <div class="min-w-0 grow">
+        <p role="status" aria-live="polite" class="text-sm font-medium">{{ importing() ? 'Importing Game Data' : busy() ? 'Checking Game Data...' : message() || (revision() ? 'Game data is ready.' : 'Ready to import game data.') }}</p>
+        @if (importing() && progress(); as p) {
+          <p class="text-xs text-on-surface-variant mt-1">{{ phaseLabel(p.phase) }}@if (p.total > 0) { &middot; {{ p.completed }} / {{ p.total }} } &middot; {{ p.records }} records &middot; {{ mb(p.bytes) }} MB</p>
+          @if (p.file) { <p class="text-xs text-on-surface-variant truncate mt-1" [title]="p.file">{{ p.file }}</p> }
+        }
+      </div>
+      @if (importing()) { <button type="button" (click)="cancel()" class="secondary-button shrink-0">Cancel</button> }
+    </div>
+    @if (importing()) {
+      @if (progress(); as p) {
+        <progress class="import-progress" [attr.value]="p.total > 0 ? p.completed : null" [attr.max]="p.total > 0 ? p.total : 1" aria-label="Current import phase"></progress>
+      } @else {
+        <progress class="import-progress" aria-label="Starting import"></progress>
+      }
+    }
+  </section>
+
+  <div class="grid md:grid-cols-2 gap-4 items-start">
+    <section class="editor-card">
+      <h2>Rules Library</h2>
+      <p class="text-sm text-on-surface-variant">Import the main game data or update your installed library.</p>
+      <form (ngSubmit)="start()">
+        <fieldset [disabled]="busy()" class="min-w-0 space-y-3">
+          <details class="rounded-lg bg-surface-container-low p-3 mt-3">
+            <summary class="text-sm font-semibold cursor-pointer">Repository Settings</summary>
+            <div class="grid sm:grid-cols-2 gap-3 mt-3">
+              <label><span class="field-label">GitHub Owner</span><input name="owner" [(ngModel)]="source.owner" required class="editor-input" /></label>
+              <label><span class="field-label">Repository</span><input name="repository" [(ngModel)]="source.repository" required class="editor-input" /></label>
+              <label><span class="field-label">Branch</span><input name="branch" [(ngModel)]="source.branch" required class="editor-input" /></label>
+              <label><span class="field-label">Data Directory</span><input name="directory" [(ngModel)]="source.directory" required class="editor-input" /></label>
+            </div>
+          </details>
+          <p class="text-xs text-on-surface-variant">{{ source.owner }}/{{ source.repository }} · {{ source.branch }}</p>
+          <div class="flex flex-wrap gap-2">
+            <button type="submit" class="action-button">{{ revision() ? 'Update Library' : 'Import Library' }}</button>
+            <button type="button" (click)="check()" class="secondary-button">Check for Updates</button>
+          </div>
+          <p role="status" aria-live="polite" class="text-xs text-on-surface-variant">{{ updateMessage() }}</p>
+        </fieldset>
+      </form>
+    </section>
+
+    <section class="editor-card">
+      <h2>Homebrew Files</h2>
+      <p class="text-sm text-on-surface-variant mb-3">Add individual 5etools JSON files from your device or a URL.</p>
+      <fieldset [disabled]="busy()" class="min-w-0 space-y-3">
+        <label class="block"><span class="field-label">JSON File URL</span>
+          <input class="editor-input" type="url" name="homebrew-url" [(ngModel)]="homebrewUrl" placeholder="https://raw.githubusercontent.com/…/file.json" />
+        </label>
+        <button type="button" class="action-button" [disabled]="!homebrewUrl.trim()" (click)="startHomebrew('url')">Import URL</button>
+        <div class="border-t border-outline-variant pt-3">
+          <input #homebrewUpload id="homebrew-upload" type="file" class="hidden" accept=".json,application/json" (change)="chooseHomebrew($event)" />
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" class="secondary-button" (click)="homebrewUpload.click()">Choose JSON File</button>
+            <button type="button" class="action-button" [disabled]="!homebrewFile" (click)="startHomebrew('file')">Import File</button>
+          </div>
+          @if (homebrewFile; as file) { <p class="text-xs text-on-surface-variant mt-2">{{ file.name }} · {{ mb(file.size) }} MB</p> }
+        </div>
+      </fieldset>
+      @if (revision()?.homebrewFiles?.length) {
+        <div class="rounded-lg bg-surface-container-low p-3 mt-3">
+          <h3 class="text-sm font-semibold mb-2">Installed Homebrew</h3>
+          @for (file of revision()?.homebrewFiles ?? []; track file.id) {
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <p class="text-sm min-w-0">{{ file.name }} <span class="text-xs text-on-surface-variant">· {{ file.sources.join(', ') }}</span></p>
+              <button type="button" class="secondary-button shrink-0" [disabled]="busy()" (click)="removeHomebrew(file.id)" [attr.aria-label]="'Remove ' + file.name">Remove</button>
+            </div>
+          }
+        </div>
+        <p class="text-xs text-on-surface-variant mt-2">Removing a file removes its content from the creator. Saved characters keep their existing snapshots.</p>
+      }
+      <p class="text-xs text-on-surface-variant mt-3">Dependencies are not downloaded automatically. Reimporting a file updates it; library updates retain your homebrew.</p>
+    </section>
+  </div>
+
+  @if (revision(); as r) {
+    <section class="editor-card mb-4">
+      <h2>Installed Library</h2>
+      <p class="text-sm">{{ r.metrics.records }} records · {{ mb(r.metrics.mappedBytes) }} MB</p>
+      <p class="text-xs text-on-surface-variant mt-1">Saved characters keep their existing content snapshots when this library changes.</p>
+      <details class="mt-3 rounded-lg bg-surface-container-low p-3">
+        <summary class="text-sm font-semibold cursor-pointer">Browse Imported Content</summary>
+        <div class="flex flex-wrap items-end gap-2 my-3">
+          <label class="min-w-0 grow"><span class="field-label">Content Type</span>
+            <select [(ngModel)]="browseKind" (ngModelChange)="browse(r.id)" class="editor-input">
+              <option value="class">Classes</option><option value="species">Species</option><option value="item">Items</option><option value="spell">Spells</option><option value="feat">Feats</option><option value="optionalfeature">Optional Features</option>
+            </select>
+          </label>
+          <button type="button" (click)="browse(r.id)" class="secondary-button">Show First 100</button>
+        </div>
+        <div class="content-records">
+          @for (record of records(); track record.key) {
+            <div class="py-2 border-b border-outline-variant last:border-0">
+              <p class="text-sm font-medium">{{ record.name }} <span class="font-normal text-on-surface-variant">({{ record.publication }})</span></p>
+              @if (itemViews()[record.key]; as display) {
+                <p class="text-xs text-on-surface-variant">{{ display.itemType }} · Properties: @for (p of display.properties; track p.key) { {{ p.name }} } · Masteries: @for (m of display.masteries; track m.key) { {{ m.name }} }</p>
+              }
+            </div>
+          }
+        </div>
+        <p class="text-xs text-on-surface-variant mt-3">Revision {{ r.commit }} · {{ mb(r.metrics.bytes) }} MB imported in {{ r.metrics.elapsedMs / 1000 }} seconds</p>
+      </details>
+    </section>
+  }
+
+  @if (diagnostics().length) {
+    <details class="editor-card mb-4" [open]="hasImportErrors()">
+      <summary class="text-sm font-semibold cursor-pointer">Import Diagnostics ({{ diagnostics().length }})</summary>
+      <p class="text-xs text-on-surface-variant mt-3">Showing the first 100. A failed import leaves the installed library unchanged.</p>
+      <div class="content-records mt-2">
+        @for (d of visibleDiagnostics(); track $index) {
+          <p class="text-xs py-2 border-b border-outline-variant" [class.text-error]="d.severity === 'error'">{{ d.severity }} · {{ d.file }} · {{ d.message }}</p>
+        }
+      </div>
+    </details>
+  }
+
+  <details class="editor-card">
+    <summary class="text-sm font-semibold cursor-pointer">Local Storage</summary>
+    <p class="text-xs text-on-surface-variant mt-3">Remove older imports to free space. The active library and character snapshots are kept.</p>
+    <button type="button" [disabled]="busy()" (click)="refreshStorage()" class="secondary-button my-3">Refresh Storage</button>
+    @if (storage(); as s) { <p class="text-xs text-on-surface-variant">{{ mb(s.usage ?? 0) }} MB used / {{ mb(s.quota ?? 0) }} MB browser allowance (entire site)</p> }
+    @for (entry of cachedRevisions(); track entry.revision.id) {
+      <div class="rounded-lg bg-surface-container-low p-3 mt-3">
+        <p class="text-sm font-medium">{{ entry.revision.source.owner }}/{{ entry.revision.source.repository }} · {{ entry.revision.source.branch }}</p>
+        <p class="text-xs text-on-surface-variant mt-1">{{ entry.revision.commit.slice(0, 12) }} · {{ entry.revision.createdAt }} · Adapter {{ entry.revision.adapterVersion }}</p>
+        <p class="text-xs mt-1">{{ entry.active ? 'Active' : entry.revision.status === 'staging' ? 'Incomplete Import' : 'Retained' }} · {{ entry.storedRecords }} records</p>
+        <button type="button" [disabled]="busy() || entry.active" (click)="removeRevision(entry.revision.id)" class="secondary-button mt-2">Remove Inactive Revision</button>
+      </div>
+    }
+  </details>
+</main>

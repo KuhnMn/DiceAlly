@@ -20,6 +20,9 @@ addEventListener('message', async ({ data }: MessageEvent<ContentImportRequest>)
       if (data.action === 'import') return importContent(cache, {
         namespace: data.namespace, source: data.source, signal, progress, homebrewFiles: base?.homebrewFiles,
       });
+      if (data.action === 'remove-homebrew') return importHomebrew(cache, {
+        namespace: data.namespace, source: data.source, base, removeFileId: data.fileId, bytes: 0, signal, progress,
+      });
       let value: unknown;
       let bytes: number;
       let name: string;

@@ -1,3 +1,4 @@
+import { UiIconComponent } from '../ui-icon.component';
 import { Component, ElementRef, HostListener, ViewChild, inject, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -6,14 +7,14 @@ export interface SelectOption { value: string; label: string; disabled?: boolean
 /** A single selection with its search inside the dropdown window. */
 @Component({
   selector: 'app-searchable-select',
-  imports: [FormsModule],
+  imports: [UiIconComponent, FormsModule],
   styleUrl: './local-editor.component.css',
   template: `
     <div class="relative" (keydown)="keydown($event)">
       <button #trigger type="button" class="editor-input flex items-center justify-between gap-2 text-left"
         aria-haspopup="dialog" [attr.aria-expanded]="open" [attr.aria-controls]="popupId" [attr.aria-label]="label()"
         [disabled]="disabled()" (click)="toggle()">
-        <span class="min-w-0 truncate">{{ selectedLabel }}</span><span class="shrink-0 text-xs" aria-hidden="true">▾</span>
+        <span class="min-w-0 truncate">{{ selectedLabel }}</span><span class="shrink-0 text-xs" aria-hidden="true"><app-ui-icon name="chevron-down" /></span>
       </button>
       @if (open) {
         <div [id]="popupId" role="dialog" [attr.aria-label]="label() + ' options'"

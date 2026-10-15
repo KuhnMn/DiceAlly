@@ -1,3 +1,4 @@
+import { UiIconComponent } from '../ui-icon.component';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { IndexedDbContentCache } from '../content/content-cache';
@@ -6,7 +7,7 @@ import { activeContentRevision } from './active-content-revision';
 
 @Component({
   selector: 'app-source-book-filter',
-  imports: [FormsModule],
+  imports: [UiIconComponent, FormsModule],
   templateUrl: './source-book-filter.component.html',
   styleUrl: './local-editor.component.css',
 })

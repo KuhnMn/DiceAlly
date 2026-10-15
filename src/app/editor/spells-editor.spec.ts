@@ -6,7 +6,7 @@ import { vi } from 'vitest';
 import { SpellsEditorComponent } from './spells-editor.component';
 import { EntryAnnotationsComponent } from './entry-annotations.component';
 import { emptyBasicCharacter, validateBasicInfo } from './basic-info';
-import { BasicInfoRepository } from './basic-info-repository';
+import { IndexedDbCharacterRepository } from '../characters/indexeddb-character-repository';
 import { IndexedDbContentCache } from '../content/content-cache';
 import { mapContent } from '../content/content-adapter';
 import { DEFAULT_CONTENT_SOURCE, ImportRevision, sourceIdentity } from '../content/content.model';
@@ -123,7 +123,7 @@ describe('Spell creator and playing sheet', () => {
     editor.addToList(bard, 'SPELLBOOK'); expect(sheet.spells).toHaveLength(3);
     fixture.detectChanges();
     validateBasicInfo(sheet);
-    const repository = new BasicInfoRepository(); await repository.save(sheet, 0);
+    const repository = new IndexedDbCharacterRepository(); await repository.save(sheet, 0);
     const saved = (await repository.list()).find(entry => entry.id === sheet.character!.characterUuid)!.sheet;
     expect(saved.spells).toEqual(sheet.spells);
     editor.revision.set(null); editor.results.set([]); fixture.componentRef.setInput('sheet', saved); editor.toggle(saved.spells![1]); fixture.detectChanges();

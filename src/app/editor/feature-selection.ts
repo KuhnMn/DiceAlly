@@ -1,3 +1,4 @@
+import { newEditorId } from './editor-identity';
 import { ContentRecord, ImportRevision } from '../content/content.model';
 import { Entry, FeatEntity, FeatureEntity, FeatureEntryFull, OptionalFeatureEntity } from '../models/character.model';
 import { contentReference } from './editor-content-helpers';
@@ -33,7 +34,7 @@ export function createFeatureEntry(
   const type = FEATURE_TYPES.find(type => type.kinds.includes(record.kind))?.value;
   if (!type) throw new Error(`Unsupported feature kind: ${record.kind}`);
   const feature: FeatureEntryFull = {
-    editorId: options.editorId ?? crypto.randomUUID(),
+    editorId: options.editorId ?? newEditorId(),
     name: record.name,
     source: record.publication,
     featureType: type,

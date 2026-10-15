@@ -1,7 +1,10 @@
 <section class="editor-card feature-editor">
   <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
     <div><h2 class="!mb-0">Features</h2><p class="text-xs text-on-surface-variant mt-1">Manage the entries on your character.</p></div>
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="button" class="secondary-button compact-button" [attr.aria-expanded]="listVisible" aria-controls="added-features" (click)="listVisible = !listVisible">{{ listVisible ? 'Hide List' : 'Show List' }} ({{ selected.length }})</button>
     <button type="button" class="action-button" aria-haspopup="dialog" (click)="openCatalog()">+ Add Features</button>
+    </div>
   </div>
   <nav class="flex flex-wrap gap-2 mb-4" aria-label="Feature types">
     @for (type of types; track type.value) {
@@ -11,7 +14,7 @@
   <app-feature-source-picker [character]="sheet().character!" [sources]="sources"
     [value]="sourceFilter" [orphanNames]="unassignedFeatures ? [''] : []"
     (selected)="sourceFilter = $event" (manageSources)="openSources.emit()" />
-  <div class="space-y-2">
+  <div id="added-features" class="space-y-2" [hidden]="!listVisible">
     @for (feature of selected; track feature; let i = $index) {
       <article class="feature-card rounded-lg border-2 border-secondary bg-surface-container p-2.5">
         <div class="entry-header">
@@ -22,7 +25,7 @@
             </span>
           </button>
           <button type="button" class="secondary-button compact-button" (click)="toggle(feature)">{{ expanded.has(feature) ? 'Close' : 'Edit' }}</button>
-          <button type="button" class="secondary-button compact-button icon-button" [attr.aria-label]="'Remove ' + feature.name" (click)="remove(feature)">×</button>
+          <button type="button" class="secondary-button compact-button icon-button" [attr.aria-label]="'Remove ' + feature.name" (click)="remove(feature)"><app-ui-icon name="close" /></button>
         </div>
         @if (!expanded.has(feature) && (feature.notes?.length || feature.uses?.length)) { <p class="text-xs text-on-surface-variant mt-1">{{ feature.notes?.length || 0 }} note groups · {{ feature.uses?.length || 0 }} use trackers</p> }
         @if (expanded.has(feature)) {
@@ -30,7 +33,7 @@
             <app-feature-source-picker mode="dropdown" heading="Feature Source" [character]="sheet().character!"
               [sources]="sources" [value]="feature.featureSourceName ?? ''" [allowUnassigned]="true"
               (selected)="feature.featureSourceName = $event || undefined; change()" />
-            <details class="description-panel !mt-5 text-sm"><summary class="description-toggle"><span class="description-arrow" aria-hidden="true">▸</span>Description</summary><div class="p-3"><app-entry-renderer [entries]="entries(feature)" /></div></details>
+            <details class="description-panel !mt-5 text-sm"><summary class="description-toggle"><span class="description-arrow" aria-hidden="true"><app-ui-icon name="chevron" /></span>Description</summary><div class="p-3"><app-entry-renderer [entries]="entries(feature)" /></div></details>
             <app-entry-annotations-editor [entry]="feature" (edited)="change()" />
           </div>
         }
@@ -50,12 +53,12 @@
       <app-feature-source-picker mode="dropdown" heading="Add to Source" [character]="sheet().character!"
         [sources]="sources" [value]="targetSource || ''" [allowUnassigned]="true" (selected)="selectedSource = $event" />
       <div class="flex items-center gap-2"><label class="flex-1 min-w-0"><span class="sr-only">Search features</span><input class="editor-input" name="feature-search" [(ngModel)]="search" (ngModelChange)="searchChanged()" placeholder="Search name, class or source book…" /></label><button type="button" class="secondary-button" [disabled]="loading()" (click)="refreshContent()">Refresh</button></div>
-      @if (message()) { <p role="status" class="text-sm text-on-surface-variant">{{ message() }} <a routerLink="/dev/content" class="text-primary underline">Content imports</a></p> }
+      @if (message()) { <p role="status" class="text-sm text-on-surface-variant">{{ message() }} <a routerLink="/content" class="text-primary underline">Content imports</a></p> }
       @if (loading()) { <p role="status" class="text-xs text-on-surface-variant">Searching…</p> }
       <div class="space-y-1">@for (record of results(); track record.key) {
         <div class="rounded border border-outline-variant p-2">
           <div class="flex justify-between gap-2"><div class="min-w-0"><p class="font-semibold text-sm">{{ record.name }}</p><p class="text-xs text-on-surface-variant">{{ qualifier(record) }}</p></div><button type="button" class="secondary-button compact-button" [disabled]="loading() || isSelected(record)" (click)="add(record)">{{ isSelected(record) ? 'Added' : 'Add' }}</button></div>
-          <details class="description-panel mt-2 text-sm"><summary class="description-toggle"><span class="description-arrow" aria-hidden="true">▸</span>Description</summary><div class="p-2"><app-entry-renderer [entries]="$any(record.data['entries'] ?? [])" /></div></details>
+          <details class="description-panel mt-2 text-sm"><summary class="description-toggle"><span class="description-arrow" aria-hidden="true"><app-ui-icon name="chevron" /></span>Description</summary><div class="p-2"><app-entry-renderer [entries]="$any(record.data['entries'] ?? [])" /></div></details>
         </div>
       }</div>
       @if (revision()) { <div class="flex flex-wrap items-center justify-between gap-2 text-xs"><span>{{ total() }} matches</span><div class="flex gap-2"><button type="button" class="secondary-button compact-button" [disabled]="loading() || offset === 0" (click)="nextPage(-1)">Previous</button><button type="button" class="secondary-button compact-button" [disabled]="loading() || offset + pageSize >= total()" (click)="nextPage(1)">Next</button></div></div> }

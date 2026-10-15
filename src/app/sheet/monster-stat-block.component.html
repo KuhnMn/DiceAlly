@@ -1,0 +1,375 @@
+@let monster = value();
+@if (monster.entity) {
+  @if (showSummary()) {
+                                              <!-- Size, Type, Alignment -->
+                <div class="text-sm text-on-surface pb-2">
+                  @if (monster.entity.size && monster.entity.size.length > 0) {
+                    <span>
+                      @for (size of monster.entity.size; track size) {
+                        <span>{{ getSizeText(size) }}</span>
+                        @if (!$last) {
+                          <span>, </span>
+                        }
+                      }
+                    </span>
+                  }
+                  @if (monster.entity.type && monster.entity.type.type) {
+                    <span> {{ monster.entity.type.type | capitalizeFirst}}</span>
+                  }
+                  @if (monster.entity.alignment && monster.entity.alignment.length > 0) {
+                    <span>, 
+                      @for (align of monster.entity.alignment; track align) {
+                        <span>{{ align }}</span>
+                      }
+                    </span>
+                  }
+                </div>
+    @if (monster.entity.hp) {
+    <p class="text-sm my-2"><strong>HP:</strong> {{ monster.entity.hp?.average ?? '' }}
+      @if (monster.entity.hp?.formula) { ({{ monster.entity.hp?.formula }}) }
+      @if (monster.entity.hp?.special) { {{ monster.entity.hp?.special }} }
+    </p>
+    }
+                <!-- AC, Speed, Initiative, CR -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 my-4">
+                  @if (monster.entity.ac && monster.entity.ac.length > 0) {
+                    <div class="p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high">
+                      <div class="text-xs text-on-surface-variant uppercase font-bold tracking-wide">AC</div>
+                      <div class="text-2xl font-bold text-primary">
+                        @for (ac of monster.entity.ac; track $index) {
+                          <app-entry-renderer [entry]="{ text: formatArmorClass(ac) }" />
+                        }
+                      </div>
+                    </div>
+                  }
+                  <div class="p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high">
+                    <div class="text-xs text-on-surface-variant uppercase font-bold tracking-wide">Initiative</div>
+                    <div class="text-2xl font-bold text-tertiary">{{ getInitiative(monster) }}</div>
+                  </div>
+                  @if (monster.entity.speed) {
+                    <div class="p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high">
+                      <div class="text-xs text-on-surface-variant uppercase font-bold tracking-wide">Speed</div>
+                      <div class="text-xl font-bold text-on-surface-container-high">{{ formatSpeeds(monster.entity.speed) }}</div>
+                    </div>
+                  }
+                  @if (monster.entity.cr) {
+                    <div class="p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high">
+                      <div class="text-xs text-on-surface-variant uppercase font-bold tracking-wide">CR</div>
+                      <div class="text-2xl font-bold text-tertiary">{{ typeof monster.entity.cr === 'string' ? monster.entity.cr : monster.entity.cr.cr }} 
+                        <span class="text-xl">(PB +{{ getProficiencyBonusFromCR(typeof monster.entity.cr === 'string' ? monster.entity.cr : monster.entity.cr.cr) }})</span>
+                      </div>
+                    </div>
+                  }
+                </div>
+
+
+  }
+                <!-- Ability Scores -->
+                @if (hasAbilityScores(monster)) {
+                  <div class="grid grid-cols-3 lg:grid-cols-6 gap-2 my-4">
+                    <div class="text-center p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high rounded-md">
+                      <div class="text-xs uppercase font-bold text-on-surface-variant">STR</div>
+                      <div class="text-xl font-bold text-primary">{{ monster.entity.str }}</div>
+                      <div class="text-xs text-tertiary">{{ getModifier(monster.entity.str) }}</div>
+                    </div>
+                    <div class="text-center p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high rounded-md">
+                      <div class="text-xs uppercase font-bold text-on-surface-variant">DEX</div>
+                      <div class="text-xl font-bold text-primary">{{ monster.entity.dex }}</div>
+                      <div class="text-xs text-tertiary">{{ getModifier(monster.entity.dex) }}</div>
+                    </div>
+                    <div class="text-center p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high rounded-md">
+                      <div class="text-xs uppercase font-bold text-on-surface-variant">CON</div>
+                      <div class="text-xl font-bold text-primary">{{ monster.entity.con }}</div>
+                      <div class="text-xs text-tertiary">{{ getModifier(monster.entity.con) }}</div>
+                    </div>
+                    <div class="text-center p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high rounded-md">
+                      <div class="text-xs uppercase font-bold text-on-surface-variant">INT</div>
+                      <div class="text-xl font-bold text-primary">{{ monster.entity.int }}</div>
+                      <div class="text-xs text-tertiary">{{ getModifier(monster.entity.int) }}</div>
+                    </div>
+                    <div class="text-center p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high rounded-md">
+                      <div class="text-xs uppercase font-bold text-on-surface-variant">WIS</div>
+                      <div class="text-xl font-bold text-primary">{{ monster.entity.wis }}</div>
+                      <div class="text-xs text-tertiary">{{ getModifier(monster.entity.wis) }}</div>
+                    </div>
+                    <div class="text-center p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high rounded-md">
+                      <div class="text-xs uppercase font-bold text-on-surface-variant">CHA</div>
+                      <div class="text-xl font-bold text-primary">{{ monster.entity.cha }}</div>
+                      <div class="text-xs text-tertiary">{{ getModifier(monster.entity.cha) }}</div>
+                    </div>
+                  </div>
+                }
+
+                <!-- Saving Throws -->
+                @if (monster.entity.save && Object.keys(monster.entity.save).length > 0) {
+                  <div class="my-3 px-4 py-3 bg-surface border-l-4 border-secondary rounded-md ">
+                    <span class="font-bold text-sm text-on-surface mr-2">Saving Throws:</span>
+                    @for (saveEntry of Object.entries(monster.entity.save); track saveEntry[0]) {
+                      <span class="text-sm text-on-surface-variant">{{ saveEntry[0] |capitalizeFirst}} {{ saveEntry[1] }}</span>
+                      @if (!$last) {
+                        <span class="text-on-surface-variant">, </span>
+                      }
+                    }
+                  </div>
+                }
+
+                <!-- Skills -->
+                @if (monster.entity.skill && Object.keys(monster.entity.skill).length > 0) {
+                  <div class="my-3 px-4 py-3 bg-surface border-l-4 border-secondary rounded-md ">
+                    <span class="font-bold text-sm text-on-surface mr-2">Skills:</span>
+                    @for (skillEntry of Object.entries(monster.entity.skill); track skillEntry[0]) {
+                      <span class="text-sm text-on-surface-variant">{{ skillEntry[0] | capitalizeFirst}} {{ skillEntry[1] }}</span>
+                      @if (!$last) {
+                        <span class="text-on-surface-variant">, </span>
+                      }
+                    }
+                  </div>
+                }
+
+                <!-- Senses -->
+                @if (monster.entity.senses && monster.entity.senses.length > 0) {
+                  <div class="my-3 px-4 py-3 bg-surface border-l-4 border-secondary rounded-md ">
+                    <span class="font-bold text-sm text-on-surface mr-2">Senses:</span>
+                    @for (sense of monster.entity.senses; track sense) {
+                      <span class="text-sm text-on-surface-variant">{{ sense }}</span>
+                      @if (!$last) {
+                        <span class="text-on-surface-variant">, </span>
+                      }
+                    }
+                  </div>
+                }
+
+                <!-- Languages -->
+                @if (monster.entity.languages && monster.entity.languages.length > 0) {
+                  <div class="my-3 px-4 py-3 bg-surface border-l-4 border-secondary rounded-md ">
+                    <span class="font-bold text-sm text-on-surface mr-2">Languages:</span>
+                    @for (lang of monster.entity.languages; track lang) {
+                      <span class="text-sm text-on-surface-variant">{{ lang }}</span>
+                      @if (!$last) {
+                        <span class="text-on-surface-variant">, </span>
+                      }
+                    }
+                  </div>
+                }
+
+                <!-- Immunities, Resists, Vulnerabilities -->
+                @if (monster.entity.immune && monster.entity.immune.length > 0) {
+                  <div class="my-3 px-4 py-3 bg-surface border-l-4 border-secondary rounded-md ">
+                    <span class="font-bold text-sm text-on-surface mr-2">Immunities:</span>
+                    @for (immune of monster.entity.immune; track $index) {
+                      <span class="text-sm text-on-surface-variant">{{ formatDefense(immune) | capitalizeFirst }}</span>
+                      @if (!$last) {
+                        <span class="text-on-surface-variant">, </span>
+                      }
+                    }
+                  </div>
+                }
+
+                @if (monster.entity.resist && monster.entity.resist.length > 0) {
+                  <div class="my-3 px-4 py-3 bg-surface border-l-4 border-secondary rounded-md ">
+                    <span class="font-bold text-sm text-on-surface mr-2">Resistances:</span>
+                    @for (resist of monster.entity.resist; track $index) {
+                      <span class="text-sm text-on-surface-variant">{{ formatDefense(resist) }}</span>
+                      @if (!$last) {
+                        <span class="text-on-surface-variant">, </span>
+                      }
+                    }
+                  </div>
+                }
+
+                @if (monster.entity.vulnerable && monster.entity.vulnerable.length > 0) {
+                  <div class="my-3 px-4 py-3 bg-surface border-l-4 border-secondary rounded-md ">
+                    <span class="font-bold text-sm text-on-surface mr-2">Vulnerabilities:</span>
+                    @for (vuln of monster.entity.vulnerable; track $index) {
+                      <span class="text-sm text-on-surface-variant">{{ formatDefense(vuln) }}</span>
+                      @if (!$last) {
+                        <span class="text-on-surface-variant">, </span>
+                      }
+                    }
+                  </div>
+                }
+
+                @if (monster.entity.conditionImmune && monster.entity.conditionImmune.length > 0) {
+                  <div class="my-3 px-4 py-3 bg-surface border-l-4 border-tertiary rounded-md ">
+                    <span class="font-bold text-sm text-on-surface mr-2">Condition Immunities:</span>
+                    @for (cond of monster.entity.conditionImmune; track $index) {
+                      <span class="text-sm text-on-surface-variant">{{ formatDefense(cond) }}</span>
+                      @if (!$last) {
+                        <span class="text-on-surface-variant">, </span>
+                      }
+                    }
+                  </div>
+                }
+
+                <!-- Spellcasting -->
+                @if (getMonsterSpellcastingBlocks(monster.entity.spellcasting).length > 0) {
+                  <div class="mt-6 pt-4 border-t border-outline-variant">
+                    <h4 class="font-bold text-lg mb-3 text-on-surface">Spellcasting</h4>
+                    @for (spell of getMonsterSpellcastingBlocks(monster.entity.spellcasting); track spell.name) {
+                      <div class="my-3 px-4 py-3 bg-surface border-l-4 border-purple rounded-md ">
+                        @if (spell.headerEntries?.length) {
+                          <div class="mt-2 space-y-1">
+                            <app-entry-renderer [entries]="$any(spell.headerEntries)" />
+                          </div>
+                        }
+                        @if (hasSpellList(spell.will)) {
+                          <div class="mt-2 text-sm text-on-surface">
+                            <span class="font-semibold">At will:</span>
+                            <span> {{ formatSpellList(spell.will) }}</span>
+                          </div>
+                        }
+                        @if (hasSpellMap(spell.daily)) {
+                          <div class="mt-2 space-y-1 text-sm text-on-surface">
+                            @for (key of getSortedSpellKeys(spell.daily); track key) {
+                              <div>
+                                <span class="font-semibold">{{ formatDailyLabel(key) }}:</span>
+                                <span> {{ formatSpellArray(spell.daily?.[key]) }}</span>
+                              </div>
+                            }
+                          </div>
+                        }
+                        @if (hasSpellMap(spell.known)) {
+                          <div class="mt-2 space-y-1 text-sm text-on-surface">
+                            @for (key of getSortedSpellKeys(spell.known); track key) {
+                              <div>
+                                <span class="font-semibold">{{ formatKnownLabel(key) }}:</span>
+                                <span> {{ formatSpellArray(spell.known?.[key]) }}</span>
+                              </div>
+                            }
+                          </div>
+                        }
+                        @for (list of ['constant', 'ritual']; track list) {
+                          @if ($any(spell)[list]?.length) {
+                            <p class="mt-2 text-sm"><strong>{{ list | capitalizeFirst }}:</strong> {{ formatSpellList($any(spell)[list]) }}</p>
+                          }
+                        }
+                        @for (key of getSortedSpellKeys(spell.rest); track key) {
+                          <p class="mt-2 text-sm"><strong>{{ key }} / Rest:</strong> {{ formatSpellArray(spell.rest?.[key]) }}</p>
+                        }
+                        @for (key of Object.keys(spell.spells ?? {}); track key) {
+                          <p class="mt-2 text-sm"><strong>{{ formatKnownLabel(key) }}@if (spell.spells?.[key]?.slots != null) { ({{ spell.spells?.[key]?.slots }} slots) }:</strong> {{ formatSpellList(spell.spells?.[key]?.spells) }}</p>
+                        }
+                        @if (spell.footerEntries?.length) { <app-entry-renderer [entries]="$any(spell.footerEntries)" /> }
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Traits -->
+                @if (monster.entity.trait && monster.entity.trait.length > 0) {
+                  <div class="mt-6 pt-4 border-t border-outline-variant">
+                    <h4 class="font-bold text-lg mb-3 text-on-surface">Traits</h4>
+                    @for (trait of monster.entity.trait; track trait.name) {
+                      <div class="my-3 px-4 py-3 bg-surface border-l-4 border-blue rounded-md ">
+                        <div class="font-bold text-on-surface mb-1">{{ trait.name }}</div>
+                        @if (trait.entries && trait.entries.length > 0) {
+                          @for (entry of trait.entries; track $index) {
+                            <div class="text-sm leading-relaxed text-on-surface-variant">
+                              <app-entry-renderer [entry]="entry"></app-entry-renderer>
+                            </div>
+                          }
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Actions -->
+                @if (monster.entity.action && monster.entity.action.length > 0) {
+                  <div class="mt-6 pt-4 border-t border-outline-variant">
+                    <h4 class="font-bold text-lg mb-3 text-on-surface">Actions</h4>
+                    @for (action of monster.entity.action; track action.name) {
+                      <div class="my-3 px-4 py-3 bg-surface border-l-4 border-tertiary rounded-md ">
+                        <div class="font-bold text-on-surface mb-1">{{ action.name }}</div>
+                        @if (action.entries && action.entries.length > 0) {
+                          @for (entry of action.entries; track $index) {
+                            <div class="text-sm leading-relaxed text-on-surface-variant">
+                              <app-entry-renderer [entry]="entry"></app-entry-renderer>
+                            </div>
+                          }
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Reactions -->
+                @if (monster.entity.reaction && monster.entity.reaction.length > 0) {
+                  <div class="mt-6 pt-4 border-t border-outline-variant">
+                    <h4 class="font-bold text-lg mb-3 text-on-surface">Reactions</h4>
+                    @for (reaction of monster.entity.reaction; track reaction.name) {
+                      <div class="my-3 px-4 py-3 bg-surface border-l-4 border-tertiary rounded-md ">
+                        <div class="font-bold text-on-surface mb-1">{{ reaction.name }}</div>
+                        @if (reaction.entries && reaction.entries.length > 0) {
+                          @for (entry of reaction.entries; track $index) {
+                            <div class="text-sm leading-relaxed text-on-surface-variant">
+                              <app-entry-renderer [entry]="entry"></app-entry-renderer>
+                            </div>
+                          }
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Legendary Actions -->
+                @if (monster.entity.legendary && monster.entity.legendary.length > 0) {
+                  <div class="mt-6 pt-4 border-t border-outline-variant">
+                    <h4 class="font-bold text-lg mb-3 text-on-surface">Legendary Actions</h4>
+                    @for (action of monster.entity.legendary; track action.name) {
+                      <div class="my-3 px-4 py-3 bg-surface border-l-4 border-tertiary rounded-md ">
+                        <div class="font-bold text-on-surface mb-1">{{ action.name }}</div>
+                        @if (action.entries && action.entries.length > 0) {
+                          @for (entry of action.entries; track $index) {
+                            <div class="text-sm leading-relaxed text-on-surface-variant">
+                              <app-entry-renderer [entry]="entry"></app-entry-renderer>
+                            </div>
+                          }
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Lair Actions -->
+                @if (monster.entity.legendaryActionsLair && monster.entity.legendaryActionsLair.length > 0) {
+                  <div class="mt-6 pt-4 border-t border-outline-variant">
+                    <h4 class="font-bold text-lg mb-3 text-on-surface">Lair Actions</h4>
+                    @for (action of monster.entity.legendaryActionsLair; track action.name) {
+                      <div class="my-3 px-4 py-3 bg-surface border-l-4 border-tertiary rounded-md ">
+                        <div class="font-bold text-on-surface mb-1">{{ action.name }}</div>
+                        @if (action.entries && action.entries.length > 0) {
+                          @for (entry of action.entries; track $index) {
+                            <div class="text-sm leading-relaxed text-on-surface-variant">
+                              <app-entry-renderer [entry]="entry"></app-entry-renderer>
+                            </div>
+                          }
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+
+  @if (monster.entity.bonus?.length) {
+    <div class="mt-6 pt-4 border-t border-outline-variant">
+      <h4 class="font-bold text-lg mb-3 text-on-surface">Bonus Actions</h4>
+      @for (action of monster.entity.bonus; track $index) {
+        <div class="my-3 px-4 py-3 bg-surface border-l-4 border-tertiary rounded-md">
+          <div class="font-bold text-on-surface mb-1">{{ action.name }}</div>
+          <app-entry-renderer [entries]="action.entries" />
+        </div>
+      }
+    </div>
+  }
+  @if (monster.entity.mythic?.length) {
+    <div class="mt-6 pt-4 border-t border-outline-variant">
+      <h4 class="font-bold text-lg mb-3 text-on-surface">Mythic Actions</h4>
+      @for (action of monster.entity.mythic; track $index) {
+        <div class="my-3 px-4 py-3 bg-surface border-l-4 border-tertiary rounded-md">
+          <div class="font-bold text-on-surface mb-1">{{ action.name }}</div>
+          <app-entry-renderer [entries]="action.entries" />
+        </div>
+      }
+    </div>
+  }
+}

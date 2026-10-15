@@ -1,3 +1,4 @@
+import { UiIconComponent } from '../ui-icon.component';
 import { Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ExportedCharacter, SpellSlot } from '../models/character.model';
@@ -6,7 +7,7 @@ import { RECOVERY_OPTIONS } from './recovery-options';
 import { FeatureSourcePickerComponent } from './feature-source-picker.component';
 
 @Component({
-  selector: 'app-editor-spell-slots', imports: [FormsModule, FeatureSourcePickerComponent],
+  selector: 'app-editor-spell-slots', imports: [UiIconComponent, FormsModule, FeatureSourcePickerComponent],
   templateUrl: './spell-slots.component.html', styleUrl: './local-editor.component.css',
 })
 export class SpellSlotsComponent {

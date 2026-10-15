@@ -47,7 +47,7 @@ try {
     clearTimeout(entry.timer); pending.delete(message.id);
     message.error ? entry.reject(new Error(message.error.message)) : entry.resolve(message.result);
   });
-  const { targetId } = await send('Target.createTarget', { url: `${origin}/dev/characters` });
+  const { targetId } = await send('Target.createTarget', { url: `${origin}/characters/new` });
   const { sessionId: session } = await send('Target.attachToTarget', { targetId, flatten: true });
   await until(() => evaluate(session, `!!globalThis.ng && !!document.querySelector('app-local-editor')`));
   await evaluate(session, `globalThis.c = ng.getComponent(document.querySelector('app-local-editor'));
@@ -83,7 +83,7 @@ try {
   await until(() => evaluate(session, `!!document.querySelector('#wizard-subclass-0')`));
   await evaluate(session, `input('#wizard-level-0','3');document.querySelector('#wizard-subclass-0 button').click();ng.applyChanges(w);Array.from(document.querySelectorAll('#wizard-subclass-0 [role=option]')).find(button=>button.dataset.value===subKey).click();ng.applyChanges(w);`);
   await check('class selection, exact subclass and skill choices produce a review',async()=>{
-    await evaluate(session, `w.advance();ng.applyChanges(w);const choice=w.proposal().choices.find(choice=>choice.label==='skill proficiencies');w.toggleChoice(choice,'arcana');w.advance();ng.applyChanges(w);`);
+    await evaluate(session, `w.advance();ng.applyChanges(w);const choice=w.proposal().choices.find(choice=>choice.label.endsWith(': skill proficiencies'));w.toggleChoice(choice,'arcana');w.advance();ng.applyChanges(w);`);
     assert.equal(await evaluate(session,'w.stage'),2); assert.deepEqual(await evaluate(session,'w.proposal().errors'),[]);
   });
   for(const width of [320,390,768,1100]){
@@ -101,7 +101,7 @@ try {
     assert.equal(await evaluate(session,'c.character.level'),3);assert.equal(await evaluate(session,'c.character.maxHp'),14);
     assert.equal(await evaluate(session,'c.sheet.features.length'),3);
     assert.equal(await evaluate(session,`c.sheet.spells.some(spell=>spell.listType==='PREPARED'&&spell.uses.length)`),true);
-    await evaluate(session,`c.open(c.entries().find(entry=>entry.id===c.character.characterUuid));ng.applyChanges(c);`);
+    await evaluate(session,`c.open(await c.library.get(c.character.characterUuid));ng.applyChanges(c);`);
     assert.equal(await evaluate(session,'c.sheet.creatorWizard.classes[0].level'),3);
   });
   await check('reopening and increasing level preserves manual HP, notes and used hit dice',async()=>{
@@ -111,6 +111,99 @@ try {
     assert.equal(await evaluate(session,'c.error()'),''); assert.equal(await evaluate(session,'c.character.maxHp'),99);
     assert.equal(await evaluate(session,'c.character.level'),4);assert.equal(await evaluate(session,'c.character.hitDice[0].total'),4);assert.equal(await evaluate(session,'c.character.hitDice[0].used'),2);
     assert.equal(await evaluate(session,'c.sheet.features[0].notes[0].notes[0]'),'Keep this note');
+  });
+
+  await check('Bard multiclass proficiency choices identify their source and complete without manual fallback',async()=>{
+    await evaluate(session,"c.wizardOpen=true;ng.applyChanges(c)");
+    await until(()=>evaluate(session,"!!document.querySelector('app-class-wizard')&&!ng.getComponent(document.querySelector('app-class-wizard')).loading()"));
+    await evaluate(session,`globalThis.w=ng.getComponent(document.querySelector('app-class-wizard'));
+      const add=(kind,data)=>{const key=JSON.stringify([kind,data.name.toLowerCase(),'test']);w.records.set(key,{key,kind,name:data.name,publication:'TEST',file:'fixture.json',data:{source:'TEST',...data},links:[]});return key;};
+      const bard=add('class',{name:'Bard',hd:{number:1,faces:8},casterProgression:'full',spellcastingAbility:'cha',classFeatures:[],multiclassing:{proficienciesGained:{skills:[{choose:{from:['perception','stealth'],count:1}}],tools:['Choose one instrument'],toolProficiencies:[{anyMusicalInstrument:1}]}}});
+      add('item',{name:'Lute',type:'INS'});add('item',{name:'Flute',type:'INS'});
+      w.state.classes.push({selectionId:'bard',classKey:bard,level:1});w.rebuild();w.stage=1;
+      for(const choice of w.proposal().choices.filter(choice=>choice.label.startsWith('Bard:')))w.toggleChoice(choice,choice.candidates[0].value);
+      ng.applyChanges(w);`);
+    assert.equal(await evaluate(session,"w.proposal().unresolved.length"),0);
+    assert.equal(await evaluate(session,"w.proposal().warnings.length"),0);
+    assert.equal(await evaluate(session,"w.canReview"),true);
+    assert.equal(await evaluate(session,"document.querySelector('app-class-wizard').textContent.includes('Finish manually if needed')"),false);
+    const cards=await evaluate(session,"[...document.querySelectorAll('app-class-wizard section')].filter(e=>e.querySelector('h3')?.textContent.startsWith('Bard:')).map(e=>({finished:e.textContent.includes('Finished'),search:!!e.querySelector('input'),enabled:[...e.querySelectorAll('button')].every(b=>!b.disabled)}))");
+    assert.equal(cards.length,2);
+    assert(cards.every(card=>card.finished&&!card.search&&card.enabled),JSON.stringify(cards));
+  });
+
+  await check('Bulk Known spells collapse while individual Prepared grants remain visible',async()=>{
+    await evaluate(session,`for(let i=0;i<20;i++){
+      const name='Bulk Cantrip '+i;const key=JSON.stringify(['spell',name.toLowerCase(),'test']);
+      w.records.set(key,{key,kind:'spell',name,publication:'TEST',file:'fixture.json',links:[],data:{name,source:'TEST',level:0,classes:{fromClassList:[{name:'Wizard',source:'TEST'}]}}});
+    }
+    const key=JSON.stringify(['spell','mage hand','test']);
+    w.records.set(key,{key,kind:'spell',name:'Mage Hand',publication:'TEST',file:'fixture.json',links:[],data:{name:'Mage Hand',source:'TEST',level:0}});
+    w.records.get(subKey).data.additionalSpells[0].known={'3':['Mage Hand|TEST']};
+    w.state.classes[0].spellList='Wizard';w.rebuild();w.stage=2;ng.applyChanges(w);`);
+    const groups=await evaluate(session,"[...document.querySelectorAll('app-class-wizard details')].filter(e=>e.querySelector('summary')?.textContent.includes('Known Cantrips')).map(e=>({open:e.open,label:e.querySelector('summary').textContent,entries:e.querySelectorAll('p').length}))");
+    assert(groups.some(group=>!group.open&&group.entries>=20),JSON.stringify(groups));
+    assert.equal(await evaluate(session,"w.reviewItems().some(item=>item.label==='Mage Hand: prepared'&&!item.entries)"),true);
+    await evaluate(session,"[...document.querySelectorAll('app-class-wizard details')].find(e=>e.querySelector('summary')?.textContent.includes('Known Cantrips')).querySelector('summary').click()");
+    assert.equal(await evaluate(session,"[...document.querySelectorAll('app-class-wizard details')].some(e=>e.open&&e.textContent.includes('Bulk Cantrip 0'))"),true);
+  });
+
+  await check('Monsters tab adds library companions and preserves HP, uses and grouped notes',async()=>{
+    await evaluate(session,"c.wizardOpen=false;c.setPage(5);ng.applyChanges(c)");
+    await until(()=>evaluate(session,"!!document.querySelector('app-editor-monsters')&&!ng.getComponent(document.querySelector('app-editor-monsters')).catalog.loading()"));
+    await evaluate(session,`globalThis.m=ng.getComponent(document.querySelector('app-editor-monsters'));
+      const revision=m.catalog.revision();
+      const wolf={key:JSON.stringify(['monster','wolf','test']),kind:'monster',name:'Wolf',publication:'TEST',file:'fixture.json',links:[],data:{name:'Wolf',source:'TEST',type:'beast',hp:{average:11},speed:{walk:40},action:[{name:'Bite',entries:['Bite text']}]}};
+      await m.catalog.cache.put(revision.id,[wolf]);m.search='Wolf';await m.catalog.search(m.query());m.openCatalog();ng.applyChanges(m);`);
+    await until(()=>evaluate(session,"!!document.querySelector('app-catalog-dialog')"));
+    await evaluate(session,"[...document.querySelectorAll('app-catalog-dialog button')].find(b=>b.textContent.trim()==='Add').click()");
+    assert.equal(await evaluate(session,"c.sheet.monsters.length"),1);
+    await evaluate(session,`m.catalogOpen=false;m.expanded.add(c.sheet.monsters[0]);ng.applyChanges(m);
+      const field=document.querySelector('app-editor-monsters input[type=number]');field.value='25';field.dispatchEvent(new Event('input',{bubbles:true}));
+      c.sheet.monsters[0].notes=[{tag:'Commands',notes:['Guard','Follow'],isEditable:true}];
+      c.sheet.monsters[0].uses=[{tag:'Summon',totalFreeUses:3,usedFreeUses:1,freeUsesRegainCondition:'SHORT_REST_ONE'}];ng.applyChanges(m);await c.save();`);
+    assert.equal(await evaluate(session,"c.error()"),'');
+    await evaluate(session,"c.open(await c.library.get(c.character.characterUuid));c.setPage(5);ng.applyChanges(c)");
+    assert.equal(await evaluate(session,"c.sheet.monsters[0].monsterMaxHP"),25);
+    assert.equal(await evaluate(session,"c.sheet.monsters[0].notes[0].notes.length"),2);
+    assert.equal(await evaluate(session,"c.sheet.monsters[0].uses[0].usedFreeUses"),1);
+    for(const width of [320,390,1100]){
+      await send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500},session);
+      await evaluate(session,"globalThis.m=ng.getComponent(document.querySelector('app-editor-monsters'));m.expanded.add(c.sheet.monsters[0]);ng.applyChanges(m)");
+      const geometry=await evaluate(session,"({width:innerWidth,scroll:document.documentElement.scrollWidth})");
+      assert(geometry.scroll<=geometry.width+1,JSON.stringify(geometry));
+    }
+    await evaluate(session,"await c.viewSheet()");
+    await until(()=>evaluate(session,"!!document.querySelector('app-character-sheet')"));
+    await evaluate(session,"globalThis.viewer=ng.getComponent(document.querySelector('app-character-sheet'));viewer.currentPage.set(5);ng.applyChanges(viewer)");
+    await until(()=>evaluate(session,"!!document.querySelector('app-monsters-page')"));
+    await evaluate(session,"globalThis.monstersPage=ng.getComponent(document.querySelector('app-monsters-page'));monstersPage.toggleExpanded('monster-Wolf');ng.applyChanges(monstersPage)");
+    assert.equal(await evaluate(session,"!!document.querySelector('app-monsters-page app-feature-uses')"),true);
+    assert.equal(await evaluate(session,"!!document.querySelector('app-monsters-page app-feature-notes')"),true);
+  });
+
+  await check('Shared stat blocks render descriptive AC and opt-in HP tracking',async()=>{
+    await evaluate(session,"await viewer.editCharacter()");
+    await until(()=>evaluate(session,"!!document.querySelector('app-local-editor')"));
+    await evaluate(session,"globalThis.c=ng.getComponent(document.querySelector('app-local-editor'));c.setPage(5);ng.applyChanges(c)");
+    await until(()=>evaluate(session,"!!document.querySelector('app-editor-monsters')&&!ng.getComponent(document.querySelector('app-editor-monsters')).catalog.loading()"));
+    await evaluate(session,`globalThis.m=ng.getComponent(document.querySelector('app-editor-monsters'));
+      const beast={key:JSON.stringify(['monster','beast of the land','test']),kind:'monster',name:'Beast of the Land',publication:'TEST',file:'fixture.json',links:[],data:{name:'Beast of the Land',source:'TEST',type:'beast',ac:[{special:'13 plus your Wisdom modifier'}],hp:{special:'5 plus five times your Ranger level'},str:14,dex:14,trait:[{name:'Primal Bond',entries:['Add your Proficiency Bonus to any ability check.']}],action:[{name:"Beast's Strike",entries:['**Melee Attack Roll:** **Bonus Equals Your Spell Attack Modifier**, reach 5 ft.']}] }};
+      await m.catalog.cache.put(m.catalog.revision().id,[beast]);m.search='Beast of the Land';await m.catalog.search(m.query());m.openCatalog();ng.applyChanges(m);`);
+    await until(()=>evaluate(session,"!!document.querySelector('app-catalog-dialog app-monster-stat-block')"));
+    const text=await evaluate(session,"document.querySelector('app-catalog-dialog app-monster-stat-block').textContent");
+    assert(text.includes('13 plus your Wisdom modifier')&&text.includes('Primal Bond')&&text.includes("Beast's Strike"),text);
+    assert(!text.includes('"entries"')&&!text.includes('**'),text);
+    await evaluate(session,"[...document.querySelectorAll('app-catalog-dialog button')].find(b=>b.textContent.trim()==='Add').click();m.catalogOpen=false;m.expanded.add(c.sheet.monsters[1]);ng.applyChanges(m)");
+    assert.equal(await evaluate(session,"c.sheet.monsters[1].hpEnabled"),false);
+    assert.equal(await evaluate(session,"[...document.querySelectorAll('app-editor-monsters article')].find(e=>e.textContent.includes('Beast of the Land')).querySelector('input[type=number]').value"),'');
+    await evaluate(session,"await c.viewSheet()");
+    await until(()=>evaluate(session,"!!document.querySelector('app-character-sheet')"));
+    await evaluate(session,"globalThis.viewer=ng.getComponent(document.querySelector('app-character-sheet'));viewer.currentPage.set(5);ng.applyChanges(viewer)");
+    await until(()=>evaluate(session,"!!document.querySelector('app-monsters-page')"));
+    const displayed=await evaluate(session,"[...document.querySelectorAll('app-monsters-page h3')].find(e=>e.textContent==='Beast of the Land').closest('div.border-2').textContent");
+    assert(displayed.includes('13 plus your Wisdom modifier'),displayed);
+    assert.equal(await evaluate(session,"viewer.characterData().monsters.find(m=>m.name==='Beast of the Land').hpEnabled"),false);
   });
 } catch (error) { report.error = error.message; process.exitCode = 1; console.error(error); }
 finally {

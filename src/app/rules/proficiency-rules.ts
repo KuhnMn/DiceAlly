@@ -1,14 +1,23 @@
 import { entityKey, object } from '../content/content.model';
 import { ContentClassSelection, ContentRulesIndex } from './feature-rules';
 import { ProficiencyContribution, SKILL_ABILITIES } from './derived-stats';
-export interface ProficiencyChoice { id: string; count: number; candidates: string[]; kind: ProficiencyContribution['kind'] }
-export interface ProficiencyPackageChoice { id: string; kind: ProficiencyContribution['kind']; options: { value: string; data: Record<string,unknown> }[] }
+export interface ProficiencyChoice { id: string; count: number; candidates: string[]; kind: ProficiencyContribution['kind']; ownerKey: string }
+export interface ProficiencyPackageChoice { id: string; kind: ProficiencyContribution['kind']; ownerKey: string; options: { value: string; data: Record<string,unknown> }[] }
 export type ProficiencyCatalogs = Partial<Record<ProficiencyContribution['kind'],Record<string,readonly string[]>>>;
 /** Generate an origin-tagged proficiency ledger; manual entries remain separate from generated grants. */
 export function deriveProficiencyGrants(selections: ContentClassSelection[],index: ContentRulesIndex,
   answers: Readonly<Record<string,readonly string[]>> = {},speciesKey?: string,manual: ProficiencyContribution[] = [],catalogs: ProficiencyCatalogs = {}) {
   const generated: ProficiencyContribution[] = []; const choices: ProficiencyChoice[] = []; const packages: ProficiencyPackageChoice[] = []; const diagnostics: string[] = [];
   const ids = new Set<string>();
+  const ownerKeys = new Map<string, string>();
+  // Structured tool choices refer to the installed playable tools, not description text.
+  const tools = [...index.records.values()].filter(record => record.kind === 'item'
+    && record.derivation?.operation !== 'item-group' && !Array.isArray(record.data['items']));
+  const toolKeys = (type?: string) => tools.filter(record =>
+    type ? String(record.data['type'] ?? '').split('|')[0] === type
+      : ['T', 'AT', 'GS', 'INS'].includes(String(record.data['type'] ?? '').split('|')[0])).map(record => record.key);
+  const toolCatalog: Record<string, string[]> = { any: toolKeys(), anyTool: toolKeys(),
+    anyArtisansTool: toolKeys('AT'), anyGamingSet: toolKeys('GS'), anyMusicalInstrument: toolKeys('INS') };
   const add = (kind: ProficiencyContribution['kind'],target: string,origin: string,rank: 0.5 | 1 | 2 = 1) => {
     if (!target) { diagnostics.push('Empty proficiency target.'); return; }
     if (!generated.some(c => c.kind === kind && c.target === target && c.origin === origin && c.rank === rank)) generated.push({ kind,target,origin,rank });
@@ -24,7 +33,7 @@ export function deriveProficiencyGrants(selections: ContentClassSelection[],inde
     const already = new Set(generated.filter(c => c.kind === kind && c.origin === origin).map(c => c.target));
     const candidates = [...new Set(from)].filter(target => !already.has(target)) as string[];
     if (Number(count) > candidates.length) { diagnostics.push(`Insufficient proficiency candidates: ${path}`); return; }
-    const id = JSON.stringify(['proficiency-choice',origin,path]); choices.push({ id,count: Number(count),candidates,kind });
+    const id = JSON.stringify(['proficiency-choice',origin,path]); choices.push({ id,count: Number(count),candidates,kind,ownerKey: ownerKeys.get(origin)! });
     const answer = Object.hasOwn(answers,id) ? answers[id] : [];
     if (!Array.isArray(answer) || answer.length !== count || new Set(answer).size !== count || answer.some(v => !candidates.includes(v))) {
       diagnostics.push(`Select ${count} valid proficiencies: ${path}`); return;
@@ -49,7 +58,7 @@ export function deriveProficiencyGrants(selections: ContentClassSelection[],inde
         // Object packages are alternatives. Choosing one must never grant the union of all packages.
         const id = JSON.stringify(['proficiency-package',origin,path]);
         const options = value.map((data,i) => ({ value: String(i),data: structuredClone(object(data)!) }));
-        packages.push({ id,kind,options });
+        packages.push({ id,kind,options,ownerKey: ownerKeys.get(origin)! });
         const answer = Object.hasOwn(answers,id) ? answers[id] : [];
         if (!Array.isArray(answer) || answer.length !== 1 || !options.some(option => option.value === answer[0])) {
           diagnostics.push(`Select one proficiency package: ${path}`); return;
@@ -73,7 +82,8 @@ export function deriveProficiencyGrants(selections: ContentClassSelection[],inde
         }
         choice(from,count,kind,origin,path);
       } else if (/^any/i.test(field) || (kind === 'language' && field === 'other')) {
-        const builtin = kind === 'skill' && ['any','anySkill'].includes(field) ? Object.keys(SKILL_ABILITIES) : undefined;
+        const builtin = kind === 'skill' && ['any','anySkill'].includes(field) ? Object.keys(SKILL_ABILITIES)
+          : kind === 'tool' ? toolCatalog[field] : undefined;
         const catalog = catalogs[kind];
         const from = catalog && Object.hasOwn(catalog,field) ? catalog[field] : builtin;
         choice(from,entry === true ? 1 : entry,kind,origin,`${path}.${field}`);
@@ -88,15 +98,25 @@ export function deriveProficiencyGrants(selections: ContentClassSelection[],inde
       || !Number.isInteger(selection.level) || selection.level < 1 || selection.level > 20) { diagnostics.push('Invalid proficiency class selection.'); continue; }
     ids.add(selection.selectionId);
     const origin = JSON.stringify(['class-proficiency',index.sourceIdentity,selection.selectionId,record.key]);
+    ownerKeys.set(origin, record.key);
     if (position === 0) parse(record.data['proficiency'],'save',origin,'proficiency');
     const fields = position === 0 ? object(record.data['startingProficiencies']) : object(object(record.data['multiclassing'])?.['proficienciesGained']);
-    for (const [field,kind] of [['armor','armor'],['weapons','weapon'],['tools','tool'],['skills','skill']] as const) parse(fields?.[field],kind,origin,`${position === 0 ? 'starting' : 'multiclass'}.${field}`);
+    for (const [field,kind] of [['armor','armor'],['weapons','weapon'],['tools','tool'],['skills','skill']] as const) {
+      const structuredTools = fields?.['toolProficiencies'];
+      const hasToolChoice = Array.isArray(structuredTools) && structuredTools.some(entry =>
+        Object.keys(object(entry) ?? {}).some(key => key === 'choose' || /^any/i.test(key)));
+      // Prefer machine-readable instrument/artisan choices over "choose one instrument" prose.
+      parse(kind === 'tool' && hasToolChoice ? structuredTools : fields?.[field],kind,origin,
+        `${position === 0 ? 'starting' : 'multiclass'}.${field}`);
+    }
   }
   if (speciesKey) {
     const species = index.records.get(speciesKey);
     if (!species || species.kind !== 'species') diagnostics.push('Missing materialized species proficiency source.');
     else for (const [field,kind] of [['skillProficiencies','skill'],['languageProficiencies','language'],['toolProficiencies','tool'],['armorProficiencies','armor'],['weaponProficiencies','weapon']] as const) {
-      parse(species.data[field],kind,JSON.stringify(['species-proficiency',index.sourceIdentity,speciesKey]),field);
+      const origin = JSON.stringify(['species-proficiency',index.sourceIdentity,speciesKey]);
+      ownerKeys.set(origin, speciesKey);
+      parse(species.data[field],kind,origin,field);
     }
   }
   return { canAccept: diagnostics.length === 0,diagnostics,choices,packages,manual: structuredClone(manual),generated,

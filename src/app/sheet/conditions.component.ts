@@ -1,3 +1,4 @@
+import { UiIconComponent } from '../ui-icon.component';
 import { Component, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ConditionName } from '../models/character.model';
@@ -22,7 +23,7 @@ const CONDITION_NAMES = [
 @Component({
   selector: 'app-conditions',
   standalone: true,
-  imports: [CommonModule],
+  imports: [UiIconComponent, CommonModule],
   template: `
     <div class="flex flex-wrap gap-2">
           @for (condition of activeConditions(); track condition) {
@@ -31,7 +32,7 @@ const CONDITION_NAMES = [
               title="Click to remove"
               class="px-2 py-1 rounded text-xs font-semibold bg-primary-container text-on-primary-container border border-primary hover:bg-primary transition-colors"
             >
-              {{ getConditionLabel(condition) }} ✕
+              {{ getConditionLabel(condition) }} <app-ui-icon name="close" />
             </button>
           }
     <div class="relative">

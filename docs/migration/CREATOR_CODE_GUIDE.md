@@ -9,7 +9,7 @@ Neither the creator nor the rules engine reads descriptions to discover mechanic
 | Concern | Code |
 | --- | --- |
 | Page navigation, draft and saving | `src/app/editor/local-editor.component.ts` |
-| Offline character storage | `src/app/editor/basic-info-repository.ts` |
+| Offline character storage | `src/app/characters/indexeddb-character-repository.ts` |
 | Wizard selections and stage transitions | `src/app/editor/class-wizard.component.ts` |
 | Assemble a proposed sheet from those selections | `src/app/editor/class-wizard-preview.ts` |
 | Preserve manual changes when applying a proposal | `src/app/editor/wizard-prefill.ts` |
@@ -74,3 +74,11 @@ The wizard preview is pure and detached. UI components own navigation and draft 
 The browser scripts in `scripts/creator-layout-acceptance.mjs` and `scripts/class-wizard-acceptance.mjs`
 check mobile and desktop layouts in light and dark themes using an isolated local profile.
 Their reports are stored beside this guide. These are viewport checks, not physical-device tests.
+
+Monster cards and catalog previews use `sheet/monster-stat-block.component`, shared
+with the playing sheet. `sheet/monster-presentation.ts` holds read-only formatting,
+including descriptive AC. Traits/actions render their headings and entry bodies,
+rather than passing entire untyped monster-ability objects to the entry renderer.
+`editor/monster-selection.ts` embeds the monster snapshot and manages optional
+HP tracking: an empty maximum disables tracking, while stat-block HP remains
+read-only reference information. Notes and uses share the annotation editor.

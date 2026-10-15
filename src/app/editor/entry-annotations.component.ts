@@ -1,10 +1,11 @@
+import { UiIconComponent } from '../ui-icon.component';
 import { Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AnnotatedEntry, EntryAnnotationsEditor } from './entry-annotations-editor';
 
 @Component({
   selector: 'app-entry-annotations-editor',
-  imports: [FormsModule],
+  imports: [UiIconComponent, FormsModule],
   templateUrl: './entry-annotations.component.html',
   styleUrl: './local-editor.component.css',
   host: { class: 'block space-y-3' },

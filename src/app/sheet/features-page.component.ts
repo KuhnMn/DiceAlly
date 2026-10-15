@@ -1,3 +1,5 @@
+import { UiIconComponent } from '../ui-icon.component';
+import { FeatureSourcePickerComponent } from '../editor/feature-source-picker.component';
 import { Component, inject, computed, signal, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
@@ -10,7 +12,7 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
 
 @Component({
   selector: 'app-features-page',
-  imports: [CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [UiIconComponent, FeatureSourcePickerComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: feature-flash 1.6s ease-out;
@@ -70,7 +72,7 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
             (click)="toggleExpanded('species')">
             <div class="flex flex-wrap items-center justify-between gap-2 w-full">
               <h3 class="text-2xl font-bold text-rose"> {{ species()?.name ?? 'Unknown' }}</h3>
-              <span class="text-xl text-rose font-bold">{{ isExpanded('species') ? '−' : '+' }}</span>
+              <span class="text-xl text-rose font-bold"><app-ui-icon [name]="isExpanded('species') ? \'minus\' : \'plus\'" /></span>
             </div>
           </button>
 
@@ -144,56 +146,12 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
           }
         </div>
         <div>
-          <div class="mb-3">
-            <span class="text-sm font-semibold text-on-surface">Source:</span>
-          </div>
-          @if (featureSourceStats().length > 0) {
-            <div class="grid gap-3 grid-cols-2 md:grid-cols-4 xl:grid-cols-6">
-              <button
-                type="button"
-                class="text-left border-2 rounded-lg p-3 transition-colors"
-                [class.bg-blue-container]="featureSourceFilter() === 'ALL'"
-                [class.border-blue]="featureSourceFilter() === 'ALL'"
-                [class.text-on-blue-container]="featureSourceFilter() === 'ALL'"
-                [class.bg-surface-container]="featureSourceFilter() !== 'ALL'"
-                [class.border-outline-variant]="featureSourceFilter() !== 'ALL'"
-                [class.text-on-surface]="featureSourceFilter() !== 'ALL'"
-                (click)="featureSourceFilter.set('ALL')"
-              >
-                <div class="text-sm font-semibold text-center">ALL</div>
-              </button>
-              @for (source of featureSourceStats(); track source.name) {
-                <button
-                  type="button"
-                  class="text-center border-2 rounded-lg p-3 transition-colors wrap-break-word"
-                  [class.bg-blue-container]="featureSourceFilter() === source.name"
-                  [class.border-blue]="featureSourceFilter() === source.name"
-                  [class.bg-surface-container]="featureSourceFilter() !== source.name"
-                  [class.border-outline-variant]="featureSourceFilter() !== source.name"
-                  (click)="featureSourceFilter.set(source.name)"
-                >
-                  <div class="text-sm font-semibold" [class.text-on-blue-container]="featureSourceFilter() === source.name" [class.text-on-surface]="featureSourceFilter() !== source.name">{{ source.name }}</div>
-                  <div class="mt-2 grid gap-2">
-                    @for (stat of source.abilities; track stat.ability) {
-                      <div class="flex flex-wrap items-center gap-2 text-sm  justify-center" [class.text-on-blue-container]="featureSourceFilter() === source.name" [class.text-on-surface-variant]="featureSourceFilter() !== source.name">
-                        <span class="font-semibold w-full">{{ stat.ability }}</span>
-                        <div class="flex items-center gap-4">
-                        <div>
-                                                  <div>Attack </div>
-                        <div class="text-tertiary">{{ stat.attack }}</div>
-                        </div>
-                        <div>
-                          <div>Save DC</div><div class="text-primary">{{ stat.save }}</div>
-                        </div>
-                        
-                        </div>
-                      </div>
-                    }
-                  </div>
-                </button>
-              }
-            </div>
-          }
+        @if (characterData()?.character; as character) {
+          <app-feature-source-picker [character]="character" [sources]="pickerSources()"
+            heading="Source" tone="features" [showManage]="false"
+            [value]="featureSourceFilter()" [orphanNames]="featureSourcesList().slice(1)"
+            (selected)="featureSourceFilter.set($event)" />
+        }
         </div>
       </div>
 
@@ -218,7 +176,7 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
                         <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded">{{ helpers.featureTypeLabel(feature) }}</span>
                       }
                     </div>
-                    <span class="text-xl text-blue font-bold">{{ isExpanded(featureAnchorId(feature) ?? 'feature') ? '−' : '+' }}</span>
+                    <span class="text-xl text-blue font-bold"><app-ui-icon [name]="isExpanded(featureAnchorId(feature) ?? 'feature') ? \'minus\' : \'plus\'" /></span>
                   </div>
                   <div class="text-sm text-on-surface-container-low mt-1">Level: {{ helpers.featureLevel(feature) }}</div>
                 </button>
@@ -290,7 +248,7 @@ export class FeaturesPageComponent {
   featureSourceFilter = signal<string>('ALL');
 
   species = computed(() => this.characterData()?.species ?? null);
-  featureSourceStats = computed(() => this.buildFeatureSourceStats());
+  readonly pickerSources = computed(() => this.characterData()?.character?.featureSources?.filter(source => source.isGeneralFeatureSource) ?? []);
   speciesCreatureTypes = computed(() => {
     return this.species()?.entity?.creatureTypes?.map(t => `${t.charAt(0).toUpperCase()}${t.slice(1).toLowerCase()}`).join(', ') ?? '';
   });
@@ -408,55 +366,5 @@ export class FeaturesPageComponent {
     return `feature-${this.helpers.sourceId(base)}`;
   }
 
-  private buildFeatureSourceStats() {
-    const character = this.characterData()?.character ?? null;
-    const sources = character?.featureSources?.filter((source) => source.isGeneralFeatureSource) ?? [];
-    const profBonus = this.helpers.proficiencyBonus(character);
 
-    return sources
-      .map((source) => {
-        const abilities = this.getFeatureSourceAbilities(source)
-          .map((ability) => {
-            const score = this.helpers.abilityScoreValue(character, ability);
-            if (typeof score !== 'number') return null;
-            const mod = this.helpers.modifierNumber(score);
-            return {
-              ability: ability.toUpperCase(),
-              attack: this.helpers.formatSigned(source.customToHit ?? mod + profBonus),
-              save: source.customDc ?? 8 + profBonus + mod,
-            };
-          })
-          .filter((entry): entry is { ability: string; attack: string; save: number } => !!entry);
-
-        if (!abilities.length && source.customToHit != null && source.customDc != null) {
-          abilities.push({ ability: 'CUSTOM', attack: this.helpers.formatSigned(source.customToHit), save: source.customDc });
-        }
-
-        return {
-          name: source.name ?? 'Feature Source',
-          abilities,
-        };
-      })
-      .filter((entry) => entry.abilities.length > 0);
-  }
-
-  private getFeatureSourceAbilities(source: {
-    usesStrength?: boolean;
-    usesDexterity?: boolean;
-    usesConstitution?: boolean;
-    usesIntelligence?: boolean;
-    usesWisdom?: boolean;
-    usesCharisma?: boolean;
-  }): string[] {
-    const abilities: string[] = [];
-
-    if (source.usesStrength) abilities.push('str');
-    if (source.usesDexterity) abilities.push('dex');
-    if (source.usesConstitution) abilities.push('con');
-    if (source.usesIntelligence) abilities.push('int');
-    if (source.usesWisdom) abilities.push('wis');
-    if (source.usesCharisma) abilities.push('cha');
-
-    return abilities;
-  }
 }

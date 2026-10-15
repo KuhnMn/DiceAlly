@@ -1,3 +1,5 @@
+import { UiIconComponent } from '../ui-icon.component';
+import { AppDialogService } from '../services/app-dialog.service';
 import { Component, computed, input, signal, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,7 +12,7 @@ import { CharacterStore } from '../stores/character.store';
 
 @Component({
   selector: 'app-equipment-page',
-  imports: [CommonModule, FormsModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [UiIconComponent, CommonModule, FormsModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: item-flash 1.6s ease-out;
@@ -196,7 +198,7 @@ import { CharacterStore } from '../stores/character.store';
                 </button>
               </div>
               <p class="text-xs text-on-surface-variant">
-                💡 Items added here will sync to your Android app, which will automatically fill in the full details.
+                <app-ui-icon name="info" /> Items added here will sync to your Android app, which will automatically fill in the full details.
               </p>
             </div>
           </div>
@@ -215,7 +217,7 @@ import { CharacterStore } from '../stores/character.store';
                   <div class="flex flex-wrap items-center gap-2">
                     <h3 class="text-xl font-bold text-green">{{ item.name }}</h3>
                     @if (item.isDummy) {
-                      <span class="text-xs bg-orange-container text-on-orange-container px-2 py-0.5 rounded font-semibold">📝 Pending Sync</span>
+                      <span class="text-xs bg-orange-container text-on-orange-container px-2 py-0.5 rounded font-semibold"><app-ui-icon name="edit" /> Pending Sync</span>
                     }
                     @if (item.entity?.itemType) {
                       <span class="text-xs bg-green-container text-on-green-container px-2 py-0.5 rounded">{{ item.entity?.itemType }}</span>
@@ -243,7 +245,7 @@ import { CharacterStore } from '../stores/character.store';
                         Delete
                       </button>
                     }
-                    <span class="text-xl text-green font-bold">{{ isExpanded('item-' + item.name) ? '−' : '+' }}</span>
+                    <span class="text-xl text-green font-bold"><app-ui-icon [name]="isExpanded('item-' + item.name) ? \'minus\' : \'plus\'" /></span>
                   </div>
                 </div>
               </button>
@@ -404,7 +406,7 @@ import { CharacterStore } from '../stores/character.store';
                       (change)="toggleAttuned(item)"
                       class="w-5 h-5 text-purple border-outline-variant rounded focus:ring-2 focus:ring-purple accent-purple"
                     />
-                    <span class="ml-2 text-sm font-semibold text-purple">✨ Attuned</span>
+                    <span class="ml-2 text-sm font-semibold text-purple"><app-ui-icon name="sparkles" /> Attuned</span>
                   </label>
                 }
                  </div>
@@ -432,6 +434,7 @@ import { CharacterStore } from '../stores/character.store';
   `,
 })
 export class EquipmentPageComponent {
+  private readonly dialogs = inject(AppDialogService);
   characterData = input.required<ExportedCharacter | null>();
   private store = inject(CharacterStore);
   helpers = inject(CharacterHelpersService);
@@ -667,7 +670,7 @@ export class EquipmentPageComponent {
     const stackable = this.newItemStackable();
     
     if (!name) {
-      alert('Please enter an item name');
+      void this.dialogs.alert('Please enter an item name');
       return;
     }
 
@@ -685,7 +688,7 @@ export class EquipmentPageComponent {
     );
 
     if (exists) {
-      alert('An item with this name and source already exists');
+      void this.dialogs.alert('An item with this name and source already exists');
       return;
     }
 
@@ -703,13 +706,13 @@ export class EquipmentPageComponent {
     this.cancelAddingItem();
   }
 
-  deleteDummyItem(item: InventoryItem) {
+  async deleteDummyItem(item: InventoryItem) {
     if (!item.isDummy) {
-      alert('Only dummy items can be deleted');
+      void this.dialogs.alert('Only dummy items can be deleted');
       return;
     }
 
-    if (!confirm(`Delete "${item.name}"?`)) {
+    if (!await this.dialogs.confirm(`Delete "${item.name}"?`)) {
       return;
     }
 

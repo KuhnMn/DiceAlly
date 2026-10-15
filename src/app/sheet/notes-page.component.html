@@ -1,0 +1,61 @@
+<section class="rounded-lg border-2 border-outline bg-surface-container-highest p-3 sm:p-5">
+  <header class="flex items-center justify-between gap-3 mb-4">
+    <h2 class="text-xl font-bold">Notes</h2>
+    <button type="button" class="rounded-lg bg-primary-container text-on-primary-container px-3 py-2 text-sm font-semibold hover:brightness-110" (click)="add()">Add Note</button>
+  </header>
+
+  @if (draft(); as note) {
+    <form class="mb-4 rounded-lg border border-secondary bg-surface-container p-3 space-y-3" (ngSubmit)="apply()">
+      <label class="block text-sm font-semibold">Heading
+        <input name="heading" [(ngModel)]="note.title" placeholder="Untitled" />
+      </label>
+      <div class="flex items-center justify-between gap-2">
+        <span class="text-sm font-semibold">Entry</span>
+        <button type="button" class="rounded px-2 py-1 text-sm text-primary hover:bg-surface-container-high" [attr.aria-pressed]="preview()" (click)="preview.set(!preview())">{{ preview() ? 'Edit Markdown' : 'Preview' }}</button>
+      </div>
+      @if (preview()) {
+        <div class="markdown min-h-32 text-sm leading-relaxed" [innerHTML]="parseMarkdown(note.body)"></div>
+      } @else {
+        <textarea name="body" aria-label="Note Markdown" [(ngModel)]="note.body" rows="8" placeholder="Write your note in Markdown"></textarea>
+      }
+      <p class="text-xs text-on-surface-variant">Markdown: # Heading, **bold**, *italic*. Apply changes, then Quick Save to keep them.</p>
+      <div class="flex flex-wrap justify-end gap-2">
+        <button type="button" class="rounded-lg px-3 py-2 text-sm hover:bg-surface-container-high" (click)="draft.set(null)">Cancel</button>
+        <button type="submit" class="rounded-lg px-3 py-2 text-sm font-semibold bg-secondary-container text-on-secondary-container disabled:opacity-40 disabled:cursor-not-allowed" [disabled]="!note.body.trim()">Apply Changes</button>
+      </div>
+    </form>
+  }
+
+  <div class="space-y-3">
+    @for (section of sections(); track section.title) {
+      <section class="rounded-lg border border-outline-variant bg-surface-container overflow-hidden">
+        <header class="flex items-center gap-2 p-2">
+          <button type="button" class="min-w-0 flex-1 flex items-center gap-2 rounded p-1 text-left hover:bg-surface-container-high" [attr.aria-expanded]="!collapsed().has(section.title)" (click)="toggle(section.title)">
+            <span aria-hidden="true"><app-ui-icon [name]="collapsed().has(section.title) ? 'plus' : 'minus'" /></span>
+            <h3 class="font-semibold break-words min-w-0">{{ section.title }}</h3>
+            <span class="text-xs text-on-surface-variant">({{ section.entries.length }})</span>
+          </button>
+          <button type="button" class="shrink-0 rounded px-2 py-1.5 text-sm text-primary hover:bg-surface-container-high" (click)="add(section.title)">Add Entry</button>
+        </header>
+        @if (!collapsed().has(section.title)) {
+          <div class="space-y-2 p-2 pt-0">
+            @for (note of section.entries; track note.id) {
+              <article class="rounded border-l-4 border-secondary bg-surface-container-high p-3">
+                <div class="markdown text-sm leading-relaxed" [innerHTML]="parseMarkdown(note.body)"></div>
+                <footer class="mt-2 flex justify-end gap-1">
+                  <button type="button" class="rounded px-2 py-1 text-sm text-primary hover:bg-surface-container" (click)="edit(note)">Edit</button>
+                  <button type="button" class="rounded px-2 py-1 text-sm text-error hover:bg-error-container" (click)="pendingRemoval.set(note)">Remove</button>
+                </footer>
+              </article>
+            }
+          </div>
+        }
+      </section>
+    } @empty {
+      <p class="py-6 text-center text-sm text-on-surface-variant">No notes yet. Add a note to get started.</p>
+    }
+  </div>
+</section>
+@if (pendingRemoval(); as note) {
+  <app-remove-entry-dialog [name]="note.title || 'Untitled'" message="This note entry will be deleted. Other entries under this heading will be kept." (cancelled)="pendingRemoval.set(null)" (confirmed)="remove()" />
+}

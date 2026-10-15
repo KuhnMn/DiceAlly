@@ -1,20 +1,23 @@
-import { Component, inject, signal, effect } from '@angular/core';
+import { UiIconComponent } from '../ui-icon.component';
+import { Component, inject, signal, effect, isDevMode } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { CharacterStore } from '../stores/character.store';
-import { CharacterStorageService, SavedCharacterMetadata } from '../services/character-storage.service';
+import { Router, RouterLink } from '@angular/router';
+import { CharacterLibraryService, CharacterSummary, CharacterImportResult } from '../characters/character-library.service';
+
 import { TmpfilesService } from '../services/tmpfiles.service';
-import { UnsavedChangesGuard } from '../guards/unsaved-changes.guard';
+
 import { ThemeService, type Theme } from '../services/theme.service';
 import { ExportOptionsModalComponent } from './export-options-modal.component';
-import type { ExportedCharacter } from '../models/character.model';
+import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.component';
 
 @Component({
   selector: 'app-import',
-  imports: [CommonModule, FormsModule, ExportOptionsModalComponent],
+  imports: [UiIconComponent, CommonModule, FormsModule, RouterLink, ExportOptionsModalComponent, RemoveEntryDialogComponent],
   template: `
     <main class="max-w-[1000px] mx-auto my-8 p-4">
+      @if (library.error()) { <p role="alert" class="mb-4 text-error">{{ library.error() }}</p> }
+      @for (issue of library.migrationIssues(); track issue) { <p role="alert" class="text-error">{{ issue }}</p> }
       <!-- Saved Characters Section -->
       @let characters = savedCharacters();
       @if (characters.length >= 0) {
@@ -22,7 +25,13 @@ import type { ExportedCharacter } from '../models/character.model';
           <div class="flex flex-col sm:flex-row justify-between items-start mb-4">
             <div class="flex flex-col items-start justify-between">
               <h2 class="text-3xl font-bold mb-2">Your Characters</h2>
-              <p class="text-on-surface-variant mb-6">Saved locally on this device</p>
+              <p class="text-on-surface-variant mb-4">Saved locally on this device</p>
+              @if (creatorAvailable) {
+                <nav aria-label="Character library actions" class="flex flex-wrap gap-2 mb-4">
+                  <a routerLink="/characters/new" class="px-4 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:opacity-90 transition-opacity">Create Character</a>
+                  <a routerLink="/content" class="px-4 py-2 rounded-lg bg-secondary-container text-on-secondary-container text-sm font-semibold hover:opacity-90 transition-opacity" title="Manage rules content and homebrew for the creator">Manage Game Data</a>
+                </nav>
+              }
             </div>
             <div class="mb-8 flex justify-end">
               <label class="text-sm font-medium flex items-center gap-2">
@@ -63,7 +72,8 @@ import type { ExportedCharacter } from '../models/character.model';
                       {{ formatDate(char.lastModified) }}
                     </div>
                   </div>
-                  <div class="flex gap-2">
+                  <div class="flex flex-wrap gap-2">
+                    @if (creatorAvailable) { <a [routerLink]="['/characters', char.characterId, 'edit']" class="px-4 py-2 rounded bg-secondary-container text-on-secondary-container text-sm">Edit</a> }
                     <button
                       (click)="loadCharacter(char.characterId)"
                       class="flex-1 px-4 py-2 bg-primary text-on-primary font-medium rounded text-sm hover:bg-primary-container transition-colors"
@@ -77,14 +87,17 @@ import type { ExportedCharacter } from '../models/character.model';
                       Export
                     </button>
                     <button
-                      (click)="deleteCharacter(char.characterId)"
+                      (click)="requestDeleteCharacter(char)"
+                      [disabled]="deleting()"
                       class="flex-1 px-4 py-2 bg-rose-container text-on-rose-container font-medium rounded text-sm hover:bg-rose transition-colors"
                     >
                       Delete
                     </button>
                   </div>
                   <p class="text-on-surface-variant text-xs pt-2">Id: {{ char.characterId }}</p>
-                  <p class="text-on-surface-variant text-xs pt-2">Installation: {{ char.installationId }}</p>
+                  @if (char.installationId) {
+                    <p class="text-on-surface-variant text-xs pt-2">Installation: {{ char.installationId }}</p>
+                  }
                 </div>
               }
             </div>
@@ -122,7 +135,7 @@ import type { ExportedCharacter } from '../models/character.model';
                 class="px-6 py-2 bg-primary text-on-primary font-semibold rounded hover:bg-primary-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 @if (isLoadingUrl()) {
-                  <span class="inline-block animate-spin">⟳</span>
+                  <span class="inline-block animate-spin"><app-ui-icon name="loader" /></span>
                 } @else {
                   Load
                 }
@@ -207,6 +220,11 @@ import type { ExportedCharacter } from '../models/character.model';
       </section>
 
       <!-- Export Options Modal -->
+      @if (pendingDeletion(); as character) {
+        <app-remove-entry-dialog [name]="character.name" action="Delete"
+          message="This character and its notes will be removed from this device."
+          (cancelled)="pendingDeletion.set(null)" (confirmed)="confirmDeleteCharacter()" />
+      }
       @if (exportingCharacterId()) {
         <app-export-options-modal
           [characterId]="exportingCharacterId()!"
@@ -218,71 +236,60 @@ import type { ExportedCharacter } from '../models/character.model';
   styleUrl: './import.component.css',
 })
 export class ImportComponent {
-  private store = inject(CharacterStore);
-  private storage = inject(CharacterStorageService);
+  protected library = inject(CharacterLibraryService);
+  readonly creatorAvailable = isDevMode();
+  private reloadVersion = 0;
   private tmpfiles = inject(TmpfilesService);
   private router = inject(Router);
-  private unsavedChangesGuard = inject(UnsavedChangesGuard);
   protected themeService = inject(ThemeService);
 
   raw = '';
   importUrl = '';
-  savedCharacters = signal<SavedCharacterMetadata[]>([]);
+  savedCharacters = signal<CharacterSummary[]>([]);
   importError = signal<{ code: string; message: string } | null>(null);
   pendingImport = signal<{ json: string; override: boolean } | null>(null);
   isLoadingUrl = signal<boolean>(false);
   exportingCharacterId = signal<string | null>(null);
+  pendingDeletion = signal<CharacterSummary | null>(null);
+  deleting = signal(false);
 
   constructor() {
     // Reload saved characters list
     this.reload();
     // Watch for save events and reload
     effect(() => {
-      this.storage.characterSaved();
+      this.library.changed();
       this.reload();
     });
   }
 
-  reload() {
-    this.savedCharacters.set(this.storage.listCharacters());
+  async reload() {
+    const request = ++this.reloadVersion;
+    try {
+      const characters = await this.library.summaries();
+      if (request === this.reloadVersion) this.savedCharacters.set(characters);
+    } catch (error) { this.library.error.set(String(error)); }
   }
 
-  onFile(event: Event) {
+  async onFile(event: Event) {
     const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
-    const file = input.files[0];
-    const reader = new FileReader();
-    reader.onload = () => {
-      const json = reader.result as string;
-      this.raw = json; // Store in raw so it's available for override
-      this.storage.importCharacterFromFile(file).then((result) => {
-        this.handleImportResult(result);
-      });
-    };
-    reader.readAsText(file);
+    if (input.files?.[0]) await this.importFile(input.files[0]);
+    input.value = '';
   }
 
-  onDrop(event: DragEvent) {
+  async onDrop(event: DragEvent) {
     event.preventDefault();
-    const files = event.dataTransfer?.files;
-    if (!files || files.length === 0) return;
-    const file = files[0];
-    if (file.type === 'application/json') {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const json = reader.result as string;
-        this.raw = json; // Store in raw so it's available for override
-        this.storage.importCharacterFromFile(file).then((result) => {
-          this.handleImportResult(result);
-        });
-      };
-      reader.readAsText(file);
-    }
+    const file = event.dataTransfer?.files[0];
+    if (file) await this.importFile(file);
   }
 
-  loadFromText() {
-    const result = this.storage.importCharacterFromJson(this.raw);
-    this.handleImportResult(result);
+  private async importFile(file: File) {
+    try { this.raw = await file.text(); await this.loadFromText(); }
+    catch (error) { this.importError.set({ code: 'UNKNOWN', message: String(error) }); }
+  }
+
+  async loadFromText() {
+    this.handleImportResult(await this.library.importCharacterFromJson(this.raw));
   }
 
   onThemeChange(event: Event) {
@@ -315,7 +322,7 @@ export class ImportComponent {
       }
 
       this.raw = jsonContent;
-      const result = this.storage.importCharacterFromJson(jsonContent);
+      const result = await this.library.importCharacterFromJson(jsonContent);
       this.handleImportResult(result);
       this.importUrl = ''; // Clear URL on success
     } catch (error) {
@@ -333,14 +340,7 @@ export class ImportComponent {
   }
 
   loadCharacter(characterId: string) {
-    const character = this.storage.loadCharacter(characterId);
-    if (character) {
-      this.store.clearNativeContext();
-      this.store.setCharacter(character);
-      // Mark the loaded character as "saved" so no warning on navigation
-      this.unsavedChangesGuard.setLastSavedState(character);
-      this.router.navigate(['/sheet']);
-    }
+    void this.router.navigate(['/characters', characterId]);
   }
 
   downloadCharacter(characterId: string) {
@@ -351,22 +351,24 @@ export class ImportComponent {
     this.exportingCharacterId.set(null);
   }
 
-  deleteCharacter(characterId: string) {
-    if (confirm('Are you sure you want to delete this character?')) {
-      this.storage.deleteCharacter(characterId);
-      this.reload();
-    }
+  requestDeleteCharacter(character: CharacterSummary) {
+    if (!this.deleting()) this.pendingDeletion.set(character);
   }
 
-  confirmOverride() {
+  async confirmDeleteCharacter() {
+    const character = this.pendingDeletion();
+    if (!character || this.deleting()) return;
+    this.pendingDeletion.set(null);
+    this.deleting.set(true);
+    this.library.error.set('');
+    try { await this.library.delete(character.characterId, character.version); await this.reload(); }
+    catch (error) { this.library.error.set(String(error)); }
+    finally { this.deleting.set(false); }
+  }
+
+  async confirmOverride() {
     const pending = this.pendingImport();
-    if (pending) {
-      const json = pending.json;
-      const result = this.storage.importCharacterFromJson(json, {
-        overrideExisting: true,
-      });
-      this.handleImportResult(result);
-    }
+    if (pending) this.handleImportResult(await this.library.importCharacterFromJson(pending.json, true));
   }
 
   clearImportError() {
@@ -374,19 +376,12 @@ export class ImportComponent {
     this.pendingImport.set(null);
   }
 
-  private handleImportResult(result: { success: boolean; characterId?: string; error?: any }) {
+  private handleImportResult(result: CharacterImportResult) {
     if (result.success) {
       this.importError.set(null);
       this.raw = '';
       this.pendingImport.set(null);
-      const character = this.storage.loadCharacter(result.characterId!);
-      if (character) {
-        this.store.clearNativeContext();
-        this.store.setCharacter(character);
-        // Mark the loaded character as "saved" so no warning on navigation
-        this.unsavedChangesGuard.setLastSavedState(character);
-        this.router.navigate(['/sheet']);
-      }
+      this.loadCharacter(result.characterId!);
     } else if (result.error?.code === 'IMPORT_CONFLICT') {
       this.pendingImport.set({ json: this.raw, override: false });
       this.importError.set({
@@ -402,7 +397,7 @@ export class ImportComponent {
   }
 
   getStorageUsage(): number {
-    return this.storage.getStorageUsage() / 1024; // Convert to KB
+    return this.library.storageBytes() / 1024; // Convert to KB
   }
 
   formatDate(timestamp: number): string {

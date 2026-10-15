@@ -25,9 +25,10 @@ import {
 interface StyledTextSegment {
   text: string;
   type: 'normal' | 'tag' | 'bonus' | 'link';
+  bold?: boolean;
 }
 
-type StyleType = 'TAG' | 'BONUS' | 'LINK';
+type StyleType = 'TAG' | 'BONUS' | 'LINK' | 'BOLD';
 
 @Component({
   selector: 'app-entry-renderer',
@@ -146,7 +147,7 @@ type StyleType = 'TAG' | 'BONUS' | 'LINK';
           <div class="text-sm whitespace-pre-wrap">
             @for (segment of parseStyledText(asStringEntry(entry()!)?.text ?? fallbackText(entry()!)); track $index) {
               @if (segment.type === 'normal') {
-                <span>{{ segment.text }}</span>
+                <span [class.font-bold]="segment.bold">{{ segment.text }}</span>
               }
               @if (segment.type === 'tag') {
                 <span class="text-primary font-bold">{{ segment.text }}</span>
@@ -284,9 +285,10 @@ export class EntryRendererComponent {
     const tagMatches = Array.from(text.matchAll(this.tagRegex)).map(m => ({ match: m, type: 'TAG' as StyleType }));
     const bonusMatches = Array.from(text.matchAll(this.bonusRegex)).map(m => ({ match: m, type: 'BONUS' as StyleType }));
     const linkMatches = Array.from(text.matchAll(this.linkRegex)).map(m => ({ match: m, type: 'LINK' as StyleType }));
+    const boldMatches = Array.from(text.matchAll(/\*\*([^*]+)\*\*/g)).map(m => ({ match: m, type: 'BOLD' as StyleType }));
 
     // Combine and sort by start position
-    const allMatches = [...tagMatches, ...bonusMatches, ...linkMatches].sort(
+    const allMatches = [...tagMatches, ...bonusMatches, ...linkMatches, ...boldMatches].sort(
       (a, b) => a.match.index! - b.match.index!
     );
 
@@ -304,6 +306,11 @@ export class EntryRendererComponent {
       // Skip overlapping matches
       if (match.index! < lastIndex) continue;
 
+      if (type === 'BOLD') {
+        segments.push(...this.parseStyledText(match[1]).map(segment => ({ ...segment, bold: true })));
+        lastIndex = match.index! + match[0].length;
+        continue;
+      }
       const styledText = this.processMatch(match, type);
       if (styledText) {
         segments.push({
@@ -330,7 +337,7 @@ export class EntryRendererComponent {
     return type === 'TAG' ? 'tag' : type === 'BONUS' ? 'bonus' : 'link';
   }
 
-  private processMatch(matchResult: RegExpMatchArray, type: StyleType): string | null {
+  private processMatch(matchResult: RegExpMatchArray, type: Exclude<StyleType, 'BOLD'>): string | null {
     switch (type) {
       case 'TAG':
         return this.processTagMatch(matchResult);

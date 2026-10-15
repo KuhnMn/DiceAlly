@@ -1,3 +1,6 @@
+import { UiIconComponent } from '../ui-icon.component';
+import { FeatureSourcePickerComponent } from '../editor/feature-source-picker.component';
+import { copySpellToList } from '../editor/spell-selection';
 import { Component, inject, computed, signal, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
@@ -20,7 +23,7 @@ type SpellLevelFilter = 'ALL' | number;
 
 @Component({
   selector: 'app-spells-page',
-  imports: [CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [UiIconComponent, FeatureSourcePickerComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: spell-flash 1.6s ease-out;
@@ -152,55 +155,11 @@ type SpellLevelFilter = 'ALL' | number;
         </button>
       </div>
       <div class="mb-6">
-        <div class="mb-3">
-          <span class="text-sm font-semibold text-on-surface">Casting Source:</span>
-        </div>
-        @if (featureSourceStats().length > 0) {
-          <div class="grid gap-3 grid-cols-2 md:grid-cols-4 xl:grid-cols-6">
-            <button
-              type="button"
-              class="text-center border-2 rounded-lg p-3 transition-colors"
-              [class.bg-purple-container]="spellCastingSourceFilter() === 'ALL'"
-              [class.border-purple]="spellCastingSourceFilter() === 'ALL'"
-              [class.text-on-purple-container]="spellCastingSourceFilter() === 'ALL'"
-              [class.bg-surface-container]="spellCastingSourceFilter() !== 'ALL'"
-              [class.border-outline-variant]="spellCastingSourceFilter() !== 'ALL'"
-              [class.text-on-surface]="spellCastingSourceFilter() !== 'ALL'"
-              (click)="spellCastingSourceFilter.set('ALL')"
-            >
-              <div class="text-sm font-semibold">ALL</div>
-            </button>
-            @for (source of featureSourceStats(); track source.name) {
-              <button
-                type="button"
-                class="text-center border-2 rounded-lg p-3 transition-colors wrap-break-word"
-                [class.bg-purple-container]="spellCastingSourceFilter() === source.name"
-                [class.border-purple]="spellCastingSourceFilter() === source.name"
-                [class.bg-surface-container]="spellCastingSourceFilter() !== source.name"
-                [class.border-outline-variant]="spellCastingSourceFilter() !== source.name"
-                (click)="spellCastingSourceFilter.set(source.name)"
-              >
-                <div class="text-sm font-semibold over" [class.text-on-purple-container]="spellCastingSourceFilter() === source.name" [class.text-on-surface]="spellCastingSourceFilter() !== source.name">{{ source.name }}</div>
-                <div class="mt-2 grid gap-2">
-                  @for (stat of source.abilities; track stat.ability) {
-                      <div class="flex flex-wrap items-center gap-2 text-sm justify-center" [class.text-on-blue-container]="spellCastingSourceFilter() === source.name" [class.text-on-surface-variant]="spellCastingSourceFilter() !== source.name">
-                        <span class="font-semibold w-full">{{ stat.ability }}</span>
-                        <div class="flex items-center gap-4">
-                        <div>
-                          <div>Attack </div>
-                        <div class="text-tertiary">{{ stat.attack }}</div>
-                        </div>
-                        <div>
-                          <div>Save DC</div><div class="text-primary">{{ stat.save }}</div>
-                        </div>
-                        
-                        </div>
-                      </div>
-                  }
-                </div>
-              </button>
-            }
-          </div>
+        @if (characterData()?.character; as character) {
+          <app-feature-source-picker [character]="character" [sources]="pickerSources()"
+            heading="Casting Source" tone="spells" [showManage]="false"
+            [value]="spellCastingSourceFilter()" [orphanNames]="spellCastingSourcesList().slice(1)"
+            (selected)="spellCastingSourceFilter.set($event)" />
         }
       </div>
       @if (spellBonusItemsOverview().length > 0) {
@@ -278,7 +237,7 @@ type SpellLevelFilter = 'ALL' | number;
                             }
                           </div>
                         </div>
-                        <span class="text-xl text-purple font-bold">{{ isExpanded(spellExpansionId(spell)) ? '−' : '+' }}</span>
+                        <span class="text-xl text-purple font-bold"><app-ui-icon [name]="isExpanded(spellExpansionId(spell)) ? \'minus\' : \'plus\'" /></span>
                       </div>
                     </button>
 
@@ -371,7 +330,7 @@ export class SpellsPageComponent {
   expandedItems = signal<Set<string>>(new Set());
 
   character = computed(() => this.characterData()?.character ?? null);
-  featureSourceStats = computed(() => this.buildFeatureSourceStats());
+  readonly pickerSources = computed(() => this.characterData()?.character?.featureSources?.filter(source => source.isSpellcastingSource) ?? []);
 
   spellListTypes = computed(() => {
     const spells = this.characterData()?.spells ?? [];
@@ -445,6 +404,7 @@ export class SpellsPageComponent {
   spellSlotGroups = computed(() => {
     const spellSlots = this.character()?.spellSlots ?? {};
     return Object.entries(spellSlots)
+      .filter(([, slots]) => slots.length > 0)
       .map(([source, slots]) => ({
         source,
         slots: [...slots]
@@ -563,7 +523,7 @@ export class SpellsPageComponent {
       }
     } else {
       // Add a PREPARED version by copying the current spell
-      const preparedSpell = { ...structuredClone(spell), editorId: crypto.randomUUID(), listType: 'PREPARED' };
+      const preparedSpell = copySpellToList(spell, 'PREPARED');
       allSpells.push(preparedSpell);
     }
     
@@ -604,57 +564,6 @@ export class SpellsPageComponent {
     this.spellRitualFilter.set(next);
   }
 
-  private buildFeatureSourceStats() {
-    const character = this.character();
-    const sources = character?.featureSources?.filter((source) => source.isSpellcastingSource) ?? [];
-    const profBonus = this.helpers.proficiencyBonus(character);
-
-    return sources
-      .map((source) => {
-        const abilities = this.getFeatureSourceAbilities(source)
-          .map((ability) => {
-            const score = this.helpers.abilityScoreValue(character, ability);
-            if (typeof score !== 'number') return null;
-            const mod = this.helpers.modifierNumber(score);
-            return {
-              ability: ability.toUpperCase(),
-              attack: this.helpers.formatSigned(source.customToHit ?? mod + profBonus),
-              save: source.customDc ?? 8 + profBonus + mod,
-            };
-          })
-          .filter((entry): entry is { ability: string; attack: string; save: number } => !!entry);
-
-        if (!abilities.length && source.customToHit != null && source.customDc != null) {
-          abilities.push({ ability: 'CUSTOM', attack: this.helpers.formatSigned(source.customToHit), save: source.customDc });
-        }
-
-        return {
-          name: source.name ?? 'Feature Source',
-          abilities,
-        };
-      })
-      .filter((entry) => entry.abilities.length > 0);
-  }
-
-  private getFeatureSourceAbilities(source: {
-    usesStrength?: boolean;
-    usesDexterity?: boolean;
-    usesConstitution?: boolean;
-    usesIntelligence?: boolean;
-    usesWisdom?: boolean;
-    usesCharisma?: boolean;
-  }): string[] {
-    const abilities: string[] = [];
-
-    if (source.usesStrength) abilities.push('str');
-    if (source.usesDexterity) abilities.push('dex');
-    if (source.usesConstitution) abilities.push('con');
-    if (source.usesIntelligence) abilities.push('int');
-    if (source.usesWisdom) abilities.push('wis');
-    if (source.usesCharisma) abilities.push('cha');
-
-    return abilities;
-  }
 
   private spellSlotUsedOverrides = signal<Record<string, number>>({});
 

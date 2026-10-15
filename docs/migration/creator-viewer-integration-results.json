@@ -1,0 +1,36 @@
+{
+  "checks": [
+    {
+      "name": "Creator Save & View opens the saved-ID sheet",
+      "passed": true
+    },
+    {
+      "name": "Viewer edits round trip into creator",
+      "passed": true
+    },
+    {
+      "name": "Editor URL reload rehydrates the same character",
+      "passed": true
+    },
+    {
+      "name": "Library lists creator saves and full export reads canonical data",
+      "passed": true
+    },
+    {
+      "name": "Saved sheet URL reload works without in-memory state",
+      "passed": true
+    },
+    {
+      "name": "Imported viewer JSON can be edited under its original ID",
+      "passed": true
+    },
+    {
+      "name": "Optional unsupported wizard history cannot hide saved characters or block the sheet",
+      "passed": true
+    },
+    {
+      "name": "Character deletion uses the shared themed dialog and respects Cancel",
+      "passed": true
+    }
+  ]
+}

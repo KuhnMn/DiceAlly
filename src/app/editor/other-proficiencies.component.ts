@@ -1,3 +1,6 @@
+import { UiIconComponent } from '../ui-icon.component';
+import { AppDialogService } from '../services/app-dialog.service';
+import { newEditorId } from './editor-identity';
 import { Component, OnInit, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -7,12 +10,14 @@ import { ContentRecord, ImportRevision } from '../content/content.model';
 import { SourceBookFilterService } from './source-book-filter.service';
 import { activeContentRevision } from './active-content-revision';
 import { SearchableSelectComponent, SelectOption } from './searchable-select.component';
+import { EntryRendererComponent } from '../entries/entry-renderer.component';
 
 @Component({
-  selector: 'app-other-proficiencies', imports: [FormsModule, RouterLink, SearchableSelectComponent],
+  selector: 'app-other-proficiencies', imports: [UiIconComponent, FormsModule, RouterLink, SearchableSelectComponent, EntryRendererComponent],
   templateUrl: './other-proficiencies.component.html', styleUrl: './local-editor.component.css',
 })
 export class OtherProficienciesComponent implements OnInit {
+  private readonly dialogs = inject(AppDialogService);
   readonly sheet = input.required<ExportedCharacter>();
   readonly panel = input<'proficiencies' | 'sources'>('proficiencies');
   readonly edited = output<void>();
@@ -24,6 +29,8 @@ export class OtherProficienciesComponent implements OnInit {
   private readonly cache = new IndexedDbContentCache();
   private readonly sourceBooks = inject(SourceBookFilterService);
   languageInput = '';
+  customInput = '';
+  editingCustom: number | null = null;
   readonly combatOptions = [
     { key: 'simpleWeapons', label: 'Simple Weapons' },
     { key: 'martialWeapons', label: 'Martial Weapons' },
@@ -43,6 +50,20 @@ export class OtherProficienciesComponent implements OnInit {
   get character() { return this.sheet().character!; }
   get advantages() { return this.character.advantageOn ?? []; }
   get languages() { return this.character.proficiencies?.languages ?? []; }
+  get customProficiencies() { return this.character.proficiencies?.custom ?? []; }
+  addCustomProficiency() {
+    const text = this.customInput.trim();
+    if (!text) return;
+    ((this.character.proficiencies ??= {}).custom ??= []).push(text);
+    this.customInput = ''; this.change();
+  }
+  updateCustomProficiency(index: number, text: string) {
+    this.character.proficiencies!.custom![index] = text; this.change();
+  }
+  removeCustomProficiency(index: number) {
+    this.character.proficiencies!.custom!.splice(index, 1);
+    this.editingCustom = null; this.change();
+  }
   get toolNames() { return Object.keys(this.character.proficiencies?.tools ?? {}); }
   get sources() { return this.character.featureSources ?? []; }
   get availableTools() {
@@ -93,7 +114,7 @@ export class OtherProficienciesComponent implements OnInit {
     const sources = this.character.featureSources ??= [];
     let name = 'New Source'; let suffix = 2;
     while (sources.some(source => source.name === name)) name = `New Source ${suffix++}`;
-    sources.push({ id: crypto.randomUUID(), name, isGeneralFeatureSource: true, isSpellcastingSource: false, userAdded: true }); this.change();
+    sources.push({ editorId: newEditorId(), name, isGeneralFeatureSource: true, isSpellcastingSource: false, userAdded: true }); this.change();
   }
   setSourceAbility(source: FeatureSource, key: keyof FeatureSource, enabled: boolean) {
     Object.assign(source, { [key]: enabled }); this.change();
@@ -117,11 +138,11 @@ export class OtherProficienciesComponent implements OnInit {
     }
     this.change();
   }
-  removeSource(index: number) {
+  async removeSource(index: number) {
     const source = this.sources[index];
     const linked = (this.sheet().features ?? []).some(feature => feature.featureSourceName === source.name)
       || (this.sheet().spells ?? []).some(spell => spell.castingSourceName === source.name) || !!this.character.spellSlots?.[source.name ?? ''];
-    if (linked && !confirm('Remove this source? Its existing features, spells and slots will be retained.')) return;
+    if (linked && !await this.dialogs.confirm('Remove this source? Its existing features, spells and slots will be retained.')) return;
     this.character.featureSources!.splice(index, 1); this.change();
   }
 }

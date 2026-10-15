@@ -3,12 +3,31 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { OtherProficienciesComponent } from './other-proficiencies.component';
 import { emptyBasicCharacter } from './basic-info';
-import { BasicInfoRepository } from './basic-info-repository';
+import { IndexedDbCharacterRepository } from '../characters/indexeddb-character-repository';
 import { IndexedDbContentCache } from '../content/content-cache';
 import { ContentRecord, DEFAULT_CONTENT_SOURCE, ImportRevision, sourceIdentity } from '../content/content.model';
 
 describe('Other Proficiencies', () => {
   beforeEach(() => TestBed.configureTestingModule({ imports: [OtherProficienciesComponent], providers: [provideRouter([])] }));
+
+  it('edits and removes descriptive proficiencies while preserving the other proficiency settings', async () => {
+    const fixture = TestBed.createComponent(OtherProficienciesComponent);
+    const sheet = emptyBasicCharacter();
+    sheet.character!.proficiencies = { languages: ['Common'], simpleWeapons: true,
+      custom: ['Weapons with the {@filter Finesse or Light|items|type=martial weapon} property'] };
+    fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
+    expect(fixture.nativeElement.textContent).not.toContain('{@filter');
+    const page = fixture.componentInstance;
+    page.updateCustomProficiency(0, 'Conditional weapons');
+    page.customInput = 'Vehicles'; page.addCustomProficiency();
+    const repository = new IndexedDbCharacterRepository(); await repository.save(sheet, 0);
+    expect((await repository.get(sheet.character!.characterUuid!))!.sheet.character!.proficiencies!.custom)
+      .toEqual(['Conditional weapons', 'Vehicles']);
+    page.removeCustomProficiency(0);
+    expect(page.customProficiencies).toEqual(['Vehicles']);
+    expect(sheet.character!.proficiencies!.languages).toEqual(['Common']);
+    expect(sheet.character!.proficiencies!.simpleWeapons).toBe(true);
+  });
 
   it('saves combat flags, conditional disadvantages, languages and multi-ability sources', async () => {
     const fixture = TestBed.createComponent(OtherProficienciesComponent);
@@ -22,7 +41,7 @@ describe('Other Proficiencies', () => {
     page.addSource(); const source = page.sources[0];
     source.isSpellcastingSource = true; source.customDc = 17; source.customToHit = -1;
     page.setSourceAbility(source, 'usesIntelligence', true); page.setSourceAbility(source, 'usesWisdom', true);
-    const repository = new BasicInfoRepository(); await repository.save(sheet, 0);
+    const repository = new IndexedDbCharacterRepository(); await repository.save(sheet, 0);
     const saved = (await repository.list()).find(entry => entry.id === sheet.character!.characterUuid)!.sheet;
     expect(saved.character!.proficiencies).toMatchObject({ languages: ['Elvish'], initiative: true, simpleWeapons: true,
       martialWeapons: true, skills: { STEALTH: 'EXPERTISE' }, tools: { 'Legacy tool': 42 }, custom: ['Keep legacy text'] });

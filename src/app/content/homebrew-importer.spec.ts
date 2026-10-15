@@ -35,6 +35,50 @@ function document(name = 'Homebrew Spell') {
 }
 
 describe('Explicit single-file homebrew imports', () => {
+  it('removes one homebrew file atomically while retaining core and other selected files', async () => {
+    const f = await fixture();
+    const first = await readHomebrewFile(document('First Spell'), 'first.json');
+    const second = await readHomebrewFile({ spell: [{ name: 'Second Spell', source: 'SECOND', level: 1 }] }, 'second.json');
+    const installed = await importHomebrew(f.cache, { ...f, file: first, bytes: 100 });
+    const both = await importHomebrew(f.cache, { ...f, base: installed, file: second, bytes: 100 });
+    const removed = await importHomebrew(f.cache, { ...f, base: both, removeFileId: first.id, bytes: 0 });
+    expect(removed.homebrewFiles!.map(file => file.id)).toEqual([second.id]);
+    expect((await f.cache.category(removed.id, 'spell')).map(record => record.name).sort()).toEqual(['Core Spell', 'Second Spell']);
+    expect((await f.cache.category(removed.id, 'species')).map(record => record.name)).toEqual(['Core Human']);
+    expect((await f.cache.active(f.namespace, f.source))!.id).toBe(removed.id);
+    // Prior snapshots remain available; removal does not mutate old revisions or character documents.
+    expect((await f.cache.category(both.id, 'spell')).some(record => record.name === 'First Spell')).toBe(true);
+    await expect(importHomebrew(f.cache, { ...f, base: removed, removeFileId: first.id, bytes: 0 })).rejects.toThrow('no longer installed');
+    expect((await f.cache.active(f.namespace, f.source))!.id).toBe(removed.id);
+  });
+  it('keeps homebrew dependency warnings nonfatal when core recipes generate magic weapons on reimport', async () => {
+    const f = await fixture();
+    const file = await readHomebrewFile({ baseitem: [
+      { name: 'Homebrew Gun', source: 'BREW', weapon: true, dmgType: 'P', property: ['GC:VSS-F|ValdaGunslinger'] },
+      { name: 'Incomplete Gun', source: 'BREW', weapon: true },
+    ] }, 'weapons.json');
+    const updated = await importContent(f.cache, {
+      namespace: f.namespace, source: f.source, homebrewFiles: [file],
+    }, async url => {
+      let value: unknown = { feat: [] };
+      if (url.startsWith('https://api.github.com/')) value = { sha: 'c'.repeat(40) };
+      else if (url.endsWith('/index.json')) value = { CORE: 'core.json' };
+      else if (url.endsWith('/spells/sources.json')) value = {};
+      else if (url.endsWith('/items-base.json')) value = { baseitem: [{ name: 'Core Sword', source: 'PHB', weapon: true, dmgType: 'S' }] };
+      else if (url.endsWith('/magicvariants.json')) value = { magicvariant: [{ name: 'Vicious Weapon', source: 'DMG', requires: [{ weapon: true }],
+        inherits: { source: 'DMG', namePrefix: 'Vicious ', entries: ['Deals {=dmgType} damage.'] } }] };
+      return { value, bytes: 1 };
+    });
+    expect(updated.status).toBe('ready');
+    expect(updated.diagnostics.some(issue => issue.severity === 'error')).toBe(false);
+    expect(updated.diagnostics.some(issue => issue.message.includes('GC:VSS-F|ValdaGunslinger') && issue.file.startsWith('homebrew/'))).toBe(true);
+    expect(updated.diagnostics.some(issue => issue.message.includes('Incomplete Gun + Vicious Weapon'))).toBe(true);
+    const items = await f.cache.category(updated.id, 'item');
+    expect(items.some(item => item.name === 'Vicious Core Sword')).toBe(true);
+    expect(items.some(item => item.name === 'Vicious Homebrew Gun' && item.file.startsWith('homebrew/'))).toBe(true);
+    expect(items.some(item => item.name === 'Incomplete Gun')).toBe(true);
+    expect(items.some(item => item.name === 'Vicious Incomplete Gun')).toBe(false);
+  });
   it('retains explicitly selected files through a core-library reimport', async () => {
     const f = await fixture();
     const brew = await importHomebrew(f.cache, { ...f, file: await readHomebrewFile(document(), 'selected.json'), bytes: 100 });

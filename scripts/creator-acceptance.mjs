@@ -67,7 +67,7 @@ try {
     const message = JSON.parse(event.data); const entry = pending.get(message.id); if (!entry) return;
     clearTimeout(entry.timer); pending.delete(message.id); message.error ? entry.reject(new Error(message.error.message)) : entry.resolve(message.result);
   });
-  const { targetId } = await send('Target.createTarget', { url: `${origin}/dev/characters` });
+  const { targetId } = await send('Target.createTarget', { url: `${origin}/characters/new` });
   const { sessionId: session } = await send('Target.attachToTarget', { targetId, flatten: true });
   await until(() => evaluate(session, `!!document.querySelector('app-local-editor') && !!globalThis.ng && !ng.getComponent(document.querySelector('app-local-editor')).busy()`));
   await evaluate(session, `globalThis.c = ng.getComponent(document.querySelector('app-local-editor')); globalThis.h = await import('${helpers}/helpers');`);
@@ -111,7 +111,7 @@ try {
       sheet.characterData().character.currentHp = 5; await sheet.quickSave();
       return sheet.saveStatus();
     })()`); assert(result);
-    await send('Page.navigate', { url: `${origin}/dev/characters` }, session);
+    await send('Page.navigate', { url: `${origin}/characters/new` }, session);
     await delay(250);
     await until(() => evaluate(session, `!!globalThis.ng && !!document.querySelector('app-local-editor') && !ng.getComponent(document.querySelector('app-local-editor')).busy()`));
     const hp = await evaluate(session, `globalThis.c = ng.getComponent(document.querySelector('app-local-editor')); await c.open(c.entries()[0]); c.document.session.currentHp;`);

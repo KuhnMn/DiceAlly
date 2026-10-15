@@ -1,3 +1,5 @@
+import { UiIconComponent } from '../ui-icon.component';
+import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { Component, inject, computed, input, effect, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -5,11 +7,10 @@ import { CharacterHelpersService } from './character-helpers.service';
 import { RestService } from '../services/rest.service';
 import { ExportedCharacter, HitDieEntry, ConditionName } from '../models/character.model';
 import { ConditionsComponent } from './conditions.component';
-import { get } from 'http';
 
 @Component({
   selector: 'app-character-info-page',
-  imports: [CommonModule, FormsModule, ConditionsComponent],
+  imports: [UiIconComponent, CommonModule, FormsModule, ConditionsComponent, EntryRendererComponent],
   styles: [`
     .ac-display {
       position: relative;
@@ -108,7 +109,7 @@ import { get } from 'http';
                   class="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
                 />
                 <div class="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity flex items-center justify-center">
-                  <span class="text-white text-2xl opacity-0 group-hover:opacity-100 transition-opacity">✎</span>
+                  <span class="text-white text-2xl opacity-0 group-hover:opacity-100 transition-opacity"><app-ui-icon name="edit" /></span>
                 </div>
               </div>
               <button
@@ -116,7 +117,7 @@ import { get } from 'http';
                 class="absolute top-1 right-1 bg-primary text-on-primary rounded-full w-3 h-3 flex items-center justify-center text-xs hover:bg-error/80 transition-colors"
                 title="Remove profile picture"
               >
-                ✕
+                <app-ui-icon name="close" />
               </button>
             } @else {
               <button
@@ -124,7 +125,7 @@ import { get } from 'http';
                 class="w-full h-full flex flex-col items-center justify-center gap-1 text-on-surface-variant hover:bg-surface-container-highest transition-colors"
                 (click)="startEditingProfilePictureUrl()"
               >
-                <span class="text-2xl">🖼️</span>
+                <span class="text-2xl"><app-ui-icon name="image" /></span>
                 <span class="text-xs uppercase font-semibold">Add Picture</span>
               </button>
             }
@@ -305,7 +306,7 @@ import { get } from 'http';
               @if (customProficiencies().length > 0) {
                 <div class="font-semibold text-on-surface-variant text-xs mb-2 mt-2">Other</div>
                 @for (prof of customProficiencies(); track prof) {
-                  <div class="ml-2">{{ prof }}</div>
+                  <div class="ml-2"><app-entry-renderer [entry]="{text: prof}" [compact]="true" /></div>
                 }
               }
               @if (toolProficiencies().length === 0 && customProficiencies().length === 0) {
@@ -350,7 +351,7 @@ import { get } from 'http';
                   class="absolute -top-2 -right-2 bg-teal text-on-teal rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-error-container transition-colors"
                   title="Reset AC"
                 >
-                  ✕
+                  <app-ui-icon name="close" />
                 </button>
               }
             </div>
@@ -369,7 +370,7 @@ import { get } from 'http';
                       class="absolute -top-2 -right-2 bg-green text-on-green rounded-full w-6 h-6 flex items-center justify-center text-xl hover:bg-error-container transition-colors"
                       aria-hidden="true"
                     >
-                      +
+                      <app-ui-icon name="plus" />
                     </span>
                   }
                 </span>
@@ -553,11 +554,11 @@ import { get } from 'http';
                         </label>
                       }
                     </div>
-                    <span class="text-xs text-primary font-semibold">🕯</span>
+                    <span class="text-xs text-primary font-semibold"><app-ui-icon name="candle" /></span>
                   </div>
                   <!-- Successes -->
                   <div class="flex items-center gap-2">
-                    <span class="text-xs text-tertiary font-semibold">❤</span>
+                    <span class="text-xs text-tertiary font-semibold"><app-ui-icon name="heart" /></span>
                     <div class="flex gap-1">
                       @for (i of [0, 1, 2]; track i) {
                         <label class="flex items-center cursor-pointer">
@@ -663,7 +664,7 @@ import { get } from 'http';
                 (click)="adjustRoundTracker(-1)"
                 aria-label="Decrease round tracker"
               >
-                −
+                <app-ui-icon name="minus" />
               </button>
               <input
                 type="number"
@@ -680,7 +681,7 @@ import { get } from 'http';
                 (click)="adjustRoundTracker(1)"
                 aria-label="Increase round tracker"
               >
-                +
+                <app-ui-icon name="plus" />
               </button>
               @if ((character()?.roundTracker ?? 0) !== 0) {
                 <button
@@ -690,7 +691,7 @@ import { get } from 'http';
                   aria-label="Reset round tracker"
                   title="Reset"
                 >
-                  ↺
+                  <app-ui-icon name="reset" />
                 </button>
               }
             </div>

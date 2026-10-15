@@ -1,14 +1,16 @@
+import { UiIconComponent } from '../ui-icon.component';
+import { AppDialogService } from '../services/app-dialog.service';
 import { Component, inject, input, output, signal, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CharacterStorageService } from '../services/character-storage.service';
+import { CharacterLibraryService } from '../characters/character-library.service';
 import { TmpfilesService } from '../services/tmpfiles.service';
 import { ExportedCharacter } from '../models/character.model';
 
-type ExportMode = 'select' | 'json' | 'share' | 'qr';
+type ExportMode = 'select' | 'json' | 'share';
 
 @Component({
   selector: 'app-export-options-modal',
-  imports: [CommonModule],
+  imports: [UiIconComponent, CommonModule],
   template: `
     <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" (click)="close.emit()">
       <div class="bg-surface-container-highest rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
@@ -26,19 +28,13 @@ type ExportMode = 'select' | 'json' | 'share' | 'qr';
               } @else {
                 Upload Failed
               }
-            } @else if (mode() === 'qr') {
-              @if (qrCodeUrl()) {
-                QR Code Ready
-              } @else {
-                Generating QR...
-              }
             }
           </h2>
           <button
             (click)="close.emit()"
             class="text-on-surface-variant hover:text-on-surface text-2xl leading-none"
           >
-            ✕
+            <app-ui-icon name="close" />
           </button>
         </div>
 
@@ -54,7 +50,7 @@ type ExportMode = 'select' | 'json' | 'share' | 'qr';
               class="w-full px-6 py-4 bg-primary-container text-on-primary-container font-medium rounded-lg hover:bg-primary-container transition-colors text-left"
             >
               <div class="flex items-center">
-                <span class="text-2xl mr-3">📄</span>
+                <span class="text-2xl mr-3"><app-ui-icon name="file" /></span>
                 <div>
                   <div class="font-semibold">Download JSON</div>
                   <div class="text-sm opacity-90">Save to your device</div>
@@ -75,23 +71,11 @@ type ExportMode = 'select' | 'json' | 'share' | 'qr';
               </div>
             </button>
 
-            <button
-              (click)="generateQRCode()"
-              class="w-full px-6 py-4 bg-tertiary-container text-on-tertiary-container font-medium rounded-lg hover:bg-tertiary transition-colors text-left"
-            >
-              <div class="flex items-center">
-                <span class="text-2xl mr-3">📱</span>
-                <div>
-                  <div class="font-semibold">QR Code</div>
-                  <div class="text-sm opacity-90">Scan with mobile device</div>
-                </div>
-              </div>
-            </button>
           </div>
         } @else if (mode() === 'json') {
           <!-- JSON downloaded confirmation -->
           <p class="text-on-surface-variant mb-4">
-            ✅ Your character has been downloaded as a JSON file.
+            <app-ui-icon name="check" /> Your character has been downloaded as a JSON file.
           </p>
           <button
             (click)="close.emit()"
@@ -103,7 +87,7 @@ type ExportMode = 'select' | 'json' | 'share' | 'qr';
           <!-- Share link result -->
           @if (isUploading()) {
             <div class="flex flex-col items-center py-8">
-              <div class="animate-spin text-4xl mb-4">⟳</div>
+              <div class="animate-spin text-4xl mb-4"><app-ui-icon name="loader" /></div>
               <p class="text-on-surface-variant">Uploading to temporary share storage...</p>
             </div>
           } @else if (shareUrl()) {
@@ -132,13 +116,13 @@ type ExportMode = 'select' | 'json' | 'share' | 'qr';
                 (click)="copyLinkToClipboard()"
                 class="px-4 py-2 bg-primary text-on-primary font-medium rounded-lg hover:bg-primary-container transition-colors"
               >
-                📋 Copy Full Link
+                <app-ui-icon name="copy" /> Copy Full Link
               </button>-->
               <button
                 (click)="copyIdToClipboard()"
                 class="px-4 py-2 bg-secondary-container text-on-secondary-container font-medium rounded-lg hover:bg-secondary transition-colors"
               >
-                📋 Copy Sync Code
+                <app-ui-icon name="copy" /> Copy Sync Code
               </button>
               <button
                 (click)="close.emit()"
@@ -167,62 +151,6 @@ type ExportMode = 'select' | 'json' | 'share' | 'qr';
               </button>
             </div>
           }
-        } @else if (mode() === 'qr') {
-          <!-- QR Code display -->
-          @if (qrCodeUrl()) {
-            <p class="text-on-surface-variant mb-4">
-              Scan this with your mobile device to import the character.
-            </p>
-
-            <div class="flex justify-center mb-4">
-              <div class="bg-white p-4 rounded-lg">
-                <img [src]="qrCodeUrl()" [alt]="characterName()" class="w-64 h-64" />
-              </div>
-            </div>
-
-            <div class="space-y-2 mb-4">
-              <p class="text-xs text-on-surface-variant">
-                <strong>Character:</strong> {{ characterName() }}
-              </p>
-              <p class="text-xs text-on-surface-variant">
-                <strong>Level:</strong> {{ characterLevel() }}
-              </p>
-              <p class="text-xs text-on-surface-variant">
-                <strong>Size:</strong> {{ qrDataSize() }} bytes
-              </p>
-            </div>
-
-            <div class="flex flex-col gap-2">
-              <button
-                (click)="downloadMinimalJson()"
-                class="w-full px-4 py-2 bg-secondary-container text-on-secondary-container font-medium rounded-lg hover:bg-secondary transition-colors"
-              >
-                📄 Download Encoded JSON (Backup)
-              </button>
-              <button
-                (click)="close.emit()"
-                class="w-full px-4 py-2 bg-primary text-on-primary font-medium rounded-lg hover:bg-primary-container transition-colors"
-              >
-                Done
-              </button>
-            </div>
-          } @else if (qrError()) {
-            <div class="mb-4 p-4 bg-error-container text-on-error-container rounded-lg">
-              <p class="font-semibold mb-2">QR Code Generation Failed</p>
-              <p class="text-sm">{{ qrError() }}</p>
-            </div>
-            <button
-              (click)="resetToSelect()"
-              class="w-full px-4 py-2 bg-surface-container text-on-surface font-medium rounded-lg hover:bg-surface-container-high transition-colors"
-            >
-              Back
-            </button>
-          } @else {
-            <div class="flex flex-col items-center py-8">
-              <div class="animate-spin text-4xl mb-4">⟳</div>
-              <p class="text-on-surface-variant">Generating QR code...</p>
-            </div>
-          }
         }
       </div>
 
@@ -239,10 +167,11 @@ type ExportMode = 'select' | 'json' | 'share' | 'qr';
   `,
 })
 export class ExportOptionsModalComponent {
+  private readonly dialogs = inject(AppDialogService);
   characterId = input.required<string>();
   close = output<void>();
 
-  private storage = inject(CharacterStorageService);
+  private library = inject(CharacterLibraryService);
   private tmpfiles = inject(TmpfilesService);
 
   mode = signal<ExportMode>('select');
@@ -253,16 +182,11 @@ export class ExportOptionsModalComponent {
   shareUrl = signal<string | null>(null);
   uploadError = signal<string | null>(null);
   
-  // QR mode
-  qrCodeUrl = signal<string | null>(null);
-  qrDataSize = signal<number>(0);
-  qrError = signal<string | null>(null);
   snackbarMessage = signal<string | null>(null);
 
   private snackbarTimeout: ReturnType<typeof setTimeout> | null = null;
 
   characterName = computed(() => this.character()?.character?.name || 'Unknown');
-  characterLevel = computed(() => this.character()?.character?.level || 1);
   fileId = computed(() => {
     const url = this.shareUrl();
     if (!url) return null;
@@ -272,10 +196,14 @@ export class ExportOptionsModalComponent {
 
   constructor() {
     // Load character when component initializes
-    effect(() => {
+    effect(onCleanup => {
       const id = this.characterId();
-      const char = this.storage.loadCharacter(id);
-      this.character.set(char);
+      let active = true;
+      this.character.set(null);
+      void this.library.get(id).then(record => {
+        if (active) this.character.set(record?.sheet ?? null);
+      }).catch(error => { if (active) this.uploadError.set(String(error)); });
+      onCleanup(() => { active = false; });
     });
   }
 
@@ -317,52 +245,15 @@ export class ExportOptionsModalComponent {
     }
   }
 
-  async generateQRCode() {
-    const character = this.character();
-    if (!character) return;
-
-    this.mode.set('qr');
-    this.qrCodeUrl.set(null);
-    this.qrError.set(null);
-
-    try {
-      const qrDataUrl = await this.storage.generateQRCode(character);
-      this.qrCodeUrl.set(qrDataUrl);
-      
-      // Calculate the size of the minimal export
-      const jsonString = this.storage.getMinimalExportJson(character);
-      this.qrDataSize.set(jsonString.length);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      this.qrError.set(message);
-    }
-  }
-
-  downloadMinimalJson() {
-    const character = this.character();
-    if (!character?.character?.characterUuid) return;
-
-    const jsonString = this.storage.getMinimalExportJson(character);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${character.character.name}_qr_backup.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
   async copyLinkToClipboard() {
     const url = this.shareUrl();
     if (!url) return;
 
     try {
       await navigator.clipboard.writeText(url);
-      alert('✅ Full link copied to clipboard!');
+      void this.dialogs.alert('✅ Full link copied to clipboard!');
     } catch (error) {
-      prompt('Copy the link below:', url);
+      await this.dialogs.showCopy('Copy the link below:', url);
     }
   }
 
@@ -374,7 +265,7 @@ export class ExportOptionsModalComponent {
       await navigator.clipboard.writeText(id);
       this.showSnackbar('Sync code copied to clipboard.');
     } catch (error) {
-      prompt('Copy the SyncCode below:', id);
+      await this.dialogs.showCopy('Copy the Sync Code below:', id);
     }
   }
 
@@ -395,7 +286,5 @@ export class ExportOptionsModalComponent {
     this.mode.set('select');
     this.shareUrl.set(null);
     this.uploadError.set(null);
-    this.qrCodeUrl.set(null);
-    this.qrError.set(null);
   }
 }

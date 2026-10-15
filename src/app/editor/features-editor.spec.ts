@@ -11,7 +11,7 @@ function annotationEditor(editor: FeaturesEditorComponent) {
     change() { editor.change(); }
   }();
 }
-import { BasicInfoRepository } from './basic-info-repository';
+import { IndexedDbCharacterRepository } from '../characters/indexeddb-character-repository';
 import { emptyBasicCharacter } from './basic-info';
 import { IndexedDbContentCache } from '../content/content-cache';
 import { mapContent } from '../content/content-adapter';
@@ -67,8 +67,8 @@ describe('Feature editor', () => {
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
     const editor = fixture.componentInstance; const notes = annotationEditor(editor);
     const picker = fixture.debugElement.query(By.directive(FeatureSourcePickerComponent)).componentInstance as FeatureSourcePickerComponent;
-    expect(picker.stats({ usesIntelligence: true })).toEqual([{ ability: 'INT', attack: '+5', save: 13 }]);
-    expect(picker.stats({ customDc: 17, customToHit: -1 })).toEqual([{ ability: 'CUSTOM', attack: '-1', save: 17 }]);
+    expect(picker.stats({ usesIntelligence: true })).toEqual([{ ability: 'INT', modifier: '+3', attack: '+5', save: 13 }]);
+    expect(picker.stats({ customDc: 17, customToHit: -1 })).toEqual([{ ability: 'CUSTOM', modifier: '—', attack: '-1', save: 17 }]);
     editor.customName = 'Notes test'; editor.addCustom(); const feature = sheet.features![0]; notes.addNote(feature);
     const group = feature.notes![0]; group.tag = 'Tactics';
     notes.setNoteEntry(group, 0, 'First entry\nwith a second line'); notes.addNoteEntry(group); notes.setNoteEntry(group, 1, 'Second entry');
@@ -77,7 +77,7 @@ describe('Feature editor', () => {
     group.isEditable = false;
     notes.addNoteEntry(group); notes.noteDraft = 'Third entry'; notes.commitNote();
     expect(group.notes).toEqual(['Second entry', 'Third entry']); expect(group.isEditable).toBe(false);
-    const repository = new BasicInfoRepository(); await repository.save(sheet, 0);
+    const repository = new IndexedDbCharacterRepository(); await repository.save(sheet, 0);
     expect((await repository.list()).find(entry => entry.id === sheet.character!.characterUuid)!.sheet.features![0].notes![0].isEditable).toBe(false);
   });
 
@@ -112,7 +112,7 @@ describe('Feature editor', () => {
       use.totalFreeUses = 3; use.usedFreeUses = 2; use.freeUsesRegainCondition = recovery;
     }
     feature.uses![0].totalFreeUses = 1;
-    const repository = new BasicInfoRepository(); await repository.save(sheet, 0);
+    const repository = new IndexedDbCharacterRepository(); await repository.save(sheet, 0);
     const saved = (await repository.list()).find(entry => entry.id === sheet.character!.characterUuid)!.sheet;
     expect(saved.features![0].notes![0].notes).toEqual(['Remember this', 'Second note']);
     expect(saved.features![0].uses![0].usedFreeUses).toBe(2);

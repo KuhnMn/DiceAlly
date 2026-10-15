@@ -47,7 +47,7 @@ try {
     clearTimeout(entry.timer); pending.delete(message.id);
     message.error ? entry.reject(new Error(message.error.message)) : entry.resolve(message.result);
   });
-  const { targetId } = await send('Target.createTarget', { url: `${origin}/dev/characters` });
+  const { targetId } = await send('Target.createTarget', { url: `${origin}/characters/new` });
   const { sessionId: session } = await send('Target.attachToTarget', { targetId, flatten: true });
   await until(() => evaluate(session, `!!globalThis.ng && !!document.querySelector('app-local-editor')`));
   await evaluate(session, `globalThis.c = ng.getComponent(document.querySelector('app-local-editor'));
@@ -62,7 +62,7 @@ try {
     const id = await evaluate(session, 'savedId');
     await send('Page.reload', {}, session); await delay(300);
     await until(() => evaluate(session, `!!globalThis.ng && !!document.querySelector('app-local-editor')`));
-    await evaluate(session, `globalThis.c = ng.getComponent(document.querySelector('app-local-editor')); await c.ngOnInit(); c.open(c.entries().find(e => e.id === '${id}'));`);
+    await evaluate(session, `globalThis.c = ng.getComponent(document.querySelector('app-local-editor')); await c.ngOnInit(); c.open(await c.library.get('${id}'));`);
     const data = await evaluate(session, `({name:c.character.name, level:c.character.level, hp:c.character.maxHp, ac:c.character.armorClass,
       fly:c.speeds.fly, resistances:c.resistances, senses:c.character.senses})`);
     assert.deepEqual(data, { name: 'Mira', level: 4, hp: 32, ac: 15, fly: 40, resistances: ['Poison'], senses: { Darkvision: 120 } });
@@ -85,7 +85,7 @@ try {
     await send('DOM.setFileInputFiles', { nodeId, files: [portrait] }, session);
     await until(() => evaluate(session, `c.sheet.portaitUrl?.startsWith('data:image/png')`));
     await evaluate(session, `await c.save();`);
-    assert(await evaluate(session, `c.entries().find(e=>e.id===c.character.characterUuid).sheet.portaitUrl.startsWith('data:image/png')`));
+    assert(await evaluate(session, `(await c.library.get(c.character.characterUuid)).sheet.portaitUrl.startsWith('data:image/png')`));
     await evaluate(session, `c.removePortrait(); await c.save();`);
     assert.equal(await evaluate(session, `c.sheet.portaitUrl`), null);
   });
@@ -96,7 +96,7 @@ try {
       for (const [key,value] of Object.entries(scores)) { const input = document.querySelector('#ability-'+key); input.value=String(value); input.dispatchEvent(new Event('input',{bubbles:true})); }`);
     await delay(100);
     assert.equal(await evaluate(session, `c.abilityModifier('wisdom')`), '+4');
-    await evaluate(session, `await c.save(); c.open(c.entries().find(e=>e.id===c.character.characterUuid));`);
+    await evaluate(session, `await c.save(); c.open((await c.library.get(c.character.characterUuid)));`);
     assert.equal(await evaluate(session, 'c.character.abilityScores.dexterity'), 14);
     assert.equal(await evaluate(session, 'c.character.abilityScores.wisdom'), 18);
     assert.equal(await evaluate(session, 'c.calculatedAc.ac'), 16);
@@ -107,7 +107,7 @@ try {
     await delay(100);
     await evaluate(session, `c.hitDiceTotal = 3; c.hitDiceType = 'd8'; c.addHitDice(); c.hitDice[0].used = 1;
       c.hitDiceTotal = 2; c.hitDiceType = 'd8'; c.addHitDice(); c.hitDiceType = 'd10'; c.addHitDice();
-      await c.save(); c.open(c.entries().find(e=>e.id===c.character.characterUuid)); c.setPage(0);`);
+      await c.save(); c.open((await c.library.get(c.character.characterUuid))); c.setPage(0);`);
     assert.deepEqual(await evaluate(session, 'c.hitDice.map(d=>({type:d.dieType,total:d.total,used:d.used}))'), [
       { type: 'd8', total: 5, used: 1 }, { type: 'd10', total: 1, used: 0 },
     ]);
@@ -119,7 +119,7 @@ try {
       const bonus=document.querySelector('#skill-bonus-PERCEPTION'); bonus.value='-1'; bonus.dispatchEvent(new Event('input',{bubbles:true}));`);
     await delay(100);
     assert.equal(await evaluate(session, `c.skillTotal('PERCEPTION','wis')`), '+7');
-    await evaluate(session, `await c.save(); c.open(c.entries().find(e=>e.id===c.character.characterUuid)); c.setPage(2);`);
+    await evaluate(session, `await c.save(); c.open((await c.library.get(c.character.characterUuid))); c.setPage(2);`);
     assert.equal(await evaluate(session, `c.skillLevel('PERCEPTION')`), 'EXPERTISE');
     assert.equal(await evaluate(session, `c.skillBonus('PERCEPTION')`), -1);
   });
@@ -130,7 +130,7 @@ try {
       const bonus=document.querySelector('#save-bonus-wis'); bonus.value='-2'; bonus.dispatchEvent(new Event('input',{bubbles:true}));`);
     await delay(100);
     assert.equal(await evaluate(session, `c.saveTotal('wisdom')`), '+4');
-    await evaluate(session, `await c.save(); c.open(c.entries().find(e=>e.id===c.character.characterUuid)); c.setPage(2);`);
+    await evaluate(session, `await c.save(); c.open((await c.library.get(c.character.characterUuid))); c.setPage(2);`);
     assert.equal(await evaluate(session, `c.saveProficient('wis')`), true);
     assert.equal(await evaluate(session, `c.saveBonus('wis')`), -2);
   });
@@ -142,7 +142,7 @@ try {
       other.addAdvantage(); Object.assign(other.advantages[0],{aType:'skill_check',appliesTo:'Perception',condition:'Dim light',isDisadvantage:false});
       other.addSource(); other.sources[0].isSpellcastingSource=true;
       other.setSourceAbility(other.sources[0],'usesIntelligence',true);
-      await c.save(); c.open(c.entries().find(e=>e.id===c.character.characterUuid));`);
+      await c.save(); c.open((await c.library.get(c.character.characterUuid)));`);
     assert.equal(await evaluate(session, `c.character.proficiencies.simpleWeapons`), true);
     assert.deepEqual(await evaluate(session, `c.character.proficiencies.languages`), ['Elvish']);
     assert.equal(await evaluate(session, `c.character.featureSources[0].usesIntelligence`), true);
@@ -152,7 +152,7 @@ try {
     await evaluate(session, `c.setPage(3); ng.applyChanges(c);`); await delay(100);
     await evaluate(session, `globalThis.slots = ng.getComponent(document.querySelector('app-editor-spell-slots'));
       slots.total=3; slots.recovery='SHORT_REST_ONE'; slots.add(); await c.save();
-      c.open(c.entries().find(e=>e.id===c.character.characterUuid));`);
+      c.open((await c.library.get(c.character.characterUuid)));`);
     assert.equal(await evaluate(session, `Object.values(c.character.spellSlots)[0][0].regainCondition`), 'SHORT_REST_ONE');
   });
   await check('Features separates types and persists notes and tracking without needing content', async () => {
@@ -161,7 +161,7 @@ try {
       features.selectedType='FEAT'; features.customName='Browser custom feat'; features.customDescription='Selected text'; features.addCustom();
       const feature=c.sheet.features[0]; features.addNote(feature); features.setNoteEntry(feature.notes[0],0,'Keep this note');
       features.addUses(feature); feature.uses[0].totalFreeUses=3; feature.uses[0].freeUsesRegainCondition='SHORT_REST_ONE';
-      await c.save(); c.open(c.entries().find(e=>e.id===c.character.characterUuid));`);
+      await c.save(); c.open((await c.library.get(c.character.characterUuid)));`);
     assert.equal(await evaluate(session, `c.sheet.features[0].notes[0].notes[0]`), 'Keep this note');
     assert.equal(await evaluate(session, `c.sheet.features[0].uses[0].freeUsesRegainCondition`), 'SHORT_REST_ONE');
   });

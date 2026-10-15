@@ -1,8 +1,14 @@
 import { ContentRecord } from '../content/content.model';
+import { newEditorId } from './editor-identity';
 import { spellClassMemberships } from '../content/spell-membership';
 import { SpellEntryFull, SpellClassInfo, SpellEntity } from '../models/character.model';
 
 export type SpellList = 'KNOWN' | 'SPELLBOOK' | 'PREPARED';
+
+/** A list copy is a separate instance of the same content, in both the creator and playing sheet. */
+export function copySpellToList(spell: SpellEntryFull, listType: SpellList): SpellEntryFull {
+  return { ...structuredClone(spell), editorId: newEditorId(), listType };
+}
 export interface SpellCatalogFilter {
   search: string;
   classes: string[];

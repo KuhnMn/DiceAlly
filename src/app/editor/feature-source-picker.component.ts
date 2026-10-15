@@ -1,3 +1,4 @@
+import { SourceStatsComponent } from '../sheet/source-stats.component';
 import { Component, inject, input, output } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { ExportedCharacter, FeatureSource } from '../models/character.model';
@@ -8,13 +9,13 @@ import { SearchableSelectComponent } from './searchable-select.component';
 /** One source selector: cards for list filtering, compact searchable dropdowns for assignment. */
 @Component({
   selector: 'app-feature-source-picker',
-  imports: [NgClass, SearchableSelectComponent],
+  imports: [NgClass, SearchableSelectComponent, SourceStatsComponent],
   styleUrl: './local-editor.component.css',
   template: `
     <div class="selector-panel source-picker" [class.mb-3]="mode() === 'cards'" [attr.data-tone]="tone()">
       <div class="flex justify-between items-center gap-2 mb-2">
         <span class="selector-heading text-sm font-semibold" [class.field-label]="mode() === 'dropdown'">{{ heading() }}</span>
-        @if (mode() === 'cards') {
+        @if (mode() === 'cards' && showManage()) {
           <button type="button" class="secondary-button compact-button" (click)="manageSources.emit()">Feature Sources</button>
         }
       </div>
@@ -22,22 +23,14 @@ import { SearchableSelectComponent } from './searchable-select.component';
         <app-searchable-select [label]="heading()" placeholder="Select a Source" [options]="options"
           [value]="value()" [disabled]="disabled()" (selected)="selected.emit($event)" />
       } @else {
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+      <div class="flex flex-wrap items-stretch gap-2">
         @for (option of options; track option.source ?? option.value) {
-          <button type="button" class="border-2 rounded-lg p-2 text-center text-sm break-words transition-colors"
+          <button type="button" class="max-w-full border-2 rounded-lg px-3 py-2 text-center text-sm break-words transition-colors"
             [ngClass]="value() === option.value ? activeClasses : 'border-outline-variant bg-surface-container'"
             [attr.aria-pressed]="value() === option.value" (click)="selected.emit(option.value)">
             <span class="font-semibold">{{ option.label }}</span>
             @if (option.source; as source) {
-              @for (stat of stats(source); track stat.ability) {
-                <div class="text-xs mt-2">
-                  <span class="font-semibold">{{ stat.ability }}</span>
-                  <div class="flex justify-center gap-2 mt-1">
-                    <div>Attack<div class="text-tertiary font-semibold">{{ stat.attack }}</div></div>
-                    <div>Save DC<div class="text-primary font-semibold">{{ displayDc(stat.save) }}</div></div>
-                  </div>
-                </div>
-              }
+              <app-source-stats [stats]="stats(source)" />
             }
           </button>
         }
@@ -55,6 +48,7 @@ export class FeatureSourcePickerComponent {
   readonly sources = input.required<FeatureSource[]>();
   readonly orphanNames = input<string[]>([]);
   readonly mode = input<'cards' | 'dropdown'>('cards');
+  readonly showManage = input(true);
   readonly allowUnassigned = input(false);
   readonly disabled = input(false);
   readonly value = input('');
@@ -77,7 +71,7 @@ export class FeatureSourcePickerComponent {
       ...this.sources().filter(source => !!source.name).map(source => ({
         value: source.name!, label: source.name!, source,
       })),
-      ...this.orphanNames().map(name => ({ value: name, label: name || 'Unassigned' })),
+      ...this.orphanNames().filter(name => !this.sources().some(source => source.name === name)).map(name => ({ value: name, label: name || 'Unassigned' })),
     ];
     // Keep legacy/missing sources visible when editing an existing assignment.
     if (this.mode() === 'dropdown' && this.value() && !options.some(option => option.value === this.value())) {

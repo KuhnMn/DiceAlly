@@ -1,116 +1,82 @@
-import { Component, computed, input, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { ExportedCharacter } from '../models/character.model';
-
-interface Note {
-  id: number;
-  characterId?: number;
-  title: string;
-  body: string;
-  orderIndex?: number;
-}
+import { UiIconComponent } from '../ui-icon.component';
+import { Component, computed, inject, input, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ExportedCharacter, Note } from '../models/character.model';
+import { CharacterStore } from '../stores/character.store';
+import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.component';
 
 @Component({
   selector: 'app-notes-page',
-  imports: [CommonModule],
-  template: `
-    <div class="bg-surface-container-highest p-8 rounded-lg border-2 border-outline shadow-lg">
-      <h2 class="text-3xl font-bold mb-6">Notes</h2>
-      
-      @if (groupedNotes().size > 0) {
-        <div class="space-y-6">
-          @for (section of sortedSections(); track section) {
-            <div class="border-2 border-primary rounded-lg p-6 bg-surface-container">
-              <!-- Section Header (clickable) -->
-              <button
-                type="button"
-                class="w-full text-left hover:bg-surface-container-low transition-colors rounded p-2 -m-2 mb-3"
-                (click)="toggleExpanded('section-' + section)"
-              >
-                <div class="flex justify-between items-center">
-                  <h3 class="text-2xl font-bold text-on-surface">{{ section }}</h3>
-                  <span class="text-2xl text-on-surface font-bold">{{ isExpanded('section-' + section) ? '−' : '+' }}</span>
-                </div>
-              </button>
-              
-              <!-- Notes Content (expandable) -->
-              @if (isExpanded('section-' + section)) {
-                <div class="space-y-3 pt-3 border-t border-outline-variant">
-                  @for (note of groupedNotes().get(section); track note.id) {
-                    <div class="p-4 bg-surface-container-high rounded border-l-4 border-secondary hover:shadow-md transition-shadow">
-                      <div class="text-sm leading-relaxed prose prose-sm max-w-none text-on-surface-variant" [innerHTML]="parseMarkdown(note.body)"></div>
-                    </div>
-                  }
-                </div>
-              }
-            </div>
-          }
-        </div>
-      } @else {
-        <div class="text-center py-10 px-5 text-on-surface-variant text-base">
-          <p>No notes yet.</p>
-        </div>
-      }
-    </div>
-  `,
+  imports: [UiIconComponent, FormsModule, RemoveEntryDialogComponent],
+  templateUrl: './notes-page.component.html',
+  styles: [`
+    :host { display: block; min-width: 0; }
+    input, textarea { width: 100%; min-width: 0; padding: .5rem .625rem; border: 1px solid var(--md-sys-color-outline-variant); border-radius: .375rem; background: var(--md-sys-color-surface-container-low); color: var(--md-sys-color-on-surface); }
+    input:focus-visible, textarea:focus-visible { outline: 2px solid var(--md-sys-color-primary); }
+    button { cursor: pointer; }
+    .markdown { overflow-wrap: anywhere; }
+  `],
 })
 export class NotesPageComponent {
-  characterData = input.required<ExportedCharacter | null>();
-  expandedItems = signal<Set<string>>(new Set());
-
-  notes = computed(() => {
-    const data = this.characterData();
-    if (!data?.notes) return [];
-    // Sort within each section by orderIndex, but maintain section grouping order
-    return [...data.notes];
-  });
-
-  groupedNotes = computed(() => {
-    const grouped = new Map<string, Note[]>();
-    for (const note of this.notes()) {
+  readonly characterData = input.required<ExportedCharacter | null>();
+  private readonly store = inject(CharacterStore);
+  readonly draft = signal<Note | null>(null);
+  readonly pendingRemoval = signal<Note | null>(null);
+  readonly collapsed = signal(new Set<string>());
+  readonly preview = signal(false);
+  readonly sections = computed(() => {
+    const groups = new Map<string, Note[]>();
+    const sorted = [...this.characterData()?.notes ?? []].sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
+    for (const note of sorted) {
       const title = note.title || 'Untitled';
-      if (!grouped.has(title)) {
-        grouped.set(title, []);
-      }
-      grouped.get(title)!.push(note);
+      if (!groups.has(title)) groups.set(title, []);
+      groups.get(title)!.push(note);
     }
-    
-    // Sort notes within each section by orderIndex
-    for (const section of grouped.keys()) {
-      grouped.get(section)!.sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
-    }
-    
-    return grouped;
+    return [...groups].map(([title, entries]) => ({ title, entries }));
   });
 
-  sortedSections = computed(() => {
-    const sections = Array.from(this.groupedNotes().keys());
-    // Sort sections by the lowest orderIndex in each section
-    return sections.sort((a, b) => {
-      const aIndex = this.groupedNotes().get(a)?.[0]?.orderIndex ?? 0;
-      const bIndex = this.groupedNotes().get(b)?.[0]?.orderIndex ?? 0;
-      return aIndex - bIndex;
+  toggle(title: string) {
+    this.collapsed.update(current => {
+      const next = new Set(current);
+      if (next.has(title)) next.delete(title); else next.add(title);
+      return next;
     });
-  });
-
-  constructor(private sanitizer: DomSanitizer) {}
-toggleExpanded(id: string) {
-    const expanded = this.expandedItems();
-    if (expanded.has(id)) {
-      expanded.delete(id);
-    } else {
-      expanded.add(id);
-    }
-    this.expandedItems.set(new Set(expanded));
   }
 
-  isExpanded(id: string): boolean {
-    return this.expandedItems().has(id);
+  add(title = '') {
+    const notes = this.characterData()?.notes ?? [];
+    this.draft.set({ id: Math.max(0, ...notes.map(note => note.id)) + 1, title, body: '',
+      orderIndex: Math.max(-1, ...notes.map(note => note.orderIndex ?? 0)) + 1 });
+    this.preview.set(false);
   }
 
-  
-  parseMarkdown(markdown: string): SafeHtml {
+  edit(note: Note) { this.draft.set({ ...note }); this.preview.set(false); }
+
+  apply() {
+    const draft = this.draft();
+    if (!draft || !draft.body.trim()) return;
+    const note = { ...draft, title: draft.title.trim() || 'Untitled' };
+    const notes = this.characterData()?.notes ?? [];
+    this.saveNotes(notes.some(entry => entry.id === note.id)
+      ? notes.map(entry => entry.id === note.id ? note : entry) : [...notes, note]);
+    this.collapsed.update(current => { const next = new Set(current); next.delete(note.title); return next; });
+    this.draft.set(null);
+  }
+
+  remove() {
+    const note = this.pendingRemoval();
+    if (note) this.saveNotes((this.characterData()?.notes ?? []).filter(entry => entry.id !== note.id));
+    this.pendingRemoval.set(null);
+  }
+
+  private saveNotes(notes: Note[]) {
+    const character = this.characterData();
+    if (!character) return;
+    // Replace the sheet reference so grouping updates immediately and Quick Save exports the new notes.
+    this.store.setCharacter({ ...character, notes });
+  }
+
+  parseMarkdown(markdown: string): string {
     // Simple markdown parsing to HTML
     let html = markdown
       // Escape HTML entities first to prevent XSS
@@ -127,6 +93,6 @@ toggleExpanded(id: string) {
       .replace(/\n/g, '<br />');
     
     html = `<p class="my-2">${html}</p>`;
-    return this.sanitizer.bypassSecurityTrustHtml(html);
+    return html;
   }
 }

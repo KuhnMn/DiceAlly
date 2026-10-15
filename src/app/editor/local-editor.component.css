@@ -145,6 +145,17 @@ details[open] > .selector-summary .selector-arrow { transform: rotate(90deg); }
   background: var(--md-sys-color-secondary-container);
   color: var(--md-sys-color-on-secondary-container);
 }
+.action-button.wizard-button {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  background: var(--md-sys-color-tertiary);
+  color: var(--md-sys-color-on-tertiary);
+}
+.action-button.wizard-button:hover {
+  background: color-mix(in srgb, var(--md-sys-color-tertiary) 90%, var(--md-sys-color-on-tertiary));
+  color: var(--md-sys-color-on-tertiary);
+}
 .action-button:hover {
   background: var(--md-sys-color-secondary);
   color: var(--md-sys-color-on-secondary);

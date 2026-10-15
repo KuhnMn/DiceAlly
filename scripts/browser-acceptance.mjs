@@ -44,7 +44,7 @@ async function evaluate(session, expression) {
   return result.result.value;
 }
 async function page(browserContextId) {
-  const { targetId } = await send('Target.createTarget', { url: `${origin}/dev/content`, ...(browserContextId ? { browserContextId } : {}) });
+  const { targetId } = await send('Target.createTarget', { url: `${origin}/content`, ...(browserContextId ? { browserContextId } : {}) });
   const { sessionId } = await send('Target.attachToTarget', { targetId, flatten: true });
   await until(() => evaluate(sessionId, `!!document.querySelector('app-content-import') && !!globalThis.ng && !ng.getComponent(document.querySelector('app-content-import')).busy()`));
   await evaluate(sessionId, `globalThis.c = ng.getComponent(document.querySelector('app-content-import')); globalThis.h = await import(${JSON.stringify(helpers)});`);

@@ -1,0 +1,21 @@
+:host { display: block; }
+main { overflow-wrap: anywhere; }
+.editor-card { min-width: 0; }
+.content-records { max-height: 24rem; overflow-y: auto; }
+summary { min-height: 2rem; }
+summary:focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 3px; }
+.import-status-bar {
+  position: sticky;
+  top: .5rem;
+  z-index: 10;
+  padding: .75rem;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: .5rem;
+  background: var(--md-sys-color-surface-container-high);
+  box-shadow: 0 2px 6px rgb(0 0 0 / .12);
+}
+.status-indicator { width: .5rem; height: .5rem; border-radius: 50%; background: var(--md-sys-color-outline); }
+.status-indicator-active { background: var(--md-sys-color-primary); }
+.import-progress { display: block; width: 100%; height: .25rem; margin-top: .625rem; accent-color: var(--md-sys-color-primary); }
+.import-progress::-webkit-progress-bar { background: var(--md-sys-color-surface-container-low); border-radius: .25rem; }
+.import-progress::-webkit-progress-value { background: var(--md-sys-color-primary); border-radius: .25rem; }

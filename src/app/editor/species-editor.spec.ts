@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 import { SpeciesEditorComponent } from './species-editor.component';
 import { EntryAnnotationsComponent } from './entry-annotations.component';
 import { emptyBasicCharacter, validateBasicInfo } from './basic-info';
-import { BasicInfoRepository } from './basic-info-repository';
+import { IndexedDbCharacterRepository } from '../characters/indexeddb-character-repository';
 import { IndexedDbContentCache } from '../content/content-cache';
 import { ADAPTER_VERSION, ContentRecord, DEFAULT_CONTENT_SOURCE, ImportRevision, sourceIdentity } from '../content/content.model';
 import { SourceBookFilterService } from './source-book-filter.service';
@@ -38,7 +38,7 @@ describe('Single species editor', () => {
       annotations.addUses(sheet.species!); const use = sheet.species!.uses!.at(-1)!;
       use.totalFreeUses = 3; use.usedFreeUses = 2; use.freeUsesRegainCondition = recovery;
     }
-    const repository = new BasicInfoRepository(); await repository.save(sheet, 0);
+    const repository = new IndexedDbCharacterRepository(); await repository.save(sheet, 0);
     const saved = (await repository.list()).find(entry => entry.id === sheet.character!.characterUuid)!.sheet;
     expect(saved.species).toEqual(sheet.species);
     fixture.componentRef.setInput('sheet', saved); editor.revision.set(null); editor.results.set([]); fixture.detectChanges();
@@ -52,7 +52,7 @@ describe('Single species editor', () => {
   it('filters source books and confirms replacement of annotated species without adding extra species', async () => {
     const data = await library(); const fixture = TestBed.createComponent(SpeciesEditorComponent);
     const sheet = emptyBasicCharacter();
-    sheet.creatorWizard = { revisionId: data.revision.id, classes: [], answers: {}, options: {}, baseline: {}, protectedKeys: [] };
+    sheet.creatorWizard = { revisionId: data.revision.id, classes: [], answers: {}, options: {}, baseline: [], protectedPaths: [] };
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
     const editor = fixture.componentInstance; await editor.openCatalog(); editor.select(data.records[0]);
     sheet.species!.notes = [{ tag: 'Traits', notes: ['Keep unless replacing'] }];

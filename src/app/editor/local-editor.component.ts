@@ -1,11 +1,17 @@
-import { ChangeDetectorRef, Component, HostListener, OnInit, inject, signal } from '@angular/core';
+import { UiIconComponent } from '../ui-icon.component';
+import { ThemePickerComponent } from '../theme-picker.component';
+import { ScrollableTabsDirective } from '../scrollable-tabs.directive';
+import { AppDialogService } from '../services/app-dialog.service';
+import { MonstersEditorComponent } from './monsters-editor.component';
+import { ChangeDetectorRef, Component, DestroyRef, HostListener, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ExportedCharacter, AbilityScores, HitDieEntry } from '../models/character.model';
 import { CharacterHelpersService } from '../sheet/character-helpers.service';
-import { CharacterStorageService } from '../services/character-storage.service';
 import { canonicalDocument } from '../rules/character-document';
-import { BasicInfoEntry, BasicInfoRepository } from './basic-info-repository';
+import { CharacterRecord } from '../characters/character-repository';
+import { CharacterLibraryService } from '../characters/character-library.service';
 import { DEFENSE_ABILITIES, emptyBasicCharacter, validateBasicInfo } from './basic-info';
 import { OtherProficienciesComponent } from './other-proficiencies.component';
 import { SpellSlotsComponent } from './spell-slots.component';
@@ -18,21 +24,23 @@ import { SpeciesEditorComponent } from './species-editor.component';
 
 @Component({
   selector: 'app-local-editor',
-  imports: [FormsModule, RouterLink, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, MasonryCardsDirective, ClassWizardComponent, SpeciesEditorComponent],
+  imports: [UiIconComponent, ThemePickerComponent, ScrollableTabsDirective, FormsModule, RouterLink, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, MasonryCardsDirective, ClassWizardComponent, SpeciesEditorComponent, MonstersEditorComponent],
   templateUrl: './local-editor.component.html',
   styleUrl: './local-editor.component.css',
 })
 export class LocalEditorComponent implements OnInit {
+  private readonly dialogs = inject(AppDialogService);
   private readonly view = inject(ChangeDetectorRef);
-  private readonly repository = new BasicInfoRepository();
+  private readonly library = inject(CharacterLibraryService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly helpers = inject(CharacterHelpersService);
-  private readonly legacyStorage = inject(CharacterStorageService);
-  readonly entries = signal<BasicInfoEntry[]>([]);
   readonly busy = signal(false);
   readonly message = signal('');
   readonly error = signal('');
   readonly defenseAbilities = DEFENSE_ABILITIES;
-  readonly pages = ['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Features & Spells'];
+  readonly pages = ['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Features & Spells', 'Monsters'];
   get hasCastingSources() { return this.character.featureSources?.some(source => source.isSpellcastingSource && source.name?.trim()) ?? false; }
   get hasSpellSlots() { return Object.values(this.character.spellSlots ?? {}).some(slots => slots.length > 0); }
   readonly savingThrows = DEFENSE_ABILITIES.map(ability => ({ ...ability, abbreviation: ability.key.slice(0, 3) }));
@@ -52,7 +60,6 @@ export class LocalEditorComponent implements OnInit {
   ] as const;
   sheet = emptyBasicCharacter();
   version = 0;
-  libraryOpen = false;
   wizardOpen = false;
   applyWizard(sheet: ExportedCharacter) {
     this.sheet = sheet; this.wizardOpen = false; this.changed();
@@ -133,8 +140,8 @@ export class LocalEditorComponent implements OnInit {
     die.total = Math.max(0, die.total + change); this.changed();
   }
   removeHitDice(position: number) { this.hitDice.splice(position, 1); this.changed(); }
-  replaceLegacyHitDice() {
-    if (!confirm('Replace the imported hit-dice text with an empty editable list?')) return;
+  async replaceLegacyHitDice() {
+    if (!await this.dialogs.confirm('Replace the imported hit-dice text with an empty editable list?')) return;
     this.character.hitDice = []; this.changed();
   }
   abilityModifier(ability: keyof AbilityScores) {
@@ -161,15 +168,14 @@ export class LocalEditorComponent implements OnInit {
   get calculatedAc() { return this.helpers.calculateArmorClass(this.character, this.sheet.inventory ?? []); }
   get unsaved() { return canonicalDocument(this.sheet) !== this.savedState; }
 
-  async ngOnInit() { await this.refreshLibrary(); }
-
-  private async refreshLibrary() {
-    try { this.entries.set(await this.repository.list()); }
-    catch (error) { this.error.set(String(error)); }
+  ngOnInit() {
+    this.route.data.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
+      if (data['editorCharacter']) this.open(data['editorCharacter'], true);
+    });
   }
 
   changed() { this.view.markForCheck(); this.message.set(''); this.error.set(''); }
-  canLeave() { return !this.unsaved || confirm('You have unsaved changes. Leave without saving?'); }
+  canLeave() { return !this.unsaved || this.dialogs.confirm('You have unsaved changes. Leave without saving?', 'Unsaved Changes', 'Leave Without Saving'); }
   @HostListener('window:beforeunload', ['$event']) beforeUnload(event: BeforeUnloadEvent) {
     if (this.unsaved) { event.preventDefault(); event.returnValue = ''; }
   }
@@ -181,21 +187,24 @@ export class LocalEditorComponent implements OnInit {
     this.sheet = emptyBasicCharacter(); this.version = 0;
     this.view.markForCheck();
     this.savedState = canonicalDocument(this.sheet);
-    this.resetInputs(); this.libraryOpen = false;
+    this.resetInputs();
   }
 
-  open(entry: BasicInfoEntry) {
+  open(entry: CharacterRecord, routeApproved = false) {
     if (this.busy()) return;
-    if (!this.canLeave()) return;
+    if (!routeApproved && !this.canLeave()) return;
     this.portraitRequest++;
     this.sheet = structuredClone(entry.sheet);
+    this.character.level ??= 1; this.character.maxHp ??= 0; this.character.armorClass ??= 10;
+    this.character.maxHp = this.character.maxHpOverride ?? this.character.maxHp;
+    this.character.armorClass = this.character.armorClassOverride ?? this.character.armorClass;
     this.character.resistances ??= []; this.character.senses ??= {}; this.character.speeds ??= { walk: 30 };
     this.character.speeds.walk ??= 30;
     this.normalizeAbilities();
     this.version = entry.version;
     this.view.markForCheck();
     this.savedState = canonicalDocument(this.sheet);
-    this.resetInputs(); this.libraryOpen = false;
+    this.resetInputs();
     this.message.set('Character loaded.');
   }
 
@@ -214,15 +223,20 @@ export class LocalEditorComponent implements OnInit {
       if (this.character.calculateAC) this.character.armorClass = this.calculatedAc.ac;
       this.character.armorClassOverride = null;
       this.character.maxHpOverride = null;
-      this.version = await this.repository.save(this.sheet, this.version);
+      const snapshot = structuredClone(this.sheet);
+      this.version = await this.library.save(snapshot, this.version);
       this.view.markForCheck();
-      this.savedState = canonicalDocument(this.sheet);
-      await this.refreshLibrary();
+      this.savedState = canonicalDocument(snapshot);
       this.message.set('Character saved on this device.');
     } catch (error) { this.error.set(error instanceof Error ? error.message : String(error)); }
     finally { this.busy.set(false); }
   }
 
+  async viewSheet() {
+    if (this.busy()) return;
+    await this.save();
+    if (!this.error() && this.version > 0) await this.router.navigate(['/characters', this.character.characterUuid]);
+  }
   adjust(field: 'level' | 'maxHp' | 'armorClass', change: number) {
     this.character[field] = Math.max(field === 'level' ? 1 : 0, (this.character[field] ?? 0) + change);
     this.changed();
@@ -284,23 +298,4 @@ export class LocalEditorComponent implements OnInit {
     } catch (error) { this.error.set(String(error)); }
   }
 
-  /** Make a separate editor copy; leave all original legacy fields and storage intact. */
-  importLegacy(id: string) {
-    if (this.busy()) return;
-    if (!this.canLeave()) return;
-    const original = this.legacyStorage.loadCharacter(id);
-    if (!original?.character) { this.error.set('Could not load that character.'); return; }
-    this.portraitRequest++;
-    this.sheet = structuredClone(original);
-    this.character.characterUuid = crypto.randomUUID();
-    this.character.resistances ??= []; this.character.senses ??= {}; this.character.speeds ??= { walk: 30 };
-    this.character.speeds.walk ??= 30;
-    this.character.level ??= 1; this.character.maxHp ??= 0; this.character.armorClass ??= 10;
-    this.character.maxHp = this.character.maxHpOverride ?? this.character.maxHp;
-    this.character.armorClass = this.character.armorClassOverride ?? this.character.armorClass;
-    this.normalizeAbilities();
-    this.version = 0; this.savedState = ''; this.libraryOpen = false;
-    this.resetInputs(); this.message.set('Editing a copy. Save to keep it in this editor.');
-  }
-  get legacyEntries() { return this.legacyStorage.listCharacters(); }
 }

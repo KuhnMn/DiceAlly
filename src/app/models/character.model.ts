@@ -250,6 +250,8 @@ export interface FeatureUses {
 }
 
 export interface FeatureNotes {
+  /** Fingerprint of the wizard's species-choice text; edited groups are left untouched. */
+  wizardChoiceHash?: string;
   tag?: string;
   notes: string[];
   isEditable?: boolean | true;
@@ -528,9 +530,16 @@ export interface DisplayItem {
   id?: number | null;
 }
 
+export interface ContentReference {
+  key: string;
+  sourceIdentity: string;
+  revisionId: string;
+  commit: string;
+}
+
 export interface SpellEntryFull {
   editorId?: string;
-  contentReference?: { key: string; sourceIdentity: string; revisionId: string; commit: string };
+  contentReference?: ContentReference;
   name: string;
   source?: string;
   castingSourceName?: string;
@@ -543,7 +552,7 @@ export interface SpellEntryFull {
 
 export interface FeatureEntryFull {
   editorId?: string;
-  contentReference?: { key: string; sourceIdentity: string; revisionId: string; commit: string };
+  contentReference?: ContentReference;
   name: string;
   source?: string;
   featureSourceName?: string;
@@ -570,8 +579,9 @@ export interface InventoryItem {
 }
 
 export interface Species {
+  editorId?: string;
   userAdded?: boolean;
-  contentReference?: { key: string; sourceIdentity: string; revisionId: string; commit: string };
+  contentReference?: ContentReference;
   name?: string;
   source?: string;
   uses?: FeatureUses[];
@@ -580,7 +590,7 @@ export interface Species {
 }
 
 export interface FeatureSource {
-  id?: string;
+  editorId?: string;
   customDc?: number | null;
   customToHit?: number | null;
   name?: string;
@@ -733,6 +743,11 @@ export interface MonsterSpellcasting {
   will?: MonsterCasting[];
   daily?: Record<string, string[]>;
   known?: Record<string, string[]>;
+  constant?: MonsterCasting[];
+  ritual?: MonsterCasting[];
+  rest?: Record<string, string[]>;
+  spells?: Record<string, { slots?: number; spells?: MonsterCasting[] }>;
+  footerEntries?: string[];
 }
 
 export interface MonsterCR {
@@ -748,7 +763,7 @@ export interface MonsterEntity {
   size?: string[];
   type?: { type: string };
   alignment?: string[];
-  ac?: (number | { ac: number; condition: string })[];
+  ac?: (number | { ac?: number; condition?: string; special?: string; from?: string[] })[];
   hp?: { average?: number; formula?: string; special?: string };
   speed?: Record<string, number>;
   str?: number;
@@ -772,6 +787,8 @@ export interface MonsterEntity {
   trait?: MonsterAbility[];
   action?: MonsterAction[];
   reaction?: MonsterAction[];
+  bonus?: MonsterAction[];
+  mythic?: MonsterAction[];
   legendary?: MonsterAction[] | null;
   legendaryActionsLair?: MonsterAction[] | null;
   environment?: string[] | null;
@@ -780,6 +797,10 @@ export interface MonsterEntity {
 }
 
 export interface Monster {
+  editorId?: string;
+  contentReference?: ContentReference;
+  uses?: FeatureUses[];
+  notes?: FeatureNotes[];
   name?: string;
   source?: string;
   hpEnabled?: boolean;
@@ -808,8 +829,8 @@ export interface ExportedCharacter {
     speciesKey?: string;
     answers: Record<string, string[]>;
     options: Record<string, boolean>;
-    baseline: Record<string, { value: unknown; scope: string; label: string }>;
-    protectedKeys: string[];
+    baseline: { path: string[]; fingerprint: string; editFingerprint?: string; scope: string; label: string }[];
+    protectedPaths: string[][];
   };
   installationId?: string;
   portaitUrl?: string | null;

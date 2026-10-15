@@ -107,6 +107,22 @@
     {
       "name": "reopening and increasing level preserves manual HP, notes and used hit dice",
       "passed": true
+    },
+    {
+      "name": "Bard multiclass proficiency choices identify their source and complete without manual fallback",
+      "passed": true
+    },
+    {
+      "name": "Bulk Known spells collapse while individual Prepared grants remain visible",
+      "passed": true
+    },
+    {
+      "name": "Monsters tab adds library companions and preserves HP, uses and grouped notes",
+      "passed": true
+    },
+    {
+      "name": "Shared stat blocks render descriptive AC and opt-in HP tracking",
+      "passed": true
     }
   ],
   "limitations": [

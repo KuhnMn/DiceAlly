@@ -1,3 +1,5 @@
+import { UiIconComponent } from '../ui-icon.component';
+import { newEditorId } from './editor-identity';
 import { ChangeDetectorRef, Component, OnDestroy, effect, inject, input, output, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -15,7 +17,7 @@ import { CatalogQuery, EditorCatalog } from './editor-catalog';
 
 @Component({
   selector: 'app-editor-species',
-  imports: [FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent],
+  imports: [UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent],
   templateUrl: './species-editor.component.html',
   styleUrl: './local-editor.component.css',
 })
@@ -74,7 +76,7 @@ export class SpeciesEditorComponent implements OnDestroy {
   }
   select(record: ContentRecord) {
     const revision = this.revision(); if (!revision || record.kind !== 'species') return;
-    this.replace({ name: record.name, source: record.publication, userAdded: true,
+    this.replace({ editorId: newEditorId(), name: record.name, source: record.publication, userAdded: true,
       contentReference: contentReference(record, revision), entity: speciesSnapshot(record) }, record.key);
   }
   private replace(next: Species, key?: string, confirmed = false) {
@@ -86,13 +88,14 @@ export class SpeciesEditorComponent implements OnDestroy {
     }
     next.notes = same ? structuredClone(previous?.notes ?? []) : [];
     next.uses = same ? structuredClone(previous?.uses ?? []) : [];
+    if (same && previous?.editorId) next.editorId = previous.editorId;
     this.sheet().species = next;
     if (this.sheet().creatorWizard) this.sheet().creatorWizard!.speciesKey = key;
     this.catalogOpen = false; this.expanded = true; this.change();
   }
   addCustom() {
     const name = this.customName.trim(); if (!name) return;
-    this.replace({ name, source: 'Custom', userAdded: true,
+    this.replace({ editorId: newEditorId(), name, source: 'Custom', userAdded: true,
       entity: { name, source: 'Custom', entries: this.customDescription ? [{ text: this.customDescription }] : [] } });
     if (!this.catalogOpen) { this.customName = ''; this.customDescription = ''; }
   }

@@ -1,9 +1,11 @@
+import { UiIconComponent } from '../ui-icon.component';
+import { AppDialogService } from '../services/app-dialog.service';
 /* import { Component, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-share-modal',
-  imports: [CommonModule],
+  imports: [UiIconComponent, CommonModule],
   template: `
     <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" (click)="close.emit()">
       <div class="bg-surface-container-highest rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
@@ -13,7 +15,7 @@ import { CommonModule } from '@angular/common';
             (click)="close.emit()"
             class="text-on-surface-variant hover:text-on-surface text-2xl leading-none"
           >
-            ✕
+            <app-ui-icon name="close" />
           </button>
         </div>
 
@@ -37,13 +39,13 @@ import { CommonModule } from '@angular/common';
             (click)="copyToClipboard()"
             class="flex-1 px-4 py-2 bg-primary text-on-primary font-medium rounded-lg hover:bg-primary-container transition-colors"
           >
-            📋 Copy Link
+            <app-ui-icon name="copy" /> Copy Link
           </button>
 <!--           <button
             (click)="copyJsonToClipboard()"
             class="flex-1 px-4 py-2 bg-secondary-container text-on-secondary-container font-medium rounded-lg hover:bg-secondary transition-colors"
           >
-            📄 Copy JSON (Backup)
+            <app-ui-icon name="file" /> Copy JSON (Backup)
           </button> -->
           <button
             (click)="close.emit()"
@@ -57,6 +59,7 @@ import { CommonModule } from '@angular/common';
   `,
 })
 export class ShareModalComponent {
+  private readonly dialogs = inject(AppDialogService);
   shareUrl = input.required<string>();
   character = input<any>(null);
   close = output<void>();
@@ -65,25 +68,25 @@ export class ShareModalComponent {
     const url = this.shareUrl();
     try {
       await navigator.clipboard.writeText(url);
-      alert('✅ Share link copied to clipboard!');
+      void this.dialogs.alert('✅ Share link copied to clipboard!');
     } catch (error) {
-      const fallbackUrl = prompt('Copy the link below:', url);
+      await this.dialogs.showCopy('Copy the link below:', url);
     }
   }
 
   async copyJsonToClipboard() {
     const char = this.character();
     if (!char) {
-      alert('Character data not available');
+      void this.dialogs.alert('Character data not available');
       return;
     }
 
     try {
       const json = JSON.stringify(char);
       await navigator.clipboard.writeText(json);
-      alert('✅ JSON copied to clipboard! Paste it in the "Or Paste JSON" section to import.');
+      void this.dialogs.alert('✅ JSON copied to clipboard! Paste it in the "Or Paste JSON" section to import.');
     } catch (error) {
-      alert('Failed to copy JSON to clipboard. Try the share link instead.');
+      void this.dialogs.alert('Failed to copy JSON to clipboard. Try the share link instead.');
     }
   }
 }
