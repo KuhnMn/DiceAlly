@@ -106,7 +106,7 @@ try {
     assert.equal(values.hp,31);assert.equal(values.ac,16);assert.equal(values.current,9);assert.equal(values.notes[0].body,'Original data');
     await evaluate(session,"ng.getComponent(document.querySelector('app-local-editor')).viewSheet()");
     await until(()=>evaluate(session,"!!document.querySelector('app-character-sheet')"));
-    assert.equal(await evaluate(session,"ng.getComponent(document.querySelector('app-character-sheet')).characterData().installationId"),'android-import');
+    assert.equal(await evaluate(session,"ng.getComponent(document.querySelector('app-character-sheet')).characterData().installationId"),undefined);
   });
 
   await check('Optional unsupported wizard history cannot hide saved characters or block the sheet',async()=>{

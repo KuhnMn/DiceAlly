@@ -3,7 +3,7 @@ import { AppDialogService } from '../services/app-dialog.service';
 import { Component, inject, input, output, signal, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CharacterLibraryService } from '../characters/character-library.service';
-import { TmpfilesService } from '../services/tmpfiles.service';
+import { CharacterSharingService } from '../characters/character-sharing.service';
 import { ExportedCharacter } from '../models/character.model';
 
 type ExportMode = 'select' | 'json' | 'share';
@@ -23,8 +23,8 @@ type ExportMode = 'select' | 'json' | 'share';
             } @else if (mode() === 'share') {
               @if (isUploading()) {
                 Uploading...
-              } @else if (shareUrl()) {
-                Sync Code Ready
+              } @else if (shareCode()) {
+                Share Code Ready
               } @else {
                 Upload Failed
               }
@@ -39,7 +39,7 @@ type ExportMode = 'select' | 'json' | 'share';
         </div>
 
         @if (mode() === 'select') {
-          <!-- Initial selection screen -->
+          
           <p class="text-on-surface-variant mb-6">
             Choose how you want to export <strong>{{ characterName() }}</strong>:
           </p>
@@ -59,21 +59,21 @@ type ExportMode = 'select' | 'json' | 'share';
             </button>
 
             <button
-              (click)="uploadToTmpfiles()"
+              (click)="createShareCode()"
               class="w-full px-6 py-4 bg-secondary-container text-on-secondary-container font-medium rounded-lg hover:bg-secondary transition-colors text-left"
             >
               <div class="flex items-center">
                 <span class="text-2xl mr-3">#</span>
                 <div>
                   <div class="font-semibold">Share via Code Sync</div>
-                  <div class="text-sm opacity-90">Upload to temporary storage</div>
+                  <div class="text-sm opacity-90">Create a code for an approved user</div>
                 </div>
               </div>
             </button>
 
           </div>
         } @else if (mode() === 'json') {
-          <!-- JSON downloaded confirmation -->
+          
           <p class="text-on-surface-variant mb-4">
             <app-ui-icon name="check" /> Your character has been downloaded as a JSON file.
           </p>
@@ -84,46 +84,39 @@ type ExportMode = 'select' | 'json' | 'share';
             Done
           </button>
         } @else if (mode() === 'share') {
-          <!-- Share link result -->
+          
           @if (isUploading()) {
             <div class="flex flex-col items-center py-8">
               <div class="animate-spin text-4xl mb-4"><app-ui-icon name="loader" /></div>
-              <p class="text-on-surface-variant">Uploading to temporary share storage...</p>
+              <p class="text-on-surface-variant">Creating a private share code...</p>
             </div>
-          } @else if (shareUrl()) {
+          } @else if (shareCode()) {
             <p class="text-on-surface-variant mb-4">
-              Your character has been uploaded. Share the Sync Code below:
+              Your character has been uploaded. Share the Share Code below:
             </p>
 
-            <!--<div class="mb-4 p-4 bg-surface-container rounded-lg border-2 border-outline-variant">
-              <p class="text-xs text-on-surface-variant font-semibold mb-2">Share Link</p>
-              <p class="text-sm font-mono text-primary break-all">{{ shareUrl() }}</p>
-            </div>-->
+            
 
             <div class="mb-4 p-4 bg-surface-container rounded-lg border-2 border-outline-variant">
-              <p class="text-xs text-on-surface-variant font-semibold mb-2">Sync Code</p>
-              <p class="text-sm font-mono text-primary break-all">{{ fileId() }}</p>
+              <p class="text-xs text-on-surface-variant font-semibold mb-2">Share Code</p>
+              <p class="text-sm font-mono text-primary break-all">{{ shareCode() }}</p>
             </div>
 
             <div class="space-y-2 mb-4">
               <p class="text-xs text-on-surface-variant">
-                <span class="font-semibold">Note:</span> Files expire after 5 minutes.
+                <span class="font-semibold">Note:</span> Codes expire after 24 hours. Importing creates an independent copy; later edits are not linked.
               </p>
             </div>
 
             <div class="flex flex-col gap-2">
-              <!--<button
-                (click)="copyLinkToClipboard()"
-                class="px-4 py-2 bg-primary text-on-primary font-medium rounded-lg hover:bg-primary-container transition-colors"
-              >
-                <app-ui-icon name="copy" /> Copy Full Link
-              </button>-->
+              
               <button
-                (click)="copyIdToClipboard()"
+                (click)="copyCodeToClipboard()"
                 class="px-4 py-2 bg-secondary-container text-on-secondary-container font-medium rounded-lg hover:bg-secondary transition-colors"
               >
-                <app-ui-icon name="copy" /> Copy Sync Code
+                <app-ui-icon name="copy" /> Copy Share Code
               </button>
+              <button (click)="revokeCode()" class="px-4 py-2 rounded-lg bg-rose-container text-on-rose-container">Revoke Code</button>
               <button
                 (click)="close.emit()"
                 class="px-4 py-2 bg-surface-container text-on-surface font-medium rounded-lg hover:bg-surface-container-high transition-colors"
@@ -138,7 +131,7 @@ type ExportMode = 'select' | 'json' | 'share';
             </div>
             <div class="flex gap-2">
               <button
-                (click)="uploadToTmpfiles()"
+                (click)="createShareCode()"
                 class="flex-1 px-4 py-2 bg-primary text-on-primary font-medium rounded-lg hover:bg-primary-container transition-colors"
               >
                 Try Again
@@ -172,14 +165,14 @@ export class ExportOptionsModalComponent {
   close = output<void>();
 
   private library = inject(CharacterLibraryService);
-  private tmpfiles = inject(TmpfilesService);
+  private sharing = inject(CharacterSharingService);
 
   mode = signal<ExportMode>('select');
   character = signal<ExportedCharacter | null>(null);
   
   // Share mode
   isUploading = signal<boolean>(false);
-  shareUrl = signal<string | null>(null);
+  shareCode = signal<string | null>(null);
   uploadError = signal<string | null>(null);
   
   snackbarMessage = signal<string | null>(null);
@@ -187,12 +180,6 @@ export class ExportOptionsModalComponent {
   private snackbarTimeout: ReturnType<typeof setTimeout> | null = null;
 
   characterName = computed(() => this.character()?.character?.name || 'Unknown');
-  fileId = computed(() => {
-    const url = this.shareUrl();
-    if (!url) return null;
-    const match = url.match(/\/files\/(\d{6}|[a-f0-9]{32})(?:\/)?$/i);
-    return match ? match[1] : null;
-  });
 
   constructor() {
     // Load character when component initializes
@@ -225,47 +212,37 @@ export class ExportOptionsModalComponent {
     this.mode.set('json');
   }
 
-  async uploadToTmpfiles() {
+  async createShareCode() {
     const character = this.character();
     if (!character) return;
 
     this.mode.set('share');
     this.isUploading.set(true);
-    this.shareUrl.set(null);
+    this.shareCode.set(null);
     this.uploadError.set(null);
 
-    const result = await this.tmpfiles.uploadCharacter(character);
-    
-    this.isUploading.set(false);
-    
-    if (result.success && result.url) {
-      this.shareUrl.set(result.url);
-    } else {
-      this.uploadError.set(result.error || 'Unknown error occurred');
-    }
+    try { this.shareCode.set(await this.sharing.create(character)); }
+    catch (error) { this.uploadError.set(error instanceof Error ? error.message : 'Could not create a share code.'); }
+    finally { this.isUploading.set(false); }
+  }
+  async revokeCode() {
+    const code = this.shareCode();
+    if (!code) return;
+    this.isUploading.set(true);
+    try { await this.sharing.revoke(code); this.resetToSelect(); }
+    catch (error) { this.uploadError.set(String(error)); }
+    finally { this.isUploading.set(false); }
   }
 
-  async copyLinkToClipboard() {
-    const url = this.shareUrl();
-    if (!url) return;
-
-    try {
-      await navigator.clipboard.writeText(url);
-      void this.dialogs.alert('✅ Full link copied to clipboard!');
-    } catch (error) {
-      await this.dialogs.showCopy('Copy the link below:', url);
-    }
-  }
-
-  async copyIdToClipboard() {
-    const id = this.fileId();
+  async copyCodeToClipboard() {
+    const id = this.shareCode();
     if (!id) return;
 
     try {
       await navigator.clipboard.writeText(id);
-      this.showSnackbar('Sync code copied to clipboard.');
+      this.showSnackbar('Share code copied to clipboard.');
     } catch (error) {
-      await this.dialogs.showCopy('Copy the Sync Code below:', id);
+      await this.dialogs.showCopy('Copy the Share Code below:', id);
     }
   }
 
@@ -284,7 +261,7 @@ export class ExportOptionsModalComponent {
 
   resetToSelect() {
     this.mode.set('select');
-    this.shareUrl.set(null);
+    this.shareCode.set(null);
     this.uploadError.set(null);
   }
 }

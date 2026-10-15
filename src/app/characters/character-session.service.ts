@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { CharacterLibraryService } from './character-library.service';
 import { CharacterStore } from '../stores/character.store';
 import { UnsavedChangesGuard } from '../guards/unsaved-changes.guard';
@@ -6,6 +6,7 @@ import { UnsavedChangesGuard } from '../guards/unsaved-changes.guard';
 /** Connect a loaded character to the viewer's existing save/rest workflow. */
 @Injectable({ providedIn: 'root' })
 export class CharacterSessionService {
+  readonly loadedVersion = signal(0);
   private readonly library = inject(CharacterLibraryService);
   private readonly store = inject(CharacterStore);
   private readonly guard = inject(UnsavedChangesGuard);
@@ -18,6 +19,7 @@ export class CharacterSessionService {
       sheet.character.currentHp = sheet.character.maxHpOverride ?? sheet.character.maxHp ?? 0;
     }
     let version = record.version;
+    this.loadedVersion.set(version);
     this.store.clearNativeContext();
     this.store.nativeCharacterId.set(id);
     this.store.setCharacter(sheet);
@@ -25,7 +27,10 @@ export class CharacterSessionService {
     this.store.nativeSave = current => {
       if (current.character?.characterUuid !== id) return Promise.reject(new Error('The loaded character changed. Reopen the sheet.'));
       const snapshot = structuredClone(current);
-      const save = pending.then(async () => { version = await this.library.save(snapshot, version); });
+      const save = pending.then(async () => {
+        version = await this.library.save(snapshot, version);
+        this.loadedVersion.set(version);
+      });
       pending = save.catch(() => undefined);
       return save;
     };

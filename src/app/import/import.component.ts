@@ -1,11 +1,11 @@
 import { UiIconComponent } from '../ui-icon.component';
-import { Component, inject, signal, effect, isDevMode } from '@angular/core';
+import { Component, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CharacterLibraryService, CharacterSummary, CharacterImportResult } from '../characters/character-library.service';
 
-import { TmpfilesService } from '../services/tmpfiles.service';
+import { CharacterSharingService } from '../characters/character-sharing.service';
 
 import { ThemeService, type Theme } from '../services/theme.service';
 import { ExportOptionsModalComponent } from './export-options-modal.component';
@@ -25,7 +25,7 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
           <div class="flex flex-col sm:flex-row justify-between items-start mb-4">
             <div class="flex flex-col items-start justify-between">
               <h2 class="text-3xl font-bold mb-2">Your Characters</h2>
-              <p class="text-on-surface-variant mb-4">Saved locally on this device</p>
+              <p class="text-on-surface-variant mb-4">Saved on this device and synced with your account</p>
               @if (creatorAvailable) {
                 <nav aria-label="Character library actions" class="flex flex-wrap gap-2 mb-4">
                   <a routerLink="/characters/new" class="px-4 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:opacity-90 transition-opacity">Create Character</a>
@@ -95,9 +95,6 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
                     </button>
                   </div>
                   <p class="text-on-surface-variant text-xs pt-2">Id: {{ char.characterId }}</p>
-                  @if (char.installationId) {
-                    <p class="text-on-surface-variant text-xs pt-2">Installation: {{ char.installationId }}</p>
-                  }
                 </div>
               }
             </div>
@@ -115,18 +112,18 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
       <!-- Import Section -->
       <section class="border-t-2 border-outline pt-8">
         <h2 class="text-3xl font-bold mb-2">Import Character</h2>
-        <p class="text-on-surface-variant mb-6">Load a character from a JSON file, temporary Sync Code, or JSON paste</p>
+        <p class="text-on-surface-variant mb-6">Load a character from a JSON file, Share Code, or JSON paste</p>
 
         <!-- URL Import -->
         <div class="mb-6">
           <label class="block">
-            <span class="block text-sm font-medium mb-3">Import Sync Code</span>
+            <span class="block text-sm font-medium mb-3">Import Share Code</span>
             <div class="flex gap-2">
               <input
                 [(ngModel)]="importUrl"
                 type="text"
                 (keydown.enter)="importFromUrl()"
-                placeholder="6-digit Sync Code"
+                placeholder="XXXXXX-XXXXXX-XXXXXX-XXXXXX"
                 class="flex-1 px-4 py-2 border-2 border-outline-variant rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-surface text-on-surface"
               />
               <button
@@ -141,7 +138,7 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
                 }
               </button>
             </div>
-            <p class="text-xs text-on-surface-variant mt-2">Paste short sync code, or the full sync URL if provided</p>
+            <p class="text-xs text-on-surface-variant mt-2">Paste a Share Code from another approved user. You will receive your own independent copy.</p>
           </label>
         </div>
 
@@ -237,9 +234,9 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
 })
 export class ImportComponent {
   protected library = inject(CharacterLibraryService);
-  readonly creatorAvailable = isDevMode();
+  readonly creatorAvailable = true;
   private reloadVersion = 0;
-  private tmpfiles = inject(TmpfilesService);
+  private sharing = inject(CharacterSharingService);
   private router = inject(Router);
   protected themeService = inject(ThemeService);
 
@@ -305,21 +302,7 @@ export class ImportComponent {
     try {
       let jsonContent: string;
 
-      // Check if this is a worker-backed temporary share URL.
-      if (this.tmpfiles.isTmpfilesUrl(this.importUrl)) {
-        const result = await this.tmpfiles.downloadCharacter(this.importUrl);
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to download from temporary share storage');
-        }
-        jsonContent = JSON.stringify(result.character);
-      } else {
-        // Standard URL import
-        const response = await fetch(this.importUrl);
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        jsonContent = await response.text();
-      }
+      jsonContent = JSON.stringify(await this.sharing.redeem(this.importUrl));
 
       this.raw = jsonContent;
       const result = await this.library.importCharacterFromJson(jsonContent);
@@ -327,12 +310,9 @@ export class ImportComponent {
       this.importUrl = ''; // Clear URL on success
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      const isTmpfiles = this.tmpfiles.isTmpfilesUrl(this.importUrl);
       this.importError.set({
         code: 'UNKNOWN',
-        message: isTmpfiles
-          ? `Failed to import from share link: ${message}\n\n💡 Backup option: Click "Copy JSON (Backup)" in the Share modal and paste it below.`
-          : `Failed to download from URL: ${message}. Make sure the URL is correct and accessible.`,
+        message: `Could not import this share code: ${message}`,
       });
     } finally {
       this.isLoadingUrl.set(false);

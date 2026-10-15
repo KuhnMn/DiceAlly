@@ -832,7 +832,6 @@ export interface ExportedCharacter {
     baseline: { path: string[]; fingerprint: string; editFingerprint?: string; scope: string; label: string }[];
     protectedPaths: string[][];
   };
-  installationId?: string;
   portaitUrl?: string | null;
   character?: CharacterData;
   species?: Species;

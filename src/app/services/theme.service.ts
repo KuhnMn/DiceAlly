@@ -1,5 +1,6 @@
 import { Injectable, PLATFORM_ID, inject, signal, effect } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { THEMES } from '../settings/account-settings';
 
 export type Theme = 'light-mc' | 'dark-mc' | 'light-royal' | 'dark-royal' | 'light-ethereal' | 'dark-ethereal' | 'light-forge' | 'dark-forge' | 'light-glade' | 'dark-glade';
 
@@ -15,7 +16,7 @@ export class ThemeService {
   currentTheme = signal<Theme>(this.DEFAULT_THEME);
   
   // List of available themes
-    readonly availableThemes: readonly Theme[] = ['light-mc', 'dark-mc', 'light-royal', 'dark-royal', 'light-ethereal', 'dark-ethereal', 'light-forge', 'dark-forge', 'light-glade', 'dark-glade'];
+    readonly availableThemes: readonly Theme[] = THEMES;
 
   constructor() {
     // Load saved theme preference on browser

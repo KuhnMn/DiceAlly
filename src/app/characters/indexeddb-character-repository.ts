@@ -1,14 +1,16 @@
 import type { CharacterRecord, CharacterRepository } from './character-repository';
 import { ExportedCharacter } from '../models/character.model';
 import { canonicalDocument } from '../rules/character-document';
+import { portableCharacter } from './portable-character';
 
 /** Uses the existing creator database, so previously saved creator characters need no conversion. */
 export class IndexedDbCharacterRepository implements CharacterRepository {
+  constructor(private readonly databaseName = 'ally-character-editor-v1') {}
   private connection?: Promise<IDBDatabase>;
 
   private db(): Promise<IDBDatabase> {
     return this.connection ??= new Promise((resolve, reject) => {
-      const request = indexedDB.open('ally-character-editor-v1', 1);
+      const request = indexedDB.open(this.databaseName, 1);
       request.onupgradeneeded = () => request.result.createObjectStore('characters', { keyPath: 'id' });
       request.onsuccess = () => {
         request.result.onversionchange = () => { request.result.close(); this.connection = undefined; };
@@ -20,11 +22,16 @@ export class IndexedDbCharacterRepository implements CharacterRepository {
   }
 
   async list(): Promise<CharacterRecord[]> {
+    return (await this.listAll()).filter(record => !record.deletedAt);
+  }
+
+  /** Tombstones and unsent changes live in the same durable rows as their character snapshots. */
+  async listAll(): Promise<CharacterRecord[]> {
     const db = await this.db();
     return new Promise((resolve, reject) => {
       const request = db.transaction('characters').objectStore('characters').getAll();
       request.onsuccess = () => resolve((request.result as CharacterRecord[])
-        .filter(record => !record.deletedAt).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
       request.onerror = () => reject(request.error);
     });
   }
@@ -43,10 +50,29 @@ export class IndexedDbCharacterRepository implements CharacterRepository {
     canonicalDocument(sheet);
     const id = sheet.character?.characterUuid;
     if (!id || typeof id !== 'string') throw new Error('Character identity is missing.');
-    const copy = structuredClone(sheet);
-    return this.write(id, expectedVersion, () => ({
+    const copy = portableCharacter(sheet);
+    return this.write(id, expectedVersion, existing => ({
+      ...existing, deletedAt: undefined,
       id, sheet: copy, version: expectedVersion + 1, updatedAt: new Date().toISOString(),
     }));
+  }
+
+  async replaceFromCloud(record: CharacterRecord, expectedVersion: number) {
+    canonicalDocument(record.sheet);
+    return this.write(record.id, expectedVersion, () => ({ ...record, sheet: portableCharacter(record.sheet), version: expectedVersion + 1, syncedVersion: expectedVersion + 1 }));
+  }
+
+  /** Acknowledgements must not increment the edit version or erase edits made during an upload. */
+  async updateSync(id: string, update: (record: CharacterRecord) => CharacterRecord): Promise<void> {
+    const db = await this.db();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction('characters', 'readwrite');
+      const store = tx.objectStore('characters');
+      const request = store.get(id);
+      request.onsuccess = () => { if (request.result) store.put(update(request.result)); };
+      tx.oncomplete = () => resolve();
+      tx.onabort = tx.onerror = () => reject(tx.error);
+    });
   }
 
   async delete(id: string, expectedVersion: number): Promise<void> {

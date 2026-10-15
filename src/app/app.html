@@ -6,17 +6,27 @@
       width="48"
       height="48"
       priority
-      alt="AllySheetViewer logo"
+      alt="Dice Ally logo"
     />
     <div class="app-header__text">
-      <span class="app-title">AllySheetViewer</span>
-      <span class="app-subtitle">Character sheet companion</span>
+      <span class="app-title">Dice Ally</span>
+      <span class="app-subtitle">For what is NOT written in the dice</span>
     </div>
   </header>
+  @if (account.accessible()) {
+    <app-sync-status (signOut)="signOut()" />
+  }
 
   <section class="app-content">
     <div class="page-transition">
-      <router-outlet></router-outlet>
+      @if (account.accessible() && !sync.initialReady()) {
+        <div class="mx-auto max-w-sm p-6 text-center" role="status" aria-live="polite">
+          <h1 class="text-xl font-semibold">Loading Characters</h1>
+          <p class="mt-2 text-sm text-on-surface-variant">Checking your cloud saves and preparing this device…</p>
+        </div>
+      } @else {
+        <router-outlet></router-outlet>
+      }
     </div>
   </section>
 

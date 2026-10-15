@@ -2,6 +2,7 @@ import { Injectable, OnDestroy, inject, signal } from '@angular/core';
 import { normalizeCharacterEditorIdentity } from '../editor/editor-identity';
 import { CHARACTER_REPOSITORY, CharacterRecord } from './character-repository';
 import { ExportedCharacter } from '../models/character.model';
+import { APP_RUNTIME_CONFIG } from '../app.tokens';
 import { CharacterStorageService, SavedCharacterMetadata, StorageError } from '../services/character-storage.service';
 
 export interface CharacterSummary extends SavedCharacterMetadata { version: number; }
@@ -12,7 +13,9 @@ export interface CharacterImportResult { success: boolean; characterId?: string;
 export class CharacterLibraryService implements OnDestroy {
   private readonly repository = inject(CHARACTER_REPOSITORY);
   private readonly legacy = inject(CharacterStorageService);
+  private readonly cloudConfigured = !!inject(APP_RUNTIME_CONFIG, { optional: true })?.firebase;
   readonly changed = signal(0);
+  readonly showSyncConflicts = signal(false);
   readonly error = signal('');
   readonly migrationIssues = signal<string[]>([]);
   readonly storageBytes = signal(0);
@@ -30,9 +33,12 @@ export class CharacterLibraryService implements OnDestroy {
     this.changed.update(value => value + 1);
     this.channel?.postMessage('changed');
   }
+  notifyStoredChange() { this.notify(); }
 
   /** Copy legacy viewer saves once per ID. Originals remain as a backup; canonical rows/tombstones win. */
   private ready(): Promise<void> {
+    // Account migration must be explicit; never assign a shared device's old saves to every login.
+    if (this.cloudConfigured) return Promise.resolve();
     if (typeof indexedDB === 'undefined') return Promise.resolve();
     return this.migration ??= this.migrateLegacy().finally(() => { this.migration = undefined; });
   }
@@ -68,7 +74,7 @@ export class CharacterLibraryService implements OnDestroy {
     return (await this.list()).map(record => ({
       characterId: record.id, version: record.version,
       name: record.sheet.character?.name || 'Unnamed', level: record.sheet.character?.level ?? 1,
-      description: record.sheet.character?.description ?? '', installationId: record.sheet.installationId,
+      description: record.sheet.character?.description ?? '',
       lastModified: Date.parse(record.updatedAt),
     }));
   }

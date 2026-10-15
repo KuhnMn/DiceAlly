@@ -69,7 +69,15 @@
           "builder": "@angular/build:unit-test"
         },
         "deploy": {
-          "builder": "angular-cli-ghpages:deploy"
+          "builder": "angular-cli-ghpages:deploy",
+          "options": {
+            "repo": "https://github.com/KuhnMn/DiceAlly.git",
+            "branch": "gh-pages",
+            "cname": "diceally.pages.mxkuhn.de",
+            "dir": "dist/dice-ally-pages/browser",
+            "noBuild": true,
+            "noNotfound": true
+          }
         }
       }
     }

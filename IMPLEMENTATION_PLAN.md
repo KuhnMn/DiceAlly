@@ -26,15 +26,15 @@ Deliver a web-only replacement for the Android app, including its current charac
 | Independent TypeScript domain module | Character rules, level application, derivation, preservation of user changes; no dependency on Angular or Supabase |
 | Content adapter and background Web Worker | Android-compatible JSON mapping, linking, validation, bounded file-by-file import |
 | IndexedDB | Local content records/indexes, import revisions, character cache, drafts, durable synchronization queue |
-| Supabase Auth and PostgreSQL | Accounts, approved membership, private saved characters, settings, revisions |
+| Firebase Authentication and Realtime Database | Accounts, approved membership, private saved characters, revision-aware cloud saves |
 | Small server functions/database operations | Temporary share-code creation/redemption, rate limits, atomic saves; administrator provisioning if needed |
 | GitHub | Original content files and revision metadata; accessed directly by the browser |
 
-Supabase is a managed backend built around PostgreSQL, with authentication and database APIs. Its free plan currently includes 500 MB database storage, 1 GB file storage, 5 GB egress, and 500,000 function invocations. Free projects pause after a week of inactivity and do not include automatic database backups. Recheck limits before rollout; provide character exports and an operator backup procedure.
+Backend decision (2026-10-15): use Firebase Authentication and Realtime Database on Spark. Low-MB character documents remain complete JSON strings; the application caps cloud payloads at 8 MB. This avoids Firestore's document-size constraint and Supabase Free's manual inactivity restoration. Configuration, operational instructions and verification status are maintained in `docs/migration/FIREBASE_SETUP.md`. Recheck provider quotas before rollout; retain JSON exports as backups. Illustrations are external URLs only.
 
-Use Google OAuth initially to avoid arranging email delivery. Store a display name in the profile; arbitrary username/password authentication is not included initially. An email/password alternative can be added with account provisioning and recovery configured. Backend membership checks must deny non-invited identities even if an authentication provider issues them a session.
+Use Firebase email/password authentication initially. Administrators provision accounts and approve their UIDs under `members`. Backend rules deny non-invited identities even when Firebase Authentication issues them a session.
 
-Privileged Supabase credentials exist only server-side. Frontend keys are public configuration; row-level security and membership checks provide access control. Angular guards provide navigation behavior, not database security.
+Privileged Firebase credentials must never enter frontend assets. Frontend keys are public configuration; database security rules enforce ownership, membership and revision checks. Angular guards provide navigation behavior, not database security.
 
 ## Repository and Android references
 
@@ -190,7 +190,9 @@ Done when create -> save -> reopen -> edit/level -> export works, manual overrid
 
 ### 5. Invite-only accounts and private cloud saves
 
-Create Supabase migrations/policies, OAuth, membership provisioning, route guards, repository adapter, and revision-aware server saves. Migrate localStorage characters only after a successful account sign-in; keep originals until verified.
+Create Firebase security rules, authentication, membership provisioning, route guards, account-isolated repository adapter, and revision-aware server saves. Existing account IndexedDB characters upload through the durable pending-save mechanism. Support portable JSON imports; do not automatically migrate experimental localStorage saves.
+
+Implemented locally: email/password sign-in and approval, separate account caches, metadata-first synchronization, durable pending edits/tombstones, explicit conflict choices, and emulator-tested security rules. Publish the updated rules and perform live two-browser acceptance before considering this milestone complete. Full offline reload/session recovery remains Milestone 6.
 
 Done when invited users can access their data on another device, unapproved users cannot use protected functions, cross-account access fails at the backend, and application secrets are absent from static assets.
 

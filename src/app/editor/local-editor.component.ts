@@ -1,4 +1,5 @@
 import { UiIconComponent } from '../ui-icon.component';
+import { CharacterUpdateNoticeComponent } from '../characters/character-update-notice.component';
 import { ThemePickerComponent } from '../theme-picker.component';
 import { ScrollableTabsDirective } from '../scrollable-tabs.directive';
 import { AppDialogService } from '../services/app-dialog.service';
@@ -24,7 +25,7 @@ import { SpeciesEditorComponent } from './species-editor.component';
 
 @Component({
   selector: 'app-local-editor',
-  imports: [UiIconComponent, ThemePickerComponent, ScrollableTabsDirective, FormsModule, RouterLink, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, MasonryCardsDirective, ClassWizardComponent, SpeciesEditorComponent, MonstersEditorComponent],
+  imports: [CharacterUpdateNoticeComponent, UiIconComponent, ThemePickerComponent, ScrollableTabsDirective, FormsModule, RouterLink, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, MasonryCardsDirective, ClassWizardComponent, SpeciesEditorComponent, MonstersEditorComponent],
   templateUrl: './local-editor.component.html',
   styleUrl: './local-editor.component.css',
 })
@@ -73,7 +74,6 @@ export class LocalEditorComponent implements OnInit {
   readonly dieTypes = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20'];
   portraitFailed = false;
   private savedState = canonicalDocument(this.sheet);
-  private portraitRequest = 0;
 
   get character() { return this.sheet.character!; }
   get resistances() { return this.character.resistances!; }
@@ -176,6 +176,15 @@ export class LocalEditorComponent implements OnInit {
 
   changed() { this.view.markForCheck(); this.message.set(''); this.error.set(''); }
   canLeave() { return !this.unsaved || this.dialogs.confirm('You have unsaved changes. Leave without saving?', 'Unsaved Changes', 'Leave Without Saving'); }
+  async refreshCharacter() {
+    if (this.busy()) return;
+    try {
+      const record = await this.library.get(this.character.characterUuid!);
+      if (!record) { await this.router.navigateByUrl('/'); return; }
+      if (!await this.canLeave()) return;
+      this.open(record, true);
+    } catch (error) { this.error.set(String(error)); }
+  }
   @HostListener('window:beforeunload', ['$event']) beforeUnload(event: BeforeUnloadEvent) {
     if (this.unsaved) { event.preventDefault(); event.returnValue = ''; }
   }
@@ -183,7 +192,6 @@ export class LocalEditorComponent implements OnInit {
   newCharacter() {
     if (this.busy()) return;
     if (!this.canLeave()) return;
-    this.portraitRequest++;
     this.sheet = emptyBasicCharacter(); this.version = 0;
     this.view.markForCheck();
     this.savedState = canonicalDocument(this.sheet);
@@ -193,7 +201,6 @@ export class LocalEditorComponent implements OnInit {
   open(entry: CharacterRecord, routeApproved = false) {
     if (this.busy()) return;
     if (!routeApproved && !this.canLeave()) return;
-    this.portraitRequest++;
     this.sheet = structuredClone(entry.sheet);
     this.character.level ??= 1; this.character.maxHp ??= 0; this.character.armorClass ??= 10;
     this.character.maxHp = this.character.maxHpOverride ?? this.character.maxHp;
@@ -274,28 +281,13 @@ export class LocalEditorComponent implements OnInit {
   updateSense(name: string, range: number) { this.character.senses![name] = range; this.changed(); }
 
   setPortraitUrl(value: string) {
-    this.portraitRequest++;
+    if (value.trim() && !/^https?:\/\//i.test(value.trim())) {
+      this.error.set('Use an http:// or https:// link to an externally hosted portrait.');
+      return;
+    }
     this.sheet.portaitUrl = value.trim() || null;
     this.portraitFailed = false; this.changed();
   }
   removePortrait() { this.setPortraitUrl(''); }
-  async choosePortrait(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0]; input.value = '';
-    if (!file) return;
-    if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type)) {
-      this.error.set('Choose a PNG, JPEG, WebP or GIF image.'); return;
-    }
-    if (file.size > 2 * 1024 * 1024) { this.error.set('Choose an image smaller than 2 MB.'); return; }
-    const request = ++this.portraitRequest;
-    try {
-      const data = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader(); reader.onload = () => resolve(String(reader.result));
-        reader.onerror = () => reject(new Error('Could not read the image.')); reader.readAsDataURL(file);
-      });
-      if (request !== this.portraitRequest) return;
-      this.sheet.portaitUrl = data; this.portraitFailed = false; this.changed();
-    } catch (error) { this.error.set(String(error)); }
-  }
 
 }

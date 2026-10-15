@@ -41,6 +41,11 @@ testem.log
 /typings
 __screenshots__/
 /public/runtime-config.js
+/firebase-debug.log
+/database-debug.log
+/.env
+/.env.*
+!/.env.example
 
 # System files
 .DS_Store

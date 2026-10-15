@@ -1,5 +1,6 @@
 import { stableHash128 } from './stable-hash';
 import { ExportedCharacter } from '../models/character.model';
+import { portableCharacter } from '../characters/portable-character';
 
 /** Instance identity is separate from content provenance: one definition can have several sheet entries. */
 export function newEditorId(): string { return crypto.randomUUID(); }
@@ -24,7 +25,7 @@ export function wizardEditorId(kind: string, ...parts: string[]): string {
 
 /** Initialize missing editor identities in RAW imports; existing current-format identities stay unchanged. */
 export function normalizeCharacterEditorIdentity(input: ExportedCharacter): ExportedCharacter {
-  const sheet = structuredClone(input);
+  const sheet = portableCharacter(input);
   const characterId = sheet.character?.characterUuid ?? '';
   const normalizeEntry = (entry: object, kind: string, position: number) => {
     const value = entry as Record<string, unknown>;

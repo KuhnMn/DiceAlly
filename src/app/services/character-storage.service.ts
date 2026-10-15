@@ -2,13 +2,13 @@ import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ExportedCharacter } from '../models/character.model';
+import { portableCharacter } from '../characters/portable-character';
 
 export interface SavedCharacterMetadata {
   characterId: string;
   name: string;
   level: number;
   description?: string;
-  installationId?: string;
   lastModified: number;
 }
 
@@ -61,7 +61,7 @@ export class CharacterStorageService {
       const storageKey = `${this.STORAGE_KEY_PREFIX}${characterId}`;
 
       // Check storage quota
-      const serialized = JSON.stringify(character);
+      const serialized = JSON.stringify(portableCharacter(character));
       if (serialized.length > 5 * 1024 * 1024) {
         return {
           success: false,
@@ -77,7 +77,7 @@ export class CharacterStorageService {
       localStorage.setItem(storageKey, serialized);
 
       // Update metadata
-      this.updateMetadata(characterId, character.character.name || 'Unnamed', character.character.level || 1, character.character?.description || "", character.installationId);
+      this.updateMetadata(characterId, character.character.name || 'Unnamed', character.character.level || 1, character.character?.description || "");
 
       this.characterSaved.set({ characterId, timestamp: Date.now() });
 
@@ -176,7 +176,7 @@ export class CharacterStorageService {
       return null;
     }
 
-    return JSON.stringify(character, null, 2);
+    return JSON.stringify(portableCharacter(character), null, 2);
   }
 
   /**
@@ -365,7 +365,7 @@ export class CharacterStorageService {
     }
   }
 
-  private updateMetadata(characterId: string, name: string, level: number, description?: string, installationId?: string): void {
+  private updateMetadata(characterId: string, name: string, level: number, description?: string): void {
     if (!this.isBrowser) {
       return;
     }
@@ -380,7 +380,6 @@ export class CharacterStorageService {
         level,
         lastModified: Date.now(),
         description: description || undefined,
-        installationId: installationId || undefined,
       };
 
       localStorage.setItem(this.STORAGE_METADATA_KEY, JSON.stringify(metadataMap));

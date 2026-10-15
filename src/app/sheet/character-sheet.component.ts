@@ -1,8 +1,10 @@
 import { UiIconComponent } from '../ui-icon.component';
+import { CharacterUpdateNoticeComponent } from '../characters/character-update-notice.component';
+import { CharacterSessionService } from '../characters/character-session.service';
 import { ThemePickerComponent } from '../theme-picker.component';
 import { ScrollableTabsDirective } from '../scrollable-tabs.directive';
 import { AppDialogService } from '../services/app-dialog.service';
-import { Component, inject, signal, isDevMode } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { CharacterLibraryService } from '../characters/character-library.service';
@@ -19,7 +21,7 @@ import { NotesPageComponent } from './notes-page.component';
 
 @Component({
   selector: 'app-character-sheet',
-  imports: [UiIconComponent, 
+  imports: [CharacterUpdateNoticeComponent, UiIconComponent,
     ThemePickerComponent,
     ScrollableTabsDirective,
     CommonModule,
@@ -44,6 +46,7 @@ import { NotesPageComponent } from './notes-page.component';
             <p class="text-xs text-on-surface-variant break-words">{{ characterData()?.character?.name || 'Unnamed Character' }}</p>
           </div>
         </header>
+        <app-character-update-notice [characterId]="store.nativeCharacterId()" [characterName]="characterData()?.character?.name || 'Unnamed Character'" [loadedVersion]="session.loadedVersion()" [busy]="isSaving()" (refresh)="refreshCharacter()" />
         <!-- Top Action Bar -->
         <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:flex sm:flex-wrap items-center gap-2 mb-4">
           <div class="flex items-center gap-1.5 min-w-0 sm:mr-auto">
@@ -221,9 +224,21 @@ import { NotesPageComponent } from './notes-page.component';
 export class CharacterSheetComponent {
   private readonly dialogs = inject(AppDialogService);
   protected store = inject(CharacterStore);
+  readonly session = inject(CharacterSessionService);
+  async refreshCharacter() {
+    if (this.isSaving()) return;
+    const id = this.store.nativeCharacterId();
+    if (!id) return;
+    if (this.unsavedChangesGuard.hasUnsavedChanges(this.characterData()) &&
+        !await this.dialogs.confirm('Refreshing replaces your open sheet with the saved version. Unsaved changes will be lost.', 'Updated Version Available', 'Refresh Now')) return;
+    try {
+      if (!await this.library.get(id)) { await this.router.navigateByUrl('/'); return; }
+      await this.session.open(id);
+    } catch (error) { await this.dialogs.alert(String(error)); }
+  }
   private library = inject(CharacterLibraryService);
   private router = inject(Router);
-  readonly creatorAvailable = isDevMode();
+  readonly creatorAvailable = true;
   private fallbackVersion?: Promise<number>;
   protected restService = inject(RestService);
   private unsavedChangesGuard = inject(UnsavedChangesGuard);

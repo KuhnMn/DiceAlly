@@ -12,7 +12,7 @@ import { RouterLink } from '@angular/router';
       <section class="legal-card" aria-label="Lokale Speicherung">
         <h2>1. Lokale Speicherung im Browser</h2>
         <p>
-          AllySheetViewer speichert Charakterdaten lokal im Browser (Local Storage),
+          Dice Ally speichert Charakterdaten lokal im Browser (Local Storage),
           damit deine Daten auf deinem Geraet verfuegbar bleiben.
         </p>
       </section>
