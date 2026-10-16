@@ -1,5 +1,5 @@
 import { UiIconComponent } from '../ui-icon.component';
-import { Component, OnDestroy, OnInit, computed, isDevMode, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { IndexedDbContentCache } from './content-cache';
@@ -70,7 +70,7 @@ export class ContentImportComponent implements OnInit, OnDestroy {
     finally { this.busy.set(false); }
   }
   async start(): Promise<void> {
-    if (this.busy() || !isDevMode()) return;
+    if (this.busy()) return;
     this.updateMessage.set('');
     this.busy.set(true);
     try {
@@ -83,7 +83,7 @@ export class ContentImportComponent implements OnInit, OnDestroy {
     this.homebrewFile = (event.target as HTMLInputElement).files?.[0];
   }
   async removeHomebrew(fileId: string) {
-    if (this.busy() || !isDevMode()) return;
+    if (this.busy()) return;
     this.busy.set(true);
     try {
       const source = validateSource(await this.cache.savedSource(this.namespace) ?? this.source);
@@ -91,7 +91,7 @@ export class ContentImportComponent implements OnInit, OnDestroy {
     } catch (error) { this.busy.set(false); this.message.set(String(error)); }
   }
   async startHomebrew(from: 'url' | 'file') {
-    if (this.busy() || !isDevMode()) return;
+    if (this.busy()) return;
     if (from === 'file' && !this.homebrewFile) return;
     if (from === 'url' && !this.homebrewUrl.trim()) return;
     this.busy.set(true);

@@ -24,11 +24,11 @@
                     </span>
                   }
                 </div>
-    @if (monster.entity.hp) {
-    <p class="text-sm my-2"><strong>HP:</strong> {{ monster.entity.hp?.average ?? '' }}
-      @if (monster.entity.hp?.formula) { ({{ monster.entity.hp?.formula }}) }
-      @if (monster.entity.hp?.special) { {{ monster.entity.hp?.special }} }
-    </p>
+    @if (monster.entity.hp; as hp) {
+      <p class="text-sm my-2"><strong>HP:</strong> {{ hp.average ?? '' }}
+        @if (hp.formula) { ({{ hp.formula }}) }
+        @if (hp.special) { {{ hp.special }} }
+      </p>
     }
                 <!-- AC, Speed, Initiative, CR -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 my-4">
