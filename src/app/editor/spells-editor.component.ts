@@ -1,3 +1,4 @@
+import { CombatBookmarkComponent } from './combat-bookmark.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { copySpellToList } from './spell-selection';
 import { newEditorId } from './editor-identity';
@@ -21,7 +22,7 @@ import { contentReference } from './editor-content-helpers';
 
 @Component({
   selector: 'app-editor-spells',
-  imports: [UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
+  imports: [CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
   templateUrl: './spells-editor.component.html',
   styleUrl: './local-editor.component.css',
 })

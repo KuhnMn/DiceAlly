@@ -6,7 +6,7 @@ export interface AnnotatedEntry {
   uses?: FeatureUses[];
 }
 
-/** One editing model for features, species, spells and monsters; annotations remain ordinary sheet data. */
+/** Shared editing model for features, species, spells, items and monsters; annotations remain ordinary sheet data. */
 @Directive()
 export abstract class EntryAnnotationsEditor {
   readonly recoveryOptions = RECOVERY_OPTIONS;

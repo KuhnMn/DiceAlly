@@ -81,7 +81,7 @@ type ExportMode = 'select' | 'json' | 'share';
             (click)="close.emit()"
             class="w-full px-4 py-2 bg-primary text-on-primary font-medium rounded-lg hover:bg-primary-container transition-colors"
           >
-            Done
+            Close
           </button>
         } @else if (mode() === 'share') {
           

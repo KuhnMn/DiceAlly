@@ -1,9 +1,11 @@
+import { CombatEditorComponent } from './combat-editor.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { CharacterUpdateNoticeComponent } from '../characters/character-update-notice.component';
 import { ThemePickerComponent } from '../theme-picker.component';
 import { ScrollableTabsDirective } from '../scrollable-tabs.directive';
 import { AppDialogService } from '../services/app-dialog.service';
 import { MonstersEditorComponent } from './monsters-editor.component';
+import { ItemsEditorComponent } from './items-editor.component';
 import { ChangeDetectorRef, Component, DestroyRef, HostListener, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -25,7 +27,7 @@ import { SpeciesEditorComponent } from './species-editor.component';
 
 @Component({
   selector: 'app-local-editor',
-  imports: [CharacterUpdateNoticeComponent, UiIconComponent, ThemePickerComponent, ScrollableTabsDirective, FormsModule, RouterLink, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, MasonryCardsDirective, ClassWizardComponent, SpeciesEditorComponent, MonstersEditorComponent],
+  imports: [CombatEditorComponent, CharacterUpdateNoticeComponent, UiIconComponent, ThemePickerComponent, ScrollableTabsDirective, FormsModule, RouterLink, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, MasonryCardsDirective, ClassWizardComponent, SpeciesEditorComponent, ItemsEditorComponent, MonstersEditorComponent],
   templateUrl: './local-editor.component.html',
   styleUrl: './local-editor.component.css',
 })
@@ -41,7 +43,7 @@ export class LocalEditorComponent implements OnInit {
   readonly message = signal('');
   readonly error = signal('');
   readonly defenseAbilities = DEFENSE_ABILITIES;
-  readonly pages = ['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Features & Spells', 'Monsters'];
+  readonly pages = ['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Features & Spells', 'Items', 'Monsters', 'Combat'];
   get hasCastingSources() { return this.character.featureSources?.some(source => source.isSpellcastingSource && source.name?.trim()) ?? false; }
   get hasSpellSlots() { return Object.values(this.character.spellSlots ?? {}).some(slots => slots.length > 0); }
   readonly savingThrows = DEFENSE_ABILITIES.map(ability => ({ ...ability, abbreviation: ability.key.slice(0, 3) }));

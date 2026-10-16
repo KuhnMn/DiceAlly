@@ -61,7 +61,14 @@
   }
   @if (panel() === 'sources') {
   <section class="editor-card">
-    <h2>Feature Sources</h2>
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+      <h2 class="!mb-0">Feature Sources</h2>
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button" class="secondary-button compact-button" [attr.aria-expanded]="sourcesVisible" aria-controls="added-feature-sources" (click)="sourcesVisible = !sourcesVisible">{{ sourcesVisible ? 'Hide List' : 'Show List' }} ({{ sources.length }})</button>
+        <button type="button" class="action-button" (click)="sourcesVisible = true; addSource()">Add Source</button>
+      </div>
+    </div>
+    <div id="added-feature-sources" [hidden]="!sourcesVisible">
     @if (sourceMessage()) { <p role="alert" class="text-sm text-error mb-3">{{ sourceMessage() }}</p> }
     <div class="space-y-3">@for (source of sources; track source; let i = $index) {
       <div class="rounded-lg border-2 border-outline-variant bg-surface-container p-3 space-y-3">
@@ -72,7 +79,7 @@
         @if (source.isSpellcastingSource) { <label class="flex items-center gap-2 text-sm"><input type="checkbox" [name]="'source-spellbook-' + i" [(ngModel)]="source.useSpellbook" (ngModelChange)="change()" />Use Spellbook</label> }
       </div>
     } @empty { <p class="text-sm text-on-surface-variant">No feature sources added yet.</p> }</div>
-    <button type="button" class="action-button mt-4" (click)="addSource()">Add Source</button>
+    </div>
   </section>
   }
 </div>

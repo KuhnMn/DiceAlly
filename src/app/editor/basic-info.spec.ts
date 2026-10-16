@@ -9,10 +9,10 @@ import { CharacterHelpersService } from '../sheet/character-helpers.service';
 describe('Basic Info editor', () => {
   beforeEach(() => TestBed.configureTestingModule({ imports: [LocalEditorComponent], providers: [provideRouter([])] }));
 
-  it('groups the editor into six stable tabs with related sections together', async () => {
+  it('groups the editor into eight stable tabs with related sections together', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
     const editor = fixture.componentInstance;
-    expect(fixture.nativeElement.querySelectorAll('nav[aria-label="Character editor pages"] button')).toHaveLength(6);
+    expect(fixture.nativeElement.querySelectorAll('nav[aria-label="Character editor pages"] button')).toHaveLength(8);
     expect(fixture.nativeElement.querySelector('#new-hit-dice-total')).not.toBeNull();
     editor.setPage(2); fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('#skill-PERCEPTION')).not.toBeNull();
@@ -23,7 +23,11 @@ describe('Basic Info editor', () => {
     expect(fixture.nativeElement.querySelector('app-editor-features')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('app-editor-spells')).not.toBeNull();
     editor.setPage(5); fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('app-editor-items')).not.toBeNull();
+    editor.setPage(6); fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('app-editor-monsters')).not.toBeNull();
+    editor.setPage(7); fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('app-editor-combat')).not.toBeNull();
     const pages = [...editor.pages];
     editor.character.featureSources = [{ name: 'Wizard', isSpellcastingSource: true }];
     expect(editor.pages).toEqual(pages);

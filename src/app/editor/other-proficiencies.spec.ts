@@ -99,10 +99,10 @@ describe('Other Proficiencies', () => {
     sheet.character!.spellSlots = { 'New Source': [{ level: 1, total: 2, used: 1 }] };
     const field = document.createElement('input'); field.value = 'Wizard';
     const event = new Event('change'); Object.defineProperty(event, 'target', { value: field });
-    page.renameSource(page.sources[0], event);
+    page.renameSource(page.sources[1], event);
     expect(sheet.features[0].featureSourceName).toBe('Wizard'); expect(sheet.spells[0].castingSourceName).toBe('Wizard');
     expect(sheet.character!.spellSlots!['Wizard'][0].used).toBe(1);
-    field.value = 'Wizard'; page.renameSource(page.sources[1], event);
-    expect(page.sources[1].name).toBe('New Source 2'); expect(page.sourceMessage()).toMatch(/unique/);
+    field.value = 'Wizard'; page.renameSource(page.sources[0], event);
+    expect(page.sources[0].name).toBe('New Source 2'); expect(page.sourceMessage()).toMatch(/unique/);
   });
 });

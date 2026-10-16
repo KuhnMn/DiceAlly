@@ -24,7 +24,7 @@
 
   <nav [appScrollableTabs]="page" class="mb-5 sm:border-b-2 border-outline-variant" aria-label="Character editor pages">
     @for (title of pages; track title; let i = $index) {
-      <button type="button" class="px-3 py-3 text-sm font-semibold border-b-4 -mb-0.5 transition-colors hover:bg-surface-container" [class.border-primary]="page === i" [class.text-primary]="page === i" [class.border-transparent]="page !== i" [class.text-on-surface-variant]="page !== i" [attr.aria-current]="page === i ? 'page' : null" (click)="setPage(i)">{{ title }}@if (title === 'Proficiencies & More') { <span class="block text-[10px] font-normal mt-1">Languages &amp; Advantages</span> }</button>
+      <button type="button" class="px-3 py-3 text-sm font-semibold border-b-4 -mb-0.5 transition-colors hover:bg-surface-container" [class.border-primary]="page === i" [class.text-primary]="page === i" [class.border-transparent]="page !== i" [class.text-on-surface-variant]="page !== i" [attr.aria-current]="page === i ? 'page' : null" (click)="setPage(i)">{{ title }}@if (title === 'Proficiencies & More') { <span class="block text-[10px] font-normal mt-1">Languages &amp; Advantages</span> }@if (title === 'Feature Sources') { <span class="block text-[10px] font-normal mt-1">Spell Slots</span> }</button>
     }
   </nav>
 
@@ -240,6 +240,12 @@
       }
       @if (pages[page] === 'Monsters') {
         <app-editor-monsters [sheet]="sheet" (edited)="changed()" />
+      }
+      @if (pages[page] === 'Items') {
+        <app-editor-items [sheet]="sheet" (edited)="changed()" />
+      }
+      @if (pages[page] === 'Combat') {
+        <app-editor-combat [sheet]="sheet" (edited)="changed()" />
       }
       <footer class="flex flex-wrap items-center justify-between gap-3 pt-2 pb-4">
         <p class="text-sm text-on-surface-variant">{{ unsaved ? 'Unsaved changes' : version ? 'Saved on this device' : pages[page] }}</p>

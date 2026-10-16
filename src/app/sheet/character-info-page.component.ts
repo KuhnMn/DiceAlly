@@ -1,3 +1,4 @@
+import { resolveCombatResource } from '../editor/combat-actions';
 import { UiIconComponent } from '../ui-icon.component';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { Component, inject, computed, input, effect, output, signal } from '@angular/core';
@@ -602,7 +603,7 @@ import { ConditionsComponent } from './conditions.component';
                         {{ getActionTypeLabel(actionType) }}
                       </h4>
                       <div class="space-y-1">
-                        @for (action of groupedCombatActions()[actionType]; track action.name) {
+                        @for (action of groupedCombatActions()[actionType]; track action) {
                           <button
                             type="button"
                             [disabled]="!isActionClickable(action)"
@@ -633,8 +634,8 @@ import { ConditionsComponent } from './conditions.component';
                             [class.cursor-default]="!isActionClickable(action)"
                             [class.text-on-surface-variant]="!isActionClickable(action)"
                           >
-                            <div class="grid grid-cols-[2fr_1fr_2fr] gap-2 text-sm">
-                              <div class="font-semibold">{{ action.name }}</div>
+                            <div class="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,2fr)] gap-2 text-sm">
+                              <div class="font-semibold break-words">{{ action.name }}@if (action.range) { <span class="block text-xs font-normal text-on-surface-variant">{{ action.range }}</span> }</div>
                               <div class="text-center font-mono text-xs">{{ action.hitOrDc }}</div>
                               <div class="text-right text-wrap font-mono text-xs">{{ action.damageOrHeal }}</div>
                             </div>
@@ -1213,25 +1214,26 @@ export class CharacterInfoPageComponent {
 
   getCombatActionAnchorId(action: any): string | null {
     const linkedResourceType = action.linkedResourceType;
-    const linkedResource = action.linkedResource;
-    
+    const sheet = this.characterData();
+    if (!sheet || !linkedResourceType || linkedResourceType === 'OTHER') return null;
+    const linkedResource = resolveCombatResource(sheet, action);
     if (!linkedResource?.name) return null;
-    if (linkedResourceType === 'OTHER' || !linkedResourceType) return null;
-    
+    const identity = linkedResource.editorId ?? this.helpers.sourceId(`${linkedResource.name}-${linkedResource.source ?? ''}`);
+
     // Map linkedResourceType to page prefix
     switch (linkedResourceType) {
       case 'CLASS_FEATURE':
       case 'FEAT':
       case 'OPTIONAL_FEATURE':
-        return `feature-${this.helpers.sourceId(`${linkedResource.name}-${linkedResource.source ?? ''}`)}`;
+        return `feature-${identity}`;
       case 'SPECIES':
         return 'species-section';
       case 'SPELL':
-        return `spell-${this.helpers.sourceId(`${linkedResource.name}-${linkedResource.source ?? ''}`)}`;
+        return `spell-${identity}`;
       case 'ITEM':
-        return `item-${this.helpers.sourceId(`${linkedResource.name}-${linkedResource.source ?? ''}`)}`;
+        return `item-${identity}`;
       case 'MONSTER':
-        return `monster-${this.helpers.sourceId(`${linkedResource.name}-${linkedResource.source ?? ''}`)}`;
+        return `monster-${identity}`;
       default:
         return null;
     }

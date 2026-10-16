@@ -257,6 +257,11 @@ export class FeaturesPageComponent {
     effect(() => {
       const targetId = this.store.featureScrollTarget();
       if (!targetId) return;
+      if (targetId.startsWith('feature-')) {
+        this.featureTypeFilter.set('ALL');
+        this.featureSourceFilter.set('ALL');
+        this.expandedItems.update(values => new Set([...values, targetId]));
+      }
       if (typeof document === 'undefined') return;
       setTimeout(() => {
         const el = document.getElementById(targetId);
@@ -360,10 +365,10 @@ export class FeaturesPageComponent {
     return parts.length ? parts.join(', ') : '—';
   }
 
-  featureAnchorId(feature: { name?: string; source?: string }): string | null {
+  featureAnchorId(feature: { name?: string; source?: string; editorId?: string }): string | null {
     if (!feature?.name) return null;
     const base = `${feature.name}-${feature.source ?? ''}`;
-    return `feature-${this.helpers.sourceId(base)}`;
+    return `feature-${feature.editorId ?? this.helpers.sourceId(base)}`;
   }
 
 

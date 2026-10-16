@@ -155,7 +155,8 @@ export class CharacterHelpersService {
     return times
       .map((time) => {
         const number = time.number ?? '';
-        const unit = time.unit ?? '';
+        // 5etools uses "bonus" as shorthand for the casting-time unit.
+        const unit = time.unit === 'bonus' ? 'bonus action' : time.unit ?? '';
         const condition = time.condition ? `, ${time.condition}` : '';
         return `${number} ${unit}${condition}`.trim();
       })

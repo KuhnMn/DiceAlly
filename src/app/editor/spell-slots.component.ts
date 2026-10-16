@@ -14,43 +14,73 @@ export class SpellSlotsComponent {
   readonly sheet = input.required<ExportedCharacter>();
   readonly edited = output<void>();
   readonly recoveryOptions = RECOVERY_OPTIONS;
-  selectedSource = '';
-  level: number | null = 1;
-  total: number | null = 1;
-  recovery = 'LONG_REST';
+  listVisible = true;
+  newestSource = '';
   error = '';
   get character() { return this.sheet().character!; }
   get sources() { return (this.character.featureSources ?? []).filter(source => source.isSpellcastingSource && source.name?.trim()); }
-  slots(source: string): SpellSlot[] { return this.character.spellSlots?.[source] ?? []; }
+  slots(source: string): SpellSlot[] {
+    return [...(this.character.spellSlots?.[source] ?? [])].sort((a, b) => a.level - b.level);
+  }
   change() { this.error = ''; this.edited.emit(); }
+  get visibleSources() {
+    return this.sources.filter(source => this.slots(source.name!).length)
+      .sort((a, b) => Number(b.name === this.newestSource) - Number(a.name === this.newestSource));
+  }
+  hasCombination(source: string, level: number, recovery: string, except?: SpellSlot): boolean {
+    return this.slots(source).some(slot => slot !== except && slot.level === level
+      && (slot.regainCondition || 'LONG_REST') === recovery);
+  }
+  disabledSources(slot: SpellSlot): string[] {
+    return this.sources.filter(source => this.hasCombination(source.name!, slot.level, slot.regainCondition || 'LONG_REST', slot))
+      .map(source => source.name!);
+  }
+  setRecovery(source: string, slot: SpellSlot, recovery: string) {
+    if (this.hasCombination(source, slot.level, recovery, slot)) {
+      this.error = 'This source already has slots at this level with this recovery.'; return;
+    }
+    slot.regainCondition = recovery; this.change();
+  }
   add() {
-    const source = this.selectedSource || this.sources[0]?.name;
-    if (!source || !this.sources.some(value => value.name === source)) { this.error = 'Choose a spellcasting source.'; return; }
-    if (!Number.isSafeInteger(this.level) || this.level! < 1 || this.level! > 9 || !Number.isSafeInteger(this.total) || this.total! < 1) {
-      this.error = 'Choose spell level 1–9 and a positive whole-number total.'; return;
+    const source = this.sources[0]?.name;
+    if (!source) { this.error = 'Add a spellcasting source first.'; return; }
+    const groups = this.character.spellSlots ??= {};
+    if (!Object.hasOwn(groups, source)) Object.defineProperty(groups, source, { value: [], enumerable: true, writable: true, configurable: true });
+    // Start with an unused level and zero slots so the row can be filled in safely.
+    const combination = this.recoveryOptions.flatMap(recovery => Array.from({ length: 9 }, (_, i) => ({ level: i + 1, recovery: recovery.value })))
+      .sort((a, b) => Number(this.slots(source).some(slot => slot.level === a.level)) - Number(this.slots(source).some(slot => slot.level === b.level))
+        || Number(b.recovery === 'LONG_REST') - Number(a.recovery === 'LONG_REST'))
+      .find(option => !this.hasCombination(source, option.level, option.recovery));
+    if (!combination) { this.error = 'All level and recovery combinations for this source are already configured.'; return; }
+    groups[source].unshift({ level: combination.level, total: 0, used: 0, regainCondition: combination.recovery, userAdded: true });
+    this.newestSource = source;
+    this.listVisible = true;
+    this.change();
+  }
+  setLevel(source: string, slot: SpellSlot, value: number | null) {
+    if (!Number.isInteger(value) || value! < 1 || value! > 9) {
+      this.error = 'Choose a spell level from 1 to 9.'; return;
     }
-    const existing = this.slots(source).find(slot => slot.level === this.level);
-    if (existing && (existing.regainCondition ?? 'LONG_REST') !== this.recovery) {
-      this.error = 'This source already has slots at this level. Edit their recovery setting below before adding more.'; return;
+    if (this.hasCombination(source, value!, slot.regainCondition || 'LONG_REST', slot)) {
+      this.error = 'This source already has slots at this level.'; return;
     }
-    const slots = this.character.spellSlots ??= {};
-    if (!Object.hasOwn(slots, source)) Object.defineProperty(slots, source, { value: [], enumerable: true, writable: true, configurable: true });
-    if (existing) existing.total += this.total!;
-    else slots[source].push({ level: this.level!, total: this.total!, used: 0, regainCondition: this.recovery, userAdded: true });
-    slots[source].sort((a, b) => a.level - b.level);
-    this.total = 1; this.change();
+    slot.level = value!; this.change();
   }
   adjust(slot: SpellSlot, amount: number) { slot.total = Math.max(0, slot.total + amount); this.change(); }
-  remove(source: string, index: number) { this.character.spellSlots![source].splice(index, 1); this.change(); }
+  remove(source: string, index: number) {
+    const slot = this.slots(source)[index];
+    const stored = this.character.spellSlots![source];
+    stored.splice(stored.indexOf(slot), 1); this.change();
+  }
   move(from: string, index: number, to: string) {
     if (from === to) return;
     const slot = this.slots(from)[index];
-    if (!this.sources.some(source => source.name === to) || this.slots(to).some(other => other.level === slot.level)) {
+    if (!this.sources.some(source => source.name === to) || this.hasCombination(to, slot.level, slot.regainCondition || 'LONG_REST', slot)) {
       this.error = 'The target source already has slots at this level. Choose another source.'; return;
     }
     const groups = this.character.spellSlots!;
     if (!Object.hasOwn(groups, to)) Object.defineProperty(groups, to, { value: [], enumerable: true, writable: true, configurable: true });
-    groups[from].splice(index, 1); groups[to].push(slot); groups[to].sort((a, b) => a.level - b.level); this.change();
+    groups[from].splice(groups[from].indexOf(slot), 1); groups[to].unshift(slot); this.newestSource = to; this.change();
   }
   get retainedSources() { return Object.keys(this.character.spellSlots ?? {}).filter(name => !this.sources.some(source => source.name === name) && this.slots(name).length > 0); }
 }

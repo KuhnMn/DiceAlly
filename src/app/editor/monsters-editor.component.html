@@ -1,9 +1,12 @@
 <section class="editor-card feature-editor">
   <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
     <div><h2 class="!mb-0">Monsters</h2><p class="text-xs text-on-surface-variant mt-1">Manage companions, summons, and their tracking settings.</p></div>
-    <button type="button" class="action-button" aria-haspopup="dialog" (click)="openCatalog()">+ Add Monsters</button>
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="button" class="secondary-button compact-button" [attr.aria-expanded]="listVisible" aria-controls="added-monsters" (click)="listVisible = !listVisible">{{ listVisible ? 'Hide List' : 'Show List' }} ({{ monsters.length }})</button>
+      <button type="button" class="action-button" aria-haspopup="dialog" (click)="openCatalog()">+ Add Monsters</button>
+    </div>
   </div>
-  <div class="space-y-2">
+  <div id="added-monsters" class="space-y-2" [hidden]="!listVisible">
     @for (monster of monsters; track monster; let i = $index) {
       <article class="feature-card rounded-lg border-2 border-secondary bg-surface-container p-2.5">
         <div class="entry-header">
@@ -11,6 +14,7 @@
             <span class="text-sm font-semibold">{{ monster.name }}</span>
             <span class="block text-xs text-on-surface-variant mt-0.5">{{ monster.source }} &middot; @if (monster.hpEnabled) { Max HP {{ monster.monsterMaxHP }} } @else { Stat Block Only }</span>
           </button>
+          <app-combat-bookmark [sheet]="sheet()" [resource]="monster" type="MONSTER" (edited)="change()" />
           <button type="button" class="secondary-button compact-button" (click)="toggle(monster)">{{ expanded.has(monster) ? 'Close' : 'Edit' }}</button>
           <button type="button" class="secondary-button compact-button icon-button" [attr.aria-label]="'Remove ' + monster.name" (click)="remove(monster)"><app-ui-icon name="close" /></button>
         </div>
@@ -32,7 +36,8 @@
 </section>
 @if (catalogOpen) {
   <app-catalog-dialog title="Add Monsters" subtitle="Browse the library or add a custom companion." (closed)="catalogOpen = false">
-    <app-source-book-filter />
+    <details class="rounded-lg bg-surface-container-high px-3 py-2 mb-3"><summary class="cursor-pointer text-sm font-semibold text-primary py-1">Add Custom Monster</summary><div class="mt-2 space-y-2"><label><span class="field-label">Name</span><input class="editor-input" name="custom-monster-name" [(ngModel)]="customName" /></label><button type="button" class="action-button" [disabled]="!customName.trim()" (click)="addCustom()">Add</button></div></details>
+      <app-source-book-filter />
     <p role="status" class="text-xs font-semibold text-secondary mb-2">{{ catalogAdded }} added this visit</p>
     <div class="flex items-center gap-2 mb-3"><label class="flex-1 min-w-0"><span class="sr-only">Search monsters</span><input class="editor-input" name="monster-search" [(ngModel)]="search" (ngModelChange)="searchChanged()" placeholder="Search monsters or source book…" /></label><button type="button" class="secondary-button" [disabled]="catalog.loading()" (click)="refreshContent()">Refresh</button></div>
     @if (catalog.message()) { <p role="status" class="text-sm text-on-surface-variant mb-3">{{ catalog.message() }} <a routerLink="/content" class="text-primary underline">Manage Game Data</a></p> }
@@ -44,7 +49,6 @@
       </div>
     }</div>
     @if (catalog.revision()) { <div class="flex flex-wrap items-center justify-between gap-2 text-xs mt-3"><span>{{ catalog.total() }} matches</span><div class="flex gap-2"><button type="button" class="secondary-button compact-button" [disabled]="catalog.loading() || catalog.offset === 0" (click)="nextPage(-1)">Previous</button><button type="button" class="secondary-button compact-button" [disabled]="catalog.loading() || catalog.offset + catalog.pageSize >= catalog.total()" (click)="nextPage(1)">Next</button></div></div> }
-    <details class="mt-3"><summary class="cursor-pointer text-sm text-primary">Add Custom Monster</summary><div class="mt-2 space-y-2"><label><span class="field-label">Name</span><input class="editor-input" name="custom-monster-name" [(ngModel)]="customName" /></label><button type="button" class="action-button" [disabled]="!customName.trim()" (click)="addCustom()">Add</button></div></details>
   </app-catalog-dialog>
 }
 @if (pendingRemoval; as monster) { <app-remove-entry-dialog [name]="monster.name || 'Monster'" (cancelled)="pendingRemoval = undefined" (confirmed)="confirmRemoval()" /> }

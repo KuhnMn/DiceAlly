@@ -49,7 +49,7 @@ import { CharacterStore } from '../stores/character.store';
       @if (monsters().length > 0) {
         <div class="space-y-6">
           @for (monster of monsters(); track monster.name) {
-            <div class="border-2 border-teal rounded-lg p-4 bg-surface-container hover:shadow-md transition-shadow\" [attr.id]=\"'monster-' + helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? ''))\" [class.flash-highlight]=\"highlightedId() === ('monster-' + helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? '')))\">
+            <div class="border-2 border-teal rounded-lg p-4 bg-surface-container hover:shadow-md transition-shadow\" [attr.id]=\"'monster-' + (monster.editorId ?? helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? '')))\" [class.flash-highlight]=\"highlightedId() === ('monster-' + (monster.editorId ?? helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? ''))))\">
               <!-- Header (always visible, clickable) -->
               <button
                 type="button"
@@ -311,6 +311,8 @@ export class MonstersPageComponent extends MonsterPresentation {
     effect(() => {
       const targetId = this.store.featureScrollTarget();
       if (!targetId) return;
+      const target = this.characterData()?.monsters?.find(monster => `monster-${monster.editorId ?? this.helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? ''))}` === targetId);
+      if (target) this.expandedItems.update(values => new Set([...values, 'monster-' + target.name]));
       if (typeof document === 'undefined') return;
       setTimeout(() => {
         const el = document.getElementById(targetId);

@@ -6,6 +6,7 @@
     <button type="button" class="action-button" aria-haspopup="dialog" (click)="openCatalog()">+ Add Spells</button>
     </div>
   </div>
+  <div id="added-spells" [hidden]="!listVisible">
   <nav class="flex flex-wrap gap-2 mb-4" aria-label="Spell lists">
     @for (type of lists; track type) {
       <button type="button" class="editor-filter" [class.bg-secondary-container]="list === type" [class.text-on-secondary-container]="list === type" [class.border-secondary]="list === type" [class.border-outline-variant]="list !== type" [attr.aria-pressed]="list === type" (click)="list = type">{{ label(type) }} ({{ count(type) }})</button>
@@ -22,7 +23,7 @@
     }
   </nav>
   <p class="text-xs text-on-surface-variant mb-3">Known spells are your available spell list. Preparing a spell or adding it to a spellbook keeps it in Known.</p>
-  <div id="added-spells" class="space-y-2" [hidden]="!listVisible">
+  <div class="space-y-2">
     @for (spell of selected; track spell) {
       <article class="feature-card rounded-lg border-2 border-purple bg-surface-container p-2.5">
         <div class="flex items-start flex-wrap gap-2">
@@ -36,6 +37,7 @@
           @if (list !== 'PREPARED') {
             <button type="button" class="action-button !py-1 !px-2 !text-xs" [disabled]="hasList(spell, 'PREPARED')" (click)="addToList(spell, 'PREPARED')">{{ hasList(spell, 'PREPARED') ? 'Prepared' : 'Prepare' }}</button>
           }
+          <app-combat-bookmark [sheet]="sheet()" [resource]="spell" type="SPELL" (edited)="change()" />
           <button type="button" class="secondary-button compact-button" (click)="toggle(spell)">{{ expanded.has(spell) ? 'Close' : list === 'PREPARED' ? 'Edit' : 'Details' }}</button>
           <button type="button" class="secondary-button compact-button" [disabled]="list === 'KNOWN' && hasList(spell, 'PREPARED')" [attr.aria-label]="(list === 'PREPARED' ? 'Unprepare ' : 'Remove ') + spell.name" [title]="list === 'KNOWN' && hasList(spell, 'PREPARED') ? 'Unprepare this spell before removing it from Known' : ''" (click)="remove(spell)">@if (list === 'PREPARED') { Unprepare } @else { <app-ui-icon name="close" /> }</button>
         </div>
@@ -44,7 +46,7 @@
         @if (expanded.has(spell)) {
           <div class="mt-3 pt-3 border-t border-outline-variant space-y-3">
             <div class="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-on-surface-variant">
-              @if (spell.entity?.time?.length) { <span>Time: {{ helpers.spellTimeLabel(spell.entity?.time ?? []) }}</span> }
+              @if (spell.entity?.time?.length) { <app-entry-renderer [entry]="{text: 'Time: ' + helpers.spellTimeLabel(spell.entity?.time ?? [])}" [compact]="true" /> }
               @if (spell.entity?.range) { <span>Range: {{ helpers.spellRangeLabel(spell.entity?.range ?? null) }}</span> }
               @if (spell.entity?.components) { <span>Components: {{ helpers.spellComponentsLabel(spell.entity?.components ?? null) }}</span> }
               @if (spell.entity?.duration?.length) { <span>Duration: {{ helpers.spellDurationLabel(spell.entity?.duration ?? []) }}</span> }
@@ -60,6 +62,7 @@
       </article>
     } @empty { <p class="text-sm text-on-surface-variant py-2">No {{ label(list).toLowerCase() }} spells for this source and level.</p> }
   </div>
+  </div>
   @if (catalogOpen) {
     <app-catalog-dialog title="Add Spells" subtitle="Build your Known spell list, individually or in bulk." [closeDisabled]="adding()" (closed)="catalogOpen = false">
       <app-source-book-filter />
@@ -68,6 +71,7 @@
       <app-feature-source-picker mode="dropdown" tone="spells" heading="Add to Casting Source"
         [character]="sheet().character!" [sources]="sources" [value]="targetSource || ''"
         [allowUnassigned]="true" [disabled]="adding()" (selected)="selectedSource = $event" />
+      <details class="rounded-lg bg-surface-container-high px-3 py-2 mb-3"><summary class="cursor-pointer text-sm font-semibold text-primary py-1">Add Custom Spell</summary><div class="mt-2 space-y-2"><div class="flex gap-2"><label class="flex-1"><span class="field-label">Name</span><input class="editor-input" name="custom-spell-name" [(ngModel)]="customName" /></label><label class="w-24"><span class="field-label">Level</span><select class="editor-input" name="custom-spell-level" [(ngModel)]="customLevel">@for (level of levels; track level) { <option [ngValue]="level">{{ level }}</option> }</select></label></div><label><span class="field-label">Description</span><textarea class="editor-input" name="custom-spell-description" rows="2" [(ngModel)]="customDescription"></textarea></label><button type="button" class="action-button" [disabled]="!customName.trim()" (click)="addCustom()">Add to Known</button></div></details>
       <div class="grid sm:grid-cols-2 gap-2">
         <details class="rounded border-2 border-outline-variant p-2">
           <summary class="cursor-pointer text-sm"><span class="font-semibold">Class spell lists</span><span class="block text-xs text-on-surface-variant mt-1">{{ filter.classes.length ? filter.classes.join(', ') : 'All classes' }}</span></summary>
@@ -102,7 +106,6 @@
         }
       </div>
       @if (revision()) { <div class="flex justify-end gap-2 text-xs"><button type="button" class="secondary-button compact-button" [disabled]="loading() || adding() || offset === 0" (click)="nextPage(-1)">Previous</button><button type="button" class="secondary-button compact-button" [disabled]="loading() || adding() || offset + pageSize >= total()" (click)="nextPage(1)">Next</button></div> }
-      <details><summary class="cursor-pointer text-sm text-primary">Add Custom Spell</summary><div class="mt-2 space-y-2"><div class="flex gap-2"><label class="flex-1"><span class="field-label">Name</span><input class="editor-input" name="custom-spell-name" [(ngModel)]="customName" /></label><label class="w-24"><span class="field-label">Level</span><select class="editor-input" name="custom-spell-level" [(ngModel)]="customLevel">@for (level of levels; track level) { <option [ngValue]="level">{{ level }}</option> }</select></label></div><label><span class="field-label">Description</span><textarea class="editor-input" name="custom-spell-description" rows="2" [(ngModel)]="customDescription"></textarea></label><button type="button" class="action-button" [disabled]="!customName.trim()" (click)="addCustom()">Add to Known</button></div></details>
     </div>
     </app-catalog-dialog>
   }

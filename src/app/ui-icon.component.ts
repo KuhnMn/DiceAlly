@@ -26,6 +26,7 @@ const ICON_PATHS: Record<string, string | undefined> = {
   reset: 'M3 10a9 9 0 1 1 1 7M3 3v7h7',
   candle: 'M9 10h6v11H9ZM12 2c-4 4-1 7 0 7s4-3 0-7ZM6 21h12',
   wand: 'm3 17 12-12 4 4L7 21ZM12 8l4 4M5 3v4M3 5h4M21 2v4M19 4h4M21 17v4M19 19h4',
+  bookmark: 'M6 3h12v18l-6-4-6 4V3Z',
 };
 
 /** Decorative outline icons inherit the control's color; the control supplies its accessible name. */

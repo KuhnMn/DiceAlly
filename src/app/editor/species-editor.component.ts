@@ -1,3 +1,4 @@
+import { CombatBookmarkComponent } from './combat-bookmark.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { newEditorId } from './editor-identity';
 import { ChangeDetectorRef, Component, OnDestroy, effect, inject, input, output, untracked } from '@angular/core';
@@ -17,7 +18,7 @@ import { CatalogQuery, EditorCatalog } from './editor-catalog';
 
 @Component({
   selector: 'app-editor-species',
-  imports: [UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent],
+  imports: [CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent],
   templateUrl: './species-editor.component.html',
   styleUrl: './local-editor.component.css',
 })

@@ -44,9 +44,9 @@ describe('Creator catalog dialogs', () => {
     const trigger = fixture.nativeElement.querySelector('button[aria-haspopup="dialog"]') as HTMLButtonElement;
     trigger.click(); await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('[role="dialog"]')?.getAttribute('aria-label')).toBe('Add Spells');
-    const done = Array.from(fixture.nativeElement.querySelectorAll('[role="dialog"] button'))
-      .find(button => (button as HTMLElement).textContent?.trim() === 'Done') as HTMLButtonElement;
-    done.click(); await fixture.whenStable(); trigger.click(); await fixture.whenStable();
+    const close = Array.from(fixture.nativeElement.querySelectorAll('[role="dialog"] button'))
+      .find(button => (button as HTMLElement).textContent?.trim() === 'Close') as HTMLButtonElement;
+    close.click(); await fixture.whenStable(); trigger.click(); await fixture.whenStable();
     expect(editor.filter).toEqual({ search: 'shield', classes: ['Wizard', 'Artificer'], levels: [0, 1, 9] });
   });
 

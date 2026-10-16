@@ -51,6 +51,7 @@ export class FeatureSourcePickerComponent {
   readonly showManage = input(true);
   readonly allowUnassigned = input(false);
   readonly disabled = input(false);
+  readonly disabledValues = input<string[]>([]);
   readonly value = input('');
   readonly heading = input('Source');
   readonly tone = input<'features' | 'spells'>('features');
@@ -64,7 +65,7 @@ export class FeatureSourcePickerComponent {
       : 'bg-purple-container border-purple text-on-purple-container';
   }
 
-  get options(): { value: string; label: string; source?: FeatureSource }[] {
+  get options(): { value: string; label: string; source?: FeatureSource; disabled?: boolean }[] {
     const options = [
       ...(this.mode() === 'cards' ? [{ value: 'ALL', label: 'All' }] : []),
       ...(this.allowUnassigned() ? [{ value: '', label: 'Unassigned' }] : []),
@@ -77,7 +78,7 @@ export class FeatureSourcePickerComponent {
     if (this.mode() === 'dropdown' && this.value() && !options.some(option => option.value === this.value())) {
       options.push({ value: this.value(), label: this.value() });
     }
-    return options;
+    return options.map(option => ({ ...option, disabled: this.disabledValues().includes(option.value) }));
   }
 
   stats(source: FeatureSource) { return featureSourceStats(source, this.character(), this.helpers); }

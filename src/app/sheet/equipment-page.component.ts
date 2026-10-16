@@ -1,3 +1,4 @@
+import { ItemCatalogComponent } from '../editor/item-catalog.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { AppDialogService } from '../services/app-dialog.service';
 import { Component, computed, input, signal, effect, inject } from '@angular/core';
@@ -12,7 +13,7 @@ import { CharacterStore } from '../stores/character.store';
 
 @Component({
   selector: 'app-equipment-page',
-  imports: [UiIconComponent, CommonModule, FormsModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [ItemCatalogComponent, UiIconComponent, CommonModule, FormsModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: item-flash 1.6s ease-out;
@@ -136,88 +137,29 @@ import { CharacterStore } from '../stores/character.store';
       <div class="space-y-4">
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-xl font-bold">Items</h3>
-          @if (!isAddingItem()) {
-            <button
-              (click)="startAddingItem()"
-              class="px-4 py-2 bg-primary text-on-primary font-medium rounded-lg hover:bg-primary-container transition-colors text-sm"
-            >
-              + Add Item
-            </button>
-          }
+          <button type="button" (click)="isAddingItem.set(true)" aria-haspopup="dialog"
+            class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-on-primary font-medium rounded-lg text-sm">
+            <app-ui-icon name="plus" /> Add Item
+          </button>
         </div>
-
-        <!-- Add Item Form -->
         @if (isAddingItem()) {
-          <div class="border-2 border-primary rounded-lg p-4 bg-surface-container-low mb-4">
-            <h4 class="text-lg font-semibold mb-3 text-primary">Add New Item</h4>
-            <div class="space-y-3">
-              <div>
-                <label class="block text-sm font-medium mb-1">Item Name *</label>
-                <input
-                  type="text"
-                  [(ngModel)]="newItemName"
-                  placeholder="e.g., Healing Potion"
-                  class="w-full px-3 py-2 border-2 border-outline-variant rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                  (keydown.enter)="addDummyItem()"
-                  (keydown.escape)="cancelAddingItem()"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium mb-1">Source (optional)</label>
-                <input
-                  type="text"
-                  [(ngModel)]="newItemSource"
-                  placeholder="e.g., PHB"
-                  class="w-full px-3 py-2 border-2 border-outline-variant rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                  (keydown.enter)="addDummyItem()"
-                  (keydown.escape)="cancelAddingItem()"
-                />
-              </div>
-              <div>
-                <label class="flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    [(ngModel)]="newItemStackable"
-                    class="w-5 h-5 text-primary border-outline-variant rounded focus:ring-2 focus:ring-primary accent-primary"
-                  />
-                  <span class="ml-2 text-sm font-medium">Stackable (allows quantity tracking)</span>
-                </label>
-              </div>
-              <div class="flex gap-2">
-                <button
-                  (click)="addDummyItem()"
-                  class="flex-1 px-4 py-2 bg-primary text-on-primary font-medium rounded-lg hover:bg-primary-container transition-colors"
-                >
-                  Add Item
-                </button>
-                <button
-                  (click)="cancelAddingItem()"
-                  class="flex-1 px-4 py-2 bg-surface-container text-on-surface font-medium rounded-lg hover:bg-surface-container-high transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-              <p class="text-xs text-on-surface-variant">
-                <app-ui-icon name="info" /> Items added here will sync to your Android app, which will automatically fill in the full details.
-              </p>
-            </div>
-          </div>
+          <app-item-catalog [sheet]="characterData()!" (edited)="inventoryChanged()" (closed)="isAddingItem.set(false)" />
         }
 
         @if (inventory().length > 0) {
-          @for (item of inventory(); track item.name) {
-            <div class="border-2 border-green rounded-lg p-4 bg-surface-container" [attr.id]="'item-' + helpers.sourceId(item.name + '-' + (item.source ?? ''))" [class.flash-highlight]="highlightedId() === ('item-' + helpers.sourceId(item.name + '-' + (item.source ?? '')))">
+          @for (item of inventory(); track item) {
+            <div class="border-2 border-green rounded-lg p-4 bg-surface-container" [attr.id]="'item-' + (item.editorId ?? helpers.sourceId(item.name + '-' + (item.source ?? '')))" [class.flash-highlight]="highlightedId() === ('item-' + (item.editorId ?? helpers.sourceId(item.name + '-' + (item.source ?? ''))))">
               <!-- Header (always visible, clickable) -->
               <button
                 type="button"
                 class="w-full text-left hover:bg-surface-container-low transition-colors rounded p-2 -m-2"
-                (click)="toggleExpanded('item-' + item.name)"
+                (click)="toggleExpanded('item-' + (item.editorId ?? item.name))"
               >
                 <div class="flex flex-wrap items-center justify-between gap-2 w-full">
                   <div class="flex flex-wrap items-center gap-2">
                     <h3 class="text-xl font-bold text-green">{{ item.name }}</h3>
                     @if (item.isDummy) {
-                      <span class="text-xs bg-orange-container text-on-orange-container px-2 py-0.5 rounded font-semibold"><app-ui-icon name="edit" /> Pending Sync</span>
+                      <span class="text-xs bg-orange-container text-on-orange-container px-2 py-0.5 rounded font-semibold"><app-ui-icon name="edit" /> Custom</span>
                     }
                     @if (item.entity?.itemType) {
                       <span class="text-xs bg-green-container text-on-green-container px-2 py-0.5 rounded">{{ item.entity?.itemType }}</span>
@@ -236,16 +178,15 @@ import { CharacterStore } from '../stores/character.store';
                 }
                   </div>
                   <div class="flex items-center gap-2">
-                    @if (item.isDummy) {
                       <button
-                        (click)="deleteDummyItem(item); $event.stopPropagation()"
+                        type="button"
+                        (click)="deleteItem(item); $event.stopPropagation()"
                         class="px-3 py-1 bg-rose text-on-rose font-medium rounded text-sm hover:bg-rose-container transition-colors"
                         title="Delete this item"
                       >
                         Delete
                       </button>
-                    }
-                    <span class="text-xl text-green font-bold"><app-ui-icon [name]="isExpanded('item-' + item.name) ? \'minus\' : \'plus\'" /></span>
+                    <span class="text-xl text-green font-bold"><app-ui-icon [name]="isExpanded('item-' + (item.editorId ?? item.name)) ? \'minus\' : \'plus\'" /></span>
                   </div>
                 </div>
               </button>
@@ -318,7 +259,7 @@ import { CharacterStore } from '../stores/character.store';
               </div>
 
               <!-- Expandable Content -->
-              @if (isExpanded('item-' + item.name)) {
+              @if (isExpanded('item-' + (item.editorId ?? item.name))) {
                 <div class="mt-3 pt-3 border-t border-outline-variant">
                   
 
@@ -450,11 +391,8 @@ export class EquipmentPageComponent {
   copperAmount = signal(0);
   expandedItems = signal<Set<string>>(new Set());
   
-  // Dummy item creation
+  // Shared catalog dialog state
   isAddingItem = signal(false);
-  newItemName = signal('');
-  newItemSource = signal('');
-  newItemStackable = signal(false);
   
   // Expose Array for template use
   readonly isArray = Array.isArray;
@@ -472,6 +410,8 @@ export class EquipmentPageComponent {
     effect(() => {
       const targetId = this.store.featureScrollTarget();
       if (!targetId) return;
+      const target = this.characterData()?.inventory?.find(item => `item-${item.editorId ?? this.helpers.sourceId(item.name + '-' + (item.source ?? ''))}` === targetId);
+      if (target) this.expandedItems.update(values => new Set([...values, 'item-' + (target.editorId ?? target.name)]));
       if (typeof document === 'undefined') return;
       setTimeout(() => {
         const el = document.getElementById(targetId);
@@ -650,69 +590,14 @@ export class EquipmentPageComponent {
     item.count = numValue;
   }
 
-  startAddingItem() {
-    this.isAddingItem.set(true);
-    this.newItemName.set('');
-    this.newItemSource.set('');
-    this.newItemStackable.set(false);
+  inventoryChanged() {
+    const sheet = this.characterData();
+    if (sheet) this.store.setCharacter({ ...sheet, inventory: [...(sheet.inventory ?? [])] });
   }
 
-  cancelAddingItem() {
-    this.isAddingItem.set(false);
-    this.newItemName.set('');
-    this.newItemSource.set('');
-    this.newItemStackable.set(false);
-  }
-
-  addDummyItem() {
-    const name = this.newItemName().trim();
-    const source = this.newItemSource().trim();
-    const stackable = this.newItemStackable();
-    
-    if (!name) {
-      void this.dialogs.alert('Please enter an item name');
-      return;
-    }
-
-    const charData = this.characterData();
-    if (!charData) return;
-
-    if (!charData.inventory) {
-      charData.inventory = [];
-    }
-
-    // Check if item already exists
-    const exists = charData.inventory.some(item => 
-      item.name.toLowerCase() === name.toLowerCase() && 
-      (item.source || '').toLowerCase() === (source || '').toLowerCase()
-    );
-
-    if (exists) {
-      void this.dialogs.alert('An item with this name and source already exists');
-      return;
-    }
-
-    // Add the dummy item
-    charData.inventory.push({
-      name,
-      source: source || "CUSTOM",
-      isDummy: true,
-      allowMultiples: stackable,
-      count: stackable ? 1 : undefined,
-      entity: null,
-    });
-
-    // Reset form
-    this.cancelAddingItem();
-  }
-
-  async deleteDummyItem(item: InventoryItem) {
-    if (!item.isDummy) {
-      void this.dialogs.alert('Only dummy items can be deleted');
-      return;
-    }
-
-    if (!await this.dialogs.confirm(`Delete "${item.name}"?`)) {
+  async deleteItem(item: InventoryItem) {
+    const annotations = item.uses?.length || item.notes?.length ? ' Its uses and notes will also be removed.' : '';
+    if (!await this.dialogs.confirm(`Delete "${item.name}" from this character?${annotations}`, 'Delete Item', 'Delete')) {
       return;
     }
 
@@ -722,6 +607,7 @@ export class EquipmentPageComponent {
     const index = charData.inventory.indexOf(item);
     if (index > -1) {
       charData.inventory.splice(index, 1);
+      this.inventoryChanged();
     }
   }
 }

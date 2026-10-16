@@ -566,6 +566,8 @@ export interface FeatureEntryFull {
 }
 
 export interface InventoryItem {
+  editorId?: string;
+  contentReference?: ContentReference;
   name: string;
   source?: string;
   isEquipped?: boolean;
@@ -658,13 +660,14 @@ export interface MinimalSpellSlotInfo {
 }
 
 export interface CombatAction {
+  editorId?: string;
   name?: string;
   range?: string;
   hitOrDc?: string;
   damageOrHeal?: string;
   actionType?: string;
   linkedResourceType?: string;
-  linkedResource?: { name?: string; source?: string };
+  linkedResource?: { name?: string; source?: string; editorId?: string };
   orderIndex?: number;
 }
 

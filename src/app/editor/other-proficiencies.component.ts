@@ -20,6 +20,7 @@ export class OtherProficienciesComponent implements OnInit {
   private readonly dialogs = inject(AppDialogService);
   readonly sheet = input.required<ExportedCharacter>();
   readonly panel = input<'proficiencies' | 'sources'>('proficiencies');
+  sourcesVisible = true;
   readonly edited = output<void>();
   readonly tools = signal<ContentRecord[]>([]);
   readonly loadingTools = signal(false);
@@ -114,7 +115,7 @@ export class OtherProficienciesComponent implements OnInit {
     const sources = this.character.featureSources ??= [];
     let name = 'New Source'; let suffix = 2;
     while (sources.some(source => source.name === name)) name = `New Source ${suffix++}`;
-    sources.push({ editorId: newEditorId(), name, isGeneralFeatureSource: true, isSpellcastingSource: false, userAdded: true }); this.change();
+    sources.unshift({ editorId: newEditorId(), name, isGeneralFeatureSource: true, isSpellcastingSource: false, userAdded: true }); this.change();
   }
   setSourceAbility(source: FeatureSource, key: keyof FeatureSource, enabled: boolean) {
     Object.assign(source, { [key]: enabled }); this.change();

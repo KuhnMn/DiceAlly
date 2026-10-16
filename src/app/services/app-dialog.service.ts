@@ -22,7 +22,7 @@ export class AppDialogService {
     return this.open({ title: 'Notice', message, confirmLabel: 'OK', cancellable: false });
   }
   showCopy(message: string, value: string): Promise<boolean> {
-    return this.open({ title: 'Copy Manually', message, copyValue: value, confirmLabel: 'Done', cancellable: false });
+    return this.open({ title: 'Copy Manually', message, copyValue: value, confirmLabel: 'Close', cancellable: false });
   }
   private open(options: Omit<AppDialogRequest, 'resolve'>): Promise<boolean> {
     return new Promise(resolve => {

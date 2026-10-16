@@ -1,3 +1,4 @@
+import { CombatBookmarkComponent } from './combat-bookmark.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, effect, inject, input, output, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -17,7 +18,7 @@ import { createMonsterEntry, setMonsterMaxHp } from './monster-selection';
 
 @Component({
   selector: 'app-editor-monsters',
-  imports: [UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, RemoveEntryDialogComponent, EntryAnnotationsComponent, MonsterStatBlockComponent, SourceBookFilterComponent],
+  imports: [CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, RemoveEntryDialogComponent, EntryAnnotationsComponent, MonsterStatBlockComponent, SourceBookFilterComponent],
   templateUrl: './monsters-editor.component.html', styleUrl: './local-editor.component.css',
 })
 export class MonstersEditorComponent implements OnInit, OnDestroy {
@@ -29,6 +30,7 @@ export class MonstersEditorComponent implements OnInit, OnDestroy {
   readonly expanded = new Set<Monster>();
   private readonly previews = new WeakMap<ContentRecord, Monster>();
   catalogOpen = false;
+  listVisible = true;
   catalogAdded = 0;
   search = '';
   customName = '';

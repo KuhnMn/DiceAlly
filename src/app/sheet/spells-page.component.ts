@@ -187,7 +187,7 @@ type SpellLevelFilter = 'ALL' | number;
               </h4>
               <div class="space-y-4">
                 @for (spell of levelGroup.spells; track spell) {
-                  <div class="border-2 border-purple rounded-lg p-4 bg-surface-container" [attr.id]="'spell-' + helpers.sourceId(spell.name + '-' + (spell.source ?? ''))" [class.flash-highlight]="highlightedId() === ('spell-' + helpers.sourceId(spell.name + '-' + (spell.source ?? '')))">
+                  <div class="border-2 border-purple rounded-lg p-4 bg-surface-container" [attr.id]="'spell-' + (spell.editorId ?? helpers.sourceId(spell.name + '-' + (spell.source ?? '')))" [class.flash-highlight]="highlightedId() === ('spell-' + (spell.editorId ?? helpers.sourceId(spell.name + '-' + (spell.source ?? ''))))">
                     <!-- Header (always visible, clickable) -->
                     <button
                       type="button"
@@ -244,7 +244,7 @@ type SpellLevelFilter = 'ALL' | number;
                     <!-- Basic Info (always visible) -->
                     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mt-3">
                       @if (spell.entity?.time?.length) {
-                        <div class="text-sm text-on-surface-container">Time: {{ helpers.spellTimeLabel(spell.entity?.time ?? []) }}</div>
+                        <div class="text-sm text-on-surface-container"><app-entry-renderer [entry]="{text: 'Time: ' + helpers.spellTimeLabel(spell.entity?.time ?? [])}" [compact]="true" /></div>
                       }
                       @if (spell.entity?.range) {
                         <div class="text-sm text-on-surface-container">Range: {{ helpers.spellRangeLabel(spell.entity?.range ?? null) }}</div>
@@ -470,6 +470,16 @@ export class SpellsPageComponent {
     effect(() => {
       const targetId = this.store.featureScrollTarget();
       if (!targetId) return;
+      if (targetId.startsWith('spell-')) {
+        const target = this.characterData()?.spells?.find(spell => `spell-${spell.editorId ?? this.helpers.sourceId(spell.name + '-' + (spell.source ?? ''))}` === targetId);
+        if (target) {
+          this.spellListTypeFilter.set((target.listType ?? 'KNOWN') as 'PREPARED' | 'KNOWN' | 'SPELLBOOK');
+          this.spellCastingSourceFilter.set('ALL');
+          this.spellLevelFilter.set('ALL');
+          this.spellRitualFilter.set('ALL');
+          this.expandedItems.update(values => new Set([...values, this.spellExpansionId(target)]));
+        }
+      }
       if (typeof document === 'undefined') return;
       setTimeout(() => {
         const el = document.getElementById(targetId);

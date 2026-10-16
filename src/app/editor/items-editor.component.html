@@ -1,0 +1,40 @@
+<section class="editor-card feature-editor">
+  <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+    <div><h2 class="!mb-0">Items</h2><p class="text-xs text-on-surface-variant mt-1">Equipment, quantities, uses, and notes.</p></div>
+    <div class="flex gap-2">
+      <button type="button" class="secondary-button" (click)="listVisible = !listVisible" [attr.aria-expanded]="listVisible">{{ listVisible ? 'Hide List' : 'Show List' }} ({{ items.length }})</button>
+      <button type="button" class="action-button" (click)="openCatalog()" aria-haspopup="dialog"><app-ui-icon name="plus" /> Add Items</button>
+    </div>
+  </div>
+  <div class="space-y-2" [hidden]="!listVisible">
+    @for (item of items; track item; let i = $index) {
+      <article class="feature-card rounded-lg border-2 border-secondary bg-surface-container p-2.5">
+        <div class="entry-header">
+          <button type="button" class="flex-1 min-w-0 text-left" (click)="toggle(item)" [attr.aria-expanded]="expanded.has(item)">
+            <span class="text-sm font-semibold">{{ item.name }} @if (item.allowMultiples) { × {{ item.count ?? 1 }} }</span>
+            <span class="block text-xs text-on-surface-variant">{{ item.source }}</span>
+          </button>
+          <app-combat-bookmark [sheet]="sheet()" [resource]="item" type="ITEM" (edited)="change()" />
+          <button type="button" class="secondary-button compact-button" (click)="toggle(item)">{{ expanded.has(item) ? 'Close' : 'Edit' }}</button>
+          <button type="button" class="secondary-button compact-button icon-button" [attr.aria-label]="'Remove ' + item.name" (click)="remove(item)"><app-ui-icon name="close" /></button>
+        </div>
+        @if (expanded.has(item)) {
+          <div class="mt-3 pt-3 border-t border-outline-variant space-y-3">
+            <div class="flex flex-wrap items-end gap-3">
+              @if (item.isDummy) { <label class="flex-1 min-w-36"><span class="field-label">Name</span><input class="editor-input" [(ngModel)]="item.name" (ngModelChange)="change()" [name]="'item-name-' + i" /></label> }
+              <label class="flex items-center gap-2 py-2"><input type="checkbox" [ngModel]="item.allowMultiples ?? false" (ngModelChange)="setStackable(item, $event)" [name]="'item-stackable-' + i" /> Stackable</label>
+              @if (item.allowMultiples) { <label><span class="field-label">Quantity</span><input class="editor-input !w-24" type="number" min="0" step="1" [ngModel]="item.count ?? 1" (ngModelChange)="setCount(item, $event)" [name]="'item-count-' + i" /></label> }
+            </div>
+            @if (item.isDummy) { <label class="block"><span class="field-label">Description</span><textarea class="editor-input" rows="3" [name]="'item-description-' + i" [ngModel]="description(item)" (ngModelChange)="setDescription(item, $event)" placeholder="Describe this item…"></textarea></label> }
+            @if (entries(item).length) { <details class="description-panel text-sm"><summary class="description-toggle">{{ item.isDummy ? 'Description Preview' : 'Description' }}</summary><div class="p-2"><app-entry-renderer [entries]="entries(item)" /></div></details> }
+            <app-entry-annotations-editor [entry]="item" (edited)="change()" />
+          </div>
+        }
+      </article>
+    } @empty { <p class="text-sm text-on-surface-variant py-2">No items selected yet.</p> }
+  </div>
+</section>
+@if (catalogOpen) {
+  <app-item-catalog [sheet]="sheet()" (edited)="change()" (closed)="catalogOpen = false" />
+}
+@if (pendingRemoval; as item) { <app-remove-entry-dialog [name]="item.name" (cancelled)="pendingRemoval = undefined" (confirmed)="confirmRemoval()" /> }

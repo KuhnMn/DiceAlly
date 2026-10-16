@@ -37,7 +37,7 @@ import { DialogScrollLockService } from './dialog-scroll-lock.service';
 })
 export class CatalogDialogComponent implements OnInit, OnDestroy {
   readonly title = input.required<string>();
-  readonly closeLabel = input('Done');
+  readonly closeLabel = input('Close');
   readonly subtitle = input('Add entries, then return to your character.');
   readonly closeDisabled = input(false);
   readonly closed = output<void>();
