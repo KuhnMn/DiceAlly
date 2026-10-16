@@ -72,24 +72,24 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
                       {{ formatDate(char.lastModified) }}
                     </div>
                   </div>
-                  <div class="flex flex-wrap gap-2">
-                    @if (creatorAvailable) { <a [routerLink]="['/characters', char.characterId, 'edit']" class="px-4 py-2 rounded bg-secondary-container text-on-secondary-container text-sm">Edit</a> }
+                  <div class="grid gap-2" [class.grid-cols-3]="creatorAvailable" [class.grid-cols-2]="!creatorAvailable">
                     <button
                       (click)="loadCharacter(char.characterId)"
-                      class="flex-1 px-4 py-2 bg-primary text-on-primary font-medium rounded text-sm hover:bg-primary-container transition-colors"
+                      class="col-span-full px-4 py-2 bg-primary text-on-primary font-medium rounded text-sm hover:bg-primary-container transition-colors"
                     >
                       Load
                     </button>
+                    @if (creatorAvailable) { <a [routerLink]="['/characters', char.characterId, 'edit']" class="px-2 py-2 rounded bg-secondary-container text-on-secondary-container text-center text-sm">Edit</a> }
                     <button
                       (click)="downloadCharacter(char.characterId)"
-                      class="flex-1 px-4 py-2 bg-secondary-container text-on-secondary-container font-medium rounded text-sm hover:bg-secondary transition-colors"
+                      class="px-2 py-2 bg-secondary-container text-on-secondary-container font-medium rounded text-sm hover:bg-secondary transition-colors"
                     >
                       Export
                     </button>
                     <button
                       (click)="requestDeleteCharacter(char)"
                       [disabled]="deleting()"
-                      class="flex-1 px-4 py-2 bg-rose-container text-on-rose-container font-medium rounded text-sm hover:bg-rose transition-colors"
+                      class="px-2 py-2 bg-rose-container text-on-rose-container font-medium rounded text-sm hover:bg-rose transition-colors"
                     >
                       Delete
                     </button>
