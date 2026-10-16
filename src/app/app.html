@@ -1,5 +1,5 @@
-<main class="app-container">
-  <header class="app-header" aria-label="Application header">
+<main class="app-container" [class.sheet-layout]="sheetOpen()">
+  <header class="app-header" [class.sheet-brand-hidden]="sheetOpen()" aria-label="Application header">
     <img
       class="app-icon"
       ngSrc="app_icon.png"
@@ -14,7 +14,7 @@
     </div>
   </header>
   @if (account.accessible()) {
-    <app-sync-status (signOut)="signOut()" />
+    <app-sync-status [compact]="sheetOpen()" (signOut)="signOut()" />
   }
 
   <section class="app-content">

@@ -1,5 +1,7 @@
+import { SheetDetailDialogComponent } from './sheet-detail-dialog.component';
 import { UiIconComponent } from '../ui-icon.component';
-import { FeatureSourcePickerComponent } from '../editor/feature-source-picker.component';
+import { SheetSourcePickerComponent } from './sheet-source-picker.component';
+import { HorizontalRowDirective } from './horizontal-row.directive';
 import { Component, inject, computed, signal, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
@@ -12,7 +14,7 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
 
 @Component({
   selector: 'app-features-page',
-  imports: [UiIconComponent, FeatureSourcePickerComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: feature-flash 1.6s ease-out;
@@ -56,28 +58,29 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
     }
   `],
   template: `
-    <div class="bg-surface-container-highest p-8 rounded-lg border-2 border-outline  shadow-lg">
-      <h2 class="text-3xl font-bold mb-6">Features & Traits</h2>
+    <div class="bg-surface-container-highest p-3 sm:p-8 rounded-lg border-2 border-outline  shadow-lg">
+      <h2 class="text-xl sm:text-3xl font-bold mb-3 sm:mb-6">Features & Traits</h2>
+
       @if (species()) {
         <h3 class="text-xl font-bold mb-3 mt-6">Species</h3>
         <div
           id="species-section"
-          class="mb-8 border-2 border-rose rounded-lg p-4 bg-surface-container"
+          class="mb-4 sm:mb-8 border-2 border-rose rounded-lg px-3 py-2 sm:p-4 bg-surface-container"
           [class.flash-highlight]="highlightedId() === 'species-section'"
         >
           <!-- Header (always visible, clickable) -->
           <button 
             type="button"
-            class="w-full text-left hover:bg-surface-container-low transition-colors rounded p-2 -m-2"
-            (click)="toggleExpanded('species')">
+            class="w-full text-left hover:bg-surface-container-low transition-colors rounded py-1 sm:p-2 sm:-m-2"
+            (click)="toggleExpanded('species')" aria-haspopup="dialog">
             <div class="flex flex-wrap items-center justify-between gap-2 w-full">
-              <h3 class="text-2xl font-bold text-rose"> {{ species()?.name ?? 'Unknown' }}</h3>
-              <span class="text-xl text-rose font-bold"><app-ui-icon [name]="isExpanded('species') ? \'minus\' : \'plus\'" /></span>
+              <h3 class="text-lg font-bold text-rose sm:text-2xl"> {{ species()?.name ?? 'Unknown' }}</h3>
+              <span class="text-xl text-rose font-bold"><app-ui-icon name="chevron" /></span>
             </div>
           </button>
 
           <!-- Basic Info (always visible) -->
-          <div class="flex flex-wrap items-center gap-2 mt-2">
+          <div class="mt-1 flex flex-wrap items-center gap-1 sm:mt-2 sm:gap-2">
 
           </div>
               <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-on-surface-container">
@@ -98,8 +101,24 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
               <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ species()?.source }}</span>
             }
 
-          <!-- Expandable Content -->
-          @if (isExpanded('species')) {
+          <!-- Reference details open in a modal on every screen size. -->
+          @if (!isExpanded('species')) {
+                  <div class="space-y-3">
+                    @for (use of species()?.uses ?? []; track use) {
+                                        <app-feature-uses [uses]="use" (usesUpdated)="use.usedFreeUses = $event.usedFreeUses" />
+                                      }
+                  </div>
+                }
+                <app-feature-notes [notes]="species()?.notes" (notesChanged)="updateSpeciesNotes($event)" />
+                @if (isExpanded('species')) {
+          <app-sheet-detail-dialog [title]="species()?.name ?? 'Species'" (closed)="toggleExpanded('species')">
+            <div class="grid grid-cols-2 gap-2 text-sm">
+              <span>Size: {{ species()?.entity?.size?.join(', ') || '—' }}</span>
+              <span>Speed: {{ formatSpeeds(species()?.entity?.speed ?? null) }}</span>
+              @if (species()?.entity?.darkvision) { <span>Darkvision: {{ species()?.entity?.darkvision }} ft.</span> }
+              <span>{{ speciesCreatureTypes() }}</span>
+              <span>{{ species()?.source }}</span>
+            </div>
             <div class="mt-3 pt-3 border-t border-outline-variant">
 
               @if (species()?.entity?.entries?.length) {
@@ -109,45 +128,49 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
               }
 
             </div>
-          }
               @if (species()?.uses?.length) {
-                <div class="mt-4 border-t border-outline-variant pt-4">
-                  @for (use of species()?.uses ?? []; track use) {
-                    <app-feature-uses 
-                      [uses]="use"
-                      (usesUpdated)="use.usedFreeUses = $event.usedFreeUses"
-                    />
-                  }
+                <div class="mt-2 sm:mt-4 border-t border-outline-variant pt-2 sm:pt-4">
+                  <div class="space-y-3">
+                    @for (use of species()?.uses ?? []; track use) {
+                                        <app-feature-uses 
+                                          [uses]="use"
+                                          (usesUpdated)="use.usedFreeUses = $event.usedFreeUses"
+                                        />
+                                      }
+                  </div>
                 </div>
               }
               <app-feature-notes
                 [notes]="species()?.notes"
                 (notesChanged)="updateSpeciesNotes($event)"
               />
+          </app-sheet-detail-dialog>
+          }
         </div>
       }
       <h3 class="text-xl font-bold mb-3 mt-6">Features</h3>
 
       <div class="mb-6 space-y-4">
-        <div class="flex flex-wrap items-center gap-2 mb-4">
+        <div appHorizontalRow class="flex flex-wrap items-center gap-2 mb-3 sm:mb-4">
           <span class="text-sm font-semibold text-on-surface">Type:</span>
           @for (type of featureTypes(); track type) {
             <button
               type="button"
               class="px-3 py-1 text-sm border rounded-full"
               [class.bg-blue]="featureTypeFilter() === type"
+              [attr.aria-pressed]="featureTypeFilter() === type"
               [class.text-on-blue]="featureTypeFilter() === type"
               [class.border-blue]="featureTypeFilter() === type"
               [class.border-outline-variant]="featureTypeFilter() !== type"
               (click)="featureTypeFilter.set(type)"
             >
-              {{ type }}
+              {{ type.toLowerCase().replaceAll('_', ' ') | titlecase }}
             </button>
           }
         </div>
         <div>
         @if (characterData()?.character; as character) {
-          <app-feature-source-picker [character]="character" [sources]="pickerSources()"
+          <app-sheet-source-picker [character]="character" [sources]="pickerSources()"
             heading="Source" tone="features" [showManage]="false"
             [value]="featureSourceFilter()" [orphanNames]="featureSourcesList().slice(1)"
             (selected)="featureSourceFilter.set($event)" />
@@ -155,34 +178,38 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
         </div>
       </div>
 
-      <div class="space-y-4">
+      <label class="mb-3 block text-sm font-semibold">Search features
+        <input type="search" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" placeholder="Search by name" class="mt-1 min-h-11 w-full rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-base font-normal sm:text-sm" />
+      </label>
+      <div class="space-y-2 sm:space-y-4">
         @if (sortedFeatures().length > 0) {
-          @for (feature of sortedFeatures(); track feature.name) {
+          @for (feature of sortedFeatures(); track feature.editorId ?? feature) {
             <div
-              class="border-2 border-blue rounded-lg p-4 bg-surface-container transition-colors"
+              class="border-2 border-blue rounded-lg px-3 py-2 sm:p-4 bg-surface-container transition-colors"
               [attr.id]="featureAnchorId(feature)"
               [class.flash-highlight]="highlightedId() === featureAnchorId(feature)"
             >
                 <!-- Header (always visible, clickable) -->
                 <button 
                   type="button"
-                  class="w-full text-left hover:bg-surface-container-low transition-colors rounded p-2 -m-2"
-                  (click)="toggleExpanded(featureAnchorId(feature) ?? 'feature')"
+                  class="w-full text-left hover:bg-surface-container-low transition-colors rounded py-1 sm:p-2 sm:-m-2"
+                  (click)="toggleExpanded(featureAnchorId(feature) ?? 'feature')" aria-haspopup="dialog"
+                  [attr.aria-expanded]="isExpanded(featureAnchorId(feature) ?? 'feature')"
                 >
                   <div class="flex flex-wrap items-center justify-between gap-2 w-full">
                     <div class="flex flex-wrap items-center gap-2">
-                      <h3 class="text-xl font-bold text-blue">{{ feature.name }}</h3>
+                      <h3 class="text-base sm:text-xl font-bold text-blue">{{ feature.name }}</h3>
                       @if (feature.featureType !== undefined) {
-                        <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded">{{ helpers.featureTypeLabel(feature) }}</span>
+                        <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded">{{ helpers.featureTypeLabel(feature).replaceAll('_', ' ') | titlecase }}</span>
                       }
                     </div>
-                    <span class="text-xl text-blue font-bold"><app-ui-icon [name]="isExpanded(featureAnchorId(feature) ?? 'feature') ? \'minus\' : \'plus\'" /></span>
+                    <span class="text-xl text-blue font-bold"><app-ui-icon name="chevron" /></span>
                   </div>
-                  <div class="text-sm text-on-surface-container-low mt-1">Level: {{ helpers.featureLevel(feature) }}</div>
+                  <div class="text-xs text-on-surface-variant mt-1">Level: {{ helpers.featureLevel(feature) }}</div>
                 </button>
 
                 <!-- Basic Info (always visible) -->
-                <div class="flex flex-wrap items-center gap-2 mt-2">
+                <div class="mt-1 flex flex-wrap items-center gap-1 sm:mt-2 sm:gap-2">
                   @if (feature.source) {
                     <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ feature.source }}</span>
                   }
@@ -191,8 +218,18 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
                   }
                 </div>
 
-                <!-- Expandable Content -->
+                <!-- Reference details open in a modal on every screen size. -->
+                @if (!isExpanded(featureAnchorId(feature) ?? 'feature')) {
+                  <div class="space-y-3">
+                    @for (use of feature.uses ?? []; track use) {
+                                        <app-feature-uses [uses]="use" (usesUpdated)="use.usedFreeUses = $event.usedFreeUses" />
+                                      }
+                  </div>
+                }
+                <app-feature-notes [notes]="feature.notes" (notesChanged)="updateFeatureNotes(feature, $event)" />
                 @if (isExpanded(featureAnchorId(feature) ?? 'feature')) {
+                <app-sheet-detail-dialog [title]="feature.name" (closed)="toggleExpanded(featureAnchorId(feature) ?? 'feature')">
+                  <p class="text-sm text-on-surface-variant">{{ helpers.featureTypeLabel(feature).replaceAll('_', ' ') | titlecase }} · Level {{ helpers.featureLevel(feature) }} · {{ feature.featureSourceName }} · {{ feature.source }}</p>
                   <div class="mt-3 pt-3 border-t border-outline-variant">
                     @if (feature.featEntity?.category) {
                       <div class="text-base text-on-surface">Feat Category: {{ feature.featEntity?.category }}</div>
@@ -212,21 +249,24 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
 
                   </div>
 
-                }
                     @if (feature.uses?.length) {
-                      <div class="mt-4 border-t border-outline-variant pt-4">
-                        @for (use of feature.uses; track use) {
-                          <app-feature-uses
-                            [uses]="use"
-                            (usesUpdated)="use.usedFreeUses = $event.usedFreeUses"
-                          />
-                        }
+                      <div class="mt-2 sm:mt-4 border-t border-outline-variant pt-2 sm:pt-4">
+                        <div class="space-y-3">
+                          @for (use of feature.uses; track use) {
+                                                    <app-feature-uses
+                                                      [uses]="use"
+                                                      (usesUpdated)="use.usedFreeUses = $event.usedFreeUses"
+                                                    />
+                                                  }
+                        </div>
                       </div>
                     }
                     <app-feature-notes
                       [notes]="feature.notes"
                       (notesChanged)="updateFeatureNotes(feature, $event)"
                     />
+                </app-sheet-detail-dialog>
+                }
             </div>
           }
         } @else {
@@ -244,6 +284,7 @@ export class FeaturesPageComponent {
   highlightedId = signal<string | null>(null);
   expandedItems = signal<Set<string>>(new Set());
 
+  readonly searchQuery = signal('');
   featureTypeFilter = signal<'ALL' | 'CLASS_FEATURE' | 'FEAT' | 'OPTIONAL_FEATURE'>('ALL');
   featureSourceFilter = signal<string>('ALL');
 
@@ -256,17 +297,19 @@ export class FeaturesPageComponent {
   constructor() {
     effect(() => {
       const targetId = this.store.featureScrollTarget();
-      if (!targetId) return;
+      if (!targetId || (!targetId.startsWith('feature-') && targetId !== 'species-section')) return;
+      if (targetId === 'species-section') this.expandedItems.set(new Set(['species']));
       if (targetId.startsWith('feature-')) {
+        this.searchQuery.set('');
         this.featureTypeFilter.set('ALL');
         this.featureSourceFilter.set('ALL');
-        this.expandedItems.update(values => new Set([...values, targetId]));
+        this.expandedItems.update(values => new Set([targetId]));
       }
       if (typeof document === 'undefined') return;
       setTimeout(() => {
         const el = document.getElementById(targetId);
         if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           this.highlightedId.set(targetId);
           setTimeout(() => this.highlightedId.set(null), 1600);
         }
@@ -294,7 +337,7 @@ export class FeaturesPageComponent {
     const filtered = items.filter((feature) => {
       const matchesType = typeFilter === 'ALL' || this.helpers.featureTypeLabel(feature) === typeFilter;
       const matchesSource = sourceFilter === 'ALL' || feature.featureSourceName === sourceFilter;
-      return matchesType && matchesSource;
+      return matchesType && matchesSource && feature.name.toLowerCase().includes(this.searchQuery().trim().toLowerCase());
     });
     return [...filtered].sort((a, b) => {
       const typeA = this.helpers.featureTypeOrder(a);
@@ -308,13 +351,7 @@ export class FeaturesPageComponent {
   });
 
   toggleExpanded(id: string) {
-    const expanded = this.expandedItems();
-    if (expanded.has(id)) {
-      expanded.delete(id);
-    } else {
-      expanded.add(id);
-    }
-    this.expandedItems.set(new Set(expanded));
+    this.expandedItems.set(this.isExpanded(id) ? new Set() : new Set([id]));
   }
 
   isExpanded(id: string): boolean {

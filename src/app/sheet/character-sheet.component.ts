@@ -1,10 +1,19 @@
+import { MobileCharacterHeaderComponent } from './mobile-character-header.component';
+import { MobileCombatPageComponent } from './mobile-combat-page.component';
+import { MobileSheetStatusComponent } from './mobile-sheet-status.component';
+import { MobileCharacterInfoPageComponent } from './mobile-character-info-page.component';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
+import { MobileSheetActionsComponent } from './mobile-sheet-actions.component';
+import { SwipePagesDirective } from './swipe-pages.directive';
 import { UiIconComponent } from '../ui-icon.component';
 import { CharacterUpdateNoticeComponent } from '../characters/character-update-notice.component';
 import { CharacterSessionService } from '../characters/character-session.service';
 import { ThemePickerComponent } from '../theme-picker.component';
 import { ScrollableTabsDirective } from '../scrollable-tabs.directive';
 import { AppDialogService } from '../services/app-dialog.service';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ElementRef, viewChild, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { CharacterLibraryService } from '../characters/character-library.service';
@@ -21,7 +30,8 @@ import { NotesPageComponent } from './notes-page.component';
 
 @Component({
   selector: 'app-character-sheet',
-  imports: [CharacterUpdateNoticeComponent, UiIconComponent,
+  host: { class: 'block w-full min-w-0 max-w-full' },
+  imports: [MobileCharacterHeaderComponent, MobileCombatPageComponent, MobileCharacterInfoPageComponent, MobileSheetStatusComponent, MobileSheetActionsComponent, SwipePagesDirective, CharacterUpdateNoticeComponent, UiIconComponent,
     ThemePickerComponent,
     ScrollableTabsDirective,
     CommonModule,
@@ -34,7 +44,7 @@ import { NotesPageComponent } from './notes-page.component';
     NotesPageComponent,
   ],
   template: `
-    <main class="max-w-[1200px] mx-auto my-6 p-4">
+    <main class="max-w-[1200px] mx-auto my-2 sm:my-6 px-2 py-2 sm:p-4">
       @if (characterData()) {
         <header class="flex items-center gap-2 min-w-0 mb-3">
           <a routerLink="/" aria-label="Back to characters"
@@ -42,18 +52,20 @@ import { NotesPageComponent } from './notes-page.component';
             <app-ui-icon name="left" />
           </a>
           <div class="min-w-0">
-            <h1 class="text-lg sm:text-2xl font-bold">Character Sheet</h1>
-            <p class="text-xs text-on-surface-variant break-words">{{ characterData()?.character?.name || 'Unnamed Character' }}</p>
+            <h1 class="break-words text-lg sm:text-2xl font-bold"><span class="sm:hidden">{{ characterData()?.character?.name || 'Unnamed Character' }}</span><span class="hidden sm:inline">Character Sheet</span></h1>
+            <p class="hidden sm:block text-xs text-on-surface-variant break-words">{{ characterData()?.character?.name || 'Unnamed Character' }}</p>
           </div>
         </header>
         <app-character-update-notice [characterId]="store.nativeCharacterId()" [characterName]="characterData()?.character?.name || 'Unnamed Character'" [loadedVersion]="session.loadedVersion()" [busy]="isSaving()" (refresh)="refreshCharacter()" />
-        <!-- Top Action Bar -->
-        <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:flex sm:flex-wrap items-center gap-2 mb-4">
+        <app-mobile-sheet-actions [saving]="isSaving()" [dirty]="hasUnsavedChanges()" (save)="quickSave()" (edit)="editCharacter()" (shortRest)="performShortRest()" (longRest)="performLongRest()" />
+        <app-mobile-character-header [characterData]="characterData()" (navigateToFeatures)="navigateToFeatures($event)" />
+        <!-- Desktop action bar -->
+        <div class="hidden sm:flex sm:flex-wrap items-center gap-2 mb-4">
           <div class="flex items-center gap-1.5 min-w-0 sm:mr-auto">
             <button type="button" (click)="quickSave()" [disabled]="isSaving()"
               class="min-h-10 flex-1 sm:flex-none whitespace-nowrap rounded-lg bg-secondary-container text-on-secondary-container px-3 py-2 text-sm font-semibold disabled:opacity-50">
               <span aria-hidden="true" class="inline-block mr-1" [class.animate-spin]="isSaving()"><app-ui-icon [name]="isSaving() ? 'loader' : 'save'" /></span>
-              {{ isSaving() ? 'Saving…' : saveStatus() ? 'Saved!' : 'Quick Save' }}
+              {{ isSaving() ? 'Saving…' : hasUnsavedChanges() ? 'Save changes' : 'Saved' }}
             </button>
           </div>
           <app-theme-picker class="min-w-0 sm:order-last sm:w-44" />
@@ -70,14 +82,14 @@ import { NotesPageComponent } from './notes-page.component';
               class="min-h-10 flex-1 sm:flex-none px-3 py-2 bg-blue-container text-on-blue-container font-medium rounded-lg hover:brightness-110 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:brightness-95 transition-all text-sm"
               title="Rest for 1 hour - restores SHORT_REST resources"
             >
-              <app-ui-icon name="rest" /> Short Rest
+              <app-ui-icon name="campfire" /> Short Rest
             </button>
             <button
               (click)="performLongRest()"
               class="min-h-10 flex-1 sm:flex-none px-3 py-2 bg-purple-container text-on-purple-container font-medium rounded-lg hover:brightness-110 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:brightness-95 transition-all text-sm"
               title="Rest for 8 hours - restores LONG_REST resources and heals to full"
             >
-              <app-ui-icon name="moon" /> Long Rest
+              <app-ui-icon name="rest" /> Long Rest
             </button>
           </div>
         </div>
@@ -96,121 +108,36 @@ import { NotesPageComponent } from './notes-page.component';
           </section>
         }
 
-        <!-- Page Navigation Tabs -->
-        <nav [appScrollableTabs]="currentPage()" class="justify-between mb-6 items-stretch" aria-label="Character sheet pages">
-          <button
-            (click)="currentPage.set(1)"
-            [attr.aria-current]="currentPage() === 1 ? 'page' : null"
-            class="px-6 py-3 font-semibold transition-colors flex-auto border-b-2 border-outline"
-            [class.border-b-4]="currentPage() === 1"
-            [class.border-primary]="currentPage() === 1"
-            [class.text-primary]="currentPage() === 1"
-            [class.text-on-surface-variant]="currentPage() !== 1"
-          >
-          <div class="flex items-center justify-center gap-2">
-            <span>
-              Sheet
-            </span>
-            
-            <div 
-            class="hidden sm:block border-1 px-1 border-primary rounded-xl bg-primary-container text-center content-center overflow-hidden transition-all duration-350 ease-in"
-            [class.opacity-0]="!characterData()?.character?.name || currentPage() === 1"
-            [class.opacity-100]="characterData()?.character?.name && currentPage() !== 1"
-            [class.max-w-0]="!characterData()?.character?.name || currentPage() === 1"
-            [class.max-w-xs]="characterData()?.character?.name && currentPage() !== 1"
-            [class.pointer-events-none]="!characterData()?.character?.name || currentPage() === 1"
-            [class.-mb-50]="!characterData()?.character?.name || currentPage() === 1"
-            [class.mb-0]="characterData()?.character?.name && currentPage() !== 1"
-          >
-              <div class="text-xs text-on-primary-container whitespace-nowrap">{{ characterData()?.character?.name }}</div>
-          </div>
-          </div>
-
-
-          </button>
-          <button
-            (click)="currentPage.set(2)"
-            [attr.aria-current]="currentPage() === 2 ? 'page' : null"
-            class="px-6 py-3 font-semibold transition-colors flex-auto border-b-2 border-outline"
-            [class.border-b-4]="currentPage() === 2"
-            [class.border-primary]="currentPage() === 2"
-            [class.text-primary]="currentPage() === 2"
-            [class.text-on-surface-variant]="currentPage() !== 2"
-          >
-            Features & Traits
-          </button>
-          <button
-            (click)="currentPage.set(3)"
-            [attr.aria-current]="currentPage() === 3 ? 'page' : null"
-            class="px-6 py-3 font-semibold transition-colors flex-auto border-b-2 border-outline"
-            [class.border-b-4]="currentPage() === 3"
-            [class.border-primary]="currentPage() === 3"
-            [class.text-primary]="currentPage() === 3"
-            [class.text-on-surface-variant]="currentPage() !== 3"
-          >
-            Spells
-          </button>
-          <button
-            (click)="currentPage.set(4)"
-            [attr.aria-current]="currentPage() === 4 ? 'page' : null"
-            class="px-6 py-3 font-semibold transition-colors flex-auto border-b-2 border-outline"
-            [class.border-b-4]="currentPage() === 4"
-            [class.border-primary]="currentPage() === 4"
-            [class.text-primary]="currentPage() === 4"
-            [class.text-on-surface-variant]="currentPage() !== 4"
-          >
-            Equipment
-          </button>
-          <button
-            (click)="currentPage.set(5)"
-            [attr.aria-current]="currentPage() === 5 ? 'page' : null"
-            class="px-6 py-3 font-semibold transition-colors flex-auto border-b-2 border-outline"
-            [class.border-b-4]="currentPage() === 5"
-            [class.border-primary]="currentPage() === 5"
-            [class.text-primary]="currentPage() === 5"
-            [class.text-on-surface-variant]="currentPage() !== 5"
-          >
-            Monsters
-          </button>
-          <button
-            (click)="currentPage.set(6)"
-            [attr.aria-current]="currentPage() === 6 ? 'page' : null"
-            class="px-6 py-3 font-semibold transition-colors flex-auto border-b-2 border-outline"
-            [class.border-b-4]="currentPage() === 6"
-            [class.border-primary]="currentPage() === 6"
-            [class.text-primary]="currentPage() === 6"
-            [class.text-on-surface-variant]="currentPage() !== 6"
-          >
-            Notes
-          </button>
-        </nav>
-
-        <!-- Page Content -->
-        @switch (currentPage()) {
-          @case (1) {
-            <app-character-info-page
-              [characterData]="characterData()"
-              (navigateToFeatures)="navigateToFeatures($event)"
-              (inspirationChanged)="onInspirationChanged($event)"
-              (characterRested)="onCharacterRested($event)"
-            />
+        <div #navigation></div>
+        <div class="sticky top-0 z-30 bg-surface pt-2 sm:static sm:pt-0">
+          @if (characterData(); as sheet) { <app-mobile-sheet-status [sheet]="sheet" [saving]="isSaving()" [dirty]="hasUnsavedChanges()" (save)="quickSave()" /> }
+          <nav [appScrollableTabs]="currentPage()" class="justify-between mb-3 sm:mb-6 items-stretch" aria-label="Character sheet pages">
+            @for (page of pages; track page.id) {
+              <button type="button" (click)="switchPage(page.id)" [attr.aria-current]="currentPage() === page.id ? 'page' : null"
+                class="px-6 py-3 font-semibold transition-colors flex-auto border-b-2 border-outline"
+                [class.border-b-4]="currentPage() === page.id" [class.border-primary]="currentPage() === page.id" [class.text-primary]="currentPage() === page.id" [class.text-on-surface-variant]="currentPage() !== page.id">
+                {{ page.label }}
+              </button>
+            }
+          </nav>
+        </div>
+        <div appSwipePages (pageSwipe)="swipePage($event)" class="min-w-0">
+          @if (visitedPages().has(1)) {
+            <div [class.hidden]="currentPage() !== 1">
+              @if (mobile()) {
+                <app-mobile-character-info-page [characterData]="characterData()" (navigateToFeatures)="navigateToFeatures($event)" (inspirationChanged)="onInspirationChanged($event)" (characterRested)="onCharacterRested($event)" />
+              } @else {
+                <app-character-info-page [characterData]="characterData()" (navigateToFeatures)="navigateToFeatures($event)" (inspirationChanged)="onInspirationChanged($event)" (characterRested)="onCharacterRested($event)" />
+              }
+            </div>
           }
-          @case (2) {
-            <app-features-page [characterData]="characterData()" />
-          }
-          @case (3) {
-            <app-spells-page [characterData]="characterData()" />
-          }
-          @case (4) {
-            <app-equipment-page [characterData]="characterData()" />
-          }
-          @case (5) {
-            <app-monsters-page [characterData]="characterData()" />
-          }
-          @case (6) {
-            <app-notes-page [characterData]="characterData()" />
-          }
-        }
+          @if (mobile() && visitedPages().has(7)) { <div [class.hidden]="currentPage() !== 7"><app-mobile-combat-page [characterData]="characterData()" (navigateToFeatures)="navigateToFeatures($event)" /></div> }
+          @if (visitedPages().has(2)) { <div [class.hidden]="currentPage() !== 2"><app-features-page [characterData]="characterData()" /></div> }
+          @if (visitedPages().has(3)) { <div [class.hidden]="currentPage() !== 3"><app-spells-page [characterData]="characterData()" /></div> }
+          @if (visitedPages().has(4)) { <div [class.hidden]="currentPage() !== 4"><app-equipment-page [characterData]="characterData()" /></div> }
+          @if (visitedPages().has(5)) { <div [class.hidden]="currentPage() !== 5"><app-monsters-page [characterData]="characterData()" /></div> }
+          @if (visitedPages().has(6)) { <div [class.hidden]="currentPage() !== 6"><app-notes-page [characterData]="characterData()" /></div> }
+        </div>
       } @else {
         <p>
           No character loaded. Use the
@@ -221,7 +148,8 @@ import { NotesPageComponent } from './notes-page.component';
     </main>
   `,
 })
-export class CharacterSheetComponent {
+export class CharacterSheetComponent implements OnDestroy {
+  readonly mobile = toSignal(inject(BreakpointObserver).observe('(max-width: 639px)').pipe(map(result => result.matches)), { initialValue: false });
   private readonly dialogs = inject(AppDialogService);
   protected store = inject(CharacterStore);
   readonly session = inject(CharacterSessionService);
@@ -245,10 +173,42 @@ export class CharacterSheetComponent {
 
   characterData = this.store.characterData;
   currentPage = signal(1);
+  private readonly standardPages = [{ id: 1, label: 'Sheet' }, { id: 2, label: 'Features' }, { id: 3, label: 'Spells' }, { id: 4, label: 'Equipment' }, { id: 5, label: 'Monsters' }, { id: 6, label: 'Notes' }];
+  private readonly mobilePages = [this.standardPages[0], { id: 7, label: 'Combat' }, ...this.standardPages.slice(1)];
+  get pages() { return this.mobile() ? this.mobilePages : this.standardPages; }
+  swipePage(direction: number) {
+    const index = this.pages.findIndex(page => page.id === this.currentPage());
+    const target = this.pages[index + direction];
+    if (target) this.switchPage(target.id);
+  }
+  readonly visitedPages = signal(new Set([1]));
+  private readonly navigation = viewChild<ElementRef<HTMLElement>>('navigation');
+  private readonly pageScroll = new Map<number, number>();
+  private scrollFrame = 0;
+  hasUnsavedChanges() { return this.unsavedChangesGuard.hasUnsavedChanges(this.characterData()); }
+  switchPage(page: number, restoreScroll = true) {
+    if (!this.pages.some(entry => entry.id === page) || page === this.currentPage()) return;
+    if (typeof window !== 'undefined') {
+      if (this.mobile()) this.pageScroll.set(this.currentPage(), window.scrollY);
+      cancelAnimationFrame(this.scrollFrame);
+    }
+    this.visitedPages.update(pages => new Set([...pages, page]));
+    this.currentPage.set(page);
+    if (restoreScroll && typeof window !== 'undefined') {
+      this.scrollFrame = requestAnimationFrame(() => {
+        const navigation = this.navigation()?.nativeElement;
+        const tabTop = navigation ? navigation.getBoundingClientRect().top + window.scrollY : 0;
+        const top = this.mobile() ? this.pageScroll.get(page) ?? tabTop : 0;
+        window.scrollTo({ top, behavior: 'instant' });
+      });
+    }
+  }
+  ngOnDestroy() { if (typeof window !== 'undefined') cancelAnimationFrame(this.scrollFrame); }
   isSaving = signal(false);
   saveStatus = signal(false);
 
   constructor() {
+    effect(() => { if (!this.mobile() && this.currentPage() === 7) this.switchPage(1, false); });
     this.restService.report.set(null);
     // Track the initial state as "saved"
     const initialData = this.characterData();
@@ -276,7 +236,7 @@ export class CharacterSheetComponent {
     }
     
     this.store.setFeatureScrollTarget(targetId);
-    this.currentPage.set(page);
+    this.switchPage(page, false);
   }
 
   onInspirationChanged(newValue: boolean) {

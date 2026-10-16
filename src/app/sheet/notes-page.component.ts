@@ -11,7 +11,7 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
   templateUrl: './notes-page.component.html',
   styles: [`
     :host { display: block; min-width: 0; }
-    input, textarea { width: 100%; min-width: 0; padding: .5rem .625rem; border: 1px solid var(--md-sys-color-outline-variant); border-radius: .375rem; background: var(--md-sys-color-surface-container-low); color: var(--md-sys-color-on-surface); }
+    input, textarea { font-size: 1rem; width: 100%; min-width: 0; padding: .5rem .625rem; border: 1px solid var(--md-sys-color-outline-variant); border-radius: .375rem; background: var(--md-sys-color-surface-container-low); color: var(--md-sys-color-on-surface); }
     input:focus-visible, textarea:focus-visible { outline: 2px solid var(--md-sys-color-primary); }
     button { cursor: pointer; }
     .markdown { overflow-wrap: anywhere; }

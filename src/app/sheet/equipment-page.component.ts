@@ -1,3 +1,6 @@
+import { SheetDetailDialogComponent } from './sheet-detail-dialog.component';
+import { HorizontalRowDirective } from './horizontal-row.directive';
+import { RuleDetailsComponent } from './rule-details.component';
 import { ItemCatalogComponent } from '../editor/item-catalog.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { AppDialogService } from '../services/app-dialog.service';
@@ -13,7 +16,7 @@ import { CharacterStore } from '../stores/character.store';
 
 @Component({
   selector: 'app-equipment-page',
-  imports: [ItemCatalogComponent, UiIconComponent, CommonModule, FormsModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [SheetDetailDialogComponent, HorizontalRowDirective, RuleDetailsComponent, ItemCatalogComponent, UiIconComponent, CommonModule, FormsModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: item-flash 1.6s ease-out;
@@ -37,344 +40,24 @@ import { CharacterStore } from '../stores/character.store';
       }
     }
     
-    .property-badge, .mastery-badge {
-      position: relative;
-      cursor: help;
-      display: inline-block;
-    }
-    .property-badge .tooltip-box, .mastery-badge .tooltip-box {
-      visibility: hidden;
-      position: absolute;
-      z-index: 1000;
-      bottom: calc(100% + 8px);
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #1f2937;
-      color: #fff;
-      text-align: left;
-      padding: 12px;
-      border-radius: 6px;
-      font-size: 13px;
-      line-height: 1.5;
-      white-space: normal;
-      width: 320px;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-    }
-    .property-badge:hover .tooltip-box, .mastery-badge:hover .tooltip-box {
-      visibility: visible;
-    }
-    .property-badge .tooltip-box::after, .mastery-badge .tooltip-box::after {
-      content: '';
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      border-width: 6px;
-      border-style: solid;
-      border-color: #1f2937 transparent transparent transparent;
-    }
-    .tooltip-box p {
-      margin: 0;
-      color: #f3f4f6;
-    }
-    .tooltip-box ul, .tooltip-box ol {
-      margin: 8px 0 0 20px;
-      padding: 0;
-      color: #f3f4f6;
-    }
-    .tooltip-box li {
-      margin: 4px 0;
-    }
-    .tooltip-box strong {
-      color: #fbbf24;
-    }
   `],
-  template: `
-    <div class="bg-surface-container-highest p-8 rounded-lg border-2 border-outline shadow-lg">
-      <h2 class="text-3xl font-bold mb-6">Equipment & Inventory</h2>
-
-      <!-- Currency Tracker -->
-      <div class="mb-6 border-4 border-tertiary rounded-lg p-4 bg-tertiary-container">
-        <h3 class="text-lg font-bold mb-3 text-on-tertiary-container">Currency</h3>
-        <div class="flex justify-between gap-6 items-center flex-wrap bg-surface-variant border-4 border-outline rounded-md p-1 px-2">
-          <div class="flex items-center gap-2  ">
-            <label class="text-sm font-semibold text-tertiary w-16">Gold</label>
-            <input
-              type="number"
-              [value]="goldAmount()"
-              (input)="updateCurrency('gold', $any($event.target).value)"
-              class="w-24 px-3 py-2 border-2 border-tertiary rounded-md focus:ring-2 focus:ring-tertiary focus:border-tertiary"
-              min="0"
-            />
-            <span class="text-xs text-tertiary">GP</span>
-          </div>
-          <div class="flex items-center gap-2  ">
-            <label class="text-sm font-semibold text-secondary w-16">Silver</label>
-            <input
-              type="number"
-              [value]="silverAmount()"
-              (input)="updateCurrency('silver', $any($event.target).value)"
-              class="w-24 px-3 py-2 border-2 border-secondary rounded-md focus:ring-2 focus:ring-secondary focus:border-secondary"
-              min="0"
-            />
-            <span class="text-xs text-secondary">SP</span>
-          </div>
-          <div class="flex items-center gap-2 ">
-            <label class="text-sm font-semibold text-primary w-16 ">Copper</label>
-            <input
-              type="number"
-              [value]="copperAmount()"
-              (input)="updateCurrency('copper', $any($event.target).value)"
-              class="w-24 px-3 py-2 border-2 border-primary rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-              min="0"
-            />
-            <span class="text-xs text-primary">CP</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Inventory -->
-      <div class="space-y-4">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-xl font-bold">Items</h3>
-          <button type="button" (click)="isAddingItem.set(true)" aria-haspopup="dialog"
-            class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-on-primary font-medium rounded-lg text-sm">
-            <app-ui-icon name="plus" /> Add Item
-          </button>
-        </div>
-        @if (isAddingItem()) {
-          <app-item-catalog [sheet]="characterData()!" (edited)="inventoryChanged()" (closed)="isAddingItem.set(false)" />
-        }
-
-        @if (inventory().length > 0) {
-          @for (item of inventory(); track item) {
-            <div class="border-2 border-green rounded-lg p-4 bg-surface-container" [attr.id]="'item-' + (item.editorId ?? helpers.sourceId(item.name + '-' + (item.source ?? '')))" [class.flash-highlight]="highlightedId() === ('item-' + (item.editorId ?? helpers.sourceId(item.name + '-' + (item.source ?? ''))))">
-              <!-- Header (always visible, clickable) -->
-              <button
-                type="button"
-                class="w-full text-left hover:bg-surface-container-low transition-colors rounded p-2 -m-2"
-                (click)="toggleExpanded('item-' + (item.editorId ?? item.name))"
-              >
-                <div class="flex flex-wrap items-center justify-between gap-2 w-full">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <h3 class="text-xl font-bold text-green">{{ item.name }}</h3>
-                    @if (item.isDummy) {
-                      <span class="text-xs bg-orange-container text-on-orange-container px-2 py-0.5 rounded font-semibold"><app-ui-icon name="edit" /> Custom</span>
-                    }
-                    @if (item.entity?.itemType) {
-                      <span class="text-xs bg-green-container text-on-green-container px-2 py-0.5 rounded">{{ item.entity?.itemType }}</span>
-                    }
-                                    @if (getItemProp(item, 'weaponCategory')) {
-                  <span class="text-xs bg-blue-container text-on-blue-container px-2 py-0.5 rounded capitalize">{{ getItemProp(item, 'weaponCategory') }}</span>
-                }
-                @if (getItemProp(item, 'rarity') && getItemProp(item, 'rarity') !== 'none') {
-                  <span class="text-xs bg-tertiary-container text-on-tertiary-container px-2 py-0.5 rounded capitalize">{{ getItemProp(item, 'rarity') }}</span>
-                }
-                @if (getItemProp(item, 'scfType')) {
-                  <span class="text-xs bg-purple-container text-on-purple-container px-2 py-0.5 rounded">Focus: {{ getItemProp(item, 'scfType') }}</span>
-                }
-                @for (tag of getItemTypeTags(item); track tag) {
-                  <span class="text-xs bg-surface-container-low text-on-surface px-2 py-0.5 rounded">{{ tag }}</span>
-                }
-                  </div>
-                  <div class="flex items-center gap-2">
-                      <button
-                        type="button"
-                        (click)="deleteItem(item); $event.stopPropagation()"
-                        class="px-3 py-1 bg-rose text-on-rose font-medium rounded text-sm hover:bg-rose-container transition-colors"
-                        title="Delete this item"
-                      >
-                        Delete
-                      </button>
-                    <span class="text-xl text-green font-bold"><app-ui-icon [name]="isExpanded('item-' + (item.editorId ?? item.name)) ? \'minus\' : \'plus\'" /></span>
-                  </div>
-                </div>
-              </button>
-
-              <!-- Basic Info (always visible) -->
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-on-surface-container space-y-1 mt-2">
-                @if (getItemProp(item, 'weight')) {
-                  <div><span class="font-semibold">Weight:</span> {{ getItemProp(item, 'weight') }} lb.</div>
-                }
-                @if (getItemProp(item, 'value')) {
-                  <div><span class="font-semibold">Value:</span> {{ formatGold(getItemProp(item, 'value')) }}</div>
-                }
-                @if (item.entity?.ac) {
-                  <div><span class="font-semibold">AC:</span> {{ item.entity?.ac }}</div>
-                }
-                @if (getItemProp(item, 'dmg1')) {
-                  <div><span class="font-semibold">Damage:</span> {{ getItemProp(item, 'dmg1') }}@if (getItemProp(item, 'dmgType')) { {{ getItemProp(item, 'dmgType') }}}@if (getItemProp(item, 'dmg2')) { ({{ getItemProp(item, 'dmg2') }} versatile)}</div>
-                }
-                @if (getItemProp(item, 'range')) {
-                  <div><span class="font-semibold">Range:</span> {{ getItemProp(item, 'range') }} ft.</div>
-                }
-              </div>
-              <div class="grid grid-cols-2 gap-2 text-sm text-on-surface-container space-y-1 mt-2">
-                @if (item.entity?.properties?.length) {
-                  <div class="flex flex-wrap items-center gap-2">
-                    <span class="font-semibold">Properties:</span>
-                    @for (prop of item.entity?.properties; track prop.name) {
-                      <span class="property-badge text-xs bg-teal-container text-on-teal-container px-2 py-1 rounded font-medium">
-                        {{ prop.name }}
-                        @if (prop.entry) {
-                          <div class="tooltip-box">
-                            @if (prop.entry && !isArray(prop.entry)) {
-                              <app-entry-renderer [entries]="[prop.entry]"></app-entry-renderer>
-                            } @else if (isArray(prop.entry)) {
-                              <app-entry-renderer [entries]="prop.entry"></app-entry-renderer>
-                            }
-                          </div>
-                        }
-                      </span>
-                    }
-                  </div>
-                }
-                @if (item.entity?.masteries?.length) {
-                  <div class="flex flex-wrap items-center gap-2">
-                    <span class="font-semibold">Mastery:</span>
-                    @for (mastery of item.entity?.masteries; track mastery.name) {
-                      <span class="mastery-badge text-xs bg-secondary-container text-on-secondary-container px-2 py-1 rounded font-medium">
-                        {{ mastery.name }}
-                        @if (mastery.entry) {
-                          <div class="tooltip-box">
-                            @if (mastery.entry && !isArray(mastery.entry)) {
-                              <app-entry-renderer [entries]="[mastery.entry]"></app-entry-renderer>
-                            } @else if (isArray(mastery.entry)) {
-                              <app-entry-renderer [entries]="mastery.entry"></app-entry-renderer>
-                            }
-                          </div>
-                        }
-                      </span>
-                    }
-                  </div>
-                }
-              </div>
-
-              <!-- Source && Rarity Tags -->
-              <div class="flex flex-wrap items-center gap-2">
-
-                @if (item.source) {
-                  <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ item.source }}</span>
-                }
-              </div>
-
-              <!-- Expandable Content -->
-              @if (isExpanded('item-' + (item.editorId ?? item.name))) {
-                <div class="mt-3 pt-3 border-t border-outline-variant">
-                  
-
-                  <!-- Item Description -->
-                  @if (getItemProp(item, 'entries')) {
-                    <div class="mt-3">
-                      <app-entry-renderer [entries]="getItemEntries(item)"></app-entry-renderer>
-                    </div>
-                  }
-
-                  <!-- Uses Tracking -->
-
-                </div>
-              }
-              <!-- Footer (always visible) -->
-               <!-- Bonuses Section -->
-                  @if (hasAnyBonus(item)) {
-                    <div class="mt-4 border-t border-outline-variant pt-4">
-                    <div class="p-2 bg-tertiary-container border border-tertiary rounded-lg">
-                      <h4 class="text-sm font-bold text-on-tertiary-container mb-2">Bonuses</h4>
-                      <div class="text-sm text-on-tertiary-container space-y-1">
-                        @if (getItemProp(item, 'bonusWeapon')) {
-                          <div>• Weapon: {{ getItemProp(item, 'bonusWeapon') }}</div>
-                        }
-                        @if (getItemProp(item, 'bonusWeaponAttack')) {
-                          <div>• Weapon Attack: {{ getItemProp(item, 'bonusWeaponAttack') }}</div>
-                        }
-                        @if (getItemProp(item, 'bonusWeaponDamage')) {
-                          <div>• Weapon Damage: {{ getItemProp(item, 'bonusWeaponDamage') }}</div>
-                        }
-                        @if (getItemProp(item, 'bonusSavingThrow')) {
-                          <div>• Saving Throws: {{ getItemProp(item, 'bonusSavingThrow') }}</div>
-                        }
-                        @if (getItemProp(item, 'bonusSpellAttack')) {
-                          <div>• Spell Attack: {{ getItemProp(item, 'bonusSpellAttack') }}</div>
-                        }
-                        @if (getItemProp(item, 'bonusSpellSaveDc')) {
-                          <div>• Spell Save DC: {{ getItemProp(item, 'bonusSpellSaveDc') }}</div>
-                        }
-                        @if (getItemProp(item, 'bonusSpellDamage')) {
-                          <div>• Spell Damage: {{ getItemProp(item, 'bonusSpellDamage') }}</div>
-                        }
-                        @if (getItemProp(item, 'bonusAc')) {
-                          <div>• AC Bonus: {{ getItemProp(item, 'bonusAc') }}</div>
-                        }
-                      </div>
-                    </div>
-                    </div>
-                  }
-                  @if (item.uses?.length) {
-                    <div class="mt-4 border-t border-outline-variant pt-4">
-                      @for (use of item.uses; track use.tag) {
-                        <app-feature-uses 
-                          [uses]="use"
-                          (usesUpdated)="updateItemUses(item, $event)"
-                        />
-                      }
-                    </div>
-                  }
-                  <app-feature-notes
-                    [notes]="item.notes"
-                    (notesChanged)="updateItemNotes(item, $event)"
-                  />
-
-              
-              <div class="flex flex-wrap items-center gap-3 mb-2 mt-4 justify-between">
-                <!-- Equipped Checkbox -->
-                 <div class="flex flex-wrap items-center gap-3">
-                <label class="flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    [checked]="item.isEquipped ?? false"
-                    (change)="toggleEquipped(item)"
-                    class="w-5 h-5 text-green border-outline-variant rounded focus:ring-2 focus:ring-green accent-green"
-                  />
-                  <span class="ml-2 text-sm font-semibold text-on-surface">Equipped</span>
-                </label>
-
-                <!-- Attunement (only for equipped items that require attunement) -->
-                @if (item.isEquipped && requiresAttunement(item)) {
-                  <label class="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      [checked]="item.isAttuned ?? false"
-                      (change)="toggleAttuned(item)"
-                      class="w-5 h-5 text-purple border-outline-variant rounded focus:ring-2 focus:ring-purple accent-purple"
-                    />
-                    <span class="ml-2 text-sm font-semibold text-purple"><app-ui-icon name="sparkles" /> Attuned</span>
-                  </label>
-                }
-                 </div>
-                <!-- Count (for multiple items) -->
-                @if (item.allowMultiples) {
-                  <div class="flex items-center gap-2">
-                    <label class="text-sm font-semibold text-on-surface">Quantity:</label>
-                    <input
-                      type="number"
-                      [value]="item.count ?? 1"
-                      (input)="updateItemCount(item, $any($event.target).value)"
-                      class="w-20 px-2 py-1 border-2 border-outline-variant rounded-md focus:ring-2 focus:ring-green focus:border-green text-center"
-                      min="0"
-                    />
-                  </div>
-                }
-              </div>
-            </div>
-          }
-        } @else {
-          <p class="text-on-surface-variant italic">No items in inventory</p>
-        }
-      </div>
-    </div>
-  `,
+  templateUrl: './equipment-page.component.html',
 })
 export class EquipmentPageComponent {
+  readonly coins = [{ kind: 'gold', label: 'Gold (GP)' }, { kind: 'silver', label: 'Silver (SP)' }, { kind: 'copper', label: 'Copper (CP)' }];
+  readonly searchQuery = signal('');
+  readonly inventoryFilter = signal<'all' | 'equipped' | 'attuned'>('all');
+  readonly inventoryFilters = [{ value: 'all', label: 'All' }, { value: 'equipped', label: 'Equipped' }, { value: 'attuned', label: 'Attuned' }] as const;
+  readonly bonusFields = [{ key: 'bonusWeapon', label: 'Weapon' }, { key: 'bonusWeaponAttack', label: 'Weapon attack' }, { key: 'bonusWeaponDamage', label: 'Weapon damage' }, { key: 'bonusSavingThrow', label: 'Saving throws' }, { key: 'bonusSpellAttack', label: 'Spell attack' }, { key: 'bonusSpellSaveDc', label: 'Spell save DC' }, { key: 'bonusSpellDamage', label: 'Spell damage' }, { key: 'bonusAc', label: 'AC' }];
+  private readonly inventoryRevision = signal(0);
+  readonly visibleInventory = computed(() => {
+    this.inventoryRevision();
+    const query = this.searchQuery().trim().toLowerCase();
+    const filter = this.inventoryFilter();
+    return this.inventory().filter(item => item.name.toLowerCase().includes(query) && (filter === 'all' || filter === 'equipped' && item.isEquipped || filter === 'attuned' && item.isAttuned))
+      .sort((a, b) => Number(!!b.isEquipped) - Number(!!a.isEquipped));
+  });
+  itemKey(item: InventoryItem) { return 'item-' + (item.editorId ?? this.helpers.sourceId(item.name + '-' + (item.source ?? ''))); }
   private readonly dialogs = inject(AppDialogService);
   characterData = input.required<ExportedCharacter | null>();
   private store = inject(CharacterStore);
@@ -409,14 +92,14 @@ export class EquipmentPageComponent {
     // Handle scroll/highlight on navigation
     effect(() => {
       const targetId = this.store.featureScrollTarget();
-      if (!targetId) return;
+      if (!targetId || (!targetId.startsWith('item-'))) return;
       const target = this.characterData()?.inventory?.find(item => `item-${item.editorId ?? this.helpers.sourceId(item.name + '-' + (item.source ?? ''))}` === targetId);
-      if (target) this.expandedItems.update(values => new Set([...values, 'item-' + (target.editorId ?? target.name)]));
+      if (target) { this.searchQuery.set(''); this.inventoryFilter.set('all'); this.expandedItems.update(values => new Set([this.itemKey(target)])); }
       if (typeof document === 'undefined') return;
       setTimeout(() => {
         const el = document.getElementById(targetId);
         if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           this.highlightedId.set(targetId);
           setTimeout(() => this.highlightedId.set(null), 1600);
         }
@@ -452,20 +135,16 @@ export class EquipmentPageComponent {
     if (!item.isEquipped) {
       item.isAttuned = false;
     }
+    this.inventoryChanged();
   }
 
   toggleAttuned(item: any) {
     item.isAttuned = !item.isAttuned;
+    this.inventoryChanged();
   }
 
   toggleExpanded(id: string) {
-    const expanded = this.expandedItems();
-    if (expanded.has(id)) {
-      expanded.delete(id);
-    } else {
-      expanded.add(id);
-    }
-    this.expandedItems.set(new Set(expanded));
+    this.expandedItems.set(this.isExpanded(id) ? new Set() : new Set([id]));
   }
 
   isExpanded(id: string): boolean {
@@ -474,7 +153,7 @@ export class EquipmentPageComponent {
 
   requiresAttunement(item: any): boolean {
     const reqAttune = item.entity?.item?.['reqAttune'];
-    return reqAttune !== null && reqAttune !== undefined;
+    return !!reqAttune && reqAttune !== 'false';
   }
 
   getItemProp(item: any, prop: string): any {
@@ -588,16 +267,21 @@ export class EquipmentPageComponent {
   updateItemCount(item: any, value: string) {
     const numValue = Math.max(0, parseInt(value) || 0);
     item.count = numValue;
+    this.inventoryChanged();
   }
 
   inventoryChanged() {
+    this.inventoryRevision.update(value => value + 1);
     const sheet = this.characterData();
     if (sheet) this.store.setCharacter({ ...sheet, inventory: [...(sheet.inventory ?? [])] });
   }
 
   async deleteItem(item: InventoryItem) {
+    const reopen = this.isExpanded(this.itemKey(item));
+    this.expandedItems.set(new Set());
     const annotations = item.uses?.length || item.notes?.length ? ' Its uses and notes will also be removed.' : '';
     if (!await this.dialogs.confirm(`Delete "${item.name}" from this character?${annotations}`, 'Delete Item', 'Delete')) {
+      if (reopen) this.expandedItems.set(new Set([this.itemKey(item)]));
       return;
     }
 

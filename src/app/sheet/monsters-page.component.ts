@@ -1,3 +1,5 @@
+import { SheetDetailDialogComponent } from './sheet-detail-dialog.component';
+import { HorizontalRowDirective } from './horizontal-row.directive';
 import { UiIconComponent } from '../ui-icon.component';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { MonsterStatBlockComponent } from './monster-stat-block.component';
@@ -12,13 +14,12 @@ import {
   MonsterCasting,
   MonsterSpellcasting,
 } from '../models/character.model';
-import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
 import { CharacterHelpersService } from './character-helpers.service';
 import { CharacterStore } from '../stores/character.store';
 
 @Component({
   selector: 'app-monsters-page',
-  imports: [UiIconComponent, CommonModule, CapitalizeFirstPipe, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent, MonsterStatBlockComponent],
+  imports: [SheetDetailDialogComponent, HorizontalRowDirective, UiIconComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent, MonsterStatBlockComponent],
   styles: [`
     .flash-highlight {
       animation: monster-flash 1.6s ease-out;
@@ -42,226 +43,18 @@ import { CharacterStore } from '../stores/character.store';
       }
     }
   `],
-  template: `
-    <div class="bg-surface-container-highest p-8 rounded-lg border-2 border-outline shadow-lg">
-      <h2 class="text-3xl font-bold mb-6">Monsters & Companions</h2>
-      
-      @if (monsters().length > 0) {
-        <div class="space-y-6">
-          @for (monster of monsters(); track monster.name) {
-            <div class="border-2 border-teal rounded-lg p-4 bg-surface-container hover:shadow-md transition-shadow\" [attr.id]=\"'monster-' + (monster.editorId ?? helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? '')))\" [class.flash-highlight]=\"highlightedId() === ('monster-' + (monster.editorId ?? helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? ''))))\">
-              <!-- Header (always visible, clickable) -->
-              <button
-                type="button"
-                class="w-full text-left hover:bg-surface-container-low transition-colors rounded p-2 -m-2 mb-3"
-                (click)="toggleExpanded('monster-' + monster.name)"
-              >
-                <div class="flex justify-between items-start">
-                  <h3 class="text-2xl font-bold text-teal">{{ monster.name }}</h3>
-                  <span class="text-2xl text-teal font-bold"><app-ui-icon [name]="isExpanded('monster-' + monster.name) ? \'minus\' : \'plus\'" /></span>
-                </div>
-              </button>
-              @if (monster.entity) {
-                                              <!-- Size, Type, Alignment -->
-                <div class="text-sm text-on-surface pb-2">
-                  @if (monster.entity.size && monster.entity.size.length > 0) {
-                    <span>
-                      @for (size of monster.entity.size; track size) {
-                        <span>{{ getSizeText(size) }}</span>
-                        @if (!$last) {
-                          <span>, </span>
-                        }
-                      }
-                    </span>
-                  }
-                  @if (monster.entity.type && monster.entity.type.type) {
-                    <span> {{ monster.entity.type.type | capitalizeFirst}}</span>
-                  }
-                  @if (monster.entity.alignment && monster.entity.alignment.length > 0) {
-                    <span>, 
-                      @for (align of monster.entity.alignment; track align) {
-                        <span>{{ align }}</span>
-                      }
-                    </span>
-                  }
-                </div>
-              }
-              <!-- Source Tag -->
-              @if (monster.source) {
-                <div class="mb-4 pb-4 border-b border-outline-variant">
-                  <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded ">{{ monster.source }}</span>
-                </div>
-              }
-
-              @if (monster.entity) {
-                <!-- HP Tracker -->
-                @if (monster.hpEnabled) {
-                  <div class="space-y-3 my-4">
-                    <div class="space-y-1 p-3 bg-primary-container rounded-md border-2 border-primary">
-                    <div class="flex flex-wrap gap-2 justify-between">
-                      <div class="flex gap-3 items-center">
-                      <div class="text-sm text-on-primary-container uppercase font-bold min-w-[3rem]">HP</div>
-                      <input
-                        type="number"
-                        [value]="monster.monsterCurrentHP ?? getEffectiveMonsterMaxHP(monster)"
-                        (input)="updateMonsterHP(monster, $any($event.target).value)"
-                        class="text-on-primary-container w-20 p-2 border-2 border-primary rounded-md text-base font-bold focus:ring-2 focus:ring-primary focus:border-primary"
-                        min="0"
-                        [max]="getEffectiveMonsterMaxHP(monster)"
-                      >
-                      <div class="text-on-primary-container">/</div>
-                      <div class="text-on-primary-container font-bold"
-                      [class.text-teal]="monster.monsterMaxHpOverride !== undefined"
-                      >{{ getEffectiveMonsterMaxHP(monster) }}</div>
-                      </div>
-                      <div class="flex flex-wrap items-center justify-center gap-3 text-xs text-on-primary-container">
-                      <div>Base:</div>
-                      <div>{{ monster.monsterMaxHP ?? 0 }}</div>
-                      <label class="flex items-center gap-2 text-on-primary-container">
-                        <span>Override</span>
-                        <input
-                          type="number"
-                          [value]="getMonsterMaxHpOverrideInput(monster)"
-                          (input)="onMonsterMaxHpOverrideInput(monster, $any($event.target).value)"
-                          (change)="commitMonsterMaxHpOverride(monster)"
-                          (blur)="commitMonsterMaxHpOverride(monster)"
-                          class="w-20 px-2 py-1 border border-primary rounded-md text-center focus:ring-2 focus:ring-primary focus:border-primary"
-                          min="0"
-                        />
-                      </label>
-                      <button
-                        type="button"
-                        class="px-2 py-1 border border-primary rounded-md hover:bg-primary text-on-primary-containerhover:border-surface hover:text-on-primary transition-colors text-xs font-semibold "
-                        [class.border-teal]="monster.monsterMaxHpOverride !== undefined"
-                        (click)="clearMonsterMaxHpOverride(monster)"
-                      >
-                        Clear
-                      </button>
-                    </div>
-    
-                    </div>
-                    <div class="flex flex-wrap gap-2 text-sm">
-                      @if (monster.entity.hp) {
-                        ≈
-                        @if (monster.entity.hp.average) {
-                        {{ monster.entity.hp.average }}
-                        }
-                        @if (monster.entity.hp.formula) {
-                          <span> ({{ monster.entity.hp.formula }})</span>
-                        }
-                        @if (monster.entity.hp.special) {
-                          <span class="italic"> {{ monster.entity.hp.special }}</span>
-                        }
-                      }
-                    </div>
-                  </div>
-                </div>
-
-                    
-                    <!-- Max HP Override -->
-
-                    
-                    <!-- Temp HP -->
-                    <div class="flex gap-3 items-center p-3 bg-secondary-container rounded-md border-2 border-green">
-                      <div class="text-sm text-on-secondary-container uppercase font-bold min-w-[3rem]">Temp HP</div>
-                      <input
-                        type="number"
-                        [value]="monster.monsterTempHP ?? 0"
-                        (input)="updateMonsterTempHP(monster, $any($event.target).value)"
-                        class="text-on-secondary-container w-24 p-2 border-2 border-green rounded-md text-base font-bold focus:ring-2 focus:ring-green focus:border-green"
-                        min="0"
-                      >
-                      @if (monster.monsterTempHP && monster.monsterTempHP > 0) {
-                        <button
-                          (click)="clearMonsterTempHP(monster)"
-                          class="px-2 py-1 bg-secondary-container border border-secondary text-on-secondary-container rounded text-xs font-semibold transition-colors hover:bg-secondary hover:text-on-secondary"
-                          title="Clear temp HP"
-                        >
-                          Clear
-                        </button>
-                      }
-
-                  </div>
-                }  @else if (monster.entity.hp) {
-                  <div class="space-y-3 my-4">
-                    <div class="flex flex-wrap gap-2 justify-between p-3 bg-primary-container rounded-md border-2 border-primary">
-                      <div class="flex gap-2 items-center">
-                      <div class="text-sm text-on-primary-container uppercase font-bold min-w-[3rem]">HP</div>
-                      <div class="text-sm text-on-primary-container">
-                      @if (monster.entity.hp.average) {
-                          {{ monster.entity.hp.average }}
-                        }
-                        @if (monster.entity.hp.formula) {
-                          <span> ({{ monster.entity.hp.formula }})</span>
-                        }
-                        @if (monster.entity.hp.special) {
-                          <span class="italic"> {{ monster.entity.hp.special }}</span>
-                        }
-                      </div>
-                    </div>
-                  </div>
-                  </div>
-                }
-                <!-- AC, Speed, Initiative, CR -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 my-4">
-                  @if (monster.entity.ac && monster.entity.ac.length > 0) {
-                    <div class="p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high">
-                      <div class="text-xs text-on-surface-variant uppercase font-bold tracking-wide">AC</div>
-                      <div class="text-2xl font-bold text-primary">
-                        @for (ac of monster.entity.ac; track $index) {
-                          <app-entry-renderer [entry]="{ text: formatArmorClass(ac) }" />
-                        }
-                      </div>
-                    </div>
-                  }
-                  <div class="p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high">
-                    <div class="text-xs text-on-surface-variant uppercase font-bold tracking-wide">Initiative</div>
-                    <div class="text-2xl font-bold text-tertiary">{{ getInitiative(monster) }}</div>
-                  </div>
-                  @if (monster.entity.speed) {
-                    <div class="p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high">
-                      <div class="text-xs text-on-surface-variant uppercase font-bold tracking-wide">Speed</div>
-                      <div class="text-xl font-bold text-on-surface-container-high">{{ formatSpeeds(monster.entity.speed) }}</div>
-                    </div>
-                  }
-                  @if (monster.entity.cr) {
-                    <div class="p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high">
-                      <div class="text-xs text-on-surface-variant uppercase font-bold tracking-wide">CR</div>
-                      <div class="text-2xl font-bold text-tertiary">{{ typeof monster.entity.cr === 'string' ? monster.entity.cr : monster.entity.cr.cr }} 
-                        <span class="text-xl">(PB +{{ getProficiencyBonusFromCR(typeof monster.entity.cr === 'string' ? monster.entity.cr : monster.entity.cr.cr) }})</span>
-                      </div>
-                    </div>
-                  }
-                </div>
-
-                <!-- Expandable Content: Ability Scores and Beyond -->
-                @if (isExpanded('monster-' + monster.name)) {
-
-                  <div class="mt-4 pt-4 border-t border-outline-variant space-y-3">
-
-                  <app-monster-stat-block [value]="monster" [showSummary]="false" />
-                  </div>
-                  <div class="mt-4 pt-4 border-t border-outline-variant space-y-3">
-                  @for (use of monster.uses ?? []; track use) {
-                    <app-feature-uses [uses]="use" (usesUpdated)="use.usedFreeUses = $event.usedFreeUses" />
-                  }
-
-                    <app-feature-notes [notes]="monster.notes" (notesChanged)="monster.notes = $event" />  
-                </div>
-                }
-              }
-            </div>
-          }
-        </div>
-      } @else {
-        <div class="text-center py-10 px-5 text-on-surface-variant text-base">
-          <p>No monsters or companions yet.</p>
-        </div>
-      }
-    </div>
-  `,
+  templateUrl: './monsters-page.component.html',
 })
 export class MonstersPageComponent extends MonsterPresentation {
+  readonly searchQuery = signal('');
+  readonly monsterFilter = signal<'all' | 'companions' | 'reference'>('all');
+  readonly monsterFilters = [{ value: 'all', label: 'All' }, { value: 'companions', label: 'Tracked companions' }, { value: 'reference', label: 'Reference' }] as const;
+  readonly visibleMonsters = computed(() => {
+    const query = this.searchQuery().trim().toLowerCase();
+    const filter = this.monsterFilter();
+    return this.monsters().filter(monster => (monster.name ?? '').toLowerCase().includes(query) && (filter === 'all' || filter === 'companions' && monster.hpEnabled || filter === 'reference' && !monster.hpEnabled));
+  });
+  monsterKey(monster: Monster) { return 'monster-' + (monster.editorId ?? this.helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? ''))); }
   characterData = input.required<ExportedCharacter | null>();
   private store = inject(CharacterStore);
   helpers = inject(CharacterHelpersService);
@@ -270,7 +63,7 @@ export class MonstersPageComponent extends MonsterPresentation {
   highlightedId = signal<string | null>(null);
 
   monsters = computed(() => 
-    (this.characterData()?.monsters ?? []).sort((a, b) => {
+    [...(this.characterData()?.monsters ?? [])].sort((a, b) => {
       // First: hpEnabled monsters first (true before false)
       const aHpEnabled = a.hpEnabled ? 1 : 0;
       const bHpEnabled = b.hpEnabled ? 1 : 0;
@@ -310,14 +103,14 @@ export class MonstersPageComponent extends MonsterPresentation {
     // Handle scroll/highlight on navigation
     effect(() => {
       const targetId = this.store.featureScrollTarget();
-      if (!targetId) return;
+      if (!targetId || (!targetId.startsWith('monster-'))) return;
       const target = this.characterData()?.monsters?.find(monster => `monster-${monster.editorId ?? this.helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? ''))}` === targetId);
-      if (target) this.expandedItems.update(values => new Set([...values, 'monster-' + target.name]));
+      if (target) { this.searchQuery.set(''); this.monsterFilter.set('all'); this.expandedItems.update(values => new Set([this.monsterKey(target)])); }
       if (typeof document === 'undefined') return;
       setTimeout(() => {
         const el = document.getElementById(targetId);
         if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           this.highlightedId.set(targetId);
           setTimeout(() => this.highlightedId.set(null), 1600);
         }
@@ -338,26 +131,26 @@ export class MonstersPageComponent extends MonsterPresentation {
     if (monster.monsterMaxHpOverride !== null && monster.monsterMaxHpOverride !== undefined) {
       return monster.monsterMaxHpOverride;
     }
-    return monster.monsterMaxHP ?? 0;
+    return monster.monsterMaxHP ?? monster.entity?.hp?.average ?? 0;
   }
 
   getMonsterMaxHpOverrideInput(monster: Monster): string {
     if (monster.monsterMaxHpOverride !== null && monster.monsterMaxHpOverride !== undefined) {
       return String(monster.monsterMaxHpOverride);
     }
-    return String(monster.monsterMaxHP ?? 0);
+    return String(monster.monsterMaxHP ?? monster.entity?.hp?.average ?? 0);
   }
 
   onMonsterMaxHpOverrideInput(monster: Monster, value: string) {
     const trimmed = value.trim();
     if (!trimmed) {
-      monster.monsterMaxHpOverride = monster.monsterMaxHP ?? 0;
+      monster.monsterMaxHpOverride = monster.monsterMaxHP ?? monster.entity?.hp?.average ?? 0;
     } else {
       const numValue = Number(trimmed);
       if (Number.isFinite(numValue) && numValue > 0) {
         monster.monsterMaxHpOverride = numValue;
       } else {
-        monster.monsterMaxHpOverride = monster.monsterMaxHP ?? 0;
+        monster.monsterMaxHpOverride = monster.monsterMaxHP ?? monster.entity?.hp?.average ?? 0;
       }
     }
   }
@@ -373,7 +166,7 @@ export class MonstersPageComponent extends MonsterPresentation {
   clearMonsterMaxHpOverride(monster: Monster) {
     monster.monsterMaxHpOverride = undefined;
     // Adjust current HP if it exceeds base max
-    const baseMax = monster.monsterMaxHP ?? 0;
+    const baseMax = monster.monsterMaxHP ?? monster.entity?.hp?.average ?? 0;
     if (monster.monsterCurrentHP && monster.monsterCurrentHP > baseMax) {
       monster.monsterCurrentHP = baseMax;
     }
@@ -391,13 +184,7 @@ export class MonstersPageComponent extends MonsterPresentation {
   }
 
   toggleExpanded(id: string) {
-    const expanded = this.expandedItems();
-    if (expanded.has(id)) {
-      expanded.delete(id);
-    } else {
-      expanded.add(id);
-    }
-    this.expandedItems.set(new Set(expanded));
+    this.expandedItems.set(this.isExpanded(id) ? new Set() : new Set([id]));
   }
 
   isExpanded(id: string): boolean {

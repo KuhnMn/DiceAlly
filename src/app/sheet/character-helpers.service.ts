@@ -199,6 +199,17 @@ export class CharacterHelpersService {
       .join(', ');
   }
 
+  compactSpellDurationLabel(durations: SpellDuration[]): string {
+    return durations.map(duration => {
+      const unit = duration.duration?.type;
+      const amount = duration.duration?.amount;
+      const base = unit
+        ? `${amount ?? ''} ${unit}${amount != null && amount !== 1 && !unit.endsWith('s') ? 's' : ''}`.trim()
+        : duration.type === 'instant' ? 'Instantaneous' : duration.type || 'Special';
+      return `${base}${duration.concentration ? ' C' : ''}`;
+    }).join(', ');
+  }
+
   // Character stat helpers
   isProficientInSavingThrow(character: CharacterData | null, abbr?: string) {
     const saves = character?.proficiencies?.savingThrows ?? [];

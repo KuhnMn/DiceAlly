@@ -2,6 +2,8 @@ import { AppDialogComponent } from './app-dialog.component';
 import { AppDialogService } from './services/app-dialog.service';
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
+import { NavigationEnd } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgOptimizedImage } from '@angular/common';
 import { ThemeService } from './services/theme.service';
 import { AccountService } from './auth/account.service';
@@ -16,7 +18,7 @@ import { UnsavedChangesGuard } from './guards/unsaved-changes.guard';
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(window:beforeunload)': 'warnBeforeUnload($event)' }
+  host: { class: 'block min-w-0 w-full', '(window:beforeunload)': 'warnBeforeUnload($event)' }
 })
 export class App {
   readonly account = inject(AccountService);
@@ -25,8 +27,12 @@ export class App {
   private readonly characterStore = inject(CharacterStore);
   private readonly unsavedChanges = inject(UnsavedChangesGuard);
   readonly signingOut = signal(false);
+  readonly sheetOpen = signal(false);
   private hadAccess = false;
   constructor() {
+    this.router.events.pipe(takeUntilDestroyed()).subscribe(event => {
+      if (event instanceof NavigationEnd) this.sheetOpen.set(/^\/(?:sheet|characters\/(?!new(?:\/|$))[^/]+)\/?$/.test(event.urlAfterRedirects.split('?')[0]));
+    });
     effect(() => {
       const accessible = this.account.accessible();
       if (this.hadAccess && !accessible) void this.router.navigateByUrl('/login');

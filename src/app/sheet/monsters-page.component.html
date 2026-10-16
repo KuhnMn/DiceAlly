@@ -1,0 +1,65 @@
+<section class="rounded-lg border-2 border-outline bg-surface-container-highest p-3 sm:p-8">
+  <h2 class="mb-3 text-xl font-bold sm:mb-6 sm:text-3xl">Monsters & Companions</h2>
+  <label class="mb-3 block text-sm font-semibold">Search monsters
+    <input type="search" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" placeholder="Search by name" class="mt-1 min-h-11 w-full rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-base font-normal sm:text-sm" />
+  </label>
+  <div appHorizontalRow class="mb-3 flex flex-wrap gap-2" aria-label="Monster filters">
+    @for (filter of monsterFilters; track filter.value) {
+      <button type="button" (click)="monsterFilter.set(filter.value)" [attr.aria-pressed]="monsterFilter() === filter.value" [class.bg-teal-container]="monsterFilter() === filter.value" [class.text-on-teal-container]="monsterFilter() === filter.value" class="min-h-11 rounded-full border border-outline-variant px-3 py-2 text-sm">{{ filter.label }}</button>
+    }
+  </div>
+  <div class="space-y-2 sm:space-y-3">
+    @for (monster of visibleMonsters(); track monster.editorId ?? monster) {
+      <article [id]="monsterKey(monster)" [class.flash-highlight]="highlightedId() === monsterKey(monster)" class="min-w-0 rounded-lg border border-teal bg-surface-container px-3 py-2 sm:p-4">
+        <h3><button type="button" (click)="toggleExpanded(monsterKey(monster))" aria-haspopup="dialog" [attr.aria-expanded]="isExpanded(monsterKey(monster))" [attr.aria-controls]="monsterKey(monster) + '-details'" class="flex min-h-8 w-full items-center justify-between gap-2 rounded text-left text-base font-bold sm:min-h-11 sm:gap-3 text-teal sm:text-xl focus-visible:outline-2 focus-visible:outline-primary"><span class="min-w-0 break-words">{{ monster.name || 'Unnamed creature' }}</span><app-ui-icon name="chevron" /></button></h3>
+        @if (monster.hpEnabled) {
+          <div class="my-1 flex flex-wrap items-stretch gap-1.5 sm:my-2 sm:gap-2">
+            <label class="flex min-h-11 min-w-0 flex-auto items-center gap-2 rounded-lg border-2 border-primary bg-primary-container px-2 py-1 text-sm font-semibold sm:px-3 sm:py-2 text-on-primary-container">HP <input type="number" inputmode="numeric" min="0" [max]="getEffectiveMonsterMaxHP(monster)" [value]="monster.monsterCurrentHP ?? getEffectiveMonsterMaxHP(monster)" (input)="updateMonsterHP(monster, $any($event.target).value)" [attr.aria-label]="monster.name + ' current HP'" class="min-h-10 w-16 rounded sm:min-h-11 border border-outline-variant bg-surface px-2 text-base text-on-surface" /><span class="whitespace-nowrap">/ {{ getEffectiveMonsterMaxHP(monster) }}</span></label>
+            <label class="flex min-h-11 items-center gap-2 rounded-lg border-2 border-green bg-surface-container-high px-2 py-1 text-sm font-semibold sm:px-3 sm:py-2">Temp HP <input type="number" inputmode="numeric" min="0" [value]="monster.monsterTempHP ?? 0" (input)="updateMonsterTempHP(monster, $any($event.target).value)" [attr.aria-label]="monster.name + ' temporary HP'" class="min-h-10 w-16 rounded sm:min-h-11 border-2 border-green bg-surface px-2 text-base text-on-surface" /></label>
+          </div>
+        }
+        @if (monster.entity; as entity) {
+          <div class="grid grid-cols-2 gap-1.5 text-sm sm:grid-cols-4 sm:gap-2" aria-label="Monster statistics">
+            @if (entity.ac?.length) { <div class="min-w-0 rounded-lg border border-outline-variant bg-surface-container-high px-2 py-1 sm:p-2"><h4 class="mb-0.5 text-[10px] sm:mb-1 font-bold uppercase text-on-surface-variant">AC</h4><div class="font-semibold">@for (ac of entity.ac; track $index) { <app-entry-renderer class="inline-block" [entry]="{text: formatArmorClass(ac)}" [compact]="true" />@if (!$last) { / } }</div></div> }
+            <div class="min-w-0 rounded-lg border border-outline-variant bg-surface-container-high px-2 py-1 sm:p-2"><h4 class="mb-0.5 text-[10px] sm:mb-1 font-bold uppercase text-on-surface-variant">Initiative</h4><p class="font-semibold text-primary">{{ getInitiative(monster) }}</p></div>
+            @if (!monster.hpEnabled && entity.hp) { <div class="min-w-0 rounded-lg border border-outline-variant bg-surface-container-high px-2 py-1 sm:p-2"><h4 class="mb-0.5 text-[10px] sm:mb-1 font-bold uppercase text-on-surface-variant">HP</h4><p class="font-semibold">{{ entity.hp.average ?? entity.hp.special ?? entity.hp.formula }}</p></div> }
+            @if (entity.speed) { <div class="min-w-0 rounded-lg border border-outline-variant bg-surface-container-high px-2 py-1 sm:p-2"><h4 class="mb-0.5 text-[10px] sm:mb-1 font-bold uppercase text-on-surface-variant">Speed</h4><p class="break-words font-semibold">{{ formatSpeeds(entity.speed) }}</p></div> }
+            @if (entity.cr) { <div class="min-w-0 rounded-lg border border-outline-variant bg-surface-container-high px-2 py-1 sm:p-2"><h4 class="mb-0.5 text-[10px] sm:mb-1 font-bold uppercase text-on-surface-variant">CR</h4><p class="font-semibold text-tertiary">{{ typeof entity.cr === 'string' ? entity.cr : entity.cr.cr }}</p></div> }
+          </div>
+        }
+        @if (!isExpanded(monsterKey(monster))) {
+        @if (monster.uses?.length) { <div class="mt-3 space-y-3">@for (use of monster.uses; track use) { <app-feature-uses [uses]="use" (usesUpdated)="use.usedFreeUses = $event.usedFreeUses" /> }</div> }
+        }
+        <app-feature-notes [notes]="monster.notes" (notesChanged)="monster.notes = $event" />
+        @if (isExpanded(monsterKey(monster))) {
+          <app-sheet-detail-dialog [title]="monster.name || 'Unnamed creature'" (closed)="toggleExpanded(monsterKey(monster))">
+        @if (monster.uses?.length) { <div class="mt-3 space-y-3">@for (use of monster.uses; track use) { <app-feature-uses [uses]="use" (usesUpdated)="use.usedFreeUses = $event.usedFreeUses" /> }</div> }
+        @if (monster.hpEnabled) {
+          <div class="my-2 flex flex-wrap items-stretch gap-2">
+            <label class="flex min-h-11 min-w-0 flex-auto items-center gap-2 rounded-lg border-2 border-primary bg-primary-container px-3 py-2 text-sm font-semibold text-on-primary-container">HP <input type="number" inputmode="numeric" min="0" [max]="getEffectiveMonsterMaxHP(monster)" [value]="monster.monsterCurrentHP ?? getEffectiveMonsterMaxHP(monster)" (input)="updateMonsterHP(monster, $any($event.target).value)" [attr.aria-label]="monster.name + ' current HP'" class="min-h-11 w-16 rounded border border-outline-variant bg-surface px-2 text-base text-on-surface" /><span class="whitespace-nowrap">/ {{ getEffectiveMonsterMaxHP(monster) }}</span></label>
+            <label class="flex min-h-11 items-center gap-2 rounded-lg border-2 border-green bg-surface-container-high px-3 py-2 text-sm font-semibold">Temp HP <input type="number" inputmode="numeric" min="0" [value]="monster.monsterTempHP ?? 0" (input)="updateMonsterTempHP(monster, $any($event.target).value)" [attr.aria-label]="monster.name + ' temporary HP'" class="min-h-11 w-16 rounded border-2 border-green bg-surface px-2 text-base text-on-surface" /></label>
+          </div>
+        }
+          <div [id]="monsterKey(monster) + '-details'" class="mt-3 space-y-3 border-t border-outline-variant pt-3">
+            @if (monster.entity; as entity) {
+              @if (monster.source) { <p class="text-xs text-on-surface-variant">{{ monster.source }}</p> }
+              @if (monster.hpEnabled) {
+                <details class="rounded-lg border border-outline-variant">
+                  <summary class="min-h-11 cursor-pointer px-3 py-2 text-sm font-semibold">HP settings</summary>
+                  <div class="space-y-2 px-3 pb-3 text-sm">
+                    <p>Base HP: {{ monster.monsterMaxHP ?? entity.hp?.average ?? 0 }} @if (entity.hp?.formula) { ({{ entity.hp?.formula }}) } @if (entity.hp?.special) { {{ entity.hp?.special }} }</p>
+                    <label class="flex flex-wrap items-center gap-2">Maximum HP override <input type="number" inputmode="numeric" min="0" [value]="getMonsterMaxHpOverrideInput(monster)" (input)="onMonsterMaxHpOverrideInput(monster, $any($event.target).value)" (change)="commitMonsterMaxHpOverride(monster)" (blur)="commitMonsterMaxHpOverride(monster)" [attr.aria-label]="monster.name + ' maximum HP override'" class="min-h-11 w-20 rounded border border-outline-variant bg-surface px-2 text-base" /></label>
+                    <div class="flex flex-wrap gap-2"><button type="button" (click)="clearMonsterMaxHpOverride(monster)" class="min-h-11 rounded bg-surface-container-high px-3 text-sm">Reset maximum HP</button><button type="button" (click)="clearMonsterTempHP(monster)" class="min-h-11 rounded bg-surface-container-high px-3 text-sm">Clear temp HP</button></div>
+                  </div>
+                </details>
+              }
+              <app-monster-stat-block [value]="monster" [showSummary]="true" />
+            }
+            <app-feature-notes [notes]="monster.notes" (notesChanged)="monster.notes = $event" />
+          </div>
+          </app-sheet-detail-dialog>
+        }
+      </article>
+    } @empty { <p class="py-4 text-sm text-on-surface-variant">{{ monsters().length ? 'No creatures match these filters.' : 'No monsters or companions yet.' }}</p> }
+  </div>
+</section>

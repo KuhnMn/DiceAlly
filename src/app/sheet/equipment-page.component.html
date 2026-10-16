@@ -1,0 +1,84 @@
+<section class="rounded-lg border-2 border-outline bg-surface-container-highest p-3 sm:p-8">
+  <h2 class="mb-3 text-xl font-bold sm:mb-6 sm:text-3xl">Equipment & Inventory</h2>
+  <section class="mb-4 rounded-lg border border-tertiary bg-tertiary-container p-3 text-on-tertiary-container" aria-label="Currency">
+    <h3 class="mb-2 text-sm font-semibold">Currency</h3>
+    <div class="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:gap-6">
+      @for (coin of coins; track coin.kind) {
+        <label class="flex min-w-0 flex-col gap-1 text-xs font-semibold sm:flex-row sm:items-center sm:gap-2">
+          <span>{{ coin.label }}</span>
+          <input type="number" inputmode="numeric" min="0" [value]="coin.kind === 'gold' ? goldAmount() : coin.kind === 'silver' ? silverAmount() : copperAmount()" (input)="updateCurrency(coin.kind, $any($event.target).value)" class="min-h-11 w-full min-w-0 rounded-md border border-outline-variant bg-surface px-2 py-1 text-base text-on-surface sm:w-24" />
+        </label>
+      }
+    </div>
+  </section>
+  <div class="mb-3 flex items-center justify-between gap-2">
+    <h3 class="text-lg font-bold">Items <span class="text-sm font-normal text-on-surface-variant">({{ visibleInventory().length }})</span></h3>
+    <button type="button" (click)="isAddingItem.set(true)" aria-haspopup="dialog" class="min-h-11 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-on-primary"><app-ui-icon name="plus" /> Add item</button>
+  </div>
+  <label class="mb-3 block text-sm font-semibold">Search items
+    <input type="search" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" placeholder="Search by name" class="mt-1 min-h-11 w-full rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-base font-normal sm:text-sm" />
+  </label>
+  <div appHorizontalRow class="mb-3 flex flex-wrap gap-2" aria-label="Inventory filters">
+    @for (filter of inventoryFilters; track filter.value) {
+      <button type="button" (click)="inventoryFilter.set(filter.value)" [attr.aria-pressed]="inventoryFilter() === filter.value" [class.bg-green-container]="inventoryFilter() === filter.value" [class.text-on-green-container]="inventoryFilter() === filter.value" class="min-h-11 rounded-full border border-outline-variant px-3 py-2 text-sm">{{ filter.label }}</button>
+    }
+  </div>
+  @if (isAddingItem()) { <app-item-catalog [sheet]="characterData()!" (edited)="inventoryChanged()" (closed)="isAddingItem.set(false)" /> }
+  <div class="space-y-2 sm:space-y-3">
+    @for (item of visibleInventory(); track item.editorId ?? item) {
+      <article class="min-w-0 rounded-lg border border-green bg-surface-container px-3 py-2 sm:p-4" [id]="itemKey(item)" [class.flash-highlight]="highlightedId() === itemKey(item)">
+        <h3><button type="button" (click)="toggleExpanded(itemKey(item))" aria-haspopup="dialog" [attr.aria-expanded]="isExpanded(itemKey(item))" [attr.aria-controls]="itemKey(item) + '-details'" class="flex min-h-8 w-full items-center justify-between gap-2 rounded text-left text-base font-bold sm:min-h-11 sm:gap-3 text-green sm:text-xl focus-visible:outline-2 focus-visible:outline-primary"><span class="min-w-0 break-words">{{ item.name }}</span><app-ui-icon name="chevron" /></button></h3>
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          @if (getItemProp(item, 'dmg1')) { <span>{{ getItemProp(item, 'dmg1') }} {{ getItemProp(item, 'dmgType') }}@if (getItemProp(item, 'dmg2')) { · {{ getItemProp(item, 'dmg2') }} versatile}</span> }
+          @if (getItemProp(item, 'ac') ?? item.entity?.ac) { <span>AC {{ getItemProp(item, 'ac') ?? item.entity?.ac }}</span> }
+          @if (getItemProp(item, 'range')) { <span>{{ getItemProp(item, 'range') }} ft.</span> }
+        </div>
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-0 text-sm sm:mt-1 sm:gap-x-4 sm:gap-y-1">
+          <label class="flex min-h-8 cursor-pointer items-center gap-2 sm:min-h-11"><input type="checkbox" [checked]="item.isEquipped ?? false" (change)="toggleEquipped(item)" class="h-5 w-5 accent-green" /> Equipped</label>
+          @if (item.isEquipped && requiresAttunement(item)) { <label class="flex min-h-8 cursor-pointer items-center gap-2 sm:min-h-11 text-purple"><input type="checkbox" [checked]="item.isAttuned ?? false" (change)="toggleAttuned(item)" class="h-5 w-5 accent-purple" /> Attuned</label> }
+          @if (item.allowMultiples) { <label class="flex min-h-10 items-center gap-2 sm:min-h-11">Qty <input type="number" inputmode="numeric" min="0" [value]="item.count ?? 1" (input)="updateItemCount(item, $any($event.target).value)" class="min-h-10 w-16 rounded sm:min-h-11 border border-outline-variant bg-surface px-2 text-base" /></label> }
+          <button type="button" (click)="deleteItem(item)" [attr.aria-label]="'Delete ' + item.name" [title]="'Delete ' + item.name" class="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm text-on-surface-variant transition-colors hover:bg-error-container hover:text-on-error-container focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="trash" /></button>
+        </div>
+        @if (!isExpanded(itemKey(item))) {
+        @if (item.uses?.length) { <div class="mt-3 space-y-3">@for (use of item.uses; track use) { <app-feature-uses [uses]="use" (usesUpdated)="updateItemUses(item, $event)" /> }</div> }
+        }
+        <app-feature-notes [notes]="item.notes" (notesChanged)="updateItemNotes(item, $event)" />
+        @if (isExpanded(itemKey(item))) {
+          <app-sheet-detail-dialog [title]="item.name" (closed)="toggleExpanded(itemKey(item))">
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          @if (getItemProp(item, 'dmg1')) { <span>{{ getItemProp(item, 'dmg1') }} {{ getItemProp(item, 'dmgType') }}@if (getItemProp(item, 'dmg2')) { · {{ getItemProp(item, 'dmg2') }} versatile}</span> }
+          @if (getItemProp(item, 'ac') ?? item.entity?.ac) { <span>AC {{ getItemProp(item, 'ac') ?? item.entity?.ac }}</span> }
+          @if (getItemProp(item, 'range')) { <span>{{ getItemProp(item, 'range') }} ft.</span> }
+        </div>
+        <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          <label class="flex min-h-11 cursor-pointer items-center gap-2"><input type="checkbox" [checked]="item.isEquipped ?? false" (change)="toggleEquipped(item)" class="h-5 w-5 accent-green" /> Equipped</label>
+          @if (item.isEquipped && requiresAttunement(item)) { <label class="flex min-h-11 cursor-pointer items-center gap-2 text-purple"><input type="checkbox" [checked]="item.isAttuned ?? false" (change)="toggleAttuned(item)" class="h-5 w-5 accent-purple" /> Attuned</label> }
+          @if (item.allowMultiples) { <label class="flex min-h-11 items-center gap-2">Qty <input type="number" inputmode="numeric" min="0" [value]="item.count ?? 1" (input)="updateItemCount(item, $any($event.target).value)" class="min-h-11 w-16 rounded border border-outline-variant bg-surface px-2 text-base" /></label> }
+        </div>
+
+        @if (item.uses?.length) { <div class="mt-3 space-y-3">@for (use of item.uses; track use) { <app-feature-uses [uses]="use" (usesUpdated)="updateItemUses(item, $event)" /> }</div> }
+          <div [id]="itemKey(item) + '-details'" class="mt-3 space-y-3 border-t border-outline-variant pt-3">
+            <div class="flex flex-wrap gap-2 text-xs text-on-surface-variant">
+              @if (item.entity?.itemType) { <span>{{ item.entity?.itemType }}</span> }@if (item.source) { <span>{{ item.source }}</span> }@if (item.isDummy) { <span>Custom</span> }
+              @if (getItemProp(item, 'rarity')) { <span class="capitalize">{{ getItemProp(item, 'rarity') }}</span> }
+              @for (tag of getItemTypeTags(item); track tag) { <span>{{ tag }}</span> }
+            </div>
+            <div class="flex flex-wrap gap-3 text-sm">
+              @if (getItemProp(item, 'weight') != null) { <span>Weight: {{ getItemProp(item, 'weight') }} lb.</span> }
+              @if (getItemProp(item, 'value') != null) { <span>Value: {{ formatGold(getItemProp(item, 'value')) }}</span> }
+              @if (getItemProp(item, 'weaponCategory')) { <span class="capitalize">{{ getItemProp(item, 'weaponCategory') }}</span> }
+              @if (getItemProp(item, 'scfType')) { <span>Focus: {{ getItemProp(item, 'scfType') }}</span> }
+            </div>
+            <app-entry-renderer [entries]="getItemEntries(item)" />
+            @if (item.entity?.properties?.length) { <section class="space-y-2"><h4 class="text-sm font-semibold">Properties</h4>@for (property of item.entity?.properties; track property.name) { <app-rule-details [label]="property.name" [entry]="property.entry" /> }</section> }
+            @if (item.entity?.masteries?.length) { <section class="space-y-2"><h4 class="text-sm font-semibold">Masteries</h4>@for (mastery of item.entity?.masteries; track mastery.name) { <app-rule-details [label]="mastery.name" [entry]="mastery.entry" /> }</section> }
+            @if (hasAnyBonus(item)) { <section class="rounded-lg border border-tertiary bg-tertiary-container p-3 text-sm text-on-tertiary-container"><h4 class="mb-1 font-semibold">Bonuses</h4>@for (bonus of bonusFields; track bonus.key) { @if (getItemProp(item, bonus.key)) { <p>{{ bonus.label }}: {{ getItemProp(item, bonus.key) }}</p> } }</section> }
+            <app-feature-notes [notes]="item.notes" (notesChanged)="updateItemNotes(item, $event)" />
+          </div>
+          </app-sheet-detail-dialog>
+        }
+
+      </article>
+    } @empty { <p class="py-4 text-sm text-on-surface-variant">{{ inventory().length ? 'No items match these filters.' : 'No items in inventory.' }}</p> }
+  </div>
+</section>

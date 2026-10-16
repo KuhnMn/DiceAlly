@@ -1,3 +1,5 @@
+import { RECOVERY_OPTIONS } from './recovery-options';
+import { RecoveryIndicatorComponent } from '../recovery-indicator.component';
 import { Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CharacterDocument } from '../rules/character-document';
@@ -5,7 +7,7 @@ import { ExportedCharacter, InventoryItem, Monster, Note, CombatAction } from '.
 import { SKILL_ABILITIES, ProficiencyContribution } from '../rules/derived-stats';
 
 @Component({
-  selector: 'app-character-management', imports: [FormsModule],
+  selector: 'app-character-management', imports: [RecoveryIndicatorComponent, FormsModule],
   templateUrl: './character-management.component.html',
   styles: [`section { margin: 1rem 0; padding: 1rem; border: 1px solid #888; border-radius: .5rem; }
     label { display: block; margin: .6rem 0; } input:not([type=checkbox]), select, textarea { border: 1px solid #888; padding: .5rem; border-radius: .3rem; background: transparent; color: inherit; max-width: 100%; }
@@ -13,6 +15,7 @@ import { SKILL_ABILITIES, ProficiencyContribution } from '../rules/derived-stats
     h3 { font-weight: bold; } article { margin: 1rem 0; padding: .75rem; border-top: 1px solid #888; } .row { display: flex; flex-wrap: wrap; gap: 1rem; }`],
 })
 export class CharacterManagementComponent {
+  readonly recoveryOptions = RECOVERY_OPTIONS;
   readonly document = input.required<CharacterDocument>();
   readonly edited = output<void>();
   readonly abilities = ['str', 'dex', 'con', 'int', 'wis', 'cha'];

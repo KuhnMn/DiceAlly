@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, computed, inject, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, computed, inject, input, output, signal } from '@angular/core';
 import { CharacterSyncService } from './character-sync.service';
 import { AccountService } from '../../auth/account.service';
 import { UiIconComponent } from '../../ui-icon.component';
@@ -10,6 +10,13 @@ import { CharacterLibraryService } from '../character-library.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="mx-3 mb-3 rounded-lg bg-secondary-container text-on-secondary-container px-3 py-2 text-sm" aria-label="Character synchronization">
+      @if (compact()) {
+        <button type="button" class="flex min-h-9 w-full items-center justify-between gap-2 text-left text-xs sm:hidden" [attr.aria-expanded]="detailsOpen()" (click)="detailsOpen.set(!detailsOpen())">
+          <span role="status">{{ sync.busy() || sync.settings.busy() ? 'Syncing…' : sync.conflicts().length ? 'Sync conflicts: ' + sync.conflicts().length : sync.error() || sync.settings.error() ? 'Saved locally · Sync needs attention' : sync.pending() + sync.settings.pending() ? 'Pending changes: ' + (sync.pending() + sync.settings.pending()) : lastSyncText() }}</span>
+          <span>{{ detailsOpen() ? 'Hide' : 'Details' }}</span>
+        </button>
+      }
+      <div [class.hidden]="compact() && !detailsOpen()" class="sm:!block">
       <div class="flex flex-wrap items-center gap-2">
         @if (sync.busy() || sync.settings.busy()) { <app-ui-icon name="loader" class="animate-spin" /> }
         <span role="status" [title]="lastSyncTitle()">{{ sync.busy() || sync.settings.busy() ? 'Syncing…' : sync.error() || sync.settings.error() ? 'Saved Locally · Sync Needs Attention' : sync.pending() + sync.settings.pending() ? 'Pending Changes: ' + (sync.pending() + sync.settings.pending()) : lastSyncText() }}</span>
@@ -19,6 +26,7 @@ import { CharacterLibraryService } from '../character-library.service';
         }
         <span class="min-w-0 truncate text-xs sm:ml-auto" [title]="account.user()?.email || ''">{{ account.user()?.email }}</span>
         <button class="shrink-0 rounded-lg px-3 py-1 bg-surface text-on-surface" (click)="signOut.emit()">Sign Out</button>
+      </div>
       </div>
       @if (sync.error()) { <p class="mt-2 text-xs" role="alert">{{ sync.error() }}</p> }
       @if (sync.settings.error()) { <p class="mt-2 text-xs" role="alert">{{ sync.settings.error() }}</p> }
@@ -41,6 +49,8 @@ import { CharacterLibraryService } from '../character-library.service';
   `,
 })
 export class SyncStatusComponent implements OnDestroy {
+  readonly compact = input(false);
+  readonly detailsOpen = signal(false);
   readonly account = inject(AccountService);
   readonly signOut = output<void>();
   readonly sync = inject(CharacterSyncService);

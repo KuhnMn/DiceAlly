@@ -6,6 +6,10 @@ import { Router } from '@angular/router';
 import { AccountService } from './auth/account.service';
 import { AppDialogService } from './services/app-dialog.service';
 import { vi } from 'vitest';
+import { Component } from '@angular/core';
+
+@Component({ template: '' })
+class RoutePlaceholder {}
 
 describe('App', () => {
   beforeEach(async () => {
@@ -26,6 +30,18 @@ describe('App', () => {
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.app-title')?.textContent).toContain('Dice Ally');
+  });
+  it('uses compact chrome for loaded sheets while keeping character creation and editing unchanged', async () => {
+    const fixture = TestBed.createComponent(App);
+    const router = TestBed.inject(Router);
+    router.resetConfig([{ path: '**', component: RoutePlaceholder }]);
+    for (const [url, sheet] of [
+      ['/characters/hero', true], ['/characters/new', false],
+      ['/characters/hero/edit', false], ['/sheet', true], ['/content', false],
+    ] as const) {
+      await router.navigateByUrl(url);
+      expect(fixture.componentInstance.sheetOpen()).toBe(sheet);
+    }
   });
   it('signs out when already on the login page, despite same-URL navigation being skipped', async () => {
     const fixture = TestBed.createComponent(App);

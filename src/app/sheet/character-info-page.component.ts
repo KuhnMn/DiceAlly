@@ -1,6 +1,7 @@
+import { SheetProficienciesComponent } from './sheet-proficiencies.component';
+import { applyHealthAdjustment } from './sheet-health';
 import { resolveCombatResource } from '../editor/combat-actions';
 import { UiIconComponent } from '../ui-icon.component';
-import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { Component, inject, computed, input, effect, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,7 +12,7 @@ import { ConditionsComponent } from './conditions.component';
 
 @Component({
   selector: 'app-character-info-page',
-  imports: [UiIconComponent, CommonModule, FormsModule, ConditionsComponent, EntryRendererComponent],
+  imports: [SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
   styles: [`
     .ac-display {
       position: relative;
@@ -95,7 +96,7 @@ import { ConditionsComponent } from './conditions.component';
   `],
   template: `
     <div
-      class="character-sheet bg-surface-container-highest p-6 rounded-lg border-2 border-outline"
+      class="character-sheet bg-surface-container-highest p-3 sm:p-6 rounded-lg border-2 border-outline"
     >
       <!-- Header Banner -->
       <header class="grid grid-cols-5 md:grid-cols-9 gap-2 mb-6">
@@ -205,7 +206,7 @@ import { ConditionsComponent } from './conditions.component';
           <!-- Ability Scores -->
           <div class="grid grid-cols-3 gap-3">
             @for (ability of abilities(); track ability.name) {
-              <div class="border-4 border-surface rounded-2xl p-3 bg-surface-container-low text-center shadow-lg">
+              <div class="border-2 sm:border-4 border-surface rounded-lg sm:rounded-2xl p-2 sm:p-3 bg-surface-container-low text-center shadow-lg">
                 <div class="text-xs font-bold text-on-surface-variant uppercase">{{ ability.abbr }}</div>
                 <div class="text-3xl font-bold my-1 text-primary">{{ ability.score }}</div>
                 <div class="text-lg font-semibold text-tertiary">
@@ -288,32 +289,7 @@ import { ConditionsComponent } from './conditions.component';
             <h3 class="text-sm font-bold uppercase text-center mb-2 border-b-2 border-outline-variant pb-2">
               Languages & Proficiencies
             </h3>
-            <div class="text-sm space-y-1">
-              @if (character()?.proficiencies?.simpleWeapons || character()?.proficiencies?.martialWeapons) {
-                <div class="font-semibold text-on-surface-variant text-xs mb-2">Weapons</div>
-                @if (character()?.proficiencies?.simpleWeapons) {
-                  <div class="ml-2">Simple</div>
-                }
-                @if (character()?.proficiencies?.martialWeapons) {
-                  <div class="ml-2">Martial</div>
-                }
-              }
-              @if (toolProficiencies().length > 0) {
-                <div class="font-semibold text-on-surface-variant text-xs mb-2">Tools</div>
-                @for (toolName of toolProficiencies(); track toolName) {
-                  <div class="ml-2">{{ toolName }}</div>
-                }
-              }
-              @if (customProficiencies().length > 0) {
-                <div class="font-semibold text-on-surface-variant text-xs mb-2 mt-2">Other</div>
-                @for (prof of customProficiencies(); track prof) {
-                  <div class="ml-2"><app-entry-renderer [entry]="{text: prof}" [compact]="true" /></div>
-                }
-              }
-              @if (toolProficiencies().length === 0 && customProficiencies().length === 0) {
-                <div class="text-on-surface-variant italic">None listed</div>
-              }
-            </div>
+            <app-sheet-proficiencies [proficiencies]="character()?.proficiencies" />
           </div>
         </div>
 
@@ -322,7 +298,7 @@ import { ConditionsComponent } from './conditions.component';
           <!-- Top Combat Stats -->
           <div class="flex justify-center gap-4 mb-4">
             <div
-              class="border-4 border-surface rounded-full w-24 h-24 bg-surface-container-low flex flex-col items-center justify-center shadow-lg ac-display relative"
+              class="border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-24 sm:h-24 bg-surface-container-low flex flex-col items-center justify-center shadow-lg ac-display relative"
               [class.cursor-pointer]="!isEditingAcOverride()"
               (click)="!isEditingAcOverride() && startEditingAc()"
             >
@@ -357,7 +333,7 @@ import { ConditionsComponent } from './conditions.component';
               }
             </div>
             <div
-              class="border-4 border-surface rounded-full w-24 h-24 bg-surface-container-low flex flex-col items-center justify-center shadow-lg speed-display relative"
+              class="border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-24 sm:h-24 bg-surface-container-low flex flex-col items-center justify-center shadow-lg speed-display relative"
             >
               <div class="text-xs text-on-surface-variant uppercase font-semibold">
                 <span class="inline-flex items-center gap-1">
@@ -382,7 +358,7 @@ import { ConditionsComponent } from './conditions.component';
               }
             </div>
             <div
-              class="border-4 border-surface rounded-full w-24 h-24 bg-surface-container-low flex flex-col items-center justify-center shadow-lg"
+              class="border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-24 sm:h-24 bg-surface-container-low flex flex-col items-center justify-center shadow-lg"
             >
               <div class="text-xs text-on-surface-variant uppercase font-semibold">Initiative</div>
               <div class="text-2xl font-bold text-tertiary">{{ helpers.formatSigned(initiative()) }}</div>
@@ -390,26 +366,26 @@ import { ConditionsComponent } from './conditions.component';
           </div>
 
           <!-- HP Tracker -->
-          <div class="border-4 border-surface rounded-3xl p-6 bg-surface-container-low shadow-lg">
+          <div class="border-4 border-surface rounded-xl sm:rounded-3xl p-3 sm:p-6 bg-surface-container-low shadow-lg">
                       <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
               Health
             </h3>  
           <div class="text-center">
               <div class="text-xs text-on-surface-variant uppercase font-semibold mb-2">Hit Points</div>
-              <div class="mt-4">
+              <div class="mt-4 flex flex-nowrap items-center justify-center gap-2">
 
                 <input
                   type="number"
                   [value]="character()?.currentHp ?? 0"
                   (input)="updateCurrentHp($any($event.target).value)"
-                  class="w-28 text-center text-4xl font-bold border-2 border-outline-variant rounded-lg py-1 pr-3 focus:ring-2 focus:ring-rose focus:border-rose"
+                  class="w-20 sm:w-28 text-center text-2xl sm:text-4xl font-bold border-2 border-outline-variant rounded-lg py-1 pr-3 focus:ring-2 focus:ring-rose focus:border-rose"
                   min="0"
                   max="{{ getEffectiveMaxHp() }}"
                 />
-                <span class="text-4xl font-bold transition-colors duration-300"
+                <span class="whitespace-nowrap text-2xl sm:text-4xl font-bold transition-colors duration-300"
                 [class.text-teal]="character()?.maxHpOverride !== null"> / {{ getEffectiveMaxHp() }}</span>
               </div>
-                            <div class="mt-2 flex items-center justify-center gap-4 text-xs text-on-surface-variant">
+                            <div class="mt-2 flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs text-on-surface-variant">
                 <div>Base: {{ character()?.maxHp ?? 0 }}</div>
                 <label class="flex items-center gap-2">
                   <span>Override</span>
@@ -636,8 +612,8 @@ import { ConditionsComponent } from './conditions.component';
                           >
                             <div class="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,2fr)] gap-2 text-sm">
                               <div class="font-semibold break-words">{{ action.name }}@if (action.range) { <span class="block text-xs font-normal text-on-surface-variant">{{ action.range }}</span> }</div>
-                              <div class="text-center font-mono text-xs">{{ action.hitOrDc }}</div>
-                              <div class="text-right text-wrap font-mono text-xs">{{ action.damageOrHeal }}</div>
+                              <div class="min-w-0 line-clamp-2 text-center font-mono text-xs [overflow-wrap:anywhere]" [title]="action.hitOrDc">{{ action.hitOrDc }}</div>
+                              <div class="min-w-0 line-clamp-3 text-right font-mono text-xs [overflow-wrap:anywhere]" [title]="action.damageOrHeal">{{ action.damageOrHeal }}</div>
                             </div>
                           </button>
                         }
@@ -770,7 +746,7 @@ import { ConditionsComponent } from './conditions.component';
             </h3>
             <div class="space-y-3 text-sm max-h-[800px] overflow-y-auto  pr-3">
               @if (features().length > 0) {
-                @for (feature of features(); track feature.name) {
+                @for (feature of features(); track feature.editorId ?? feature) {
                   <div class="pb-2 border-b border-outline-variant">
                     <button
                       type="button"
@@ -817,16 +793,12 @@ export class CharacterInfoPageComponent {
   isEditingAcOverride = signal(false);
   isEditingProfilePictureUrl = signal(false);
   profilePictureUrlInput = signal('');
-  activeConditions = signal<ConditionName[]>([]);
+  activeConditions() { return this.characterData()?.conditions ?? []; }
   hpAdjustmentInput = signal('');
 
   constructor() {
     effect(() => {
       const data = this.characterData();
-      if (data?.conditions) {
-        this.activeConditions.set(data.conditions);
-      }
-
       this.acOverride.set(data?.character?.armorClassOverride ?? null);
     });
 
@@ -970,45 +942,18 @@ export class CharacterInfoPageComponent {
   }
 
   applyDamageFromAdjustment() {
-    const amount = this.getHpAdjustmentAmount();
     const char = this.character();
-    if (!char || amount <= 0) {
-      this.clearHpAdjustmentInput();
-      return;
-    }
-
-    const tempHp = Math.max(0, char.tempHp ?? 0);
-    const currentHp = Math.max(0, char.currentHp ?? 0);
-    const damageToTempHp = Math.min(tempHp, amount);
-    const damageToCurrentHp = amount - damageToTempHp;
-
-    char.tempHp = tempHp - damageToTempHp;
-    char.currentHp = Math.max(0, currentHp - damageToCurrentHp);
+    if (char) applyHealthAdjustment(char, 'damage', this.getHpAdjustmentAmount());
     this.clearHpAdjustmentInput();
   }
-
   healFromAdjustment() {
-    const amount = this.getHpAdjustmentAmount();
     const char = this.character();
-    if (!char || amount <= 0) {
-      this.clearHpAdjustmentInput();
-      return;
-    }
-
-    const currentHp = Math.max(0, char.currentHp ?? 0);
-    char.currentHp = Math.min(this.getEffectiveMaxHp(), currentHp + amount);
+    if (char) applyHealthAdjustment(char, 'heal', this.getHpAdjustmentAmount());
     this.clearHpAdjustmentInput();
   }
-
   setTempHpFromAdjustment() {
-    const amount = this.getHpAdjustmentAmount();
     const char = this.character();
-    if (!char) {
-      this.clearHpAdjustmentInput();
-      return;
-    }
-
-    char.tempHp = amount;
+    if (char) applyHealthAdjustment(char, 'temp', this.getHpAdjustmentAmount());
     this.clearHpAdjustmentInput();
   }
 
@@ -1090,14 +1035,13 @@ export class CharacterInfoPageComponent {
     const data = this.characterData();
     if (data) {
       data.conditions = conditions;
-      this.activeConditions.set(conditions);
     }
   }
 
-  goToFeature(feature: { name?: string; source?: string }) {
+  goToFeature(feature: { name?: string; source?: string; editorId?: string }) {
     if (!feature?.name) return;
     const base = `${feature.name}-${feature.source ?? ''}`;
-    this.navigateToFeatures.emit(`feature-${this.helpers.sourceId(base)}`);
+    this.navigateToFeatures.emit(`feature-${feature.editorId ?? this.helpers.sourceId(base)}`);
   }
 
   goToSpecies() {

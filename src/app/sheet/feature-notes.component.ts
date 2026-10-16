@@ -4,16 +4,17 @@ import { FeatureNotes } from '../models/character.model';
 
 @Component({
   selector: 'app-feature-notes',
+  host: { class: 'block min-w-0' },
   imports: [UiIconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (localNotes().length > 0) {
-        <div class="mt-4 border-t border-outline-variant pt-4">
-      <div class="border border-outline-variant rounded-lg p-3 mb-2 bg-surface-variant">
+        <div class="mt-2 border-t border-outline-variant pt-2 sm:mt-4 sm:pt-4">
+      <div class="rounded-lg border border-outline-variant bg-surface-variant p-2 sm:mb-2 sm:p-3">
         @for (group of localNotes(); track $index; let i = $index) {
-          <div [class]="i < localNotes().length - 1 ? 'mb-3' : ''">
+          <div [class]="i < localNotes().length - 1 ? 'mb-2 sm:mb-3' : ''">
             @if (group.tag) {
-              <div class="text-sm font-semibold text-on-surface mb-1">{{ group.tag }}</div>
+              <div class="mb-1 break-words text-xs font-semibold text-on-surface sm:text-sm">{{ group.tag }}</div>
             }
             <div class="flex flex-wrap gap-1 items-center">
               @for (note of group.notes; track $index; let j = $index) {
@@ -22,12 +23,12 @@ import { FeatureNotes } from '../models/character.model';
                     type="button"
                     (click)="removeNote(i, j)"
                     [attr.aria-label]="note + ', remove note'"
-                    class="px-2 py-1 rounded text-xs bg-tertiary-container text-on-tertiary-container border border-tertiary hover:opacity-75 transition-opacity"
+                    class="max-w-full whitespace-normal break-words px-2 py-0.5 sm:py-1 rounded text-xs bg-tertiary-container text-on-tertiary-container border border-tertiary hover:opacity-75 transition-opacity"
                   >
                     {{ note }} <app-ui-icon name="close" />
                   </button>
                 } @else {
-                  <span class="px-2 py-1 rounded text-xs bg-tertiary-container text-on-tertiary-container border border-tertiary">
+                  <span class="max-w-full whitespace-normal break-words px-2 py-0.5 sm:py-1 rounded text-xs bg-tertiary-container text-on-tertiary-container border border-tertiary">
                     {{ note }}
                   </span>
                 }
@@ -43,7 +44,7 @@ import { FeatureNotes } from '../models/character.model';
                   (keydown.enter)="confirmAdd()"
                   (keydown.escape)="cancelAdd()"
                   (blur)="confirmAdd()"
-                  class="px-2 py-1 rounded text-xs bg-surface border border-primary text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
+                  class="min-w-0 max-w-full px-2 py-1 rounded text-base sm:text-xs bg-surface border border-primary text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               } @else if (group.isEditable === true) {
                 <button

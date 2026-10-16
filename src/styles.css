@@ -1,6 +1,14 @@
 /* Tailwind v4 entry */
 @import 'tailwindcss';
 
+/* Register error colors so Tailwind also generates container and border utilities. */
+@theme inline {
+  --color-error: var(--md-sys-color-error);
+  --color-on-error: var(--md-sys-color-on-error);
+  --color-error-container: var(--md-sys-color-error-container);
+  --color-on-error-container: var(--md-sys-color-on-error-container);
+}
+
 /* Import Material Design theme colors */
 @import './Color Themes/light-mc.css';
 @import './Color Themes/dark-mc.css';
@@ -1033,13 +1041,17 @@ body {
 }
 .page-tabs::-webkit-scrollbar-thumb:hover { background: var(--md-sys-color-primary); }
 .page-tabs::-webkit-scrollbar-corner { background: transparent; }
+
 /* Theme colors use CSS variables rather than Tailwind color tokens. */
 @variant max-sm {
   .page-tabs > button {
-    background-color: var(--md-sys-color-surface-container);
+    background-color: transparent;
   }
   .page-tabs > button[aria-current='page'] {
-    background-color: var(--md-sys-color-primary);
-    color: var(--md-sys-color-on-primary);
+    background-color: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+    color: var(--md-sys-color-primary);
   }
 }
+
+/* Long and short sheet tabs keep the same centered desktop alignment. */
+html:has(.app-container.sheet-layout) { scrollbar-gutter: stable; }

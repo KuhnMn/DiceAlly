@@ -1,3 +1,4 @@
+import { RecoveryIndicatorComponent } from '../recovery-indicator.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -5,7 +6,7 @@ import { AnnotatedEntry, EntryAnnotationsEditor } from './entry-annotations-edit
 
 @Component({
   selector: 'app-entry-annotations-editor',
-  imports: [UiIconComponent, FormsModule],
+  imports: [RecoveryIndicatorComponent, UiIconComponent, FormsModule],
   templateUrl: './entry-annotations.component.html',
   styleUrl: './local-editor.component.css',
   host: { class: 'block space-y-3' },
