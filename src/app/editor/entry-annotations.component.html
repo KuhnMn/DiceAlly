@@ -63,7 +63,6 @@
     <div class="space-y-2">
       @for (uses of entry().uses ?? []; track uses; let u = $index) {
         <div class="rounded border border-outline-variant bg-surface-container-lowest p-2">
-          <div class="mb-2 flex justify-end"><app-recovery-indicator [condition]="uses.freeUsesRegainCondition" [showText]="true" /></div>
           <div class="flex items-end flex-wrap gap-2">
             <label class="flex-1 min-w-24">
               <span class="field-label">Label</span>
@@ -77,13 +76,13 @@
             </label>
             <label class="flex-1 min-w-32">
               <span class="field-label">Recovery</span>
-              <select class="editor-input" [name]="'uses-recovery-' + i + '-' + u"
+              <span class="relative block"><app-recovery-indicator class="pointer-events-none absolute inset-y-0 left-2 flex items-center" [condition]="uses.freeUsesRegainCondition" /><select class="editor-input !pl-12" [name]="'uses-recovery-' + i + '-' + u"
                 [ngModel]="uses.freeUsesRegainCondition || 'LONG_REST'"
                 (ngModelChange)="uses.freeUsesRegainCondition = $event; change()">
                 @for (option of recoveryOptions; track option.value) {
                   <option [value]="option.value">{{ option.label }}</option>
                 }
-              </select>
+              </select></span>
             </label>
             <button type="button" class="secondary-button icon-button" aria-label="Remove use tracker"
               (click)="removeUses(entry(), u)"><app-ui-icon name="close" /></button>

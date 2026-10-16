@@ -5,7 +5,6 @@ import { MonstersPageComponent } from './monsters-page.component';
 import { SpellsPageComponent } from './spells-page.component';
 import { ConditionsComponent } from './conditions.component';
 import { MobileSheetActionsComponent } from './mobile-sheet-actions.component';
-import { AppDialogService } from '../services/app-dialog.service';
 import { InventoryItem, Monster } from '../models/character.model';
 import { ThemePickerComponent } from '../theme-picker.component';
 import { ThemeService } from '../services/theme.service';
@@ -103,7 +102,7 @@ describe('Companion list presentation', () => {
 });
 
 describe('Spell controls', () => {
-  it('shows the prepared state and unprepare action, then switches back to Prepare after clicking', () => {
+  it('shows the prepared state and switches back to Prepare after confirming unprepare', async () => {
     const fixture = TestBed.createComponent(SpellsPageComponent);
     fixture.componentRef.setInput('characterData', { character: {}, spells: [
       { editorId: 'known', name: 'Light', listType: 'KNOWN' },
@@ -115,6 +114,8 @@ describe('Spell controls', () => {
     expect(unprepare.textContent).toContain('Prep.');
     expect(unprepare.getAttribute('aria-pressed')).toBe('true');
     unprepare.click();
+    TestBed.inject(AppDialogService).finish(true);
+    await fixture.whenStable();
     const saved = TestBed.inject(CharacterStore).characterData();
     expect(saved?.spells?.map(spell => spell.listType)).toEqual(['KNOWN']);
     fixture.componentRef.setInput('characterData', saved); fixture.detectChanges();
@@ -184,3 +185,4 @@ describe('Theme picker initial selection', () => {
     expect(fixture.nativeElement.querySelector('select').value).toBe('light-mc');
   });
 });
+import { AppDialogService } from '../services/app-dialog.service';

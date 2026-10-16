@@ -222,7 +222,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     }
   }
   // 3. Rule handlers expose candidates and validate answers before producing sheet entries.
-  const proficiencies = deriveProficiencyGrants(state.classes, index, state.answers, state.speciesKey);
+  const proficiencies = deriveProficiencyGrants(state.classes, index, state.answers, state.speciesKey, [], {}, sourceBooks);
   warnings.push(...proficiencies.diagnostics.filter(message => !message.startsWith('Select ')));
   choices.push(...proficiencies.choices.map(choice => ({ ownerKey: choice.ownerKey, id: choice.id, label: `${records.get(choice.ownerKey)?.name ?? 'Character'}: ${choice.kind} proficiencies`, count: choice.count, searchable: false,
     candidates: choice.candidates.map(value => ({ value, label: records.has(value) ? `${records.get(value)!.name} (${records.get(value)!.publication})` : value })) })));

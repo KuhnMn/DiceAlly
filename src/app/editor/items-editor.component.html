@@ -26,7 +26,7 @@
               @if (item.allowMultiples) { <label><span class="field-label">Quantity</span><input class="editor-input !w-24" type="number" min="0" step="1" [ngModel]="item.count ?? 1" (ngModelChange)="setCount(item, $event)" [name]="'item-count-' + i" /></label> }
             </div>
             @if (item.isDummy) { <label class="block"><span class="field-label">Description</span><textarea class="editor-input" rows="3" [name]="'item-description-' + i" [ngModel]="description(item)" (ngModelChange)="setDescription(item, $event)" placeholder="Describe this item…"></textarea></label> }
-            @if (entries(item).length) { <details class="description-panel text-sm"><summary class="description-toggle">{{ item.isDummy ? 'Description Preview' : 'Description' }}</summary><div class="p-2"><app-entry-renderer [entries]="entries(item)" /></div></details> }
+            @if (entries(item).length) { <app-description-dialog [title]="item.name" [label]="item.isDummy ? 'Description Preview' : 'Description'"><div class="p-2"><app-entry-renderer [entries]="entries(item)" /></div></app-description-dialog> }
             <app-entry-annotations-editor [entry]="item" (edited)="change()" />
           </div>
         }

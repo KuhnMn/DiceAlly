@@ -15,6 +15,7 @@ import { CharacterHelpersService } from './character-helpers.service';
 import { ExportedCharacter, FeatureNotes } from '../models/character.model';
 import { CharacterStore } from '../stores/character.store';
 import { preparationLocked, spellIdentity } from '../editor/spell-selection';
+import { AppDialogService } from '../services/app-dialog.service';
 
 type SpellBonusItemOverview = {
   key: string;
@@ -163,7 +164,7 @@ type SpellLevelFilter = 'ALL' | number;
       </div>
       <div class="mb-6">
         @if (characterData()?.character; as character) {
-          <app-sheet-source-picker [character]="character" [sources]="pickerSources()"
+          <app-feature-source-picker [character]="character" [sources]="pickerSources()"
             heading="Casting Source" tone="spells" [showManage]="false"
             [value]="spellCastingSourceFilter()" [orphanNames]="spellCastingSourcesList().slice(1)"
             (selected)="spellCastingSourceFilter.set($event)" />
@@ -301,6 +302,7 @@ type SpellLevelFilter = 'ALL' | number;
 export class SpellsPageComponent {
   characterData = input.required<ExportedCharacter | null>();
   private store = inject(CharacterStore);
+  private readonly dialogs = inject(AppDialogService);
   helpers = inject(CharacterHelpersService);
   
   highlightedId = signal<string | null>(null);
@@ -501,15 +503,18 @@ export class SpellsPageComponent {
     return this.getSpellListTypes(spell).includes(listType);
   }
 
-  togglePreparedSpell(spell: any, event: Event) {
+  async togglePreparedSpell(spell: any, event: Event) {
     event.stopPropagation();
     
-    const allSpells = [...this.characterData()?.spells ?? []];
     const key = this.spellKey(spell);
     const isPrepared = this.hasSpellListType(spell, 'PREPARED');
     if (this.isPreparationLocked(spell)) {
       return; // Don't allow toggling if the spell has uses (e.g., limited daily casts)
     }
+    if (isPrepared && !await this.dialogs.confirm(`Are you sure you want to unprepare "${spell.name}"?`, 'Unprepare Spell', 'Unprepare')) {
+      return;
+    }
+    const allSpells = [...this.characterData()?.spells ?? []];
     if (isPrepared) {
       // Remove the PREPARED version
       const index = allSpells.findIndex((s) => this.spellKey(s) === key && s.listType === 'PREPARED');

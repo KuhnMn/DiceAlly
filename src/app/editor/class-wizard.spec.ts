@@ -57,19 +57,27 @@ describe('Subclass-granted spell prefill', () => {
           multiclassing: { proficienciesGained: { skills: [{ choose: { from: ['arcana', 'perception'], count: 1 } }],
             tools: ['Choose one {@item Musical Instrument|XPHB}'], toolProficiencies: [{ anyMusicalInstrument: 1 }] } } }],
       item: [{ name: 'Lute', source: 'XPHB', type: 'INS|XPHB' }, { name: 'Flute', source: 'XPHB', type: 'INS|XPHB' },
-        { name: 'Dice Set', source: 'XPHB', type: 'GS|XPHB' }],
+        { name: 'Dice Set', source: 'XPHB', type: 'GS|XPHB' },
+        { name: 'Lute', source: 'PHB', type: 'INS' }],
     }, 'bard-fixture.json').records;
     const records = new Map(extra.map(record => [record.key, record]));
     const state: WizardState = { revisionId: f.revision.id, classes: ['Fighter', 'Bard'].map(name => ({
       selectionId: name, level: 1, classKey: extra.find(record => record.kind === 'class' && record.name === name)!.key,
     })), answers: {}, options: {}, baseline: [], protectedPaths: [] };
-    const initial = previewClassWizard(emptyBasicCharacter(), state, f.revision, records);
+    const initial = previewClassWizard(emptyBasicCharacter(), state, f.revision, records, ['XPHB']);
     const skill = initial.choices.find(choice => choice.label === 'Bard: skill proficiencies')!;
     const tool = initial.choices.find(choice => choice.label === 'Bard: tool proficiencies')!;
     expect(skill.searchable).toBe(false); expect(tool.searchable).toBe(false);
     expect(tool.candidates.map(candidate => candidate.label).sort()).toEqual(['Flute (XPHB)', 'Lute (XPHB)']);
+    expect(previewClassWizard(emptyBasicCharacter(), state, f.revision, records).choices
+      .find(choice => choice.id === tool.id)!.candidates).toHaveLength(3);
+    const excluded = previewClassWizard(emptyBasicCharacter(), state, f.revision, records, ['OTHER']);
+    expect(excluded.unresolved.some(choice => choice.id === tool.id && !choice.candidates.length)).toBe(true);
     state.answers[skill.id] = ['perception'];
     state.answers[tool.id] = [tool.candidates.find(candidate => candidate.label === 'Lute (XPHB)')!.value];
+    const filteredAnswer = previewClassWizard(emptyBasicCharacter(), state, f.revision, records, ['PHB']);
+    expect(filteredAnswer.unresolved.some(choice => choice.id === tool.id)).toBe(true);
+    expect(filteredAnswer.sheet.character!.proficiencies!.tools?.['Lute (XPHB)']).toBeUndefined();
     const completed = previewClassWizard(emptyBasicCharacter(), state, f.revision, records);
     expect(completed.unresolved).toEqual([]); expect(completed.warnings).toEqual([]);
     expect(completed.sheet.character!.proficiencies!.skills!['PERCEPTION']).toBe('PROFICIENT');

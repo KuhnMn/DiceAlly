@@ -170,7 +170,7 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
         </div>
         <div>
         @if (characterData()?.character; as character) {
-          <app-sheet-source-picker [character]="character" [sources]="pickerSources()"
+          <app-feature-source-picker [character]="character" [sources]="pickerSources()"
             heading="Source" tone="features" [showManage]="false"
             [value]="featureSourceFilter()" [orphanNames]="featureSourcesList().slice(1)"
             (selected)="featureSourceFilter.set($event)" />

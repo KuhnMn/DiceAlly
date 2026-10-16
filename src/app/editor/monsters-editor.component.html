@@ -24,9 +24,9 @@
               <input class="editor-input !w-36" type="number" min="0" step="1" [name]="'monster-max-hp-' + i" [ngModel]="monster.hpEnabled ? monster.monsterMaxHP : null" (ngModelChange)="setMaxHp(monster, $event)" placeholder="Not tracked" />
               <span class="block text-xs text-on-surface-variant mt-1">Leave empty to show the stat block without tracking HP.</span>
             </label>
-            <details class="description-panel text-sm"><summary class="description-toggle"><span class="description-arrow" aria-hidden="true">&#9656;</span>Stat Block</summary><div class="p-3">
+            <app-description-dialog [title]="monster.name || 'Monster'" label="Stat Block"><div class="p-3">
               <app-monster-stat-block [value]="monster" [compact]="true" />
-            </div></details>
+            </div></app-description-dialog>
             <app-entry-annotations-editor [entry]="monster" (edited)="change()" />
           </div>
         }
@@ -45,7 +45,7 @@
     <div class="space-y-1">@for (record of catalog.results(); track record.key) {
       <div class="rounded border border-outline-variant p-2">
         <div class="flex justify-between gap-2"><div class="min-w-0"><p class="font-semibold text-sm">{{ record.name }}</p><p class="text-xs text-on-surface-variant">{{ record.publication }} &middot; HP {{ $any(record.data['hp'])?.average ?? 'Special' }}</p></div><button type="button" class="secondary-button compact-button" [disabled]="catalog.loading() || isSelected(record)" (click)="add(record)">{{ isSelected(record) ? 'Added' : 'Add' }}</button></div>
-        <details class="description-panel mt-2 text-sm"><summary class="description-toggle underline">Stat Block</summary><div class="p-2"><app-monster-stat-block [value]="preview(record)" [compact]="true" /></div></details>
+        <app-description-dialog [title]="record.name" label="Stat Block"><div class="p-2"><app-monster-stat-block [value]="preview(record)" [compact]="true" /></div></app-description-dialog>
       </div>
     }</div>
     @if (catalog.revision()) { <div class="flex flex-wrap items-center justify-between gap-2 text-xs mt-3"><span>{{ catalog.total() }} matches</span><div class="flex gap-2"><button type="button" class="secondary-button compact-button" [disabled]="catalog.loading() || catalog.offset === 0" (click)="nextPage(-1)">Previous</button><button type="button" class="secondary-button compact-button" [disabled]="catalog.loading() || catalog.offset + catalog.pageSize >= catalog.total()" (click)="nextPage(1)">Next</button></div></div> }

@@ -1,3 +1,4 @@
+import { DescriptionDialogComponent } from './description-dialog.component';
 import { CombatBookmarkComponent } from './combat-bookmark.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, effect, inject, input, output, untracked } from '@angular/core';
@@ -18,7 +19,7 @@ import { createMonsterEntry, setMonsterMaxHp } from './monster-selection';
 
 @Component({
   selector: 'app-editor-monsters',
-  imports: [CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, RemoveEntryDialogComponent, EntryAnnotationsComponent, MonsterStatBlockComponent, SourceBookFilterComponent],
+  imports: [DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, RemoveEntryDialogComponent, EntryAnnotationsComponent, MonsterStatBlockComponent, SourceBookFilterComponent],
   templateUrl: './monsters-editor.component.html', styleUrl: './local-editor.component.css',
 })
 export class MonstersEditorComponent implements OnInit, OnDestroy {

@@ -1,3 +1,4 @@
+import { DescriptionDialogComponent } from './description-dialog.component';
 import { CombatBookmarkComponent } from './combat-bookmark.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { newEditorId } from './editor-identity';
@@ -18,7 +19,7 @@ import { CatalogQuery, EditorCatalog } from './editor-catalog';
 import { FEATURE_TYPES, FeatureType, createFeatureEntry, featureEntries, featureTypeOf } from './feature-selection';
 
 @Component({
-  selector: 'app-editor-features', imports: [CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
+  selector: 'app-editor-features', imports: [DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
   templateUrl: './features-editor.component.html', styleUrl: './local-editor.component.css',
 })
 export class FeaturesEditorComponent implements OnInit, OnDestroy {

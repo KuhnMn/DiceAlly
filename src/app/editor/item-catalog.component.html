@@ -14,7 +14,7 @@
       @for (record of catalog.results(); track record.key) {
         <article class="rounded border border-outline-variant p-2">
           <div class="flex justify-between items-center gap-2"><div class="min-w-0"><p class="text-sm font-semibold">{{ record.name }}</p><p class="text-xs text-on-surface-variant">{{ record.publication }}</p></div><button type="button" class="secondary-button compact-button" [disabled]="adding || catalog.loading()" (click)="add(record)">Add</button></div>
-          @if (catalogEntries(record).length) { <details class="description-panel mt-2 text-sm"><summary class="description-toggle">Description</summary><div class="p-2"><app-entry-renderer [entries]="catalogEntries(record)" /></div></details> }
+          @if (catalogEntries(record).length) { <app-description-dialog [title]="record.name" label="Description"><div class="p-2"><app-entry-renderer [entries]="catalogEntries(record)" /></div></app-description-dialog> }
         </article>
       }
     </div>

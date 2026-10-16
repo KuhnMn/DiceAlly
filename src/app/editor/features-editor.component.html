@@ -35,7 +35,7 @@
             <app-feature-source-picker mode="dropdown" heading="Feature Source" [character]="sheet().character!"
               [sources]="sources" [value]="feature.featureSourceName ?? ''" [allowUnassigned]="true"
               (selected)="feature.featureSourceName = $event || undefined; change()" />
-            <details class="description-panel !mt-5 text-sm"><summary class="description-toggle"><span class="description-arrow" aria-hidden="true"><app-ui-icon name="chevron" /></span>Description</summary><div class="p-3"><app-entry-renderer [entries]="entries(feature)" /></div></details>
+            <app-description-dialog [title]="feature.name" label="Description"><div class="p-3"><app-entry-renderer [entries]="entries(feature)" /></div></app-description-dialog>
             <app-entry-annotations-editor [entry]="feature" (edited)="change()" />
           </div>
         }
@@ -62,7 +62,7 @@
       <div class="space-y-1">@for (record of results(); track record.key) {
         <div class="rounded border border-outline-variant p-2">
           <div class="flex justify-between gap-2"><div class="min-w-0"><p class="font-semibold text-sm">{{ record.name }}</p><p class="text-xs text-on-surface-variant">{{ qualifier(record) }}</p></div><button type="button" class="secondary-button compact-button" [disabled]="loading() || isSelected(record)" (click)="add(record)">{{ isSelected(record) ? 'Added' : 'Add' }}</button></div>
-          <details class="description-panel mt-2 text-sm"><summary class="description-toggle"><span class="description-arrow" aria-hidden="true"><app-ui-icon name="chevron" /></span>Description</summary><div class="p-2"><app-entry-renderer [entries]="$any(record.data['entries'] ?? [])" /></div></details>
+          <app-description-dialog [title]="record.name" label="Description"><div class="p-2"><app-entry-renderer [entries]="$any(record.data['entries'] ?? [])" /></div></app-description-dialog>
         </div>
       }</div>
       @if (revision()) { <div class="flex flex-wrap items-center justify-between gap-2 text-xs"><span>{{ total() }} matches</span><div class="flex gap-2"><button type="button" class="secondary-button compact-button" [disabled]="loading() || offset === 0" (click)="nextPage(-1)">Previous</button><button type="button" class="secondary-button compact-button" [disabled]="loading() || offset + pageSize >= total()" (click)="nextPage(1)">Next</button></div></div> }

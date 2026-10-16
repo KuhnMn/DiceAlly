@@ -14,7 +14,7 @@ import { applyHealthAdjustment } from './sheet-health';
 class SwipeHost {}
 
 describe('Mobile page swipes', () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
   function setup() {
     vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(390);
@@ -42,6 +42,39 @@ describe('Mobile page swipes', () => {
     expect(pages).toEqual([1, -1]);
   });
 
+  it('provides drag feedback and animates the page change without horizontal translation', () => {
+    const { fixture, content, pages, touch } = setup();
+    const animation = { cancel: vi.fn(), pause: vi.fn(), currentTime: 0 };
+    const animate = vi.fn(() => animation);
+    const host = content.parentElement!;
+    Object.defineProperty(host, 'animate', { configurable: true, value: animate });
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false })));
+    touch(content, 'touchstart', 280, 200);
+    touch(content, 'touchmove', 180, 205);
+    expect(animation.pause).toHaveBeenCalled();
+    expect(animation.currentTime).toBeGreaterThan(0);
+    touch(content, 'touchend', 140, 205);
+    expect(pages).toEqual([1]);
+    expect(animate.mock.calls.at(-1)).toEqual([
+      [{ opacity: 0.82, transform: 'scale(0.99)', transformOrigin: 'top center' }, { opacity: 1, transform: 'scale(1)', transformOrigin: 'top center' }],
+      { duration: 200, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+    ]);
+    fixture.destroy();
+    expect(animation.cancel).toHaveBeenCalled();
+  });
+
+  it('switches pages without animation when reduced motion is preferred', () => {
+    const { content, pages, touch } = setup();
+    const animate = vi.fn();
+    Object.defineProperty(content.parentElement!, 'animate', { configurable: true, value: animate });
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })));
+    touch(content, 'touchstart', 280, 200);
+    touch(content, 'touchmove', 180, 205);
+    touch(content, 'touchend', 140, 205);
+    expect(pages).toEqual([1]);
+    expect(animate).not.toHaveBeenCalled();
+  });
+
   it('leaves horizontal rows and interactive controls to their native interactions', () => {
     const { fixture, pages, touch } = setup();
     for (const selector of ['[data-horizontal-row] span', 'input', 'button', 'dialog span']) {
@@ -49,6 +82,27 @@ describe('Mobile page swipes', () => {
       touch(target, 'touchstart', 280, 200); touch(target, 'touchend', 100, 200);
     }
     expect(pages).toEqual([]);
+  });
+
+  it('allows combat-card swipes without activating the card and preserves ordinary taps', () => {
+    const { fixture, pages, touch } = setup();
+    const card = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    card.setAttribute('data-page-swipe', '');
+    const title = document.createElement('span');
+    card.append(title);
+    const clicked = vi.fn();
+    card.addEventListener('click', clicked);
+    touch(title, 'touchstart', 280, 200);
+    touch(title, 'touchmove', 180, 205);
+    touch(title, 'touchend', 140, 205);
+    card.click();
+    expect(pages).toEqual([1]);
+    expect(clicked).not.toHaveBeenCalled();
+    touch(title, 'touchstart', 180, 200);
+    touch(title, 'touchend', 180, 200);
+    card.click();
+    expect(clicked).toHaveBeenCalledOnce();
+    expect(pages).toEqual([1]);
   });
 
   it('rejects vertical scrolling, short gestures, screen edges, and multitouch', () => {

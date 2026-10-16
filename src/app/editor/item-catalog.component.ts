@@ -1,3 +1,4 @@
+import { DescriptionDialogComponent } from './description-dialog.component';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, effect, inject, input, output, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -15,7 +16,7 @@ import { newEditorId } from './editor-identity';
 /** Shared acquisition dialog for play and creation. Annotation editing belongs only to the creator. */
 @Component({
   selector: 'app-item-catalog',
-  imports: [FormsModule, RouterLink, CatalogDialogComponent, SourceBookFilterComponent, EntryRendererComponent],
+  imports: [DescriptionDialogComponent, FormsModule, RouterLink, CatalogDialogComponent, SourceBookFilterComponent, EntryRendererComponent],
   templateUrl: './item-catalog.component.html', styleUrl: './local-editor.component.css',
 })
 export class ItemCatalogComponent implements OnInit, OnDestroy {

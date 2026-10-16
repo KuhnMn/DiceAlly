@@ -9,7 +9,7 @@ let nextDialogId = 0;
   selector: 'app-sheet-detail-dialog',
   imports: [UiIconComponent],
   template: `
-    <dialog #dialog (close)="dismiss()" (click)="backdrop($event)" [attr.aria-labelledby]="titleId"
+    <dialog #dialog (close)="dismiss()" (click)="backdrop($event)" (keydown.escape)="$event.stopPropagation()" [attr.aria-labelledby]="titleId"
       class="fixed inset-0 m-auto box-border max-h-[92dvh] w-[calc(100vw_-_1rem)] min-w-0 max-w-[min(48rem,calc(100vw_-_1rem))] overflow-hidden rounded-2xl border border-outline-variant bg-surface p-0 text-on-surface shadow-xl open:flex open:flex-col backdrop:bg-black/60">
       <header class="z-10 flex shrink-0 items-center justify-between gap-3 border-b border-outline-variant bg-surface px-4 py-2 sm:px-6">
         <h2 [id]="titleId" class="min-w-0 text-xl font-bold [overflow-wrap:anywhere]">{{ title() }}</h2>

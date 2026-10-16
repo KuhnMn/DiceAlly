@@ -4,6 +4,43 @@ import { MobileCharacterInfoPageComponent } from './mobile-character-info-page.c
 import { MobileSheetStatusComponent } from './mobile-sheet-status.component';
 
 describe('Mobile sheet controls', () => {
+  it('offers short and long rests from the status icon row', () => {
+    const fixture = TestBed.createComponent(MobileSheetStatusComponent);
+    fixture.componentRef.setInput('sheet', { character: {} }); fixture.detectChanges();
+    const rests: string[] = [];
+    fixture.componentInstance.shortRest.subscribe(() => rests.push('short'));
+    fixture.componentInstance.longRest.subscribe(() => rests.push('long'));
+    const menu = fixture.nativeElement.querySelector('details') as HTMLDetailsElement;
+    expect(menu.querySelector('summary')?.getAttribute('aria-label')).toBe('Rest');
+    const buttons = menu.querySelectorAll('button');
+    menu.open = true; buttons[0].click();
+    expect(menu.open).toBe(false);
+    menu.open = true; buttons[1].click();
+    expect(rests).toEqual(['short', 'long']);
+    expect(menu.open).toBe(false);
+  });
+  it('adds a proportional temporary HP segment without overflowing or dividing by zero', () => {
+    const fixture = TestBed.createComponent(MobileSheetStatusComponent);
+    const character = { currentHp: 94, maxHp: 94, tempHp: 5 };
+    fixture.componentRef.setInput('sheet', { character }); fixture.detectChanges();
+    const component = fixture.componentInstance;
+    expect(component.healthPercent()).toBeCloseTo(94 / 99 * 100);
+    expect(component.temporaryHealthPercent()).toBeCloseTo(5 / 99 * 100);
+    const button = fixture.nativeElement.querySelector('button[aria-label^="Adjust health"]');
+    expect(button.querySelector('.bg-green')).not.toBeNull();
+    expect(button.textContent).not.toContain('temp');
+    expect(button.getAttribute('aria-label')).toContain('5 temporary HP');
+    character.currentHp = 47;
+    expect(component.healthPercent()).toBeCloseTo(47 / 99 * 100);
+    character.tempHp = 0;
+    expect(component.healthPercent()).toBe(50);
+    expect(component.temporaryHealthPercent()).toBe(0);
+    character.maxHp = 0;
+    expect(component.healthPercent()).toBe(0);
+    expect(component.temporaryHealthPercent()).toBe(0);
+    character.tempHp = 10;
+    expect(component.temporaryHealthPercent()).toBe(100);
+  });
   it('edits AC on click, saves on Enter or blur, cancels on Escape, and resets to the original AC', async () => {
     const fixture = TestBed.createComponent(SheetAcControlComponent);
     const character = { armorClass: 12, armorClassOverride: null as number | null };

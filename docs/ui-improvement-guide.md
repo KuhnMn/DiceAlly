@@ -458,3 +458,13 @@ Validated on the populated character's Breath Weapon/Draconic Flight trackers wi
 ### Confirmed Mobile Spell Overflow Cause
 
 The remaining sideways-panning issue was reproduced with the affected character. Absolutely positioned screen-reader-only labels in spell summaries escaped horizontally scrollable rows because those rows lacked a positioning boundary. Giving horizontal rows position: relative confines those labels to their own scroller. The document width dropped from 640 px to the available viewport width at 320, 360, and 390 px; desktop remained unchanged. Removed the earlier document-level overflow-clipping workarounds.
+
+
+### Creator/Editor Source Selectors and Descriptions
+
+- The creator and sheet viewer share the colored Feature Source/Casting Source picker, with horizontally scrollable source cards on mobile. Assignment dropdowns keep their existing searchable behavior.
+- Reference descriptions and species abilities/stat blocks open in the shared detail overlay, including catalog previews. Description editing fields and other form controls remain in their editor panels.
+- A description opened inside a catalog dismisses independently on Escape, restores focus, and keeps the catalog's scroll lock active until that catalog closes.
+- Mobile editor pages support guarded left/right swipes through the existing tab order. Swipes do not switch pages from inputs, selectors, source scrollers or dialogs, go past the first/last tab, or switch while saving. Draft values remain intact.
+
+Validation: 323 tests pass. Browser checks verified colored source-row scrolling, editor reference overlays, and nested catalog dismissal/scroll-lock behavior. Production build passes with the existing size-budget warnings. Temporary catalog preview data was restored without saving character changes.

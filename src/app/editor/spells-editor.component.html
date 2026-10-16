@@ -51,11 +51,11 @@
               @if (spell.entity?.components) { <span>Components: {{ helpers.spellComponentsLabel(spell.entity?.components ?? null) }}</span> }
               @if (spell.entity?.duration?.length) { <span>Duration: {{ helpers.spellDurationLabel(spell.entity?.duration ?? []) }}</span> }
             </div>
-            <details class="description-panel !mt-5 text-sm"><summary class="description-toggle"><span class="description-arrow" aria-hidden="true"><app-ui-icon name="chevron" /></span>Description</summary>
+            <app-description-dialog [title]="spell.name" label="Description">
               <div class="p-3"><app-entry-renderer [entries]="spell.entity?.entries ?? []" />
                 @for (higher of spell.entity?.entriesHigherLevel ?? []; track $index) { <div class="mt-3 pt-2 border-t border-outline-variant"><p class="font-semibold mb-1">At Higher Levels</p><app-entry-renderer [entries]="higher.entries ?? []" /></div> }
               </div>
-            </details>
+            </app-description-dialog>
             @if (list === 'PREPARED') { <app-entry-annotations-editor [entry]="spell" (edited)="change()" /> }
           </div>
         }
@@ -101,7 +101,7 @@
         @for (record of results(); track record.key) {
           <div class="rounded border border-outline-variant p-2">
             <div class="flex justify-between gap-2"><div class="min-w-0"><p class="font-semibold text-sm">{{ record.name }}</p><p class="text-xs text-on-surface-variant">{{ record.data['level'] === 0 ? 'Cantrip' : 'Level ' + record.data['level'] }} · {{ record.publication }}</p></div><button type="button" class="secondary-button compact-button" [disabled]="loading() || adding() || isAdded(record)" (click)="add(record)">{{ isAdded(record) ? 'Added' : 'Add' }}</button></div>
-            <details class="description-panel mt-2"><summary class="description-toggle"><span class="description-arrow" aria-hidden="true"><app-ui-icon name="chevron" /></span>Description</summary><div class="p-2 text-sm"><app-entry-renderer [entries]="$any(record.data['entries'] ?? [])" /></div></details>
+            <app-description-dialog [title]="record.name" label="Description"><div class="p-2 text-sm"><app-entry-renderer [entries]="$any(record.data['entries'] ?? [])" /></div></app-description-dialog>
           </div>
         }
       </div>

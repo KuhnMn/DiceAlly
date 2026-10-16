@@ -35,6 +35,7 @@ import { UiIconComponent } from '../ui-icon.component';
                         @for (action of groupedCombatActions()[actionType]; track action) {
                           <button
                             type="button"
+                            data-page-swipe
                             [disabled]="!isActionClickable(action)"
                             (click)="navigateToCombatAction(action)"
                             class="w-full text-left p-2 rounded transition-colors duration-300 border-2 bg-surface-container"

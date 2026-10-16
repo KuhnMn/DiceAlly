@@ -11,13 +11,17 @@ import { AppDialogService } from '../services/app-dialog.service';
   imports: [UiIconComponent, CombatActionDialogComponent],
   styleUrl: './local-editor.component.css',
   template: `
+    <span class="inline-flex items-center gap-1 rounded-lg" [class.border]="type() === 'MONSTER' && isBookmarked()"
+      [class.border-outline-variant]="type() === 'MONSTER' && isBookmarked()" [class.p-1]="type() === 'MONSTER' && isBookmarked()"
+      role="group" [attr.aria-label]="resource().name + ' Combat Entries'">
     <button type="button" class="compact-button icon-button" [class.secondary-button]="!isBookmarked()" [class.action-button]="isBookmarked()"
       [title]="isBookmarked() ? 'In Combat · Click to Remove' : 'Add to Combat'" [attr.aria-pressed]="isBookmarked()"
       [attr.aria-label]="(isBookmarked() ? 'Remove ' : 'Add ') + resource().name + (isBookmarked() ? ' from Combat' : ' to Combat')"
       aria-haspopup="dialog" (click)="toggle()"><app-ui-icon name="bookmark" /></button>
     @if (type() === 'MONSTER' && isBookmarked()) {
-      <button type="button" class="secondary-button compact-button icon-button" title="Add Another Monster Ability to Combat" aria-label="Add another monster ability to Combat" (click)="open()"><app-ui-icon name="plus" /></button>
+      <button type="button" class="secondary-button compact-button inline-flex items-center gap-1" [title]="'Add Another Combat Entry for ' + resource().name" [attr.aria-label]="'Add another combat entry for ' + resource().name" (click)="open()"><app-ui-icon name="plus" /><span>Entry</span></button>
     }
+    </span>
     @if (draft; as action) { <app-combat-action-dialog [entry]="action" [suggestions]="suggestions" (saved)="add($event)" (cancelled)="draft = undefined" /> }
   `,
 })

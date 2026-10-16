@@ -5,9 +5,26 @@ import { LocalEditorComponent } from './local-editor.component';
 import { IndexedDbCharacterRepository } from '../characters/indexeddb-character-repository';
 import { emptyBasicCharacter, validateBasicInfo } from './basic-info';
 import { CharacterHelpersService } from '../sheet/character-helpers.service';
+import { By } from '@angular/platform-browser';
+import { SwipePagesDirective } from '../sheet/swipe-pages.directive';
 
 describe('Basic Info editor', () => {
   beforeEach(() => TestBed.configureTestingModule({ imports: [LocalEditorComponent], providers: [provideRouter([])] }));
+
+  it('navigates by page swipes while retaining edits and respecting tab bounds and save state', async () => {
+    const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
+    const editor = fixture.componentInstance;
+    const swipe = fixture.debugElement.query(By.directive(SwipePagesDirective)).injector.get(SwipePagesDirective);
+    editor.character.name = 'Unsaved Name';
+    swipe.pageSwipe.emit(-1); expect(editor.page).toBe(0);
+    swipe.pageSwipe.emit(1); expect(editor.page).toBe(1);
+    swipe.pageSwipe.emit(-1); expect(editor.page).toBe(0);
+    expect(editor.character.name).toBe('Unsaved Name');
+    editor.setPage(editor.pages.length - 1);
+    swipe.pageSwipe.emit(1); expect(editor.page).toBe(editor.pages.length - 1);
+    editor.busy.set(true);
+    swipe.pageSwipe.emit(-1); expect(editor.page).toBe(editor.pages.length - 1);
+  });
 
   it('groups the editor into eight stable tabs with related sections together', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();

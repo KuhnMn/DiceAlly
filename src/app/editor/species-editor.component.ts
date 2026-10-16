@@ -1,3 +1,4 @@
+import { DescriptionDialogComponent } from './description-dialog.component';
 import { CombatBookmarkComponent } from './combat-bookmark.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { newEditorId } from './editor-identity';
@@ -18,7 +19,7 @@ import { CatalogQuery, EditorCatalog } from './editor-catalog';
 
 @Component({
   selector: 'app-editor-species',
-  imports: [CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent],
+  imports: [DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent],
   templateUrl: './species-editor.component.html',
   styleUrl: './local-editor.component.css',
 })

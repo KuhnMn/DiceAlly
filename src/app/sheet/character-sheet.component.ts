@@ -57,7 +57,7 @@ import { NotesPageComponent } from './notes-page.component';
           </div>
         </header>
         <app-character-update-notice [characterId]="store.nativeCharacterId()" [characterName]="characterData()?.character?.name || 'Unnamed Character'" [loadedVersion]="session.loadedVersion()" [busy]="isSaving()" (refresh)="refreshCharacter()" />
-        <app-mobile-sheet-actions [saving]="isSaving()" [dirty]="hasUnsavedChanges()" (save)="quickSave()" (edit)="editCharacter()" (shortRest)="performShortRest()" (longRest)="performLongRest()" />
+        <app-mobile-sheet-actions [saving]="isSaving()" [dirty]="hasUnsavedChanges()" (save)="quickSave()" (edit)="editCharacter()" />
         <app-mobile-character-header [characterData]="characterData()" (navigateToFeatures)="navigateToFeatures($event)" />
         <!-- Desktop action bar -->
         <div class="hidden sm:flex sm:flex-wrap items-center gap-2 mb-4">
@@ -110,12 +110,12 @@ import { NotesPageComponent } from './notes-page.component';
 
         <div #navigation></div>
         <div class="sticky top-0 z-30 bg-surface pt-2 sm:static sm:pt-0">
-          @if (characterData(); as sheet) { <app-mobile-sheet-status [sheet]="sheet" [saving]="isSaving()" [dirty]="hasUnsavedChanges()" (save)="quickSave()" /> }
+          @if (characterData(); as sheet) { <app-mobile-sheet-status [sheet]="sheet" [saving]="isSaving()" [dirty]="hasUnsavedChanges()" (save)="quickSave()" (shortRest)="performShortRest()" (longRest)="performLongRest()" /> }
           <nav [appScrollableTabs]="currentPage()" class="justify-between mb-3 sm:mb-6 items-stretch" aria-label="Character sheet pages">
             @for (page of pages; track page.id) {
               <button type="button" (click)="switchPage(page.id)" [attr.aria-current]="currentPage() === page.id ? 'page' : null"
-                class="px-6 py-3 font-semibold transition-colors flex-auto border-b-2 border-outline"
-                [class.border-b-4]="currentPage() === page.id" [class.border-primary]="currentPage() === page.id" [class.text-primary]="currentPage() === page.id" [class.text-on-surface-variant]="currentPage() !== page.id">
+                class="px-6 py-3 font-semibold transition-colors flex-auto border-b-4"
+                [class.border-transparent]="currentPage() !== page.id" [class.border-primary]="currentPage() === page.id" [class.text-primary]="currentPage() === page.id" [class.text-on-surface-variant]="currentPage() !== page.id">
                 {{ page.label }}
               </button>
             }

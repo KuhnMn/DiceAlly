@@ -6,7 +6,7 @@ export interface ProficiencyPackageChoice { id: string; kind: ProficiencyContrib
 export type ProficiencyCatalogs = Partial<Record<ProficiencyContribution['kind'],Record<string,readonly string[]>>>;
 /** Generate an origin-tagged proficiency ledger; manual entries remain separate from generated grants. */
 export function deriveProficiencyGrants(selections: ContentClassSelection[],index: ContentRulesIndex,
-  answers: Readonly<Record<string,readonly string[]>> = {},speciesKey?: string,manual: ProficiencyContribution[] = [],catalogs: ProficiencyCatalogs = {}) {
+  answers: Readonly<Record<string,readonly string[]>> = {},speciesKey?: string,manual: ProficiencyContribution[] = [],catalogs: ProficiencyCatalogs = {}, sourceBooks: readonly string[] = []) {
   const generated: ProficiencyContribution[] = []; const choices: ProficiencyChoice[] = []; const packages: ProficiencyPackageChoice[] = []; const diagnostics: string[] = [];
   const ids = new Set<string>();
   const ownerKeys = new Map<string, string>();
@@ -31,8 +31,10 @@ export function deriveProficiencyGrants(selections: ContentClassSelection[],inde
       diagnostics.push(`Unsupported proficiency candidate: ${path}`); return;
     }
     const already = new Set(generated.filter(c => c.kind === kind && c.origin === origin).map(c => c.target));
-    const candidates = [...new Set(from)].filter(target => !already.has(target)) as string[];
-    if (Number(count) > candidates.length) { diagnostics.push(`Insufficient proficiency candidates: ${path}`); return; }
+    const candidates = [...new Set(from)].filter(target => !already.has(target)
+      && (kind !== 'tool' || !sourceBooks.length || !index.records.has(target)
+        || sourceBooks.includes(index.records.get(target)!.publication))) as string[];
+    if (Number(count) > candidates.length) { diagnostics.push(`Insufficient proficiency candidates: ${path}`); }
     const id = JSON.stringify(['proficiency-choice',origin,path]); choices.push({ id,count: Number(count),candidates,kind,ownerKey: ownerKeys.get(origin)! });
     const answer = Object.hasOwn(answers,id) ? answers[id] : [];
     if (!Array.isArray(answer) || answer.length !== count || new Set(answer).size !== count || answer.some(v => !candidates.includes(v))) {

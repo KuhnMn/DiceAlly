@@ -3,6 +3,7 @@ import { UiIconComponent } from '../ui-icon.component';
 import { CharacterUpdateNoticeComponent } from '../characters/character-update-notice.component';
 import { ThemePickerComponent } from '../theme-picker.component';
 import { ScrollableTabsDirective } from '../scrollable-tabs.directive';
+import { SwipePagesDirective } from '../sheet/swipe-pages.directive';
 import { AppDialogService } from '../services/app-dialog.service';
 import { MonstersEditorComponent } from './monsters-editor.component';
 import { ItemsEditorComponent } from './items-editor.component';
@@ -27,7 +28,7 @@ import { SpeciesEditorComponent } from './species-editor.component';
 
 @Component({
   selector: 'app-local-editor',
-  imports: [CombatEditorComponent, CharacterUpdateNoticeComponent, UiIconComponent, ThemePickerComponent, ScrollableTabsDirective, FormsModule, RouterLink, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, MasonryCardsDirective, ClassWizardComponent, SpeciesEditorComponent, ItemsEditorComponent, MonstersEditorComponent],
+  imports: [SwipePagesDirective, CombatEditorComponent, CharacterUpdateNoticeComponent, UiIconComponent, ThemePickerComponent, ScrollableTabsDirective, FormsModule, RouterLink, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, MasonryCardsDirective, ClassWizardComponent, SpeciesEditorComponent, ItemsEditorComponent, MonstersEditorComponent],
   templateUrl: './local-editor.component.html',
   styleUrl: './local-editor.component.css',
 })
@@ -154,6 +155,7 @@ export class LocalEditorComponent implements OnInit {
     this.changed();
   }
   setPage(page: number) {
+    if (this.busy() || page < 0 || page >= this.pages.length) return;
     this.page = page;
     this.view.markForCheck();
     this.message.set(''); this.error.set('');

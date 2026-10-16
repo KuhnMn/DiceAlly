@@ -13,18 +13,25 @@ import { DialogScrollLockService } from '../editor/dialog-scroll-lock.service';
 @Component({
   selector: 'app-mobile-sheet-status',
   imports: [SheetAcControlComponent, SheetHealthDetailsComponent, SheetStatBadgeComponent, HitDiceTrackerComponent, ConditionsComponent, UiIconComponent],
-  host: { class: 'block sm:hidden' },
+  host: { class: 'block sm:hidden', '(document:pointerdown)': 'dismissRest($event)', '(document:keydown.escape)': 'closeRest()' },
   template: `
     @if (sheet().character; as character) {
-      <div class="grid grid-cols-6 items-stretch gap-2 pb-2" aria-label="Character status">
-        <button type="button" (click)="openHealth()" class="order-4 col-span-5 min-w-0 rounded-lg bg-primary-container px-3 py-2 text-left text-on-primary-container" aria-label="Adjust health and conditions">
-          <div class="flex items-baseline justify-between gap-2 text-sm"><span class="font-semibold">HP {{ character.currentHp ?? 0 }} / {{ maxHp() }}</span>@if (character.tempHp) { <span class="text-xs">+{{ character.tempHp }} temp</span> }</div>
-          <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-container" aria-hidden="true"><div class="h-full bg-primary" [style.width.%]="healthPercent()"></div></div>
+      <div class="grid grid-cols-12 items-center gap-2 pb-2" aria-label="Character status">
+        <button type="button" (click)="openHealth()" class="col-span-10 min-w-0 rounded-lg bg-primary-container px-3 py-2 text-left text-on-primary-container" [attr.aria-label]="'Adjust health and conditions: ' + (character.currentHp ?? 0) + ' of ' + maxHp() + ' HP, ' + temporaryHp() + ' temporary HP'">
+          <div class="text-sm font-semibold">HP {{ character.currentHp ?? 0 }} / {{ maxHp() }}</div>
+          <div class="mt-1.5 flex h-1.5 overflow-hidden rounded-full bg-surface-container" aria-hidden="true"><div class="h-full shrink-0 bg-primary transition-[width] duration-300" [style.width.%]="healthPercent()"></div><div class="h-full shrink-0 bg-green transition-[width] duration-300" [style.width.%]="temporaryHealthPercent()"></div></div>
         </button>
-        <button type="button" (click)="character.hasInspiration = !character.hasInspiration" [attr.aria-pressed]="character.hasInspiration ?? false" [title]="character.hasInspiration ? 'Use Inspiration' : 'Gain Inspiration'" aria-label="Toggle Inspiration" class="order-5 flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-outline-variant text-xl" [class.bg-tertiary-container]="character.hasInspiration" [class.text-on-tertiary-container]="character.hasInspiration" [class.text-on-surface-variant]="!character.hasInspiration"><app-ui-icon name="sparkles" [filled]="character.hasInspiration ?? false" /></button>
-        <app-sheet-ac-control class="order-1 col-span-2 justify-self-center" [characterData]="sheet()" />
-        <app-sheet-stat-badge class="order-2 col-span-2 justify-self-center" label="Init." shape="octagon" [value]="helpers.formatSigned(helpers.initiative(character))" />
-        <app-sheet-stat-badge class="order-3 col-span-2 justify-self-center" label="PB" shape="octagon" [value]="helpers.formatSigned(helpers.proficiencyBonus(character))" />
+        <button type="button" (click)="character.hasInspiration = !character.hasInspiration" [attr.aria-pressed]="character.hasInspiration ?? false" [title]="character.hasInspiration ? 'Use Inspiration' : 'Gain Inspiration'" aria-label="Toggle Inspiration" class="col-span-2 flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-outline-variant text-xl" [class.bg-tertiary-container]="character.hasInspiration" [class.text-on-tertiary-container]="character.hasInspiration" [class.text-on-surface-variant]="!character.hasInspiration"><app-ui-icon name="sparkles" [filled]="character.hasInspiration ?? false" /></button>
+        <app-sheet-ac-control class="col-span-3 justify-self-center" [characterData]="sheet()" />
+        <app-sheet-stat-badge class="col-span-3 justify-self-center" label="Init." shape="octagon" [value]="helpers.formatSigned(helpers.initiative(character))" />
+        <app-sheet-stat-badge class="col-span-3 justify-self-center" label="PB" shape="octagon" [value]="helpers.formatSigned(helpers.proficiencyBonus(character))" />
+        <details #restMenu name="sheet-actions" class="relative col-span-3 justify-self-center">
+          <summary aria-label="Rest" title="Rest" class="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center rounded-lg bg-surface-container text-xl [&::-webkit-details-marker]:hidden"><app-ui-icon name="moon" /></summary>
+          <div class="absolute right-0 top-full z-50 mt-1 w-44 rounded-lg border border-outline-variant bg-surface-container-high p-1 shadow-lg">
+            <button type="button" [disabled]="saving()" (click)="restMenu.open = false; shortRest.emit()" class="min-h-11 w-full rounded px-3 py-2 text-left text-sm hover:bg-surface-container"><app-ui-icon name="campfire" /> Short Rest</button>
+            <button type="button" [disabled]="saving()" (click)="restMenu.open = false; longRest.emit()" class="min-h-11 w-full rounded px-3 py-2 text-left text-sm hover:bg-surface-container"><app-ui-icon name="rest" /> Long Rest</button>
+          </div>
+        </details>
       </div>
       <button type="button" (click)="openHealth()" class="mb-2 flex min-h-9 w-full items-center gap-2 rounded-lg bg-surface-container px-2 text-left text-xs" aria-label="Manage active conditions"><app-ui-icon name="info" /><span class="font-semibold">Conditions & Effects</span><span class="min-w-0 flex-1 truncate text-primary">{{ sheet().conditions?.length ? sheet().conditions?.join(' · ') : 'None' }}</span><app-ui-icon name="chevron" /></button>
       <dialog #healthDialog (close)="releaseScroll()" (click)="closeOnBackdrop($event)" class="fixed inset-x-0 bottom-0 top-auto m-0 max-h-[85dvh] w-full max-w-none overflow-hidden rounded-t-2xl border border-outline-variant bg-surface p-0 text-on-surface open:flex open:flex-col backdrop:bg-black/50 sm:inset-0 sm:m-auto sm:max-w-md sm:rounded-2xl" aria-labelledby="mobile-health-title">
@@ -56,6 +63,11 @@ export class MobileSheetStatusComponent implements OnDestroy {
   readonly saving = input(false);
   readonly dirty = input(false);
   readonly save = output<void>();
+  readonly shortRest = output<void>();
+  readonly longRest = output<void>();
+  private readonly restMenu = viewChild<ElementRef<HTMLDetailsElement>>('restMenu');
+  closeRest() { const menu = this.restMenu()?.nativeElement; if (menu) menu.open = false; }
+  dismissRest(event: Event) { if (event.target instanceof Node && !this.restMenu()?.nativeElement.contains(event.target)) this.closeRest(); }
   readonly helpers = inject(CharacterHelpersService);
   readonly amount = signal('');
   readonly feedback = signal('');
@@ -63,7 +75,13 @@ export class MobileSheetStatusComponent implements OnDestroy {
   private readonly scrollLock = inject(DialogScrollLockService);
   private locked = false;
   maxHp() { return this.sheet().character?.maxHpOverride ?? this.sheet().character?.maxHp ?? 0; }
-  healthPercent() { return this.maxHp() > 0 ? Math.max(0, Math.min(100, (this.sheet().character?.currentHp ?? 0) / this.maxHp() * 100)) : 0; }
+  temporaryHp() { return Math.max(0, this.sheet().character?.tempHp ?? 0); }
+  private healthBarTotal() { return Math.max(0, this.maxHp()) + this.temporaryHp(); }
+  healthPercent() {
+    const hp = Math.max(0, Math.min(this.maxHp(), this.sheet().character?.currentHp ?? 0));
+    return this.healthBarTotal() > 0 ? hp / this.healthBarTotal() * 100 : 0;
+  }
+  temporaryHealthPercent() { return this.healthBarTotal() > 0 ? this.temporaryHp() / this.healthBarTotal() * 100 : 0; }
   armorClass() {
     const character = this.sheet().character;
     if (!character) return 10;

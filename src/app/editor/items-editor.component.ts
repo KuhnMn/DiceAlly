@@ -1,3 +1,4 @@
+import { DescriptionDialogComponent } from './description-dialog.component';
 import { CombatBookmarkComponent } from './combat-bookmark.component';
 import { ChangeDetectorRef, Component, inject, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -11,7 +12,7 @@ import { setCustomItemDescription } from './item-selection';
 
 @Component({
   selector: 'app-editor-items',
-  imports: [CombatBookmarkComponent, FormsModule, EntryAnnotationsComponent, RemoveEntryDialogComponent, EntryRendererComponent, UiIconComponent, ItemCatalogComponent],
+  imports: [DescriptionDialogComponent, CombatBookmarkComponent, FormsModule, EntryAnnotationsComponent, RemoveEntryDialogComponent, EntryRendererComponent, UiIconComponent, ItemCatalogComponent],
   templateUrl: './items-editor.component.html', styleUrl: './local-editor.component.css',
 })
 export class ItemsEditorComponent {

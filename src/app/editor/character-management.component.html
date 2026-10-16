@@ -54,8 +54,7 @@
       <label>Kind <select [(ngModel)]="pool.kind" (ngModelChange)="change()"><option value="feature-uses">Feature uses</option><option value="spell-slots">Spell slots</option><option value="hit-dice">Hit dice</option></select></label>
       <label>Slot level / die faces <input type="number" min="1" [(ngModel)]="pool.rank" (ngModelChange)="change()" /></label>
       <label>Total <input type="number" min="0" [(ngModel)]="pool.total" (ngModelChange)="change()" /></label>
-      <div class="flex justify-end"><app-recovery-indicator [condition]="pool.regain" [showText]="true" /></div>
-      <label>Recovery <select [(ngModel)]="pool.regain" (ngModelChange)="change()">@for (option of recoveryOptions; track option.value) { <option [value]="option.value">{{ option.label }}</option> }</select></label>
+      <label>Recovery <span class="relative block"><app-recovery-indicator class="pointer-events-none absolute inset-y-0 left-2 flex items-center" [condition]="pool.regain" /><select class="w-full !pl-12" [(ngModel)]="pool.regain" (ngModelChange)="change()">@for (option of recoveryOptions; track option.value) { <option [value]="option.value">{{ option.label }}</option> }</select></span></label>
       <label>Used <input type="number" min="0" [ngModel]="d.session.resources[pool.id]?.used ?? 0" (ngModelChange)="setPoolUsed(pool.id, $event)" /></label>
       <button (click)="d.creation.manualResources.splice(i, 1); change()">Remove resource</button>
     </article>

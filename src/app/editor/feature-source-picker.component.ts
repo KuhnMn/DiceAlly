@@ -1,4 +1,5 @@
 import { SourceStatsComponent } from '../sheet/source-stats.component';
+import { HorizontalRowDirective } from '../sheet/horizontal-row.directive';
 import { Component, inject, input, output } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { ExportedCharacter, FeatureSource } from '../models/character.model';
@@ -9,7 +10,7 @@ import { SearchableSelectComponent } from './searchable-select.component';
 /** One source selector: cards for list filtering, compact searchable dropdowns for assignment. */
 @Component({
   selector: 'app-feature-source-picker',
-  imports: [NgClass, SearchableSelectComponent, SourceStatsComponent],
+  imports: [HorizontalRowDirective, NgClass, SearchableSelectComponent, SourceStatsComponent],
   styleUrl: './local-editor.component.css',
   template: `
     <div class="selector-panel source-picker" [class.mb-3]="mode() === 'cards'" [attr.data-tone]="tone()">
@@ -23,9 +24,9 @@ import { SearchableSelectComponent } from './searchable-select.component';
         <app-searchable-select [label]="heading()" placeholder="Select a Source" [options]="options"
           [value]="value()" [disabled]="disabled()" (selected)="selected.emit($event)" />
       } @else {
-      <div class="flex flex-wrap items-stretch gap-2">
+      <div appHorizontalRow class="flex flex-wrap items-stretch gap-2">
         @for (option of options; track option.source ?? option.value) {
-          <button type="button" class="max-w-full border-2 rounded-lg px-3 py-2 text-center text-sm break-words transition-colors"
+          <button type="button" class="max-w-full border-2 rounded-lg px-3 py-2 text-center text-sm break-words transition-colors max-sm:w-max"
             [ngClass]="value() === option.value ? activeClasses : 'border-outline-variant bg-surface-container'"
             [attr.aria-pressed]="value() === option.value" (click)="selected.emit(option.value)">
             <span class="font-semibold">{{ option.label }}</span>
