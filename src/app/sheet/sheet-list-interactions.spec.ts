@@ -23,26 +23,59 @@ describe('Sheet inventory interactions', () => {
     return { fixture, items, component: fixture.componentInstance };
   }
 
-  it('presents equipped items first without changing the saved inventory order', () => {
+  it('preserves saved inventory order when equipment states change', () => {
     const { items, component } = setup();
-    expect(component.visibleInventory().map(item => item.name)).toEqual(['Sword', 'Potion']);
+    expect(component.visibleInventory().map(item => item.name)).toEqual(['Potion', 'Sword']);
+    component.toggleEquipped(items[0]);
+    expect(component.visibleInventory().map(item => item.name)).toEqual(['Potion', 'Sword']);
+    component.toggleEquipped(items[1]);
+    expect(component.visibleInventory().map(item => item.name)).toEqual(['Potion', 'Sword']);
     expect(items.map(item => item.name)).toEqual(['Potion', 'Sword']);
+  });
+
+  it('adjusts quantity with the stepper and prevents decrementing below zero', () => {
+    const { fixture, items } = setup();
+    const decrease = fixture.nativeElement.querySelector('button[aria-label="Decrease quantity of Potion"]') as HTMLButtonElement;
+    const increase = fixture.nativeElement.querySelector('button[aria-label="Increase quantity of Potion"]') as HTMLButtonElement;
+    increase.click(); fixture.detectChanges();
+    expect(items[0].count).toBe(4);
+    for (let index = 0; index < 4; index++) { decrease.click(); fixture.detectChanges(); }
+    expect(items[0].count).toBe(0);
+    expect(decrease.disabled).toBe(true);
+    increase.click(); fixture.detectChanges();
+    expect(items[0].count).toBe(1);
+    expect(decrease.disabled).toBe(false);
   });
 
   it('updates equipped/attuned filters immediately after unequipping', () => {
     const { fixture, items, component } = setup();
     component.inventoryFilter.set('attuned'); fixture.detectChanges();
     expect(component.visibleInventory().length).toBe(1);
-    const equipped = fixture.nativeElement.querySelector('article input[type="checkbox"]') as HTMLInputElement;
+    const equipped = fixture.nativeElement.querySelector('button[aria-label="Unequip Sword"]') as HTMLButtonElement;
     equipped.click(); fixture.detectChanges();
     expect(items[1].isEquipped).toBe(false);
     expect(items[1].isAttuned).toBe(false);
     expect(component.visibleInventory()).toEqual([]);
   });
 
+  it('fills equipment icons when active and offers attunement only while equipped', () => {
+    const { fixture, component } = setup();
+    const icon = (action: string) => fixture.nativeElement.querySelector(`button[aria-label="${action} Sword"]`);
+    expect(icon('Unequip').querySelector('svg').getAttribute('fill')).toBe('currentColor');
+    expect(icon('Unattune').querySelector('svg').getAttribute('fill')).toBe('currentColor');
+    icon('Unattune').click(); fixture.detectChanges();
+    expect(icon('Attune').querySelector('svg').getAttribute('fill')).toBe('none');
+    icon('Unequip').click(); fixture.detectChanges();
+    expect(icon('Equip').querySelector('svg').getAttribute('fill')).toBe('none');
+    expect(icon('Attune')).toBeNull();
+    expect(component.expandedItems().size).toBe(0);
+    icon('Equip').click(); fixture.detectChanges();
+    expect(icon('Attune')).not.toBeNull();
+  });
+
   it('keeps properties and deletion accessible after expansion without nested buttons', async () => {
     const { fixture, items, component } = setup();
-    fixture.nativeElement.querySelector('article h3 button').click(); fixture.detectChanges();
+    fixture.nativeElement.querySelector('#item-sword h3 button').click(); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('button button')).toBeNull();
     expect(fixture.nativeElement.querySelector('app-rule-details details')?.textContent).toContain('Use either damage die.');
     expect(fixture.nativeElement.querySelector('dialog button[aria-label="Delete Sword"]')).toBeNull();
@@ -138,12 +171,16 @@ describe('Spell controls', () => {
 
   it('prepares independently of expansion and retains the summary when collapsed', () => {
     const fixture = TestBed.createComponent(SpellsPageComponent);
-    fixture.componentRef.setInput('characterData', { character: {}, spells: [{ editorId: 'light', name: 'Light', listType: 'KNOWN', entity: { name: 'Light', level: 0, time: [{ number: 1, unit: 'action' }], duration: [{ type: 'timed', duration: { amount: 10, type: 'minute' }, concentration: true }] } }] });
+    fixture.componentRef.setInput('characterData', { character: {}, spells: [{ editorId: 'light', name: 'Light', listType: 'KNOWN', entity: { name: 'Light', level: 0, meta: { ritual: true }, time: [{ number: 1, unit: 'action' }], duration: [{ type: 'timed', duration: { amount: 10, type: 'minute' }, concentration: true }] } }] });
     fixture.componentInstance.spellListTypeFilter.set('KNOWN'); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('button button')).toBeNull();
     fixture.nativeElement.querySelector('button[aria-label="Prepare Light"]').click(); fixture.detectChanges();
     expect(fixture.componentInstance.expandedItems().size).toBe(0);
-    expect(fixture.nativeElement.querySelector('app-spell-summary')?.textContent).toContain('10 minutes C');
+    const concentration = fixture.nativeElement.querySelector('span[aria-label="Concentration"]');
+    expect(concentration.textContent).toBe('C');
+    expect(concentration.previousElementSibling.textContent).toBe('Ritual');
+    expect(fixture.nativeElement.querySelector('app-spell-summary')?.textContent).toContain('10 minutes');
+    expect(fixture.nativeElement.querySelector('app-spell-summary')?.textContent).not.toContain('minutes C');
   });
 });
 

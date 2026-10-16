@@ -1,3 +1,4 @@
+import { ItemRuleTagComponent } from './item-rule-tag.component';
 import { SheetDetailDialogComponent } from './sheet-detail-dialog.component';
 import { HorizontalRowDirective } from './horizontal-row.directive';
 import { RuleDetailsComponent } from './rule-details.component';
@@ -16,7 +17,7 @@ import { CharacterStore } from '../stores/character.store';
 
 @Component({
   selector: 'app-equipment-page',
-  imports: [SheetDetailDialogComponent, HorizontalRowDirective, RuleDetailsComponent, ItemCatalogComponent, UiIconComponent, CommonModule, FormsModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [ItemRuleTagComponent, SheetDetailDialogComponent, HorizontalRowDirective, RuleDetailsComponent, ItemCatalogComponent, UiIconComponent, CommonModule, FormsModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: item-flash 1.6s ease-out;
@@ -54,8 +55,7 @@ export class EquipmentPageComponent {
     this.inventoryRevision();
     const query = this.searchQuery().trim().toLowerCase();
     const filter = this.inventoryFilter();
-    return this.inventory().filter(item => item.name.toLowerCase().includes(query) && (filter === 'all' || filter === 'equipped' && item.isEquipped || filter === 'attuned' && item.isAttuned))
-      .sort((a, b) => Number(!!b.isEquipped) - Number(!!a.isEquipped));
+    return this.inventory().filter(item => item.name.toLowerCase().includes(query) && (filter === 'all' || filter === 'equipped' && item.isEquipped || filter === 'attuned' && item.isAttuned));
   });
   itemKey(item: InventoryItem) { return 'item-' + (item.editorId ?? this.helpers.sourceId(item.name + '-' + (item.source ?? ''))); }
   private readonly dialogs = inject(AppDialogService);
@@ -161,6 +161,12 @@ export class EquipmentPageComponent {
     return item.entity.item[prop];
   }
 
+  hasItemStatistics(item: InventoryItem): boolean {
+    return ['dmg1', 'range', 'scfType'].some(prop => !!this.getItemProp(item, prop))
+      || !!(this.getItemProp(item, 'ac') ?? item.entity?.ac)
+      || ['weight', 'value'].some(prop => this.getItemProp(item, prop) != null);
+  }
+
   formatGold(copperValue: any): string {
     const value = Number(copperValue);
     if (!value || isNaN(value)) return '—';
@@ -228,6 +234,7 @@ export class EquipmentPageComponent {
 
     for (const check of typeChecks) {
       if (check.flag) {
+        if (check.label === 'Weapon' && /weapon/i.test(item.entity?.itemType ?? '')) continue;
         tags.push(check.label);
       }
     }

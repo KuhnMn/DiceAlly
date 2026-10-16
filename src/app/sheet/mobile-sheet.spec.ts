@@ -146,7 +146,7 @@ describe('Compact spell duration', () => {
       { type: 'timed', duration: { amount: 10, type: 'minute' }, concentration: true },
       { type: 'timed', duration: { amount: 1, type: 'hour' } },
       { type: 'instant' }, { type: 'special' },
-    ])).toBe('10 minutes C, 1 hour, Instantaneous, special');
+    ])).toBe('10 minutes, 1 hour, Instantaneous, special');
     expect(helpers.spellDurationLabel([{ duration: { amount: 10, type: 'minute' }, concentration: true }])).toBe('Concentration, 10 minute');
   });
 });

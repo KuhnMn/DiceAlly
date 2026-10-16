@@ -1,5 +1,6 @@
 /* Tailwind v4 entry */
 @import 'tailwindcss';
+@import '@angular/cdk/overlay-prebuilt.css';
 
 /* Register error colors so Tailwind also generates container and border utilities. */
 @theme inline {

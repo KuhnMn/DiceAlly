@@ -73,16 +73,16 @@ type SpellLevelFilter = 'ALL' | number;
                         <span class="ml-auto whitespace-nowrap">{{ slot.total-spellSlotUsed(group.source, slot) }} / {{ slot.total }}</span>
                         <app-recovery-indicator [condition]="slot.regainCondition" />
                       </div>
-                      <div class="hidden sm:block w-full bg-outline-variant rounded-full h-2 mb-3">
+                      <div class="hidden sm:block w-full bg-outline-variant rounded-full h-2 mb-0.5">
                         <div
                           class="bg-purple h-2 rounded-full transition-all"
                           [style.width.%]="spellSlotProgress(group.source, slot)"
                         ></div>
                       </div>
                       @if (slot.total > 0) {
-                        <div class="flex flex-wrap gap-0 sm:gap-2">
+                        <div class="flex flex-wrap gap-0 sm:gap-1">
                           @for (index of spellSlotIndexes(slot.total); track index) {
-                            <label class="flex min-h-8 min-w-9 sm:min-h-11 items-center justify-center cursor-pointer">
+                            <label class="flex min-h-8 min-w-9 sm:min-h-10 items-center justify-center cursor-pointer">
                               <input
                                 type="checkbox"
                                 [attr.aria-label]="group.source + ' level ' + slot.level + ' slot ' + (index + 1) + ' used'"
@@ -201,13 +201,15 @@ type SpellLevelFilter = 'ALL' | number;
                   <div class="border-2 border-purple rounded-lg px-3 py-2 sm:p-4 bg-surface-container" [attr.id]="'spell-' + (spell.editorId ?? helpers.sourceId(spell.name + '-' + (spell.source ?? '')))" [class.flash-highlight]="highlightedId() === ('spell-' + (spell.editorId ?? helpers.sourceId(spell.name + '-' + (spell.source ?? ''))))">
                     <h3>
                       <button type="button" (click)="toggleExpanded(spellExpansionId(spell))" aria-haspopup="dialog" [attr.aria-expanded]="isExpanded(spellExpansionId(spell))" class="flex min-h-8 w-full items-center justify-between gap-2 rounded text-left text-base font-bold text-purple sm:min-h-11 sm:gap-3 sm:text-xl focus-visible:outline-2 focus-visible:outline-primary">
-                        <span class="min-w-0 break-words">{{ spell.name }}</span><app-ui-icon name="chevron" />
+                        <span class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1"><span class="min-w-0 break-words [overflow-wrap:anywhere]">{{ spell.name }}</span>
+                        @if (spell.entity?.level !== undefined) { <span class="shrink-0 whitespace-nowrap rounded bg-purple-container px-2 py-0.5 text-xs font-normal text-on-purple-container">{{ helpers.spellLevelLabel(spell) }}</span> }
+                        </span><app-ui-icon class="shrink-0" name="chevron" />
                       </button>
                     </h3>
                     <div class="flex flex-wrap items-center gap-1 sm:gap-2">
-                      @if (spell.entity?.level !== undefined) { <span class="rounded bg-purple-container px-2 py-0.5 text-xs text-on-purple-container">{{ helpers.spellLevelLabel(spell) }}</span> }
                       @if (spell.entity?.school) { <span class="rounded bg-teal-container px-2 py-0.5 text-xs text-on-teal-container">{{ helpers.spellSchoolLabel(spell.entity?.school ?? '') }}</span> }
                       @if (spell.entity?.meta?.ritual) { <span class="rounded bg-green-container px-2 py-0.5 text-xs text-on-green-container">Ritual</span> }
+                      @if (requiresConcentration(spell)) { <span class="rounded bg-tertiary-container px-2 py-0.5 text-xs text-on-tertiary-container" title="Concentration" aria-label="Concentration">C</span> }
                       @for (type of listTypesForSpell(spell); track type) {
                         @if (type === 'PREPARED') {
                           @let prepared = hasSpellListType(spell, 'PREPARED');
@@ -552,6 +554,10 @@ export class SpellsPageComponent {
 
   isPreparationLocked(spell: any): boolean {
     return preparationLocked(spell, this.characterData()?.spells ?? []);
+  }
+
+  requiresConcentration(spell: any): boolean {
+    return spell.entity?.duration?.some((duration: { concentration?: boolean }) => duration.concentration) ?? false;
   }
 
   spellLevelHeader(level: number): string {

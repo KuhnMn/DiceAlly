@@ -21,7 +21,7 @@ function identity(label: string): string {
 
 /** Group legacy custom entries for display without altering the saved proficiencies. */
 export function proficiencyGroups(proficiencies?: Proficiencies) {
-  const groups = new Map(['Weapons', 'Armor', 'Tools', 'Languages', 'Other'].map(name => [name, [] as string[]]));
+  const groups = new Map(['Weapons', 'Tools', 'Languages', 'Other'].map(name => [name, [] as string[]]));
   const seen = new Set<string>();
   const add = (group: string, label: string) => {
     const normalized = identity(label);
@@ -36,7 +36,6 @@ export function proficiencyGroups(proficiencies?: Proficiencies) {
   for (const custom of proficiencies?.custom ?? []) {
     const normalized = key(custom);
     const group = LEGACY_LANGUAGES.has(normalized) ? 'Languages'
-      : /^(light|medium|heavy)( armor| armour)?$|^shields?( armor| armour)?$/.test(normalized) ? 'Armor'
       : /\bweapons?\b/.test(normalized) ? 'Weapons'
       : /\b(tools?|supplies|kits?|instruments?|vehicles?)\b/.test(normalized) ? 'Tools' : 'Other';
     add(group, custom);

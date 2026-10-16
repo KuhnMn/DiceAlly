@@ -206,7 +206,7 @@ export class CharacterHelpersService {
       const base = unit
         ? `${amount ?? ''} ${unit}${amount != null && amount !== 1 && !unit.endsWith('s') ? 's' : ''}`.trim()
         : duration.type === 'instant' ? 'Instantaneous' : duration.type || 'Special';
-      return `${base}${duration.concentration ? ' C' : ''}`;
+      return base;
     }).join(', ');
   }
 

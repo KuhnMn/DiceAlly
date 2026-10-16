@@ -94,6 +94,7 @@ import { NotesPageComponent } from './notes-page.component';
           </div>
         </div>
 
+        <ng-template #restReport>
         @if (restService.report(); as report) {
           <section class="mb-4 rounded-lg bg-secondary-container text-on-secondary-container p-3" role="status" aria-live="polite">
             <div class="flex items-center justify-between gap-3">
@@ -107,10 +108,13 @@ import { NotesPageComponent } from './notes-page.component';
             } @else { <p class="text-sm mt-1">No resources needed restoring.</p> }
           </section>
         }
+        </ng-template>
+        @if (!mobile()) { <ng-container [ngTemplateOutlet]="restReport" /> }
 
         <div #navigation></div>
         <div class="sticky top-0 z-30 bg-surface pt-2 sm:static sm:pt-0">
           @if (characterData(); as sheet) { <app-mobile-sheet-status [sheet]="sheet" [saving]="isSaving()" [dirty]="hasUnsavedChanges()" (save)="quickSave()" (shortRest)="performShortRest()" (longRest)="performLongRest()" /> }
+          @if (mobile()) { <ng-container [ngTemplateOutlet]="restReport" /> }
           <nav [appScrollableTabs]="currentPage()" class="justify-between mb-3 sm:mb-6 items-stretch" aria-label="Character sheet pages">
             @for (page of pages; track page.id) {
               <button type="button" (click)="switchPage(page.id)" [attr.aria-current]="currentPage() === page.id ? 'page' : null"
