@@ -9,7 +9,7 @@ export type Theme = 'light-mc' | 'dark-mc' | 'light-royal' | 'dark-royal' | 'lig
 })
 export class ThemeService {
   private readonly THEME_KEY = 'ally-sheet-theme';
-  private readonly DEFAULT_THEME: Theme = 'light-mc';
+  private readonly DEFAULT_THEME: Theme = 'dark-mc';
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
 

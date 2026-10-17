@@ -76,7 +76,7 @@ export class AccountSettingsService implements OnDestroy {
     if (uid) this.persist();
   }
   private apply() {
-    this.observed = { theme: this.cache.theme?.value ?? '"light-mc"', sourceBooks: this.cache.sourceBooks?.value ?? '[]' };
+    this.observed = { theme: this.cache.theme?.value ?? '"dark-mc"', sourceBooks: this.cache.sourceBooks?.value ?? '[]' };
     this.theme.setTheme(JSON.parse(this.observed.theme) as Theme);
     this.books.setSelection(JSON.parse(this.observed.sourceBooks) as string[]);
   }

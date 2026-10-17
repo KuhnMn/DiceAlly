@@ -15,3 +15,15 @@ export function signInErrorMessage(error: unknown): string {
   const message = messages[code] ?? 'Sign-in failed. Check your email and password, then try again.';
   return code ? `${message} (${code})` : message;
 }
+
+export function passwordResetErrorMessage(error: unknown): string {
+  const code = error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'
+    ? error.code : '';
+  const messages: Record<string, string> = {
+    'auth/invalid-email': 'Enter a valid email address to reset your password.',
+    'auth/missing-email': 'Enter your email address to reset your password.',
+    'auth/too-many-requests': 'Too many password reset requests. Wait a while before trying again.',
+    'auth/network-request-failed': 'Could not reach Firebase Authentication. Check your connection or browser request blocking.',
+  };
+  return `${messages[code] ?? 'Could not request a password reset.'}${code ? ` (${code})` : ' Please try again later.'}`;
+}

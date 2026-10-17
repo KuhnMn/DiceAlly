@@ -12,6 +12,21 @@ import { CharacterSessionService } from '../characters/character-session.service
 import { emptyBasicCharacter } from '../editor/basic-info';
 
 describe('Sheet navigation and mobile health integration', () => {
+  it('keeps rest changes unsaved until an explicit save', async () => {
+    const { component, store } = setup(true);
+    store.nativeCharacterId.set(store.characterData()!.character!.characterUuid!);
+    component.performShortRest();
+    expect(store.nativeSave).not.toHaveBeenCalled();
+    component.performLongRest();
+    expect(store.characterData()?.character?.currentHp).toBe(30);
+    expect(component.hasUnsavedChanges()).toBe(true);
+    expect(store.nativeSave).not.toHaveBeenCalled();
+    component.onCharacterRested('long');
+    expect(store.nativeSave).not.toHaveBeenCalled();
+    await component.quickSave();
+    expect(store.nativeSave).toHaveBeenCalledOnce();
+    expect(component.hasUnsavedChanges()).toBe(false);
+  });
   function setup(mobile = false) {
     TestBed.configureTestingModule({ providers: [
       provideRouter([]),

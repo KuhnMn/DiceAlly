@@ -1,4 +1,5 @@
 import { SheetProficienciesComponent } from './sheet-proficiencies.component';
+import { AdvantageBadgeComponent } from './advantage-badge.component';
 import { Component } from '@angular/core';
 import { CharacterInfoPageComponent } from './character-info-page.component';
 import { UiIconComponent } from '../ui-icon.component';
@@ -6,7 +7,7 @@ import { UiIconComponent } from '../ui-icon.component';
 /** Mobile composition reuses the full sheet's calculations and editing actions. */
 @Component({
   selector: 'app-mobile-character-info-page',
-  imports: [SheetProficienciesComponent, UiIconComponent],
+  imports: [AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent],
   template: `
     @if (character(); as c) {
       <div class="space-y-3 rounded-lg border border-outline-variant bg-surface-container-highest p-3">
@@ -82,7 +83,12 @@ import { UiIconComponent } from '../ui-icon.component';
           <div class="grid grid-cols-2 gap-2">@for (speed of speedEntries(); track speed) { <p class="rounded-lg bg-surface-container p-2">{{ speed }}</p> }
           @for (sense of senseEntries(); track sense) { <p class="rounded-lg bg-surface-container p-2">{{ sense }}</p> }</div>
           @if (resistanceEntries().length) { <h3 class="mt-2 text-xs font-semibold text-on-surface-variant">Resistances</h3>@for (resistance of resistanceEntries(); track resistance) { <p>{{ resistance }}</p> } }
-          @for (advantage of advantageItems(); track advantage.text) { <p class="mt-2 rounded-lg bg-surface-container p-2">{{ advantage.isDisadvantage ? 'Disadvantage' : 'Advantage' }}: {{ advantage.text }}</p> }
+          @for (advantage of advantageItems(); track advantage.text) {
+            <p class="mt-2 flex items-center gap-2 rounded-lg bg-surface-container p-2">
+              <app-advantage-badge [disadvantage]="advantage.isDisadvantage" />
+              <span class="min-w-0 [overflow-wrap:anywhere]">{{ advantage.text }}</span>
+            </p>
+          }
           </div>
         </details>
 

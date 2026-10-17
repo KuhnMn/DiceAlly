@@ -55,7 +55,7 @@
         }
         <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm mt-2 sm:gap-x-4 sm:gap-y-1">
           @if (item.source) { <span class="rounded bg-surface-container-high px-2 py-0.5 text-xs">{{ item.source }}</span> }
-          @if (item.isDummy) { <span class="rounded bg-surface-container-high px-2 py-0.5 text-xs">Custom</span> }
+          @if (item.isDummy) { <span role="img" aria-label="Created in-app" title="Created in-app" class="inline-flex items-center rounded bg-surface-container-high px-1.5 py-1 text-sm"><app-ui-icon name="wand" /></span> }
           @if (item.allowMultiples) {
             <div class="inline-flex items-center gap-1" role="group" [attr.aria-label]="item.name + ' quantity'">
               <span class="mr-1 text-sm">Qty</span>
@@ -99,7 +99,7 @@
         @if (item.uses?.length) { <div class="mt-3 space-y-3">@for (use of item.uses; track use) { <app-feature-uses [uses]="use" (usesUpdated)="updateItemUses(item, $event)" /> }</div> }
           <div [id]="itemKey(item) + '-details'" class="mt-3 space-y-3 border-t border-outline-variant pt-3">
             <div class="flex flex-wrap gap-2 text-xs text-on-surface-variant">
-              @if (item.entity?.itemType) { <span>{{ item.entity?.itemType }}</span> }@if (item.source) { <span>{{ item.source }}</span> }@if (item.isDummy) { <span>Custom</span> }
+              @if (item.entity?.itemType) { <span>{{ item.entity?.itemType }}</span> }@if (item.source) { <span>{{ item.source }}</span> }@if (item.isDummy) { <span role="img" aria-label="Created in-app" title="Created in-app" class="inline-flex items-center rounded bg-surface-container-high px-1.5 py-1 text-sm"><app-ui-icon name="wand" /></span> }
               @if (getItemProp(item, 'rarity')) { <span class="capitalize">{{ getItemProp(item, 'rarity') }}</span> }
               @for (tag of getItemTypeTags(item); track tag) { <span>{{ tag }}</span> }
             </div>

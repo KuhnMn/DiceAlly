@@ -262,8 +262,6 @@ export class CharacterSheetComponent implements OnDestroy {
     // Notify the store with the new reference
     this.store.setCharacter(updatedCharacter);
     
-    // Trigger a save update for the rested state
-    this.quickSave();
   }
 
   async editCharacter() {
@@ -306,8 +304,6 @@ export class CharacterSheetComponent implements OnDestroy {
     
     // Notify the store that character data has changed to trigger reactivity
     this.store.setCharacter(updatedCharacter);
-    // Trigger a save update for the rested state
-    this.quickSave();
   }
 
   performLongRest() {
@@ -321,8 +317,6 @@ export class CharacterSheetComponent implements OnDestroy {
     
     // Notify the store that character data has changed to trigger reactivity
     this.store.setCharacter(updatedCharacter);
-    // Trigger a save update for the rested state
-    this.quickSave();
   }
 
 

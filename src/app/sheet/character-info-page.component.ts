@@ -1,4 +1,5 @@
 import { SheetProficienciesComponent } from './sheet-proficiencies.component';
+import { AdvantageBadgeComponent } from './advantage-badge.component';
 import { applyHealthAdjustment } from './sheet-health';
 import { resolveCombatResource } from '../editor/combat-actions';
 import { UiIconComponent } from '../ui-icon.component';
@@ -12,7 +13,7 @@ import { ConditionsComponent } from './conditions.component';
 
 @Component({
   selector: 'app-character-info-page',
-  imports: [SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
+  imports: [AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
   styles: [`
     .ac-display {
       position: relative;
@@ -250,7 +251,7 @@ import { ConditionsComponent } from './conditions.component';
                     </span>
                   }
                   @case ('EXP.') {
-                    <span class="w-6 h-6 border-2 border-outline rounded-full flex items-center justify-center text-s font-bold text-tertiary">
+                    <span class="w-6 h-6 border-2 border-outline rounded-full flex items-center justify-center text-xs font-bold text-tertiary">
                       ✪
                     </span>
                   }
@@ -724,11 +725,7 @@ import { ConditionsComponent } from './conditions.component';
                   <div class="space-y-1">
                     @for (adv of advantageItems(); track adv.text) {
                       <div class="flex items-center gap-2">
-                        <span
-                          class="inline-block"
-                          [class.text-green]="!adv.isDisadvantage"
-                          [class.text-rose]="adv.isDisadvantage"
-                        >{{ adv.isDisadvantage ? 'D' : 'A' }}</span>
+                        <app-advantage-badge [disadvantage]="adv.isDisadvantage" />
                         <span>{{ adv.text }}</span>
                       </div>
                     }

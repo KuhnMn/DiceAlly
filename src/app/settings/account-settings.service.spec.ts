@@ -50,7 +50,7 @@ describe('Account settings synchronization', () => {
     expect(remote['alice']['sourceBooks'].value).toBe('[]');
     user.set({ uid: 'bob', getIdToken: async () => 'token' });
     TestBed.tick(); await service.sync();
-    expect(currentTheme()).toBe('light-mc');
+    expect(currentTheme()).toBe('dark-mc');
     expect(selected()).toEqual([]);
     expect(remote['bob']).toEqual({});
     remote['bob']['sourceBooks'] = { value: '["HB"]', mutationId: crypto.randomUUID() };

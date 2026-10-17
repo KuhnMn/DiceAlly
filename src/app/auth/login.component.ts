@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AccountService } from './account.service';
-import { signInErrorMessage } from './auth-error';
+import { passwordResetErrorMessage, signInErrorMessage } from './auth-error';
 
 @Component({
   selector: 'app-login',
@@ -41,10 +41,10 @@ import { signInErrorMessage } from './auth-error';
             <input class="block w-full mt-1 rounded-lg p-2 bg-surface" name="password" type="password" autocomplete="current-password" [(ngModel)]="password" required>
           </label>
           <button class="rounded-lg px-4 py-2 bg-primary text-on-primary disabled:opacity-50" [disabled]="busy() || !email || !password">Sign In</button>
-          <button type="button" class="rounded-lg px-3 py-2 text-primary disabled:opacity-50" [disabled]="busy() || !email" (click)="reset()">Reset Password</button>
+          <button type="button" class="rounded-lg px-3 py-2 text-primary disabled:opacity-50" [disabled]="busy()" (click)="reset()">Reset Password</button>
         </form>
       }
-      @if (account.error() || message()) { <p class="text-sm" role="status">{{ account.error() || message() }}</p> }
+      @if (message() || account.error()) { <p class="text-sm" role="status">{{ message() || account.error() }}</p> }
     </section>
   `,
 })
@@ -64,9 +64,15 @@ export class LoginComponent {
     finally { this.busy.set(false); }
   }
   async reset() {
+    if (this.busy()) return;
+    if (!this.email.trim()) {
+      this.message.set('Enter your email address above, then click Reset Password. You do not need to enter a password.');
+      return;
+    }
     this.busy.set(true);
+    this.message.set('Requesting a password reset…');
     try { await this.account.resetPassword(this.email); this.message.set('If the account exists, a password reset email will be sent.'); }
-    catch { this.message.set('Could not request a password reset. Please try again later.'); }
+    catch (error) { this.message.set(passwordResetErrorMessage(error)); }
     finally { this.busy.set(false); }
   }
 }
