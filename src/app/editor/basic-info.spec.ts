@@ -7,9 +7,49 @@ import { emptyBasicCharacter, validateBasicInfo } from './basic-info';
 import { CharacterHelpersService } from '../sheet/character-helpers.service';
 import { By } from '@angular/platform-browser';
 import { SwipePagesDirective } from '../sheet/swipe-pages.directive';
+import { NgForm } from '@angular/forms';
 
 describe('Basic Info editor', () => {
   beforeEach(() => TestBed.configureTestingModule({ imports: [LocalEditorComponent], providers: [provideRouter([])] }));
+
+  it('keeps extracted page controls registered with the submit form and validates the active page', async () => {
+    const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
+    const editor = fixture.componentInstance;
+    const form = fixture.debugElement.query(By.directive(NgForm)).injector.get(NgForm);
+    expect(form.controls['name']).toBeDefined();
+    expect(form.controls['maxHp']).toBeDefined();
+    const hp = fixture.nativeElement.querySelector('#maxHp') as HTMLInputElement;
+    hp.value = ''; hp.dispatchEvent(new Event('input', { bubbles: true }));
+    await fixture.whenStable();
+    expect(form.controls['maxHp'].hasError('required')).toBe(true);
+    editor.setPage(1); await fixture.whenStable();
+    expect(form.controls['maxHp']).toBeUndefined();
+    expect(form.controls['ability-strength']).toBeDefined();
+    editor.setPage(2); await fixture.whenStable();
+    expect(form.controls['skill-bonus-STEALTH']).toBeDefined();
+    expect(form.controls['save-bonus-wis']).toBeDefined();
+  });
+
+  it('retains unfinished basic inputs across tabs and follows a replacement sheet from the wizard', async () => {
+    const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
+    const editor = fixture.componentInstance;
+    const senseName = fixture.nativeElement.querySelector('input[name="sense-name"]') as HTMLInputElement;
+    senseName.value = 'Darkvision'; senseName.dispatchEvent(new Event('input', { bubbles: true }));
+    await fixture.whenStable();
+    editor.setPage(1); await fixture.whenStable();
+    editor.setPage(0); await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('input[name="sense-name"]').value).toBe('Darkvision');
+    const original = editor.sheet;
+    const replacement = emptyBasicCharacter();
+    editor.applyWizard(replacement);
+    editor.basicInfo.addSense();
+    editor.abilities.adjustAbility('strength', 1);
+    editor.proficiencies.setSkillLevel('STEALTH', 'EXPERTISE');
+    expect(replacement.character!.senses!['Darkvision']).toBe(60);
+    expect(replacement.character!.abilityScores!.strength).toBe(11);
+    expect(replacement.character!.proficiencies!.skills!['STEALTH']).toBe('EXPERTISE');
+    expect(original.character!.senses!['Darkvision']).toBeUndefined();
+  });
 
   it('navigates by page swipes while retaining edits and respecting tab bounds and save state', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
@@ -56,20 +96,20 @@ describe('Basic Info editor', () => {
   it('toggles full saving throw proficiency and preserves signed bonuses and other pages', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
     const editor = fixture.componentInstance;
-    editor.character.level = 5; editor.abilityScores.wisdom = 16;
-    editor.setSkillLevel('STEALTH', 'EXPERTISE');
-    editor.setSaveBonus('wis', -1); expect(editor.saveTotal('wisdom')).toBe('+2');
-    editor.toggleSaveProficiency('wis'); expect(editor.saveTotal('wisdom')).toBe('+5');
-    editor.toggleSaveProficiency('wis'); expect(editor.saveProficient('wis')).toBe(false);
-    editor.toggleSaveProficiency('wis'); editor.setPage(2);
+    editor.character.level = 5; editor.abilities.abilityScores.wisdom = 16;
+    editor.proficiencies.setSkillLevel('STEALTH', 'EXPERTISE');
+    editor.proficiencies.setSaveBonus('wis', -1); expect(editor.proficiencies.saveTotal('wisdom')).toBe('+2');
+    editor.proficiencies.toggleSaveProficiency('wis'); expect(editor.proficiencies.saveTotal('wisdom')).toBe('+5');
+    editor.proficiencies.toggleSaveProficiency('wis'); expect(editor.proficiencies.saveProficient('wis')).toBe(false);
+    editor.proficiencies.toggleSaveProficiency('wis'); editor.setPage(2);
     fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
     expect(fixture.nativeElement.querySelectorAll('button[id^="save-"]').length).toBe(6);
     await editor.save(); expect(editor.error()).toBe('');
     const entry = (await new IndexedDbCharacterRepository().get(editor.character.characterUuid!))!;
     editor.newCharacter(); editor.open(entry);
-    expect(editor.saveProficient('wis')).toBe(true); expect(editor.saveBonus('wis')).toBe(-1);
-    expect(editor.skillLevel('STEALTH')).toBe('EXPERTISE');
-    editor.setSaveBonus('wis', null); expect(editor.saveBonus('wis')).toBe(0);
+    expect(editor.proficiencies.saveProficient('wis')).toBe(true); expect(editor.proficiencies.saveBonus('wis')).toBe(-1);
+    expect(editor.proficiencies.skillLevel('STEALTH')).toBe('EXPERTISE');
+    editor.proficiencies.setSaveBonus('wis', null); expect(editor.proficiencies.saveBonus('wis')).toBe(0);
   });
 
   it('opens without imported content and renders only the requested first page', async () => {
@@ -97,9 +137,9 @@ describe('Basic Info editor', () => {
     editor.character.name = 'Aster'; editor.character.level = 7; editor.character.maxHp = 43;
     editor.character.armorClass = 18; editor.character.description = 'Scout';
     editor.sheet.portaitUrl = 'data:image/png;base64,aGVsbG8=';
-    editor.resistanceInput = 'Poison'; editor.addResistance();
-    editor.senseName = 'Darkvision'; editor.senseRange = 120; editor.addSense();
-    editor.speeds.fly = 40; editor.speeds.swim = 20; editor.speeds.burrow = 10;
+    editor.basicInfo.resistanceInput = 'Poison'; editor.basicInfo.addResistance();
+    editor.basicInfo.senseName = 'Darkvision'; editor.basicInfo.senseRange = 120; editor.basicInfo.addSense();
+    editor.basicInfo.speeds.fly = 40; editor.basicInfo.speeds.swim = 20; editor.basicInfo.speeds.burrow = 10;
     await editor.save();
     expect(editor.error()).toBe(''); expect(editor.unsaved).toBe(false);
     const entry = (await new IndexedDbCharacterRepository().list()).find(e => e.id === editor.character.characterUuid)!;
@@ -115,12 +155,12 @@ describe('Basic Info editor', () => {
     const editor = fixture.componentInstance;
     editor.character.abilityScores!.dexterity = 14; editor.character.abilityScores!.wisdom = 18;
     editor.character.armorClass = 17;
-    editor.setAutomaticAc(true); editor.setUnarmoredDefense(true); editor.setDefenseAbility('wisdom');
+    editor.basicInfo.setAutomaticAc(true); editor.basicInfo.setUnarmoredDefense(true); editor.basicInfo.setDefenseAbility('wisdom');
     fixture.changeDetectorRef.markForCheck();
     await fixture.whenStable();
-    expect(editor.calculatedAc.ac).toBe(16);
+    expect(editor.basicInfo.calculatedAc.ac).toBe(16);
     expect(editor.character.unarmoredDefense).toBe('WISDOM');
-    editor.setAutomaticAc(false);
+    editor.basicInfo.setAutomaticAc(false);
     expect(editor.character.armorClass).toBe(17);
     await editor.save();
     expect(editor.character.armorClass).toBe(17);
@@ -151,25 +191,25 @@ describe('Basic Info editor', () => {
     await fixture.whenStable();
     const editor = fixture.componentInstance;
     editor.character.name = 'Ability test'; editor.character.maxHp = 24;
-    editor.setAutomaticAc(true); editor.setUnarmoredDefense(true); editor.setDefenseAbility('wisdom');
+    editor.basicInfo.setAutomaticAc(true); editor.basicInfo.setUnarmoredDefense(true); editor.basicInfo.setDefenseAbility('wisdom');
     editor.setPage(1);
     fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
     const scores = [12, 14, 16, 8, 18, 10];
-    editor.defenseAbilities.forEach((ability, i) => {
+    editor.abilities.defenseAbilities.forEach((ability, i) => {
       const input = fixture.nativeElement.querySelector(`#ability-${ability.key}`) as HTMLInputElement;
       expect(input).toBeTruthy();
       input.value = String(scores[i]); input.dispatchEvent(new Event('input', { bubbles: true }));
     });
     await fixture.whenStable();
-    editor.adjustAbility('strength', 1);
-    expect(editor.abilityScores.strength).toBe(13);
-    expect(editor.abilityModifier('wisdom')).toBe('+4');
+    editor.abilities.adjustAbility('strength', 1);
+    expect(editor.abilities.abilityScores.strength).toBe(13);
+    expect(editor.abilities.abilityModifier('wisdom')).toBe('+4');
     editor.setPage(0);
-    expect(editor.character.name).toBe('Ability test'); expect(editor.calculatedAc.ac).toBe(16);
+    expect(editor.character.name).toBe('Ability test'); expect(editor.basicInfo.calculatedAc.ac).toBe(16);
     await editor.save(); expect(editor.error()).toBe('');
     const entry = (await new IndexedDbCharacterRepository().get(editor.character.characterUuid!))!;
     editor.newCharacter(); editor.open(entry); editor.setPage(1);
-    expect(editor.abilityScores).toEqual({ strength: 13, dexterity: 14, constitution: 16, intelligence: 8, wisdom: 18, charisma: 10 });
+    expect(editor.abilities.abilityScores).toEqual({ strength: 13, dexterity: 14, constitution: 16, intelligence: 8, wisdom: 18, charisma: 10 });
     expect(editor.character.maxHp).toBe(24);
   });
 
@@ -178,54 +218,54 @@ describe('Basic Info editor', () => {
     await fixture.whenStable();
     const editor = fixture.componentInstance;
     editor.character.name = 'Hit dice test'; editor.setPage(0);
-    editor.hitDiceTotal = 3; editor.hitDiceType = 'd8'; editor.addHitDice();
-    editor.hitDice[0].used = 2;
-    editor.hitDiceTotal = 2; editor.hitDiceType = 'D8'; editor.addHitDice();
-    expect(editor.hitDice).toEqual([{ total: 5, used: 2, dieType: 'd8', userAdded: true }]);
-    editor.adjustHitDice(0, -1);
-    expect(editor.hitDice[0]).toMatchObject({ total: 4, used: 2 });
-    editor.hitDiceTotal = 1; editor.hitDiceType = 'd10'; editor.addHitDice();
+    editor.basicInfo.hitDiceTotal = 3; editor.basicInfo.hitDiceType = 'd8'; editor.basicInfo.addHitDice();
+    editor.basicInfo.hitDice[0].used = 2;
+    editor.basicInfo.hitDiceTotal = 2; editor.basicInfo.hitDiceType = 'D8'; editor.basicInfo.addHitDice();
+    expect(editor.basicInfo.hitDice).toEqual([{ total: 5, used: 2, dieType: 'd8', userAdded: true }]);
+    editor.basicInfo.adjustHitDice(0, -1);
+    expect(editor.basicInfo.hitDice[0]).toMatchObject({ total: 4, used: 2 });
+    editor.basicInfo.hitDiceTotal = 1; editor.basicInfo.hitDiceType = 'd10'; editor.basicInfo.addHitDice();
     fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
     expect(fixture.nativeElement.querySelectorAll('#new-hit-dice-total').length).toBe(1);
     editor.setPage(0); await editor.save(); expect(editor.error()).toBe('');
     const entry = (await new IndexedDbCharacterRepository().get(editor.character.characterUuid!))!;
     editor.newCharacter(); editor.open(entry);
-    expect(editor.hitDice).toHaveLength(2); expect(editor.hitDice[0].used).toBe(2);
-    editor.removeHitDice(1); expect(editor.hitDice).toHaveLength(1);
+    expect(editor.basicInfo.hitDice).toHaveLength(2); expect(editor.basicInfo.hitDice[0].used).toBe(2);
+    editor.basicInfo.removeHitDice(1); expect(editor.basicInfo.hitDice).toHaveLength(1);
   });
 
   it('rejects invalid hit-dice additions without mutating the character', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent);
     await fixture.whenStable();
     const editor = fixture.componentInstance;
-    editor.hitDiceTotal = 0; editor.addHitDice();
-    expect(editor.hitDice).toEqual([]); expect(editor.error()).toMatch(/positive/);
-    editor.hitDiceTotal = 1; editor.hitDiceType = 'not dice'; editor.addHitDice();
-    expect(editor.hitDice).toEqual([]);
+    editor.basicInfo.hitDiceTotal = 0; editor.basicInfo.addHitDice();
+    expect(editor.basicInfo.hitDice).toEqual([]); expect(editor.error()).toMatch(/positive/);
+    editor.basicInfo.hitDiceTotal = 1; editor.basicInfo.hitDiceType = 'not dice'; editor.basicInfo.addHitDice();
+    expect(editor.basicInfo.hitDice).toEqual([]);
   });
 
   it('supports every skill proficiency rank and signed bonuses with persistent sheet keys', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent);
     await fixture.whenStable();
     const editor = fixture.componentInstance;
-    editor.character.level = 5; editor.abilityScores.dexterity = 14;
+    editor.character.level = 5; editor.abilities.abilityScores.dexterity = 14;
     editor.character.proficiencies = { savingThrows: ['WIS'], custom: ['Keep'] };
-    editor.setSkillBonus('STEALTH', -1);
+    editor.proficiencies.setSkillBonus('STEALTH', -1);
     for (const [rank, total] of [['NONE', '+1'], ['HALF', '+2'], ['PROFICIENT', '+4'], ['EXPERTISE', '+7']]) {
-      editor.setSkillLevel('STEALTH', rank);
-      expect(editor.skillTotal('STEALTH', 'dex')).toBe(total);
+      editor.proficiencies.setSkillLevel('STEALTH', rank);
+      expect(editor.proficiencies.skillTotal('STEALTH', 'dex')).toBe(total);
     }
     editor.setPage(2); fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
     expect(fixture.nativeElement.querySelectorAll('button[id^="skill-"]').length).toBe(18);
-    editor.cycleSkillLevel('STEALTH'); expect(editor.skillLevel('STEALTH')).toBe('NONE');
-    editor.cycleSkillLevel('STEALTH'); expect(editor.skillLevel('STEALTH')).toBe('HALF');
-    editor.cycleSkillLevel('STEALTH'); expect(editor.skillLevel('STEALTH')).toBe('PROFICIENT');
-    editor.cycleSkillLevel('STEALTH'); expect(editor.skillLevel('STEALTH')).toBe('EXPERTISE');
+    editor.proficiencies.cycleSkillLevel('STEALTH'); expect(editor.proficiencies.skillLevel('STEALTH')).toBe('NONE');
+    editor.proficiencies.cycleSkillLevel('STEALTH'); expect(editor.proficiencies.skillLevel('STEALTH')).toBe('HALF');
+    editor.proficiencies.cycleSkillLevel('STEALTH'); expect(editor.proficiencies.skillLevel('STEALTH')).toBe('PROFICIENT');
+    editor.proficiencies.cycleSkillLevel('STEALTH'); expect(editor.proficiencies.skillLevel('STEALTH')).toBe('EXPERTISE');
     await editor.save(); expect(editor.error()).toBe('');
     const entry = (await new IndexedDbCharacterRepository().get(editor.character.characterUuid!))!;
     editor.newCharacter(); editor.open(entry);
-    expect(editor.skillLevel('STEALTH')).toBe('EXPERTISE'); expect(editor.skillBonus('STEALTH')).toBe(-1);
+    expect(editor.proficiencies.skillLevel('STEALTH')).toBe('EXPERTISE'); expect(editor.proficiencies.skillBonus('STEALTH')).toBe(-1);
     expect(editor.character.proficiencies?.savingThrows).toEqual(['WIS']);
-    editor.setSkillBonus('STEALTH', null); expect(editor.skillBonus('STEALTH')).toBe(0);
+    editor.proficiencies.setSkillBonus('STEALTH', null); expect(editor.proficiencies.skillBonus('STEALTH')).toBe(0);
   });
 });

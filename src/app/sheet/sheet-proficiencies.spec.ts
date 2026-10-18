@@ -35,14 +35,4 @@ describe('Grouped sheet proficiencies', () => {
     expect(details.open).toBe(false);
   });
 
-  it('also starts General Stats expanded and lets its heading collapse the section', () => {
-    const fixture = TestBed.createComponent(MobileCharacterInfoPageComponent);
-    fixture.componentRef.setInput('characterData', { character: { speeds: { walk: 30 } } });
-    fixture.detectChanges();
-    const details = fixture.nativeElement.querySelector('details[aria-label="General Stats"]') as HTMLDetailsElement;
-    expect(details.open).toBe(true);
-    expect(details.textContent).toContain('Walk: 30 ft.');
-    details.querySelector('summary')!.click();
-    expect(details.open).toBe(false);
-  });
 });

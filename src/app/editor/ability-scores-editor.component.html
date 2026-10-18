@@ -1,0 +1,19 @@
+@let editor = model();
+<section class="editor-card">
+  <h2>Ability Scores</h2>
+  <div class="divide-y divide-outline-variant">
+    @for (ability of editor.defenseAbilities; track ability.key) {
+      <div class="grid grid-cols-[minmax(0,1fr)_8.25rem] items-center gap-2 py-3">
+        <div>
+          <label [for]="'ability-' + ability.key" class="font-medium text-sm">{{ ability.label }}</label>
+          <p class="text-xs text-on-surface-variant mt-1">Modifier <span class="font-semibold text-secondary">{{ editor.abilityModifier(ability.key) }}</span></p>
+        </div>
+        <div class="stat-stepper">
+          <button type="button" class="stepper-button" [attr.aria-label]="'Decrease ' + ability.label" (click)="editor.adjustAbility(ability.key, -1)"><app-ui-icon name="minus" /></button>
+          <input [id]="'ability-' + ability.key" [name]="'ability-' + ability.key" type="number" required min="0" step="1" class="editor-input text-center" [(ngModel)]="editor.abilityScores[ability.key]" (ngModelChange)="editor.changed()" />
+          <button type="button" class="stepper-button" [attr.aria-label]="'Increase ' + ability.label" (click)="editor.adjustAbility(ability.key, 1)"><app-ui-icon name="plus" /></button>
+        </div>
+      </div>
+    }
+  </div>
+</section>

@@ -7,7 +7,7 @@ import { COMBAT_TYPES } from './combat-actions';
 @Component({
   selector: 'app-combat-action-dialog',
   imports: [FormsModule, CatalogDialogComponent],
-  styleUrl: './local-editor.component.css',
+  styleUrl: './editor.css',
   template: `
     <app-catalog-dialog title="Combat Entry" subtitle="Keep a short reference for use during combat." (closed)="cancelled.emit()">
       @if (suggestions().length > 1) {

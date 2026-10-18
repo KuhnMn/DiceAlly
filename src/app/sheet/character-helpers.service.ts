@@ -1,4 +1,4 @@
-import { Injectable, computed, Signal } from '@angular/core';
+import { Injectable } from '@angular/core';
 import {
   Entry,
   FeatureEntryFull,
@@ -10,7 +10,6 @@ import {
   SpellTime,
   CharacterData,
   InventoryItem,
-  AbilityScores,
 } from '../models/character.model';
 
 @Injectable({

@@ -10,7 +10,7 @@ import { ItemView, resolveItemView } from './item-resolver';
 
 @Component({
   selector: 'app-content-import', imports: [UiIconComponent, FormsModule, RouterLink],
-  styleUrls: ['../editor/local-editor.component.css', './content-import.component.css'],
+  styleUrls: ['../editor/editor.css', './content-import.component.css'],
   templateUrl: './content-import.component.html',
 })
 export class ContentImportComponent implements OnInit, OnDestroy {

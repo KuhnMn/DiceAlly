@@ -18,7 +18,7 @@ import { newEditorId } from './editor-identity';
 @Component({
   selector: 'app-item-catalog',
   imports: [DescriptionDialogComponent, UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, SourceBookFilterComponent, EntryRendererComponent],
-  templateUrl: './item-catalog.component.html', styleUrl: './local-editor.component.css',
+  templateUrl: './item-catalog.component.html', styleUrl: './editor.css',
 })
 export class ItemCatalogComponent implements OnInit, OnDestroy {
   readonly sheet = input.required<ExportedCharacter>();

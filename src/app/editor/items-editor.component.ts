@@ -13,7 +13,7 @@ import { setCustomItemDescription } from './item-selection';
 @Component({
   selector: 'app-editor-items',
   imports: [DescriptionDialogComponent, CombatBookmarkComponent, FormsModule, EntryAnnotationsComponent, RemoveEntryDialogComponent, EntryRendererComponent, UiIconComponent, ItemCatalogComponent],
-  templateUrl: './items-editor.component.html', styleUrl: './local-editor.component.css',
+  templateUrl: './items-editor.component.html', styleUrl: './editor.css',
 })
 export class ItemsEditorComponent {
   readonly sheet = input.required<ExportedCharacter>();

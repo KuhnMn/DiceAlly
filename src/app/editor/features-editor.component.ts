@@ -1,3 +1,4 @@
+import { EditorListHeaderComponent } from './editor-list-header.component';
 import { DescriptionDialogComponent } from './description-dialog.component';
 import { CombatBookmarkComponent } from './combat-bookmark.component';
 import { UiIconComponent } from '../ui-icon.component';
@@ -19,8 +20,8 @@ import { CatalogQuery, EditorCatalog } from './editor-catalog';
 import { FEATURE_TYPES, FeatureType, createFeatureEntry, featureEntries, featureTypeOf } from './feature-selection';
 
 @Component({
-  selector: 'app-editor-features', imports: [DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
-  templateUrl: './features-editor.component.html', styleUrl: './local-editor.component.css',
+  selector: 'app-editor-features', imports: [EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
+  templateUrl: './features-editor.component.html', styleUrl: './editor.css',
 })
 export class FeaturesEditorComponent implements OnInit, OnDestroy {
   readonly sheet = input.required<ExportedCharacter>();

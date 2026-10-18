@@ -10,7 +10,7 @@ import { AppDialogService } from '../services/app-dialog.service';
   selector: 'app-combat-bookmark',
   host: { class: 'flex min-w-0 max-w-full' },
   imports: [UiIconComponent, CombatActionDialogComponent],
-  styleUrl: './local-editor.component.css',
+  styleUrl: './editor.css',
   template: `
     <span class="inline-flex max-w-full flex-wrap items-center gap-1 rounded-lg" [class.outline]="isBookmarked()"
       [class.outline-1]="isBookmarked()" [class.outline-outline-variant]="isBookmarked()" [class.outline-offset-2]="isBookmarked()"

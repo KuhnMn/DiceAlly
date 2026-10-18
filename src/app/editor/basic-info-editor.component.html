@@ -1,0 +1,129 @@
+@let editor = model();
+<section class="editor-card">
+  <h2>Basic Information</h2>
+  <div class="space-y-4">
+    <label class="block"><span class="field-label">Character Name</span><input class="editor-input" name="name" [(ngModel)]="editor.character.name" (ngModelChange)="editor.changed()" autocomplete="off" /></label>
+    <label class="block"><span class="field-label">Description</span><textarea class="editor-input resize-y" name="description" [(ngModel)]="editor.character.description" (ngModelChange)="editor.changed()" rows="2" placeholder="e.g., Human Fighter"></textarea></label>
+  </div>
+</section>
+
+<section class="editor-card">
+  <h2>Portrait</h2>
+  <div class="flex flex-wrap items-center gap-4">
+    <div class="w-20 h-20 shrink-0 rounded-lg border-2 border-surface overflow-hidden bg-surface-container flex items-center justify-center text-on-surface-variant">
+      @if (editor.sheet.portaitUrl && !editor.portraitFailed) { <img [src]="editor.sheet.portaitUrl" alt="Character portrait" class="h-full w-full object-cover" (error)="editor.portraitFailed = true" /> }
+      @else { <svg viewBox="0 0 48 48" class="w-14 h-14" fill="currentColor" aria-hidden="true"><circle cx="24" cy="16" r="9"/><path d="M7 43c0-12 7-18 17-18s17 6 17 18z"/></svg> }
+    </div>
+    <div class="space-y-2">
+      @if (editor.sheet.portaitUrl) { <button type="button" class="secondary-button" (click)="editor.removePortrait()">Remove</button> }
+      <p class="text-xs text-on-surface-variant">Use a link to an externally hosted image.</p>
+    </div>
+  </div>
+  <label class="block mt-3"><span class="field-label">Portrait URL</span><input class="editor-input" type="url" name="portrait-url" [ngModel]="editor.sheet.portaitUrl?.startsWith('data:') ? '' : editor.sheet.portaitUrl" (ngModelChange)="editor.setPortraitUrl($event)" placeholder="https://…" /></label>
+  @if (editor.sheet.portaitUrl?.startsWith('data:')) { <p class="text-sm text-error mt-2">This imported portrait is embedded. Remove it or replace it with an image URL before syncing.</p> }
+  @if (editor.portraitFailed) { <p class="text-sm text-error mt-2">This image could not be displayed. Choose another image or check its URL.</p> }
+</section>
+
+<section class="editor-card">
+  <h2>Combat Stats</h2>
+  <div class="divide-y divide-outline-variant">
+    @for (field of editor.combatFields; track field.key) {
+      <div class="stepper-field flex items-center justify-between gap-3 py-3">
+        <label [for]="field.key" class="font-medium">{{ field.label }}</label>
+        <div class="stat-stepper">
+          <button type="button" class="stepper-button" [attr.aria-label]="'Decrease ' + field.label" (click)="editor.adjust(field.key, -1)"><app-ui-icon name="minus" /></button>
+          <input [id]="field.key" [name]="field.key" type="number" required [min]="field.minimum" step="1" class="editor-input text-center" [(ngModel)]="editor.character[field.key]" (ngModelChange)="editor.changed()" />
+          <button type="button" class="stepper-button" [attr.aria-label]="'Increase ' + field.label" (click)="editor.adjust(field.key, 1)"><app-ui-icon name="plus" /></button>
+        </div>
+      </div>
+    }
+  </div>
+</section>
+
+  <section class="editor-card">
+    <h2>Hit Dice</h2>
+    @if (editor.legacyHitDice) {
+      <p class="text-sm text-on-surface-variant mb-3">Imported hit dice: {{ editor.legacyHitDice }}</p>
+      <button type="button" class="secondary-button" (click)="editor.replaceLegacyHitDice()">Replace with an editable list</button>
+    } @else {
+      <div class="space-y-3">
+        @for (die of editor.hitDice; track $index; let i = $index) {
+          <div class="rounded-lg border-2 border-outline-variant bg-surface-container p-3 space-y-3">
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="font-semibold">{{ die.total }}{{ die.dieType }}</h3>
+              <button type="button" class="secondary-button" [attr.aria-label]="'Remove ' + die.dieType + ' hit dice'" (click)="editor.removeHitDice(i)">Remove</button>
+            </div>
+            <div class="stepper-field flex flex-wrap items-center justify-between gap-3">
+              <label [for]="'hit-dice-total-' + i" class="text-sm font-medium">Total</label>
+              <div class="stat-stepper">
+                <button type="button" class="stepper-button" [attr.aria-label]="'Decrease ' + die.dieType + ' total'" (click)="editor.adjustHitDice(i, -1)"><app-ui-icon name="minus" /></button>
+                <input [id]="'hit-dice-total-' + i" [name]="'hit-dice-total-' + i" type="number" required min="0" step="1" class="editor-input text-center" [(ngModel)]="die.total" (ngModelChange)="editor.changed()" />
+                <button type="button" class="stepper-button" [attr.aria-label]="'Increase ' + die.dieType + ' total'" (click)="editor.adjustHitDice(i, 1)"><app-ui-icon name="plus" /></button>
+              </div>
+            </div>
+          </div>
+        } @empty { <p class="text-sm text-on-surface-variant py-3">No hit dice added yet.</p> }
+      </div>
+      <div class="mt-4 rounded-lg border-2 border-secondary bg-surface-container p-3">
+        <h3 class="font-semibold mb-3">Add Hit Dice</h3>
+        <div class="flex flex-wrap gap-3 items-end">
+          <label class="flex-1 min-w-24"><span class="field-label">Total</span><input id="new-hit-dice-total" name="new-hit-dice-total" type="number" min="1" step="1" class="editor-input" [(ngModel)]="editor.hitDiceTotal" (keydown.enter)="$event.preventDefault(); editor.addHitDice()" /></label>
+          <label class="flex-1 min-w-24"><span class="field-label">Die type</span><input id="new-hit-dice-type" name="new-hit-dice-type" class="editor-input" list="hit-die-types" [(ngModel)]="editor.hitDiceType" placeholder="d8" (keydown.enter)="$event.preventDefault(); editor.addHitDice()" /></label>
+          <datalist id="hit-die-types">@for (dieType of editor.dieTypes; track dieType) { <option [value]="dieType"></option> }</datalist>
+          <button type="button" class="action-button" (click)="editor.addHitDice()">Add</button>
+        </div>
+        <p class="text-xs text-on-surface-variant mt-3">Adding the same die type increases its total.</p>
+      </div>
+    }
+  </section>
+
+<section class="editor-card">
+  <h2>Armor Class</h2>
+  <label class="flex items-center justify-between gap-4"><span class="font-medium">Calculate Automatically</span><input name="calculate-ac" type="checkbox" [ngModel]="editor.character.calculateAC" (ngModelChange)="editor.setAutomaticAc($event)" /></label>
+  @if (!editor.character.calculateAC) {
+    <div class="stepper-field flex flex-wrap items-center justify-between gap-3 mt-4"><label for="manual-ac" class="font-medium">Armor Class</label>
+      <div class="stat-stepper"><button type="button" class="stepper-button" aria-label="Decrease Armor Class" (click)="editor.adjust('armorClass', -1)"><app-ui-icon name="minus" /></button>
+        <input id="manual-ac" name="armor-class" type="number" required min="0" step="1" class="editor-input text-center" [(ngModel)]="editor.character.armorClass" (ngModelChange)="editor.changed()" />
+        <button type="button" class="stepper-button" aria-label="Increase Armor Class" (click)="editor.adjust('armorClass', 1)"><app-ui-icon name="plus" /></button></div>
+    </div>
+  } @else {
+    <div class="mt-3 flex items-center justify-between gap-2 rounded-lg border border-secondary bg-secondary-container px-2.5 py-2 text-on-secondary-container">
+      <div class="min-w-0 flex-1"><p class="text-xs font-semibold">Calculated AC</p><p class="mt-0.5 text-xs leading-snug break-words">{{ editor.calculatedAc.source }}</p></div>
+      <strong class="shrink-0 whitespace-nowrap text-xl leading-none tabular-nums">{{ editor.calculatedAc.ac }}</strong>
+    </div>
+    <label class="flex items-center justify-between gap-4 mt-4"><span>Unarmored Defense</span><input name="unarmored-defense" type="checkbox" [ngModel]="!!editor.character.unarmoredDefense" (ngModelChange)="editor.setUnarmoredDefense($event)" /></label>
+    @if (editor.character.unarmoredDefense) {
+      <label class="block mt-3"><span class="field-label">Preferred ability</span><select name="defense-ability" class="editor-input" [ngModel]="editor.defenseAbility" (ngModelChange)="editor.setDefenseAbility($event)">@for (ability of editor.defenseAbilities; track ability.key) { <option [value]="ability.key">{{ ability.label }}</option> }</select></label>
+      <p class="text-sm text-on-surface-variant mt-2">10 + Dexterity modifier + the selected ability modifier. Uses the best available AC.</p>
+    }
+  }
+</section>
+
+<section class="editor-card space-y-6">
+  <h2 class="!mb-0">General Stats</h2>
+  <div>
+    <h3 class="font-semibold mb-3">Resistances</h3>
+    <div class="flex gap-2"><label class="flex-1 min-w-0"><span class="sr-only">Add Resistance</span><input name="resistance" class="editor-input" [(ngModel)]="editor.resistanceInput" placeholder="Add resistance" (keydown.enter)="$event.preventDefault(); editor.addResistance()" /></label><button type="button" class="secondary-button" (click)="editor.addResistance()" [disabled]="!editor.resistanceInput.trim()">Add</button></div>
+    <div class="flex flex-wrap gap-2 mt-3">@for (resistance of editor.resistances; track $index; let i = $index) { <button type="button" class="rounded-full border border-secondary px-3 py-1.5 text-sm bg-secondary-container text-on-secondary-container hover:bg-secondary hover:text-on-secondary transition-colors" [attr.aria-label]="'Remove resistance ' + resistance" (click)="editor.removeResistance(i)">{{ resistance }} <span aria-hidden="true" class="ml-2"><app-ui-icon name="close" /></span></button> }</div>
+  </div>
+  <div>
+    <h3 class="font-semibold mb-3">Senses</h3>
+    <div class="flex flex-wrap gap-2 items-end">
+      <label class="flex-1 min-w-32"><span class="field-label">Sense name</span><input name="sense-name" class="editor-input" [(ngModel)]="editor.senseName" placeholder="e.g., Darkvision" (keydown.enter)="$event.preventDefault(); editor.addSense()" /></label>
+      <label class="w-24"><span class="field-label">Range (ft)</span><input name="sense-range" type="number" min="0" step="1" class="editor-input" [(ngModel)]="editor.senseRange" (keydown.enter)="$event.preventDefault(); editor.addSense()" /></label>
+      <button type="button" class="secondary-button !py-2.5" [disabled]="!editor.senseName.trim()" (click)="editor.addSense()">Add</button>
+    </div>
+    <div class="sense-list mt-3">@for (sense of editor.senses; track sense[0]) {
+      <div class="sense-card flex flex-wrap items-center justify-between gap-2 rounded-lg border-2 border-outline-variant bg-surface-container p-3">
+        <label [for]="'sense-' + sense[0]" class="flex-1 min-w-0 break-words">{{ sense[0] }}</label>
+        <div class="flex items-center gap-2"><input [id]="'sense-' + sense[0]" [name]="'sense-' + sense[0]" type="number" required min="0" step="1" class="editor-input !w-24" [ngModel]="sense[1]" (ngModelChange)="editor.updateSense(sense[0], $event)" /><span class="text-sm">ft</span><button type="button" class="secondary-button icon-button" [attr.aria-label]="'Remove sense ' + sense[0]" (click)="editor.removeSense(sense[0])"><app-ui-icon name="close" /></button></div>
+      </div>
+    }</div>
+  </div>
+  <div>
+    <h3 class="font-semibold mb-3">Speeds</h3>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">@for (speed of editor.speedFields; track speed.key) {
+      <label><span class="field-label">{{ speed.label }} (ft)</span><input [id]="'speed-' + speed.key" [name]="'speed-' + speed.key" type="number" min="0" step="1" class="editor-input" [(ngModel)]="editor.speeds[speed.key]" (ngModelChange)="editor.changed()" [required]="speed.key === 'walk'" [placeholder]="speed.key === 'walk' ? '30' : '—'" /></label>
+    }</div>
+  </div>
+</section>

@@ -1,4 +1,4 @@
-import { ContentRecord, entityKey, JsonObject, object, string } from '../content/content.model';
+import { ContentRecord, entityKey, JsonObject, object } from '../content/content.model';
 import { ContentRulesIndex } from './feature-rules';
 import { describeSpellChoice, isCompleteSelection, isSpellRequirementMet, spellChoiceQuery } from './spell-choice';
 

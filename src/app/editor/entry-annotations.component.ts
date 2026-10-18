@@ -8,7 +8,7 @@ import { AnnotatedEntry, EntryAnnotationsEditor } from './entry-annotations-edit
   selector: 'app-entry-annotations-editor',
   imports: [RecoveryIndicatorComponent, UiIconComponent, FormsModule],
   templateUrl: './entry-annotations.component.html',
-  styleUrl: './local-editor.component.css',
+  styleUrl: './editor.css',
   host: { class: 'block space-y-3' },
 })
 export class EntryAnnotationsComponent extends EntryAnnotationsEditor {

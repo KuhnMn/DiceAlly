@@ -9,7 +9,7 @@ import { AppDialogService } from '../services/app-dialog.service';
 import { Component, computed, input, signal, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ExportedCharacter, Entry, DisplayItem, InventoryItem, FeatureNotes } from '../models/character.model';
+import { ExportedCharacter, Entry, InventoryItem, FeatureNotes } from '../models/character.model';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { FeatureUsesComponent } from './feature-uses.component';
 import { FeatureNotesComponent } from './feature-notes.component';
@@ -106,7 +106,7 @@ export class EquipmentPageComponent {
       const targetId = this.store.featureScrollTarget();
       if (!targetId || (!targetId.startsWith('item-'))) return;
       const target = this.characterData()?.inventory?.find(item => `item-${item.editorId ?? this.helpers.sourceId(item.name + '-' + (item.source ?? ''))}` === targetId);
-      if (target) { this.searchQuery.set(''); this.inventoryFilter.set('all'); this.expandedItems.update(values => new Set([this.itemKey(target)])); }
+      if (target) { this.searchQuery.set(''); this.inventoryFilter.set('all'); this.expandedItems.set(new Set([this.itemKey(target)])); }
       if (typeof document === 'undefined') return;
       setTimeout(() => {
         const el = document.getElementById(targetId);

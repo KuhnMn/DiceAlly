@@ -9,7 +9,7 @@ import { activeContentRevision } from './active-content-revision';
   selector: 'app-source-book-filter',
   imports: [UiIconComponent, FormsModule],
   templateUrl: './source-book-filter.component.html',
-  styleUrl: './local-editor.component.css',
+  styleUrl: './editor.css',
 })
 export class SourceBookFilterComponent implements OnInit {
   readonly filter = inject(SourceBookFilterService);

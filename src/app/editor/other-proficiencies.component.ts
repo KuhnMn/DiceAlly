@@ -14,7 +14,7 @@ import { EntryRendererComponent } from '../entries/entry-renderer.component';
 
 @Component({
   selector: 'app-other-proficiencies', imports: [UiIconComponent, FormsModule, RouterLink, SearchableSelectComponent, EntryRendererComponent],
-  templateUrl: './other-proficiencies.component.html', styleUrl: './local-editor.component.css',
+  templateUrl: './other-proficiencies.component.html', styleUrl: './editor.css',
 })
 export class OtherProficienciesComponent implements OnInit {
   private readonly dialogs = inject(AppDialogService);

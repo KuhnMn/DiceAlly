@@ -1,3 +1,4 @@
+import { EditorListHeaderComponent } from './editor-list-header.component';
 import { DescriptionDialogComponent } from './description-dialog.component';
 import { CombatBookmarkComponent } from './combat-bookmark.component';
 import { UiIconComponent } from '../ui-icon.component';
@@ -19,8 +20,8 @@ import { createMonsterEntry, setMonsterMaxHp } from './monster-selection';
 
 @Component({
   selector: 'app-editor-monsters',
-  imports: [DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, RemoveEntryDialogComponent, EntryAnnotationsComponent, MonsterStatBlockComponent, SourceBookFilterComponent],
-  templateUrl: './monsters-editor.component.html', styleUrl: './local-editor.component.css',
+  imports: [EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, RemoveEntryDialogComponent, EntryAnnotationsComponent, MonsterStatBlockComponent, SourceBookFilterComponent],
+  templateUrl: './monsters-editor.component.html', styleUrl: './editor.css',
 })
 export class MonstersEditorComponent implements OnInit, OnDestroy {
   readonly sheet = input.required<ExportedCharacter>();

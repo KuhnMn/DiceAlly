@@ -1,0 +1,49 @@
+@let editor = model();
+<p class="text-sm text-on-surface-variant">Skills, saving throws, weapons, tools, languages and advantage conditions.</p>
+<div class="proficiency-layout" appMasonryCards>
+<section class="editor-card">
+  <h2>Skill Proficiencies</h2>
+  <p class="text-xs text-on-surface-variant mb-4">Click the proficiency icon to cycle: None <app-ui-icon name="right" /> Half <app-ui-icon name="right" /> Full <app-ui-icon name="right" /> Expertise.</p>
+  <div class="flex flex-wrap gap-x-4 gap-y-2 text-xs mb-4 pb-3 border-b-2 border-outline-variant">
+    <span>○ None</span><span class="text-secondary">◐ Half</span><span class="text-primary">● Full</span><span class="text-tertiary">✪ Expertise</span>
+  </div>
+  <div class="text-xs font-semibold text-on-surface-variant text-right mb-2 pr-2">Manual bonus</div>
+  <ul class="space-y-1 text-sm">
+    @for (skill of editor.skills; track skill.key) {
+      <li class="grid grid-cols-[1.5rem_1.75rem_minmax(0,1fr)_3.5rem] gap-x-2 items-center rounded px-1 py-0.5 hover:bg-surface-container transition-colors">
+        <button type="button" [id]="'skill-' + skill.key" class="w-6 h-6 border-2 border-outline rounded-full flex items-center justify-center text-xs font-bold hover:bg-surface-container-high transition-colors" [attr.aria-label]="skill.name + ' proficiency: ' + editor.skillLevel(skill.key) + '. Click to change.'" [title]="editor.skillLevel(skill.key)" (click)="editor.cycleSkillLevel(skill.key)">
+          @switch (editor.skillLevel(skill.key)) {
+            @case ('PROFICIENT') { <span class="text-primary" aria-hidden="true">●</span> }
+            @case ('EXPERTISE') { <span class="text-tertiary text-sm" aria-hidden="true">✪</span> }
+            @case ('HALF') { <span class="text-secondary" aria-hidden="true">◐</span> }
+          }
+        </button>
+        <strong class="font-mono font-bold" [attr.aria-label]="skill.name + ' total bonus'">{{ editor.skillTotal(skill.key, skill.ability) }}</strong>
+        <span class="min-w-0 leading-tight">{{ skill.name }} <span class="text-xs text-on-surface-variant">({{ skill.ability.toUpperCase() }})</span></span>
+        <label><span class="sr-only">{{ skill.name }} manual bonus</span><input [id]="'skill-bonus-' + skill.key" [name]="'skill-bonus-' + skill.key" type="number" step="1" class="editor-input text-center !py-0 !px-1" [ngModel]="editor.skillBonus(skill.key)" (ngModelChange)="editor.setSkillBonus(skill.key, $event)" /></label>
+      </li>
+    }
+  </ul>
+</section>
+
+<section class="editor-card">
+  <h2>Saving Throw Proficiencies</h2>
+  <p class="text-xs text-on-surface-variant mb-4">Click the proficiency icon to toggle full proficiency.</p>
+  <div class="flex gap-4 text-xs mb-4 pb-3 border-b-2 border-outline-variant"><span>○ None</span><span class="text-primary">● Full</span></div>
+  <div class="text-xs font-semibold text-on-surface-variant text-right mb-2 pr-2">Manual bonus</div>
+  <ul class="space-y-1 text-sm">
+    @for (ability of editor.savingThrows; track ability.key) {
+      <li class="grid grid-cols-[1.5rem_1.75rem_minmax(0,1fr)_3.5rem] gap-x-2 items-center rounded px-1 py-0.5 hover:bg-surface-container transition-colors">
+        <button type="button" [id]="'save-' + ability.abbreviation" class="w-6 h-6 border-2 border-outline rounded-full flex items-center justify-center text-xs font-bold hover:bg-surface-container-high transition-colors" [attr.aria-pressed]="editor.saveProficient(ability.abbreviation)" [attr.aria-label]="ability.label + ' saving throw proficiency'" (click)="editor.toggleSaveProficiency(ability.abbreviation)">
+          @if (editor.saveProficient(ability.abbreviation)) { <span class="text-primary" aria-hidden="true">●</span> }
+        </button>
+        <strong class="font-mono font-bold" [attr.aria-label]="ability.label + ' saving throw total'">{{ editor.saveTotal(ability.key) }}</strong>
+        <span class="min-w-0 leading-tight">{{ ability.label }} <span class="text-xs text-on-surface-variant">({{ ability.abbreviation.toUpperCase() }})</span></span>
+        <label><span class="sr-only">{{ ability.label }} saving throw manual bonus</span><input [id]="'save-bonus-' + ability.abbreviation" [name]="'save-bonus-' + ability.abbreviation" type="number" step="1" class="editor-input text-center !py-0 !px-1" [ngModel]="editor.saveBonus(ability.abbreviation)" (ngModelChange)="editor.setSaveBonus(ability.abbreviation, $event)" /></label>
+      </li>
+    }
+  </ul>
+</section>
+
+<app-other-proficiencies [sheet]="editor.sheet" (edited)="editor.changed()" />
+</div>

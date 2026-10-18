@@ -30,6 +30,8 @@ export class App {
   readonly sheetOpen = signal(false);
   private hadAccess = false;
   constructor() {
+    // Load and apply the saved theme on startup.
+    inject(ThemeService);
     this.router.events.pipe(takeUntilDestroyed()).subscribe(event => {
       if (event instanceof NavigationEnd) this.sheetOpen.set(/^\/(?:sheet|characters\/(?!new(?:\/|$))[^/]+)\/?$/.test(event.urlAfterRedirects.split('?')[0]));
     });
@@ -65,8 +67,6 @@ export class App {
     }
   }
   readonly dialogs = inject(AppDialogService);
-  // Initialize theme service to load/apply theme on startup
-  private themeService = inject(ThemeService);
   
   protected readonly title = signal('Dice Ally');
 }

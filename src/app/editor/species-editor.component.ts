@@ -21,7 +21,7 @@ import { CatalogQuery, EditorCatalog } from './editor-catalog';
   selector: 'app-editor-species',
   imports: [DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent],
   templateUrl: './species-editor.component.html',
-  styleUrl: './local-editor.component.css',
+  styleUrl: './editor.css',
 })
 export class SpeciesEditorComponent implements OnDestroy {
   readonly sheet = input.required<ExportedCharacter>();

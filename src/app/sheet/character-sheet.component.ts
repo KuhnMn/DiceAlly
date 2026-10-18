@@ -253,7 +253,7 @@ export class CharacterSheetComponent implements OnDestroy {
     }
   }
 
-  onCharacterRested(restType: 'short' | 'long') {
+  onCharacterRested(_restType: 'short' | 'long') {
     const character = this.characterData();
     if (!character) return;
     

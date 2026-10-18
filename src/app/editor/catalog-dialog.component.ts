@@ -19,7 +19,7 @@ import { DialogScrollLockService } from './dialog-scroll-lock.service';
       <div class="catalog-footer"><ng-content select="[catalog-footer]" /></div>
     </section>
   `,
-  styleUrl: './local-editor.component.css',
+  styleUrl: './editor.css',
   styles: [`
     :host { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 1rem; }
     .catalog-backdrop { position: absolute; inset: 0; background: rgb(0 0 0 / .55); cursor: default; }

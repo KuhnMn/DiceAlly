@@ -6,7 +6,7 @@ import { DialogScrollLockService } from './editor/dialog-scroll-lock.service';
 @Component({
   selector: 'app-dialog',
   imports: [A11yModule],
-  styleUrl: './editor/local-editor.component.css',
+  styleUrl: './editor/editor.css',
   template: `
     <div class="fixed inset-0 bg-black/55 z-[1200] grid place-items-center p-4" (click)="dismiss()">
       <section role="alertdialog" aria-modal="true" aria-labelledby="app-dialog-title" aria-describedby="app-dialog-message"

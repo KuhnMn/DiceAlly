@@ -1,11 +1,7 @@
 <section class="editor-card feature-editor">
-  <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-    <div><h2 class="!mb-0">Monsters</h2><p class="text-xs text-on-surface-variant mt-1">Manage companions, summons, and their tracking settings.</p></div>
-    <div class="flex flex-wrap items-center gap-2">
-      <button type="button" class="secondary-button compact-button" [attr.aria-expanded]="listVisible" aria-controls="added-monsters" (click)="listVisible = !listVisible">{{ listVisible ? 'Hide List' : 'Show List' }} ({{ monsters.length }})</button>
-      <button type="button" class="action-button" aria-haspopup="dialog" (click)="openCatalog()">+ Add Monsters</button>
-    </div>
-  </div>
+  <app-editor-list-header title="Monsters" description="Manage companions, summons, and their tracking settings."
+    [count]="monsters.length" controlsId="added-monsters"
+    [(visible)]="listVisible" (add)="openCatalog()" />
   <div id="added-monsters" class="space-y-2" [hidden]="!listVisible">
     <label class="mb-3 block text-sm font-semibold">Search monsters
       <input type="search" class="editor-input mt-1" name="selected-monster-search" [(ngModel)]="listSearch" placeholder="Search by name" />

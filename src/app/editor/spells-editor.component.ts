@@ -1,3 +1,4 @@
+import { EditorListHeaderComponent } from './editor-list-header.component';
 import { DescriptionDialogComponent } from './description-dialog.component';
 import { CombatBookmarkComponent } from './combat-bookmark.component';
 import { HorizontalRowDirective } from '../sheet/horizontal-row.directive';
@@ -24,9 +25,9 @@ import { contentReference } from './editor-content-helpers';
 
 @Component({
   selector: 'app-editor-spells',
-  imports: [DescriptionDialogComponent, CombatBookmarkComponent, HorizontalRowDirective, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
+  imports: [EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, HorizontalRowDirective, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
   templateUrl: './spells-editor.component.html',
-  styleUrl: './local-editor.component.css',
+  styleUrl: './editor.css',
 })
 export class SpellsEditorComponent implements OnInit, OnDestroy {
   readonly sheet = input.required<ExportedCharacter>();

@@ -1,11 +1,7 @@
 <section class="editor-card feature-editor">
-  <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-    <div><h2 class="!mb-0">Spells</h2><p class="text-xs text-on-surface-variant mt-1">Manage the entries on your character.</p></div>
-    <div class="flex flex-wrap items-center gap-2">
-      <button type="button" class="secondary-button compact-button" [attr.aria-expanded]="listVisible" aria-controls="added-spells" (click)="listVisible = !listVisible">{{ listVisible ? 'Hide List' : 'Show List' }} ({{ selected.length }})</button>
-    <button type="button" class="action-button" aria-haspopup="dialog" (click)="openCatalog()">+ Add Spells</button>
-    </div>
-  </div>
+  <app-editor-list-header title="Spells"
+    [count]="selected.length" controlsId="added-spells"
+    [(visible)]="listVisible" (add)="openCatalog()" />
   <div id="added-spells" [hidden]="!listVisible">
   <label class="mb-3 block text-sm font-semibold">Search spells
     <input type="search" class="editor-input mt-1" name="selected-spell-search" [(ngModel)]="listSearch" placeholder="Search by name" />

@@ -25,8 +25,11 @@ import { UiIconComponent } from '../ui-icon.component';
 })
 export class SheetAcControlComponent extends CharacterInfoPageComponent {
   private readonly acInput = viewChild<ElementRef<HTMLInputElement>>('acInput');
-  private readonly focusEditor = afterRenderEffect(() => {
-    const input = this.acInput()?.nativeElement;
-    if (input) { input.focus(); input.select(); }
-  });
+  constructor() {
+    super();
+    afterRenderEffect(() => {
+      const input = this.acInput()?.nativeElement;
+      if (input) { input.focus(); input.select(); }
+    });
+  }
 }

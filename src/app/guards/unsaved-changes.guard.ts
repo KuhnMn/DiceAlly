@@ -23,7 +23,7 @@ export class UnsavedChangesGuard {
   }
 }
 
-export const canDeactivateCharacterSheet: CanDeactivateFn<any> = (component) => {
+export const canDeactivateCharacterSheet: CanDeactivateFn<any> = () => {
   const guard = inject(UnsavedChangesGuard);
   const store = inject(CharacterStore);
   const characterData = store.characterData();

@@ -1,6 +1,6 @@
 import { ContentCache } from './content-cache';
 import { directLinks, featureReference } from './content-adapter';
-import { ContentLink, ContentRecord, entityKey, ImportDiagnostic, JsonObject, normalize, object, string } from './content.model';
+import { ContentLink, ContentRecord, ImportDiagnostic, normalize, object, string } from './content.model';
 
 const TAGS: Record<string, { kind: string; source: string }> = {
   spell: { kind: 'spell', source: 'PHB' }, item: { kind: 'item', source: 'DMG' },

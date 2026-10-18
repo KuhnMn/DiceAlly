@@ -37,7 +37,7 @@ export function mapContent(value: unknown, file: string): { records: ContentReco
   return { records, diagnostics };
 }
 
-export function featureReference(value: unknown, kind: 'classFeature' | 'subclassFeature', parent: JsonObject): ContentLink {
+export function featureReference(value: unknown, kind: 'classFeature' | 'subclassFeature', _parent: JsonObject): ContentLink {
   const token = typeof value === 'string' ? value : string(object(value)?.[kind]);
   const p = token.split('|');
   const subclass = kind === 'subclassFeature';

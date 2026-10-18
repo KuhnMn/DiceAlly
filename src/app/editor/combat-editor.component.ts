@@ -9,7 +9,7 @@ import { UiIconComponent } from '../ui-icon.component';
 @Component({
   selector: 'app-editor-combat',
   imports: [CombatActionDialogComponent, UiIconComponent],
-  styleUrl: './local-editor.component.css',
+  styleUrl: './editor.css',
   template: `
     <section class="editor-card">
       <div class="flex flex-wrap items-center justify-between gap-2 mb-3"><div><h2 class="!mb-0">Combat</h2><p class="text-xs text-on-surface-variant mt-1">Quick references on the sheet. Bookmark features, spells, items, or monsters to prefill an entry.</p></div><button type="button" class="action-button" (click)="create()"><app-ui-icon name="plus" /> Add Custom Entry</button></div>

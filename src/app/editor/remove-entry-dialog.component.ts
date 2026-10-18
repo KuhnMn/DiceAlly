@@ -18,7 +18,7 @@ import { DialogScrollLockService } from './dialog-scroll-lock.service';
       </footer>
     </section>
   `,
-  styleUrl: './local-editor.component.css',
+  styleUrl: './editor.css',
   styles: [`
     :host { position: fixed; inset: 0; z-index: 1100; display: grid; place-items: center; padding: 1rem; }
     .backdrop { position: absolute; inset: 0; background: rgb(0 0 0 / .55); }

@@ -22,7 +22,7 @@ import { activeContentRevision } from './active-content-revision';
   selector: 'app-class-wizard',
   imports: [UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, SourceBookFilterComponent, SearchableSelectComponent, CapitalizeFirstPipe],
   templateUrl: './class-wizard.component.html',
-  styleUrl: './local-editor.component.css',
+  styleUrl: './editor.css',
 })
 export class ClassWizardComponent implements OnInit, OnDestroy {
   readonly sheet = input.required<ExportedCharacter>();

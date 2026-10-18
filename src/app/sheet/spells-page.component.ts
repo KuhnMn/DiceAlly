@@ -470,7 +470,7 @@ export class SpellsPageComponent {
           this.spellCastingSourceFilter.set('ALL');
           this.spellLevelFilter.set('ALL');
           this.spellRitualFilter.set('ALL');
-          this.expandedItems.update(values => new Set([this.spellExpansionId(target)]));
+          this.expandedItems.set(new Set([this.spellExpansionId(target)]));
         }
       }
       if (typeof document === 'undefined') return;

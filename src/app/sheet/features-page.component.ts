@@ -11,7 +11,6 @@ import { FeatureNotesComponent } from './feature-notes.component';
 import { CharacterHelpersService } from './character-helpers.service';
 import { ExportedCharacter, FeatureEntryFull, FeatureNotes, Speeds } from '../models/character.model';
 import { CharacterStore } from '../stores/character.store';
-import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
 
 @Component({
   selector: 'app-features-page',
@@ -325,7 +324,7 @@ export class FeaturesPageComponent {
         this.searchQuery.set('');
         this.featureTypeFilter.set('ALL');
         this.featureSourceFilter.set('ALL');
-        this.expandedItems.update(values => new Set([targetId]));
+        this.expandedItems.set(new Set([targetId]));
       }
       if (typeof document === 'undefined') return;
       setTimeout(() => {

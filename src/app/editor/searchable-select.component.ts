@@ -8,7 +8,7 @@ export interface SelectOption { value: string; label: string; disabled?: boolean
 @Component({
   selector: 'app-searchable-select',
   imports: [UiIconComponent, FormsModule],
-  styleUrl: './local-editor.component.css',
+  styleUrl: './editor.css',
   template: `
     <div class="relative" (keydown)="keydown($event)">
       <button #trigger type="button" class="editor-input flex items-center justify-between gap-2 text-left" [class.compact-select]="compact()"

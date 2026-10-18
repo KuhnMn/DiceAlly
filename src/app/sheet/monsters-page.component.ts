@@ -12,8 +12,6 @@ import { CommonModule } from '@angular/common';
 import {
   ExportedCharacter,
   Monster,
-  MonsterCasting,
-  MonsterSpellcasting,
 } from '../models/character.model';
 import { CharacterHelpersService } from './character-helpers.service';
 import { CharacterStore } from '../stores/character.store';
@@ -106,7 +104,7 @@ export class MonstersPageComponent extends MonsterPresentation {
       const targetId = this.store.featureScrollTarget();
       if (!targetId || (!targetId.startsWith('monster-'))) return;
       const target = this.characterData()?.monsters?.find(monster => `monster-${monster.editorId ?? this.helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? ''))}` === targetId);
-      if (target) { this.searchQuery.set(''); this.monsterFilter.set('all'); this.expandedItems.update(values => new Set([this.monsterKey(target)])); }
+      if (target) { this.searchQuery.set(''); this.monsterFilter.set('all'); this.expandedItems.set(new Set([this.monsterKey(target)])); }
       if (typeof document === 'undefined') return;
       setTimeout(() => {
         const el = document.getElementById(targetId);

@@ -11,7 +11,7 @@ import { SearchableSelectComponent } from './searchable-select.component';
 @Component({
   selector: 'app-feature-source-picker',
   imports: [HorizontalRowDirective, NgClass, SearchableSelectComponent, SourceStatsComponent],
-  styleUrl: './local-editor.component.css',
+  styleUrl: './editor.css',
   template: `
     <div class="source-picker" [class.selector-panel]="!compact()" [class.mb-3]="mode() === 'cards'" [attr.data-tone]="tone()">
       @if (compact() && mode() === 'dropdown') {
