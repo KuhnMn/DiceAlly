@@ -193,6 +193,15 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
                 (change)="onFile($event)"
               />
             </label>
+            <div class="mt-4 border-t border-outline-variant pt-4">
+              <button type="button" (click)="legacyFileInput.click()" [disabled]="isConvertingLegacy()"
+                class="flex w-full items-center justify-center gap-2 rounded bg-secondary-container px-4 py-3 font-semibold text-on-secondary-container disabled:opacity-50">
+                @if (isConvertingLegacy()) { <span class="inline-flex animate-spin"><app-ui-icon name="loader" /></span> }
+                {{ isConvertingLegacy() ? 'Converting old export…' : 'Import old app export' }}
+              </button>
+              <input #legacyFileInput hidden type="file" accept=".json,application/json" (change)="onFile($event, true)" />
+              <p class="mt-2 text-xs text-on-surface-variant">Converts old app JSON, merges sources, and matches entries against your installed game data.</p>
+            </div>
           </div>
 
           <!-- Paste JSON -->
@@ -212,6 +221,8 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
             >
               Load from Text
             </button>
+            <button type="button" (click)="loadFromText(true)" [disabled]="!raw.trim() || isConvertingLegacy()"
+              class="mt-2 w-full rounded border border-outline-variant px-4 py-2 text-sm font-semibold text-on-surface disabled:opacity-50">Import old JSON from text</button>
           </div>
         </div>
       </section>
@@ -244,7 +255,8 @@ export class ImportComponent {
   importUrl = '';
   savedCharacters = signal<CharacterSummary[]>([]);
   importError = signal<{ code: string; message: string } | null>(null);
-  pendingImport = signal<{ json: string; override: boolean } | null>(null);
+  pendingImport = signal<{ json: string; override: boolean; legacy?: boolean } | null>(null);
+  readonly isConvertingLegacy = signal(false);
   isLoadingUrl = signal<boolean>(false);
   exportingCharacterId = signal<string | null>(null);
   pendingDeletion = signal<CharacterSummary | null>(null);
@@ -268,9 +280,9 @@ export class ImportComponent {
     } catch (error) { this.library.error.set(String(error)); }
   }
 
-  async onFile(event: Event) {
+  async onFile(event: Event, legacy = false) {
     const input = event.target as HTMLInputElement;
-    if (input.files?.[0]) await this.importFile(input.files[0]);
+    if (input.files?.[0]) await this.importFile(input.files[0], legacy);
     input.value = '';
   }
 
@@ -280,13 +292,19 @@ export class ImportComponent {
     if (file) await this.importFile(file);
   }
 
-  private async importFile(file: File) {
-    try { this.raw = await file.text(); await this.loadFromText(); }
+  private async importFile(file: File, legacy = false) {
+    try { this.raw = await file.text(); await this.loadFromText(legacy); }
     catch (error) { this.importError.set({ code: 'UNKNOWN', message: String(error) }); }
   }
 
-  async loadFromText() {
-    this.handleImportResult(await this.library.importCharacterFromJson(this.raw));
+  async loadFromText(legacy = false) {
+    if (this.isConvertingLegacy()) return;
+    this.isConvertingLegacy.set(legacy);
+    try {
+      const result = legacy ? await this.library.importLegacyCharacterFromJson(this.raw)
+        : await this.library.importCharacterFromJson(this.raw);
+      this.handleImportResult(result, legacy);
+    } finally { this.isConvertingLegacy.set(false); }
   }
 
   onThemeChange(event: Event) {
@@ -348,7 +366,13 @@ export class ImportComponent {
 
   async confirmOverride() {
     const pending = this.pendingImport();
-    if (pending) this.handleImportResult(await this.library.importCharacterFromJson(pending.json, true));
+    if (!pending || this.isConvertingLegacy()) return;
+    this.isConvertingLegacy.set(!!pending.legacy);
+    try {
+      const result = pending.legacy ? await this.library.importLegacyCharacterFromJson(pending.json, true)
+        : await this.library.importCharacterFromJson(pending.json, true);
+      this.handleImportResult(result, !!pending.legacy);
+    } finally { this.isConvertingLegacy.set(false); }
   }
 
   clearImportError() {
@@ -356,14 +380,14 @@ export class ImportComponent {
     this.pendingImport.set(null);
   }
 
-  private handleImportResult(result: CharacterImportResult) {
+  private handleImportResult(result: CharacterImportResult, legacy = false) {
     if (result.success) {
       this.importError.set(null);
       this.raw = '';
       this.pendingImport.set(null);
       this.loadCharacter(result.characterId!);
     } else if (result.error?.code === 'IMPORT_CONFLICT') {
-      this.pendingImport.set({ json: this.raw, override: false });
+      this.pendingImport.set({ json: this.raw, override: false, legacy });
       this.importError.set({
         code: 'IMPORT_CONFLICT',
         message: result.error.message,

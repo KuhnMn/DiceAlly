@@ -81,16 +81,16 @@ function write(sheet: ExportedCharacter, path: string[], value: unknown) {
   else if (group.index < 0) group.list.push(structuredClone(value));
   else group.list[group.index] = structuredClone(value);
 }
-function collision(sheet: ExportedCharacter, entry: PrefillValue): boolean {
+function collisions(sheet: ExportedCharacter, entry: PrefillValue): { editorId?: string }[] {
   const value = entry.value as FeatureEntryFull & SpellEntryFull;
-  if (entry.path[0] === 'features') return (sheet.features ?? []).some(feature => feature.editorId !== value.editorId
+  if (entry.path[0] === 'features') return (sheet.features ?? []).filter(feature => feature.editorId !== value.editorId
     && feature.name === value.name && feature.source === value.source && feature.featureSourceName === value.featureSourceName
     && (feature.contentReference?.key ?? '') === (value.contentReference?.key ?? ''));
-  if (entry.path[0] === 'spells') return (sheet.spells ?? []).some(spell => spell.editorId !== value.editorId
+  if (entry.path[0] === 'spells') return (sheet.spells ?? []).filter(spell => spell.editorId !== value.editorId
     && spell.name === value.name && spell.source === value.source && spell.castingSourceName === value.castingSourceName && spell.listType === value.listType);
-  if (entry.path[0] === 'sources') return (sheet.character?.featureSources ?? []).some(source => source.editorId !== (entry.value as { editorId: string }).editorId
+  if (entry.path[0] === 'sources') return (sheet.character?.featureSources ?? []).filter(source => source.editorId !== (entry.value as { editorId: string }).editorId
     && source.name === (entry.value as { name: string }).name);
-  return false;
+  return [];
 }
 function hasAnnotations(value: unknown): boolean {
   const entry = value as FeatureEntryFull | undefined;
@@ -98,7 +98,7 @@ function hasAnnotations(value: unknown): boolean {
 }
 
 /** Detached, repeatable prefill. Manual changes and removals become protected values. */
-export function mergeWizardPrefill(original: ExportedCharacter, state: WizardState, values: PrefillValue[]) {
+export function mergeWizardPrefill(original: ExportedCharacter, state: WizardState, values: PrefillValue[], overrideSections: readonly string[] = []) {
   const sheet = structuredClone(original);
   const bookkeeping = readWizardBookkeeping(original.creatorWizard ?? {});
   const previous = Object.fromEntries(bookkeeping.baseline.map(entry => [JSON.stringify(entry.path), entry]));
@@ -111,15 +111,22 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
     : state.options[scope] !== false;
   const desired = new Map(values.filter(entry => enabled(entry.scope)).map(entry => [JSON.stringify(entry.path), entry]));
   for (const [key, entry] of desired) {
-    const current = read(sheet, entry.path);
+    // Shared source definitions are owned by features/spells, never by an unrelated section.
+    const overrideManualEdits = overrideSections.includes(entry.scope);
+    let current = read(sheet, entry.path);
+    const matches = collisions(sheet, entry);
+    const replacement = overrideManualEdits && current === undefined && matches.length === 1 ? matches[0] : undefined;
+    if (replacement) current = replacement;
     const old = previous[key];
     // Compare definition-only fingerprints here; notes and trackers are preserved separately.
     const excludesAnnotations = ['features', 'spells', 'species'].includes(entry.path[0]);
     const manuallyChanged = old ? wizardFingerprint(current, excludesAnnotations) !== (old.editFingerprint ?? old.fingerprint)
       : current !== undefined && !same(current, read(defaults, entry.path));
-    if (protectedKeys.has(key) || manuallyChanged || collision(sheet, entry)) {
+    if ((!overrideManualEdits && (protectedKeys.has(key) || manuallyChanged || matches.length > 0))
+      || matches.length > (replacement ? 1 : 0)) {
       protectedKeys.add(key); changes.push({ path: entry.path, label: entry.label, action: 'Keep' });
     } else {
+      protectedKeys.delete(key);
       let proposed = structuredClone(entry.value);
       if (current && typeof current === 'object' && proposed && typeof proposed === 'object') {
         const next = proposed as MutableObject; const existing = current as MutableObject;
@@ -127,6 +134,14 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
         if (['features', 'spells', 'species'].includes(entry.path[0])) {
           next['notes'] = structuredClone(existing['notes'] ?? []);
           if (Array.isArray(existing['uses']) && existing['uses'].length) next['uses'] = structuredClone(existing['uses']);
+        }
+      }
+      if (replacement) {
+        const list = collection(sheet, entry.path)!.list;
+        list.splice(list.indexOf(replacement), 1);
+        // Combat bookmarks must continue to resolve after adopting the wizard identity.
+        for (const action of sheet.combatActions ?? []) if (replacement.editorId && action.linkedResource?.editorId === replacement.editorId) {
+          action.linkedResource.editorId = entry.path[1];
         }
       }
       if (!same(current, proposed)) changes.push({ path: entry.path, label: entry.label, action: current === undefined ? 'Fill' : 'Update' });
@@ -138,16 +153,18 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
   const obsolete = Object.entries(previous).filter(([key, entry]) => !desired.has(key) && enabled(entry.scope))
     .sort(([a], [b]) => Number(JSON.parse(a)[0] === 'sources') - Number(JSON.parse(b)[0] === 'sources'));
   for (const [key, entry] of obsolete) {
+    const overrideManualEdits = overrideSections.includes(entry.scope);
     const path = JSON.parse(key) as string[]; const current = read(sheet, path);
     const source = current as { name?: string } | undefined;
     const stillLinked = path[0] === 'sources' && source?.name && (sheet.features?.some(feature => feature.featureSourceName === source.name)
       || sheet.spells?.some(spell => spell.castingSourceName === source.name) || sheet.character?.spellSlots?.[source.name]?.length);
-    if (current !== undefined && (protectedKeys.has(key) || wizardFingerprint(current) !== entry.fingerprint || hasAnnotations(current) || stillLinked)) {
+    if (current !== undefined && (hasAnnotations(current) || stillLinked
+      || !overrideManualEdits && (protectedKeys.has(key) || wizardFingerprint(current) !== entry.fingerprint))) {
       protectedKeys.add(key); changes.push({ path, label: entry.label, action: 'Keep' });
     } else {
       if (current !== undefined) changes.push({ path, label: entry.label, action: 'Remove' });
       // Required basic values (such as Walk speed) return to their editor defaults.
-      write(sheet, path, read(defaults, path)); delete baseline[key];
+      write(sheet, path, read(defaults, path)); delete baseline[key]; protectedKeys.delete(key);
     }
   }
   sheet.creatorWizard = { ...structuredClone(state), baseline: Object.values(baseline),

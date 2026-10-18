@@ -374,6 +374,20 @@ describe('Optional class wizard prefill', () => {
     const component = TestBed.createComponent(ClassWizardComponent); component.componentRef.setInput('sheet', f.sheet);
     await component.whenStable(); await component.componentInstance.loadContent();
     const wizard = component.componentInstance; wizard.addClass(); wizard.selectClass(wizard.state.classes[0], f.find('class', 'Mage').key);
+    f.sheet.character!.maxHp = 50; wizard.rebuild();
+    expect(wizard.overrideSections).toEqual([]);
+    expect(wizard.proposal()!.sheet.character!.maxHp).toBe(50);
+    wizard.stage = 1;
+    component.changeDetectorRef.markForCheck(); await component.whenStable();
+    const override = component.nativeElement.querySelector('input[aria-label="Override manual edits for Maximum HP"]');
+    override.click(); await component.whenStable();
+    expect(wizard.overrideSections).toEqual(['hp']);
+    expect(wizard.proposal()!.sheet.character!.maxHp).toBe(8);
+    expect(f.sheet.character!.maxHp).toBe(50);
+    wizard.state.options['hp'] = false; wizard.rebuild();
+    expect(wizard.overrideSections).toEqual([]);
+    expect(wizard.proposal()!.sheet.character!.maxHp).toBe(50);
+    wizard.state.options['hp'] = true; wizard.stage = 0;
     expect(wizard.subclasses(wizard.state.classes[0]).map(record => record.name)).toEqual(['School']);
     wizard.advance(); expect(wizard.stage).toBe(1);
     const choice = wizard.proposal()!.choices.find(choice => choice.label.endsWith(': skill proficiencies'))!;
@@ -381,6 +395,6 @@ describe('Optional class wizard prefill', () => {
     wizard.advance(); expect(wizard.stage).toBe(2);
     let applied = f.sheet; wizard.applied.subscribe(value => applied = value); wizard.apply();
     expect(applied.character!.level).toBe(1); expect(applied.character!.maxHp).toBe(8);
-    expect(f.sheet.character!.maxHp).toBe(0);
+    expect(f.sheet.character!.maxHp).toBe(50);
   });
 });

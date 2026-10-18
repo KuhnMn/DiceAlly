@@ -1,5 +1,6 @@
 import { Injectable, OnDestroy, inject, signal } from '@angular/core';
 import { normalizeCharacterEditorIdentity } from '../editor/editor-identity';
+import { migrateLegacyCharacterExport } from './legacy-character-import';
 import { CHARACTER_REPOSITORY, CharacterRecord } from './character-repository';
 import { ExportedCharacter } from '../models/character.model';
 import { APP_RUNTIME_CONFIG } from '../app.tokens';
@@ -96,8 +97,16 @@ export class CharacterLibraryService implements OnDestroy {
     this.notify();
   }
 
-  /** Full portable JSON is persisted as-is: creator metadata, cached entities and session edits travel together. */
+  /** Normal imports retain portable JSON without applying old-app conversion. */
   async importCharacterFromJson(json: string, overrideExisting = false): Promise<CharacterImportResult> {
+    return this.importJson(json, overrideExisting, false);
+  }
+
+  async importLegacyCharacterFromJson(json: string, overrideExisting = false): Promise<CharacterImportResult> {
+    return this.importJson(json, overrideExisting, true);
+  }
+
+  private async importJson(json: string, overrideExisting: boolean, convertLegacy: boolean): Promise<CharacterImportResult> {
     try {
       const sheet = JSON.parse(json) as ExportedCharacter;
       if (!sheet || !sheet.character || typeof sheet.character !== 'object' || Array.isArray(sheet.character)) {
@@ -112,7 +121,8 @@ export class CharacterLibraryService implements OnDestroy {
         error: { code: 'IMPORT_CONFLICT', message: `Character "${existing.sheet.character?.name}" with ID ${id} already exists.` },
       };
       if (existing && sheet.portaitUrl == null) sheet.portaitUrl = existing.sheet.portaitUrl;
-      await this.repository.save(normalizeCharacterEditorIdentity(sheet), existing?.version ?? 0);
+      const imported = convertLegacy ? await migrateLegacyCharacterExport(sheet) : sheet;
+      await this.repository.save(normalizeCharacterEditorIdentity(imported), existing?.version ?? 0);
       this.notify(); return { success: true, characterId: id };
     } catch (error) {
       return { success: false, error: { code: 'INVALID_FORMAT', message: String(error) } };

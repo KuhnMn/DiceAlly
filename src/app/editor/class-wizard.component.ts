@@ -1,5 +1,5 @@
 import { UiIconComponent } from '../ui-icon.component';
-import { groupWizardReview } from './wizard-review';
+import { groupWizardReview, REVIEW_ACTION_LABELS } from './wizard-review';
 import { isCompleteSelection } from '../rules/spell-choice';
 import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
 import { Component, OnDestroy, OnInit, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
@@ -36,6 +36,7 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
     const proposal = this.proposal();
     return proposal ? groupWizardReview(proposal.changes, this.sheet(), proposal.sheet) : [];
   });
+  readonly reviewActionLabels = REVIEW_ACTION_LABELS;
   readonly sections = WIZARD_SECTIONS;
   readonly sourceBooks = inject(SourceBookFilterService);
   private readonly cache = new IndexedDbContentCache();
@@ -44,6 +45,14 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
   stage = 0;
   choiceSearch: Record<string, string> = {};
   leaveManual = false;
+  readonly overrideEdits: Record<string, boolean> = {};
+  get overrideSections() {
+    const sections = this.sections.filter(section => this.overrideEdits[section.key] && this.state.options[section.key] !== false).map(section => section.key);
+    // Only override a shared source when every enabled section using it opts in.
+    const sourceSections = ['features', 'spells'].filter(key => this.state.options[key] !== false);
+    if (sourceSections.length && sourceSections.every(key => sections.includes(key))) sections.push('sources');
+    return sections;
+  }
   differentRevision = false;
   savedRevisionAvailable = false;
   private destroyed = false;
@@ -136,7 +145,7 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
   }
   rebuild() {
     const revision = this.revision(); if (!revision) return;
-    try { this.proposal.set(previewClassWizard(this.sheet(), this.state, revision, this.records, this.sourceBooks.selected())); this.error.set(''); }
+    try { this.proposal.set(previewClassWizard(this.sheet(), this.state, revision, this.records, this.sourceBooks.selected(), this.overrideSections)); this.error.set(''); }
     catch (error) { this.proposal.set(null); this.error.set(error instanceof Error ? error.message : String(error)); }
   }
   choiceComplete(choice: WizardChoice) {

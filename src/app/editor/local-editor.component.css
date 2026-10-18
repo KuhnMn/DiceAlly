@@ -73,38 +73,6 @@ details[open] > .selector-summary .selector-arrow { transform: rotate(90deg); }
 .feature-editor .note-group {
   background: var(--md-sys-color-surface-container-lowest);
 }
-.feature-editor .description-panel {
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: .5rem;
-  overflow: hidden;
-  background: var(--md-sys-color-surface-container-lowest);
-}
-.feature-editor .description-toggle {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  min-height: 2.5rem;
-  padding: .5rem .75rem;
-  cursor: pointer;
-  font-size: .875rem;
-  font-weight: 600;
-  color: var(--md-sys-color-on-secondary-container);
-  background: var(--md-sys-color-secondary-container);
-}
-.feature-editor .description-toggle:hover {
-  background: var(--md-sys-color-secondary);
-  color: var(--md-sys-color-on-secondary);
-}
-.feature-editor .description-toggle:focus-visible {
-  outline: 2px solid var(--md-sys-color-primary);
-  outline-offset: -2px;
-}
-.feature-editor .description-toggle::-webkit-details-marker {
-  display: none;
-}
-.feature-editor details[open] > .description-toggle .description-arrow {
-  transform: rotate(90deg);
-}
 .editor-card {
   border: 2px solid var(--md-sys-color-outline-variant);
   border-radius: .5rem;

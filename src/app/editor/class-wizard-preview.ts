@@ -49,7 +49,7 @@ export function matchesSubclass(record: ContentRecord, classKey: string) {
  * Rules read structured imported data; they do not interpret description text.
  */
 export function previewClassWizard(sheet: ExportedCharacter, state: WizardState, revision: ImportRevision,
-  records: ReadonlyMap<string, ContentRecord>, sourceBooks: readonly string[] = []) {
+  records: ReadonlyMap<string, ContentRecord>, sourceBooks: readonly string[] = [], overrideSections: readonly string[] = []) {
   const index: ContentRulesIndex = { records, sourceIdentity: revision.sourceIdentity, revisionId: revision.id };
   const values: PrefillValue[] = []; const choices: WizardChoice[] = []; const warnings: string[] = []; const errors: string[] = [];
   const put = (scope: string, label: string, path: string[], value: unknown) => values.push({ scope, label, path, value });
@@ -266,7 +266,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     return !isCompleteSelection(answer, choice.count, choice.candidates.map(candidate => candidate.value));
   });
   // 4. Reconcile with the last baseline. Manual changes and annotations take precedence.
-  const proposal = mergeWizardPrefill(sheet, state, values);
+  const proposal = mergeWizardPrefill(sheet, state, values, overrideSections);
   // Notes follow the species that was actually applied, not a manually retained different species.
   if (state.options['species'] !== false && state.speciesKey
     && proposal.sheet.species?.contentReference?.key === state.speciesKey) {
