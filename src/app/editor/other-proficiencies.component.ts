@@ -21,6 +21,19 @@ export class OtherProficienciesComponent implements OnInit {
   readonly sheet = input.required<ExportedCharacter>();
   readonly panel = input<'proficiencies' | 'sources'>('proficiencies');
   sourcesVisible = true;
+  private readonly customSources = new Set<FeatureSource>();
+  usesCustomValues(source: FeatureSource) {
+    return this.customSources.has(source) || source.customToHit != null || source.customDc != null;
+  }
+  setCustomValues(source: FeatureSource, enabled: boolean) {
+    if (enabled) this.customSources.add(source);
+    else {
+      this.customSources.delete(source);
+      source.customToHit = null;
+      source.customDc = null;
+    }
+    this.change();
+  }
   readonly edited = output<void>();
   readonly tools = signal<ContentRecord[]>([]);
   readonly loadingTools = signal(false);

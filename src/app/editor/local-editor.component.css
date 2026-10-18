@@ -36,6 +36,28 @@ details[open] > .selector-summary .selector-arrow { transform: rotate(90deg); }
   width: 2.25rem;
   height: 2.25rem;
 }
+.spell-slot-editor .slot-total-stepper {
+  grid-template-columns: 2rem 2.75rem 2rem;
+  gap: .25rem;
+  width: 7.25rem;
+}
+.spell-slot-editor .slot-total-stepper .stepper-button { width: 2rem; height: 2rem; }
+.spell-slot-editor .slot-total-stepper .editor-input {
+  padding: .25rem;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.slot-total-stepper input::-webkit-inner-spin-button,
+.slot-total-stepper input::-webkit-outer-spin-button {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+}
+.editor-input.compact-select,
+.spell-slot-editor .editor-input.slot-recovery-select {
+  height: 2.25rem;
+  padding: .375rem .625rem;
+}
 .feature-editor .editor-input {
   padding: .375rem .5rem;
 }
@@ -278,16 +300,47 @@ input[type=checkbox] {
 }
 .entry-header {
   display: flex;
-  align-items: flex-start;
+  flex-wrap: wrap;
+  align-items: center;
   gap: .5rem;
 }
 .entry-header > button:first-child {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 0;
   overflow-wrap: anywhere;
 }
 .entry-header > button:not(:first-child) {
   flex-shrink: 0;
 }
+.note-entries {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-bottom: .25rem;
+  scrollbar-width: thin;
+}
+.note-entry { flex-shrink: 0; max-width: 16rem; }
+.note-entry-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.note-entry-remove {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  min-height: 1.5rem;
+}
+.sense-list { display: grid; gap: .5rem; }
 @media (max-width: 639px) {
+  .sense-list { grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
+  .sense-card { padding: .375rem .5rem; gap: .375rem; font-size: .75rem; }
+  .sense-card .editor-input { width: 4rem !important; padding: .25rem; }
+  .sense-card .icon-button { min-width: 1.75rem; width: 1.75rem; min-height: 1.75rem; padding: .125rem; }
+  .sense-card > div { gap: .375rem; }
   .editor-card {
     padding: .75rem;
   }

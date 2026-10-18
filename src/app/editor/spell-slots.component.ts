@@ -1,7 +1,7 @@
 import { RecoveryIndicatorComponent } from '../recovery-indicator.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { Component, input, output } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgModel } from '@angular/forms';
 import { ExportedCharacter, SpellSlot } from '../models/character.model';
 
 import { RECOVERY_OPTIONS } from './recovery-options';
@@ -47,13 +47,13 @@ export class SpellSlotsComponent {
     if (!source) { this.error = 'Add a spellcasting source first.'; return; }
     const groups = this.character.spellSlots ??= {};
     if (!Object.hasOwn(groups, source)) Object.defineProperty(groups, source, { value: [], enumerable: true, writable: true, configurable: true });
-    // Start with an unused level and zero slots so the row can be filled in safely.
+    // Start with an unused level and one available slot.
     const combination = this.recoveryOptions.flatMap(recovery => Array.from({ length: 9 }, (_, i) => ({ level: i + 1, recovery: recovery.value })))
       .sort((a, b) => Number(this.slots(source).some(slot => slot.level === a.level)) - Number(this.slots(source).some(slot => slot.level === b.level))
         || Number(b.recovery === 'LONG_REST') - Number(a.recovery === 'LONG_REST'))
       .find(option => !this.hasCombination(source, option.level, option.recovery));
     if (!combination) { this.error = 'All level and recovery combinations for this source are already configured.'; return; }
-    groups[source].unshift({ level: combination.level, total: 0, used: 0, regainCondition: combination.recovery, userAdded: true });
+    groups[source].unshift({ level: combination.level, total: 1, used: 0, regainCondition: combination.recovery, userAdded: true });
     this.newestSource = source;
     this.listVisible = true;
     this.change();
@@ -67,7 +67,14 @@ export class SpellSlotsComponent {
     }
     slot.level = value!; this.change();
   }
-  adjust(slot: SpellSlot, amount: number) { slot.total = Math.max(0, slot.total + amount); this.change(); }
+  setTotal(slot: SpellSlot, value: number | null, field?: NgModel) {
+    slot.total = Number.isFinite(value) ? Math.max(1, Math.floor(value!)) : 1;
+    if (field && field.value !== slot.total) {
+      field.control.setValue(slot.total, { emitEvent: false, emitViewToModelChange: false });
+    }
+    this.change();
+  }
+  adjust(slot: SpellSlot, amount: number) { this.setTotal(slot, slot.total + amount); }
   remove(source: string, index: number) {
     const slot = this.slots(source)[index];
     const stored = this.character.spellSlots![source];

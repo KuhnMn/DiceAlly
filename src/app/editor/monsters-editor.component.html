@@ -7,7 +7,10 @@
     </div>
   </div>
   <div id="added-monsters" class="space-y-2" [hidden]="!listVisible">
-    @for (monster of monsters; track monster; let i = $index) {
+    <label class="mb-3 block text-sm font-semibold">Search monsters
+      <input type="search" class="editor-input mt-1" name="selected-monster-search" [(ngModel)]="listSearch" placeholder="Search by name" />
+    </label>
+    @for (monster of filteredMonsters; track monster; let i = $index) {
       <article class="feature-card rounded-lg border-2 border-secondary bg-surface-container p-2.5">
         <div class="entry-header">
           <button type="button" class="flex-1 min-w-0 text-left" [attr.aria-expanded]="expanded.has(monster)" (click)="toggle(monster)">
@@ -31,7 +34,7 @@
           </div>
         }
       </article>
-    } @empty { <p class="text-sm text-on-surface-variant py-2">No monsters selected yet.</p> }
+    } @empty { <p class="text-sm text-on-surface-variant py-2">{{ monsters.length ? 'No monsters match this search.' : 'No monsters selected yet.' }}</p> }
   </div>
 </section>
 @if (catalogOpen) {

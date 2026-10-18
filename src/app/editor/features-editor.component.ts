@@ -43,6 +43,7 @@ export class FeaturesEditorComponent implements OnInit, OnDestroy {
   selectedSource: string | undefined;
   sourceFilter = 'ALL';
   search = '';
+  listSearch = '';
   customName = '';
   customDescription = '';
   catalogOpen = false;
@@ -65,7 +66,8 @@ export class FeaturesEditorComponent implements OnInit, OnDestroy {
   get unassignedFeatures() { return (this.sheet().features ?? []).some(feature => !feature.featureSourceName); }
   get selected() {
     return (this.sheet().features ?? []).filter(feature => featureTypeOf(feature) === this.selectedType
-      && (this.sourceFilter === 'ALL' || (feature.featureSourceName ?? '') === this.sourceFilter));
+      && (this.sourceFilter === 'ALL' || (feature.featureSourceName ?? '') === this.sourceFilter)
+      && feature.name.toLowerCase().includes(this.listSearch.trim().toLowerCase()));
   }
   readonly entries = featureEntries;
   qualifier(record: ContentRecord): string {

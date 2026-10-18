@@ -21,17 +21,17 @@
               (ngModelChange)="group.isEditable = $event; change()" />
             Editable on the character sheet
           </label>
-          <div class="flex flex-wrap items-center gap-1">
+          <div class="note-entries" data-horizontal-row role="region" [attr.aria-label]="(group.tag || 'Notes') + ' entries'" tabindex="0">
             @for (note of group.notes; track $index; let e = $index) {
-              <span class="inline-flex max-w-full rounded border border-tertiary bg-tertiary-container text-on-tertiary-container text-xs">
-                <button type="button" class="px-2 py-1 whitespace-pre-wrap break-words text-left min-w-0"
+              <span class="note-entry inline-flex rounded border border-tertiary bg-tertiary-container text-on-tertiary-container text-xs">
+                <button type="button" class="note-entry-text px-2 py-0.5 text-left min-w-0" [title]="note"
                   [attr.aria-label]="'Edit note: ' + note" (click)="editNoteEntry(group, e)">{{ note }}</button>
-                <button type="button" class="icon-button" [attr.aria-label]="'Remove note: ' + note"
+                <button type="button" class="note-entry-remove" [attr.aria-label]="'Remove note: ' + note"
                   (click)="removeNoteEntry(group, e)"><app-ui-icon name="close" /></button>
               </span>
             }
             @if (editingNoteGroup !== group) {
-              <button type="button" class="secondary-button compact-button" (click)="addNoteEntry(group)">+ Add Entry</button>
+              <button type="button" class="secondary-button compact-button shrink-0 whitespace-nowrap" (click)="addNoteEntry(group)">+ Add Entry</button>
             }
           </div>
           @if (editingNoteGroup === group) {

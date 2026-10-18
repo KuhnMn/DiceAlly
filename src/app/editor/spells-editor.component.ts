@@ -1,5 +1,6 @@
 import { DescriptionDialogComponent } from './description-dialog.component';
 import { CombatBookmarkComponent } from './combat-bookmark.component';
+import { HorizontalRowDirective } from '../sheet/horizontal-row.directive';
 import { UiIconComponent } from '../ui-icon.component';
 import { copySpellToList } from './spell-selection';
 import { newEditorId } from './editor-identity';
@@ -23,7 +24,7 @@ import { contentReference } from './editor-content-helpers';
 
 @Component({
   selector: 'app-editor-spells',
-  imports: [DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
+  imports: [DescriptionDialogComponent, CombatBookmarkComponent, HorizontalRowDirective, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
   templateUrl: './spells-editor.component.html',
   styleUrl: './local-editor.component.css',
 })
@@ -85,10 +86,12 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
   get selected() {
     return this.spells.filter(spell => spell.listType === this.list
       && (this.sourceFilter === 'ALL' || (spell.castingSourceName ?? '') === this.sourceFilter)
-      && (!this.displayedLevels.length || this.displayedLevels.includes(spell.entity?.level ?? 0)))
+      && (!this.displayedLevels.length || this.displayedLevels.includes(spell.entity?.level ?? 0))
+      && spell.name.toLowerCase().includes(this.listSearch.trim().toLowerCase()))
       .sort((a, b) => (a.entity?.level ?? 0) - (b.entity?.level ?? 0) || a.name.localeCompare(b.name));
   }
   label(list: SpellList) { return list === 'KNOWN' ? 'Known' : list === 'SPELLBOOK' ? 'Spellbook' : 'Prepared'; }
+  listSearch = '';
   toggleClass(name: string) {
     this.filter.classes = this.filter.classes.includes(name)
       ? this.filter.classes.filter(value => value !== name) : [...this.filter.classes, name];

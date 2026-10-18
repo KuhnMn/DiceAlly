@@ -10,6 +10,29 @@ import { ContentRecord, DEFAULT_CONTENT_SOURCE, ImportRevision, sourceIdentity }
 describe('Other Proficiencies', () => {
   beforeEach(() => TestBed.configureTestingModule({ imports: [OtherProficienciesComponent], providers: [provideRouter([])] }));
 
+  it('reveals custom source fields on demand and recognizes existing zero-valued overrides', async () => {
+    const fixture = TestBed.createComponent(OtherProficienciesComponent);
+    const sheet = emptyBasicCharacter();
+    const source = { name: 'Wizard', isSpellcastingSource: true, customToHit: null as number | null, customDc: null as number | null };
+    sheet.character!.featureSources = [source];
+    fixture.componentRef.setInput('sheet', sheet); fixture.componentRef.setInput('panel', 'sources');
+    await fixture.whenStable();
+    const input = (label: string) => Array.from(fixture.nativeElement.querySelectorAll('label') as NodeListOf<HTMLLabelElement>)
+      .find(element => element.textContent?.trim() === label)?.querySelector('input');
+    expect(input('Custom attack bonus')).toBeUndefined();
+    input('Custom')!.click(); await fixture.whenStable();
+    expect(input('Custom attack bonus')).toBeDefined();
+    source.customToHit = 0; source.customDc = 14;
+    expect(fixture.componentInstance.usesCustomValues(source)).toBe(true);
+    input('Custom')!.click(); await fixture.whenStable();
+    expect(source.customToHit).toBeNull(); expect(source.customDc).toBeNull();
+    expect(input('Custom save DC')).toBeUndefined();
+    source.customToHit = 0;
+    fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
+    expect(input('Custom')!.checked).toBe(true);
+    expect(input('Custom attack bonus')).toBeDefined();
+  });
+
   it('edits and removes descriptive proficiencies while preserving the other proficiency settings', async () => {
     const fixture = TestBed.createComponent(OtherProficienciesComponent);
     const sheet = emptyBasicCharacter();

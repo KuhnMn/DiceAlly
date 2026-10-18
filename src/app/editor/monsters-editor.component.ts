@@ -32,6 +32,7 @@ export class MonstersEditorComponent implements OnInit, OnDestroy {
   private readonly previews = new WeakMap<ContentRecord, Monster>();
   catalogOpen = false;
   listVisible = true;
+  listSearch = '';
   catalogAdded = 0;
   search = '';
   customName = '';
@@ -47,6 +48,7 @@ export class MonstersEditorComponent implements OnInit, OnDestroy {
     });
   }
   get monsters() { return this.sheet().monsters ?? []; }
+  get filteredMonsters() { return this.monsters.filter(monster => (monster.name ?? '').toLowerCase().includes(this.listSearch.trim().toLowerCase())); }
   ngOnInit() { void this.refreshContent(); }
   ngOnDestroy() { this.catalog.dispose(); }
   change() { this.view.markForCheck(); this.edited.emit(); }

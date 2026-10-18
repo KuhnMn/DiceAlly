@@ -11,7 +11,7 @@ export interface SelectOption { value: string; label: string; disabled?: boolean
   styleUrl: './local-editor.component.css',
   template: `
     <div class="relative" (keydown)="keydown($event)">
-      <button #trigger type="button" class="editor-input flex items-center justify-between gap-2 text-left"
+      <button #trigger type="button" class="editor-input flex items-center justify-between gap-2 text-left" [class.compact-select]="compact()"
         aria-haspopup="dialog" [attr.aria-expanded]="open" [attr.aria-controls]="popupId" [attr.aria-label]="label()"
         [disabled]="disabled()" (click)="toggle()">
         <span class="min-w-0 truncate">{{ selectedLabel }}</span><span class="shrink-0 text-xs" aria-hidden="true"><app-ui-icon name="chevron-down" /></span>
@@ -40,6 +40,7 @@ export class SearchableSelectComponent {
   readonly label = input('Selection');
   readonly placeholder = input('Select an option');
   readonly disabled = input(false);
+  readonly compact = input(false);
   readonly selected = output<string>();
   readonly popupId = `select-${crypto.randomUUID()}`;
   private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);

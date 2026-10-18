@@ -7,6 +7,9 @@
     </div>
   </div>
   <div id="added-features" [hidden]="!listVisible">
+  <label class="mb-3 block text-sm font-semibold">Search features
+    <input type="search" class="editor-input mt-1" name="selected-feature-search" [(ngModel)]="listSearch" placeholder="Search by name" />
+  </label>
   <nav class="flex flex-wrap gap-2 mb-4" aria-label="Feature types">
     @for (type of types; track type.value) {
       <button type="button" class="editor-filter" [class.bg-secondary-container]="selectedType === type.value" [class.text-on-secondary-container]="selectedType === type.value" [class.border-secondary]="selectedType === type.value" [class.border-outline-variant]="selectedType !== type.value" [attr.aria-pressed]="selectedType === type.value" (click)="setType(type.value)">{{ type.label }}</button>
@@ -40,7 +43,7 @@
           </div>
         }
       </article>
-    } @empty { <p class="text-sm text-on-surface-variant py-2">No features of this type selected for this source.</p> }
+    } @empty { <p class="text-sm text-on-surface-variant py-2">No features match this search, type and source.</p> }
   </div>
   </div>
   @if (catalogOpen) {

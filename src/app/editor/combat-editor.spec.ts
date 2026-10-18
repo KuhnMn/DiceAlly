@@ -21,6 +21,28 @@ function spell(): SpellEntryFull {
 }
 describe('Combat creator', () => {
   beforeEach(() => TestBed.configureTestingModule({}));
+  it.each(['SPELL', 'ITEM', 'SPECIES', 'CLASS_FEATURE', 'FEAT', 'OPTIONAL_FEATURE'] as const)(
+    'adds multiple linked combat entries to a %s resource', async type => {
+      const fixture = TestBed.createComponent(CombatBookmarkComponent);
+      const sheet = emptyBasicCharacter();
+      const resource = { editorId: 'resource', name: 'Resource' };
+      if (type === 'SPELL') sheet.spells = [resource];
+      else if (type === 'ITEM') sheet.inventory = [resource];
+      else if (type === 'SPECIES') sheet.species = resource;
+      else sheet.features = [resource];
+      fixture.componentRef.setInput('sheet', sheet); fixture.componentRef.setInput('resource', resource);
+      fixture.componentRef.setInput('type', type); await fixture.whenStable();
+      const bookmark = fixture.componentInstance;
+      bookmark.open(); bookmark.add(bookmark.draft!);
+      fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
+      fixture.nativeElement.querySelector('button[aria-label="Add another combat entry for Resource"]').click();
+      expect(bookmark.draft).toBeDefined();
+      bookmark.add({ ...bookmark.draft!, name: 'Second action', actionType: 'BONUS' });
+      expect(bookmark.linkedActions()).toHaveLength(2);
+      expect(new Set(bookmark.linkedActions().map(action => action.editorId)).size).toBe(2);
+      expect(bookmark.linkedActions().map(action => action.orderIndex)).toEqual([0, 1]);
+      expect(sheet.combatActions?.every(action => resolveCombatResource(sheet, action) === resource)).toBe(true);
+    });
   it('suggests spell and weapon stats while leaving the original definitions unchanged', () => {
     const sheet = emptyBasicCharacter(); sheet.character!.level = 5;
     sheet.character!.abilityScores = { intelligence: 18, strength: 12, dexterity: 16 };

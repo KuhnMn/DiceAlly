@@ -22,8 +22,10 @@ export class ItemsEditorComponent {
   readonly expanded = new Set<InventoryItem>();
   catalogOpen = false;
   listVisible = true;
+  listSearch = '';
   pendingRemoval?: InventoryItem;
   get items() { return this.sheet().inventory ?? []; }
+  get filteredItems() { return this.items.filter(item => item.name.toLowerCase().includes(this.listSearch.trim().toLowerCase())); }
   change() { this.view.markForCheck(); this.edited.emit(); }
   toggle(item: InventoryItem) { this.expanded.has(item) ? this.expanded.delete(item) : this.expanded.add(item); }
   openCatalog() { this.catalogOpen = true; }

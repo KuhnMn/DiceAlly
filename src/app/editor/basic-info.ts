@@ -39,7 +39,7 @@ export function validateBasicInfo(sheet: ExportedCharacter): void {
   for (const slots of Object.values(character.spellSlots ?? {})) for (const slot of slots) {
     integer(slot.level, 'Spell slot level', 1);
     if (slot.level > 9) throw new Error('Spell slot level must be 1–9.');
-    integer(slot.total, 'Spell slot total'); integer(slot.used, 'Used spell slots');
+    integer(slot.total, 'Spell slot total', 1); integer(slot.used, 'Used spell slots');
     if (slot.regainCondition && !['SHORT_REST', 'SHORT_REST_ONE', 'LONG_REST', 'MANUAL'].includes(slot.regainCondition)) throw new Error('Unknown spell slot recovery setting.');
   }
   if (!character.calculateAC) integer(character.armorClass, 'Armor Class');

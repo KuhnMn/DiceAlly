@@ -8,17 +8,18 @@ import { AppDialogService } from '../services/app-dialog.service';
 
 @Component({
   selector: 'app-combat-bookmark',
+  host: { class: 'flex min-w-0 max-w-full' },
   imports: [UiIconComponent, CombatActionDialogComponent],
   styleUrl: './local-editor.component.css',
   template: `
-    <span class="inline-flex items-center gap-1 rounded-lg" [class.border]="type() === 'MONSTER' && isBookmarked()"
-      [class.border-outline-variant]="type() === 'MONSTER' && isBookmarked()" [class.p-1]="type() === 'MONSTER' && isBookmarked()"
+    <span class="inline-flex max-w-full flex-wrap items-center gap-1 rounded-lg" [class.outline]="isBookmarked()"
+      [class.outline-1]="isBookmarked()" [class.outline-outline-variant]="isBookmarked()" [class.outline-offset-2]="isBookmarked()"
       role="group" [attr.aria-label]="resource().name + ' Combat Entries'">
     <button type="button" class="compact-button icon-button" [class.secondary-button]="!isBookmarked()" [class.action-button]="isBookmarked()"
       [title]="isBookmarked() ? 'In Combat · Click to Remove' : 'Add to Combat'" [attr.aria-pressed]="isBookmarked()"
       [attr.aria-label]="(isBookmarked() ? 'Remove ' : 'Add ') + resource().name + (isBookmarked() ? ' from Combat' : ' to Combat')"
       aria-haspopup="dialog" (click)="toggle()"><app-ui-icon name="bookmark" /></button>
-    @if (type() === 'MONSTER' && isBookmarked()) {
+    @if (isBookmarked()) {
       <button type="button" class="secondary-button compact-button inline-flex items-center gap-1" [title]="'Add Another Combat Entry for ' + resource().name" [attr.aria-label]="'Add another combat entry for ' + resource().name" (click)="open()"><app-ui-icon name="plus" /><span>Entry</span></button>
     }
     </span>

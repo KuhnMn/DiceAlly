@@ -7,6 +7,9 @@
     </div>
   </div>
   <div id="added-spells" [hidden]="!listVisible">
+  <label class="mb-3 block text-sm font-semibold">Search spells
+    <input type="search" class="editor-input mt-1" name="selected-spell-search" [(ngModel)]="listSearch" placeholder="Search by name" />
+  </label>
   <nav class="flex flex-wrap gap-2 mb-4" aria-label="Spell lists">
     @for (type of lists; track type) {
       <button type="button" class="editor-filter" [class.bg-secondary-container]="list === type" [class.text-on-secondary-container]="list === type" [class.border-secondary]="list === type" [class.border-outline-variant]="list !== type" [attr.aria-pressed]="list === type" (click)="list = type">{{ label(type) }} ({{ count(type) }})</button>
@@ -15,7 +18,7 @@
   <app-feature-source-picker heading="Casting Source" tone="spells" [character]="sheet().character!"
     [sources]="sources" [value]="sourceFilter" [orphanNames]="orphanSources"
     (selected)="setSource($event)" (manageSources)="openSources.emit()" />
-  <nav class="flex flex-wrap items-center gap-1 mb-3" aria-label="Selected spell levels">
+  <nav appHorizontalRow class="flex flex-wrap items-center gap-1 mb-3" aria-label="Selected spell levels">
     <span class="text-xs text-on-surface-variant mr-1">Levels</span>
     <button type="button" class="spell-filter-chip" [class.spell-filter-active]="!displayedLevels.length" [attr.aria-pressed]="!displayedLevels.length" (click)="displayedLevels = []">All</button>
     @for (level of levels; track level) {
@@ -26,8 +29,8 @@
   <div class="space-y-2">
     @for (spell of selected; track spell) {
       <article class="feature-card rounded-lg border-2 border-purple bg-surface-container p-2.5">
-        <div class="flex items-start flex-wrap gap-2">
-          <button type="button" class="flex-1 min-w-32 text-left" [attr.aria-expanded]="expanded.has(spell)" (click)="toggle(spell)">
+        <div class="entry-header">
+          <button type="button" class="flex-1 min-w-0 text-left" [attr.aria-expanded]="expanded.has(spell)" (click)="toggle(spell)">
             <span class="text-sm font-semibold">{{ spell.name }}</span>
             <span class="block text-xs text-on-surface-variant mt-0.5">{{ helpers.spellLevelLabel(spell) }} · {{ spell.source }} · {{ spell.castingSourceName || 'Unassigned' }}</span>
           </button>
@@ -35,11 +38,11 @@
             <button type="button" class="secondary-button compact-button" [disabled]="hasList(spell, 'SPELLBOOK')" (click)="addToList(spell, 'SPELLBOOK')">{{ hasList(spell, 'SPELLBOOK') ? 'In Book' : 'To Book' }}</button>
           }
           @if (list !== 'PREPARED') {
-            <button type="button" class="action-button !py-1 !px-2 !text-xs" [disabled]="hasList(spell, 'PREPARED')" (click)="addToList(spell, 'PREPARED')">{{ hasList(spell, 'PREPARED') ? 'Prepared' : 'Prepare' }}</button>
+            <button type="button" class="action-button compact-button" [disabled]="hasList(spell, 'PREPARED')" (click)="addToList(spell, 'PREPARED')">{{ hasList(spell, 'PREPARED') ? 'Prepared' : 'Prepare' }}</button>
           }
           <app-combat-bookmark [sheet]="sheet()" [resource]="spell" type="SPELL" (edited)="change()" />
           <button type="button" class="secondary-button compact-button" (click)="toggle(spell)">{{ expanded.has(spell) ? 'Close' : list === 'PREPARED' ? 'Edit' : 'Details' }}</button>
-          <button type="button" class="secondary-button compact-button" [disabled]="list === 'KNOWN' && hasList(spell, 'PREPARED')" [attr.aria-label]="(list === 'PREPARED' ? 'Unprepare ' : 'Remove ') + spell.name" [title]="list === 'KNOWN' && hasList(spell, 'PREPARED') ? 'Unprepare this spell before removing it from Known' : ''" (click)="remove(spell)">@if (list === 'PREPARED') { Unprepare } @else { <app-ui-icon name="close" /> }</button>
+          <button type="button" class="secondary-button compact-button" [class.icon-button]="list !== 'PREPARED'" [disabled]="list === 'KNOWN' && hasList(spell, 'PREPARED')" [attr.aria-label]="(list === 'PREPARED' ? 'Unprepare ' : 'Remove ') + spell.name" [title]="list === 'KNOWN' && hasList(spell, 'PREPARED') ? 'Unprepare this spell before removing it from Known' : ''" (click)="remove(spell)">@if (list === 'PREPARED') { Unprepare } @else { <app-ui-icon name="close" /> }</button>
         </div>
         @if (list === 'PREPARED' && spell.uses?.length) { <p class="text-xs text-on-surface-variant mt-2"><app-ui-icon name="lock" /> Use trackers keep this spell prepared during play. You can unprepare it here.</p> }
         @if (!expanded.has(spell) && list === 'PREPARED' && (spell.notes?.length || spell.uses?.length)) { <p class="text-xs text-on-surface-variant mt-1">{{ spell.notes?.length || 0 }} note groups · {{ spell.uses?.length || 0 }} use trackers</p> }
@@ -60,7 +63,7 @@
           </div>
         }
       </article>
-    } @empty { <p class="text-sm text-on-surface-variant py-2">No {{ label(list).toLowerCase() }} spells for this source and level.</p> }
+    } @empty { <p class="text-sm text-on-surface-variant py-2">No {{ label(list).toLowerCase() }} spells match this search, source and level.</p> }
   </div>
   </div>
   @if (catalogOpen) {
@@ -84,7 +87,7 @@
         </details>
         <div class="rounded border-2 border-outline-variant p-2">
           <span class="text-sm font-semibold">Spell levels</span>
-          <div class="flex flex-wrap gap-1 mt-2" role="group" aria-label="Catalog spell levels">
+          <div appHorizontalRow class="flex flex-wrap gap-1 mt-2" role="group" aria-label="Catalog spell levels">
             <button type="button" class="spell-filter-chip" [class.spell-filter-active]="!filter.levels.length" [attr.aria-pressed]="!filter.levels.length" [disabled]="adding()" (click)="filter.levels = []; filterChanged()">All</button>
             @for (level of levels; track level) {
               <button type="button" class="spell-filter-chip" [class.spell-filter-active]="filter.levels.includes(level)" [attr.aria-pressed]="filter.levels.includes(level)" [disabled]="adding()" (click)="toggleCatalogLevel(level)">{{ level === 0 ? 'Cantrips' : level }}</button>

@@ -7,7 +7,10 @@
     </div>
   </div>
   <div class="space-y-2" [hidden]="!listVisible">
-    @for (item of items; track item; let i = $index) {
+    <label class="mb-3 block text-sm font-semibold">Search items
+      <input type="search" class="editor-input mt-1" name="selected-item-search" [(ngModel)]="listSearch" placeholder="Search by name" />
+    </label>
+    @for (item of filteredItems; track item; let i = $index) {
       <article class="feature-card rounded-lg border-2 border-secondary bg-surface-container p-2.5">
         <div class="entry-header">
           <button type="button" class="flex-1 min-w-0 text-left" (click)="toggle(item)" [attr.aria-expanded]="expanded.has(item)">
@@ -31,7 +34,7 @@
           </div>
         }
       </article>
-    } @empty { <p class="text-sm text-on-surface-variant py-2">No items selected yet.</p> }
+    } @empty { <p class="text-sm text-on-surface-variant py-2">{{ items.length ? 'No items match this search.' : 'No items selected yet.' }}</p> }
   </div>
 </section>
 @if (catalogOpen) {

@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { SpellSlotsComponent } from './spell-slots.component';
 import { LocalEditorComponent } from './local-editor.component';
-import { emptyBasicCharacter } from './basic-info';
+import { emptyBasicCharacter, validateBasicInfo } from './basic-info';
 import { IndexedDbCharacterRepository } from '../characters/indexeddb-character-repository';
 import { RestService } from '../services/rest.service';
 import { By } from '@angular/platform-browser';
@@ -12,10 +12,37 @@ import { FeatureSourcePickerComponent } from './feature-source-picker.component'
 describe('Spell Slots editor', () => {
   beforeEach(() => TestBed.configureTestingModule({ imports: [SpellSlotsComponent, LocalEditorComponent], providers: [provideRouter([])] }));
 
+  it('keeps configured levels at one slot or more through buttons, typing and save validation', async () => {
+    const fixture = TestBed.createComponent(SpellSlotsComponent);
+    const sheet = emptyBasicCharacter();
+    sheet.character!.featureSources = [{ name: 'Wizard', isSpellcastingSource: true }];
+    fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
+    const editor = fixture.componentInstance;
+    editor.add();
+    const slot = editor.slots('Wizard')[0];
+    slot.used = 2;
+    editor.adjust(slot, -1);
+    expect(slot.total).toBe(1);
+    for (const value of [0, -3, null, NaN]) {
+      editor.setTotal(slot, value);
+      expect(slot.total).toBe(1);
+      expect(slot.used).toBe(2);
+    }
+    fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('button[aria-label="Decrease Wizard level 1 total"]').disabled).toBe(true);
+    const input = fixture.nativeElement.querySelector('input[type="number"]') as HTMLInputElement;
+    input.value = '0'; input.dispatchEvent(new Event('input')); await fixture.whenStable();
+    expect(slot.total).toBe(1);
+    expect(input.value).toBe('1');
+    editor.setTotal(slot, 3); expect(slot.total).toBe(3);
+    slot.total = 0;
+    expect(() => validateBasicInfo(sheet)).toThrow(/Spell slot total/);
+  });
+
   it('offers slots inside Feature Sources when casting sources or existing slots exist', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
     const editor = fixture.componentInstance;
-    expect(editor.pages).toEqual(['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Features & Spells', 'Items', 'Monsters', 'Combat']);
+    expect(editor.pages).toEqual(['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Species & Features', 'Spells', 'Items', 'Monsters', 'Combat']);
     expect(editor.hasCastingSources).toBe(false);
     editor.character.featureSources = [{ name: 'Wizard', isSpellcastingSource: true }];
     expect(editor.hasCastingSources).toBe(true);
@@ -34,7 +61,7 @@ describe('Spell Slots editor', () => {
     const editor = fixture.componentInstance;
     editor.add();
     const first = editor.slots('Wizard')[0];
-    expect(first).toMatchObject({ level: 1, total: 0, used: 0 });
+    expect(first).toMatchObject({ level: 1, total: 1, used: 0 });
     first.total = 5; first.used = 2; first.regainCondition = 'SHORT_REST_ONE';
     editor.add();
     expect(editor.slots('Wizard').map(slot => slot.level)).toEqual([1, 2]);

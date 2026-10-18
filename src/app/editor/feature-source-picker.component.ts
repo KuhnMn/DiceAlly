@@ -13,16 +13,20 @@ import { SearchableSelectComponent } from './searchable-select.component';
   imports: [HorizontalRowDirective, NgClass, SearchableSelectComponent, SourceStatsComponent],
   styleUrl: './local-editor.component.css',
   template: `
-    <div class="selector-panel source-picker" [class.mb-3]="mode() === 'cards'" [attr.data-tone]="tone()">
+    <div class="source-picker" [class.selector-panel]="!compact()" [class.mb-3]="mode() === 'cards'" [attr.data-tone]="tone()">
+      @if (compact() && mode() === 'dropdown') {
+        <span class="field-label compact-source-heading">{{ heading() }}</span>
+      } @else {
       <div class="flex justify-between items-center gap-2 mb-2">
         <span class="selector-heading text-sm font-semibold" [class.field-label]="mode() === 'dropdown'">{{ heading() }}</span>
         @if (mode() === 'cards' && showManage()) {
           <button type="button" class="secondary-button compact-button" (click)="manageSources.emit()">Feature Sources</button>
         }
       </div>
+      }
       @if (mode() === 'dropdown') {
         <app-searchable-select [label]="heading()" placeholder="Select a Source" [options]="options"
-          [value]="value()" [disabled]="disabled()" (selected)="selected.emit($event)" />
+          [value]="value()" [disabled]="disabled()" [compact]="compact()" (selected)="selected.emit($event)" />
       } @else {
       <div appHorizontalRow class="flex flex-wrap items-stretch gap-2">
         @for (option of options; track option.source ?? option.value) {
@@ -40,6 +44,7 @@ import { SearchableSelectComponent } from './searchable-select.component';
     </div>
   `,
   styles: [`
+    .compact-source-heading { margin-bottom: .25rem; }
     .source-picker { --selector-accent: var(--md-extended-color-custom-color3-color); }
     .source-picker[data-tone=spells] { --selector-accent: var(--md-extended-color-custom-color5-color); }
   `],
@@ -49,6 +54,7 @@ export class FeatureSourcePickerComponent {
   readonly sources = input.required<FeatureSource[]>();
   readonly orphanNames = input<string[]>([]);
   readonly mode = input<'cards' | 'dropdown'>('cards');
+  readonly compact = input(false);
   readonly showManage = input(true);
   readonly allowUnassigned = input(false);
   readonly disabled = input(false);
