@@ -1,3 +1,6 @@
+import { ConcentrationControlComponent } from './concentration-control.component';
+import { ConcentrationService } from '../services/concentration.service';
+import { CharacterStore } from '../stores/character.store';
 import { SheetProficienciesComponent } from './sheet-proficiencies.component';
 import { AdvantageBadgeComponent } from './advantage-badge.component';
 import { applyHealthAdjustment } from './sheet-health';
@@ -7,13 +10,12 @@ import { Component, inject, computed, input, effect, output, signal } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CharacterHelpersService } from './character-helpers.service';
-import { RestService } from '../services/rest.service';
 import { ExportedCharacter, HitDieEntry, ConditionName } from '../models/character.model';
 import { ConditionsComponent } from './conditions.component';
 
 @Component({
   selector: 'app-character-info-page',
-  imports: [AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
+  imports: [ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
   styles: [`
     .ac-display {
       position: relative;
@@ -633,9 +635,11 @@ import { ConditionsComponent } from './conditions.component';
         <div class="space-y-4 order-3 md:order-3">
           <div class="border-4 border-surface rounded-lg p-4 bg-surface-container-low shadow-lg">
             <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
-              Round Tracker
+              Concentration &amp; Round Tracker
             </h3>
-            <div class="flex items-center justify-center gap-2">
+            <div class="flex items-center gap-2" role="group" aria-label="Concentration &amp; Round Tracker">
+              @if (characterData(); as sheet) { <app-concentration-control class="min-w-0 flex-1 border-r border-outline-variant pr-3" [sheet]="sheet" /> }
+              <div class="inline-flex shrink-0 items-center gap-1">
               <button
                 type="button"
                 class="w-9 h-9 rounded border-2 border-outline-variant bg-surface-container text-on-surface hover:bg-surface-container-high"
@@ -650,7 +654,7 @@ import { ConditionsComponent } from './conditions.component';
                 min="0"
                 [value]="character()?.roundTracker ?? 0"
                 (input)="updateRoundTracker($any($event.target).value)"
-                class="round-tracker-input w-24 px-2 py-1 border-2 border-outline-variant rounded bg-surface text-on-surface text-center"
+                class="round-tracker-input h-9 w-10 px-2 py-1 border-2 border-outline-variant rounded bg-surface text-on-surface text-center"
                 aria-label="Round tracker value"
               />
               <button
@@ -661,17 +665,18 @@ import { ConditionsComponent } from './conditions.component';
               >
                 <app-ui-icon name="plus" />
               </button>
-              @if ((character()?.roundTracker ?? 0) !== 0) {
                 <button
                   type="button"
                   class="w-9 h-9 rounded border-2 border-outline-variant bg-surface-container text-on-surface hover:bg-surface-container-high text-sm"
                   (click)="resetRoundTracker()"
+                  [class.invisible]="(character()?.roundTracker ?? 0) === 0"
+                  [disabled]="(character()?.roundTracker ?? 0) === 0"
                   aria-label="Reset round tracker"
                   title="Reset"
                 >
                   <app-ui-icon name="reset" />
                 </button>
-              }
+              </div>
             </div>
           </div>
 
@@ -774,9 +779,10 @@ import { ConditionsComponent } from './conditions.component';
   `,
 })
 export class CharacterInfoPageComponent {
+  private readonly store = inject(CharacterStore);
+  private readonly concentration = inject(ConcentrationService);
   characterData = input.required<ExportedCharacter | null>();
   helpers = inject(CharacterHelpersService);
-  restService = inject(RestService);
   navigateToFeatures = output<string>();
   inspirationChanged = output<boolean>();
   characterRested = output<'short' | 'long'>();
@@ -940,7 +946,11 @@ export class CharacterInfoPageComponent {
 
   applyDamageFromAdjustment() {
     const char = this.character();
-    if (char) applyHealthAdjustment(char, 'damage', this.getHpAdjustmentAmount());
+    if (char) {
+      applyHealthAdjustment(char, 'damage', this.getHpAdjustmentAmount());
+      this.store.setCharacter({ ...this.characterData()! });
+      void this.concentration.remindAfterDamage(this.characterData()!, this.getHpAdjustmentAmount());
+    }
     this.clearHpAdjustmentInput();
   }
   healFromAdjustment() {
@@ -1216,14 +1226,12 @@ export class CharacterInfoPageComponent {
   performShortRest() {
     const data = this.characterData();
     if (!data) return;
-    this.restService.performShortRest(data);
     this.characterRested.emit('short');
   }
 
   performLongRest() {
     const data = this.characterData();
     if (!data) return;
-    this.restService.performLongRest(data);
     this.characterRested.emit('long');
   }
 

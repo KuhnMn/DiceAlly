@@ -3,6 +3,7 @@
     <h2 class="text-xl font-bold sm:text-3xl">Equipment & Inventory</h2>
     <app-sheet-list-layout #listLayout />
   </div>
+  <p class="mb-3 text-sm text-on-surface-variant">Attuned items: {{ attunedCount }}. Equipping and attunement are separate; your table sets the limit.</p>
   <section class="mb-4 rounded-lg border border-tertiary bg-tertiary-container p-3 text-on-tertiary-container" aria-label="Currency">
     <h3 class="mb-2 text-sm font-semibold">Currency</h3>
     <div class="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:gap-6">
@@ -73,7 +74,7 @@
           }
           <div class="ml-auto flex shrink-0 items-center gap-1" role="group" [attr.aria-label]="item.name + ' controls'">
             <button type="button" (click)="toggleEquipped(item)" [attr.aria-pressed]="item.isEquipped ?? false" [attr.aria-label]="(item.isEquipped ? 'Unequip ' : 'Equip ') + item.name" [title]="item.isEquipped ? 'Equipped: click to unequip' : 'Equip item'" class="flex h-8 w-8 items-center justify-center rounded text-xl text-green hover:bg-green-container focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="backpack" [filled]="item.isEquipped ?? false" /></button>
-            @if (item.isEquipped && requiresAttunement(item)) {
+            @if ((requiresAttunement(item) || item.isAttuned)) {
               <button type="button" (click)="toggleAttuned(item)" [attr.aria-pressed]="item.isAttuned ?? false" [attr.aria-label]="(item.isAttuned ? 'Unattune ' : 'Attune ') + item.name" [title]="item.isAttuned ? 'Attuned: click to unattune' : 'Attune item'" class="flex h-8 w-8 items-center justify-center rounded text-xl text-purple hover:bg-purple-container focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="flame" [filled]="item.isAttuned ?? false" /></button>
             }
           <button type="button" (click)="deleteItem(item)" [attr.aria-label]="'Delete ' + item.name" [title]="'Delete ' + item.name" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm text-on-surface-variant transition-colors hover:bg-error-container hover:text-on-error-container focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="trash" /></button>
@@ -92,7 +93,7 @@
         </div>
         <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
           <label class="flex min-h-11 cursor-pointer items-center gap-2"><input type="checkbox" [checked]="item.isEquipped ?? false" (change)="toggleEquipped(item)" class="h-5 w-5 accent-green" /> Equipped</label>
-          @if (item.isEquipped && requiresAttunement(item)) { <label class="flex min-h-11 cursor-pointer items-center gap-2 text-purple"><input type="checkbox" [checked]="item.isAttuned ?? false" (change)="toggleAttuned(item)" class="h-5 w-5 accent-purple" /> Attuned</label> }
+          @if ((requiresAttunement(item) || item.isAttuned)) { <label class="flex min-h-11 cursor-pointer items-center gap-2 text-purple"><input type="checkbox" [checked]="item.isAttuned ?? false" (change)="toggleAttuned(item)" class="h-5 w-5 accent-purple" /> Attuned</label> }
           @if (item.allowMultiples) {
             <div class="inline-flex items-center gap-1" role="group" [attr.aria-label]="item.name + ' quantity'">
               <span class="mr-1 text-sm">Qty</span>

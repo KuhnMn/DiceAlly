@@ -12,6 +12,25 @@ import { NgForm } from '@angular/forms';
 describe('Basic Info editor', () => {
   beforeEach(() => TestBed.configureTestingModule({ imports: [LocalEditorComponent], providers: [provideRouter([])] }));
 
+  it('preserves base health and AC independently of temporary overrides through save and reopen', async () => {
+    const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
+    const editor = fixture.componentInstance;
+    const sheet = emptyBasicCharacter();
+    Object.assign(sheet.character!, { maxHp: 52, maxHpOverride: 40, armorClass: 16, armorClassOverride: 19, calculateAC: false });
+    const repository = new IndexedDbCharacterRepository();
+    await repository.save(sheet, 0);
+    editor.open((await repository.get(sheet.character!.characterUuid!))!, true);
+    expect(editor.character.maxHp).toBe(52);
+    expect(editor.character.armorClass).toBe(16);
+    editor.character.name = 'Unrelated edit';
+    await editor.save(); expect(editor.error()).toBe('');
+    editor.open((await repository.get(sheet.character!.characterUuid!))!, true);
+    expect(editor.character).toMatchObject({ maxHp: 52, maxHpOverride: 40, armorClass: 16, armorClassOverride: 19 });
+    editor.character.maxHp = 55;
+    await editor.save();
+    expect((await repository.get(sheet.character!.characterUuid!))!.sheet.character).toMatchObject({ maxHp: 55, maxHpOverride: 40 });
+  });
+
   it('keeps extracted page controls registered with the submit form and validates the active page', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
     const editor = fixture.componentInstance;

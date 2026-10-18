@@ -7,6 +7,7 @@ import { CharacterStore } from '../stores/character.store';
   providedIn: 'root',
 })
 export class UnsavedChangesGuard {
+  private readonly store = inject(CharacterStore);
   private lastSavedState: string = '';
 
   setLastSavedState(data: any): void {
@@ -15,7 +16,7 @@ export class UnsavedChangesGuard {
 
   hasUnsavedChanges(data: any): boolean {
     if (!data) return false;
-    return JSON.stringify(data) !== this.lastSavedState;
+    return this.store.hasNoteDraftChanges() || JSON.stringify(data) !== this.lastSavedState;
   }
 
   resetGuard(): void {

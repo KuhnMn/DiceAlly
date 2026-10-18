@@ -141,12 +141,10 @@ export class EquipmentPageComponent {
     }
   }
 
-  toggleEquipped(item: any) {
+  get attunedCount() { return this.inventory().filter(item => item.isAttuned).length; }
+
+  toggleEquipped(item: InventoryItem) {
     item.isEquipped = !item.isEquipped;
-    // If unequipping, also remove attunement
-    if (!item.isEquipped) {
-      item.isAttuned = false;
-    }
     this.inventoryChanged();
   }
 

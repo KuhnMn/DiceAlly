@@ -7,7 +7,7 @@
   @if (draft(); as note) {
     <form class="mb-4 rounded-lg border border-secondary bg-surface-container p-3 space-y-3" (ngSubmit)="apply()">
       <label class="block text-sm font-semibold">Heading
-        <input name="heading" [(ngModel)]="note.title" placeholder="Untitled" />
+        <input name="heading" [ngModel]="note.title" (ngModelChange)="updateDraft('title', $event)" placeholder="Untitled" />
       </label>
       <div class="flex items-center justify-between gap-2">
         <span class="text-sm font-semibold">Entry</span>
@@ -16,12 +16,12 @@
       @if (preview()) {
         <div class="markdown min-h-32 text-sm leading-relaxed" [innerHTML]="parseMarkdown(note.body)"></div>
       } @else {
-        <textarea name="body" aria-label="Note Markdown" [(ngModel)]="note.body" rows="8" placeholder="Write your note in Markdown"></textarea>
+        <textarea name="body" aria-label="Note Markdown" [ngModel]="note.body" (ngModelChange)="updateDraft('body', $event)" rows="8" placeholder="Write your note in Markdown"></textarea>
       }
-      <p class="text-xs text-on-surface-variant">Markdown: # Heading, **bold**, *italic*. Apply changes, then Quick Save to keep them.</p>
+      <p class="text-xs text-on-surface-variant">Markdown: # Heading, **bold**, *italic*. Save changes includes this open draft. Apply to Character closes the draft; save afterward to keep changes on this device.</p>
       <div class="flex flex-wrap justify-end gap-2">
         <button type="button" class="rounded-lg px-3 py-2 text-sm hover:bg-surface-container-high" (click)="draft.set(null)">Cancel</button>
-        <button type="submit" class="rounded-lg px-3 py-2 text-sm font-semibold bg-secondary-container text-on-secondary-container disabled:opacity-40 disabled:cursor-not-allowed" [disabled]="!note.body.trim()">Apply Changes</button>
+        <button type="submit" class="rounded-lg px-3 py-2 text-sm font-semibold bg-secondary-container text-on-secondary-container disabled:opacity-40 disabled:cursor-not-allowed" [disabled]="!note.body.trim() && !note.title.trim()">Apply to Character</button>
       </div>
     </form>
   }

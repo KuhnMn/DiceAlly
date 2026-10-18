@@ -16,6 +16,17 @@ describe('Application dialogs', () => {
     expect(dialogs.current()).toBeNull();
   });
 
+  it('offers Okay and an explicit secondary action, while Escape only acknowledges', async () => {
+    const dialogs = TestBed.inject(AppDialogService);
+    const result = dialogs.alertWithAction('Roll concentration.', 'Concentration Reminder', 'End Concentration');
+    const fixture = TestBed.createComponent(AppDialogComponent);
+    fixture.componentRef.setInput('request', dialogs.current()); fixture.detectChanges();
+    expect([...fixture.nativeElement.querySelectorAll('button')].map((button: any) => button.textContent.trim())).toEqual(['End Concentration', 'Okay']);
+    fixture.componentInstance.escape(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(await result).toBe(true);
+    fixture.destroy();
+  });
+
   it('renders safe text and cancels a confirmation with Escape', async () => {
     const dialogs = TestBed.inject(AppDialogService);
     const result = dialogs.confirm('<script>unsafe</script>');

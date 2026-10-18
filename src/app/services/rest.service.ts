@@ -18,6 +18,13 @@ export class RestService {
     this.performRest(character, 'short');
   }
 
+  previewRest(character: ExportedCharacter, type: 'short' | 'long'): string[] {
+    const preview = structuredClone(character);
+    if (type === 'long') this.applyLongRest(preview);
+    else this.applyShortRest(preview);
+    return summarizeRest(character, preview);
+  }
+
   private performRest(character: ExportedCharacter, type: 'short' | 'long'): void {
     const before = structuredClone(character);
     if (type === 'long') this.applyLongRest(character);

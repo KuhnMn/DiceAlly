@@ -1,10 +1,11 @@
+import { ConcentrationControlComponent } from './concentration-control.component';
 import { Component } from '@angular/core';
 import { CharacterInfoPageComponent } from './character-info-page.component';
 import { UiIconComponent } from '../ui-icon.component';
 
 @Component({
   selector: 'app-mobile-combat-page',
-  imports: [UiIconComponent],
+  imports: [UiIconComponent, ConcentrationControlComponent],
   template: `
     @if (character(); as c) {
           <!-- Combat Actions -->
@@ -12,15 +13,16 @@ import { UiIconComponent } from '../ui-icon.component';
             <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
               Combat
             </h3>
-            <div class="mb-4 flex items-center justify-between gap-3" role="group" aria-label="Round Tracker">
-              <label for="mobile-combat-round" class="text-xs font-semibold tracking-wide text-on-surface-variant">Round</label>
-              <div class="inline-flex items-center gap-1 rounded-xl border border-outline-variant bg-surface-container p-1 shadow-sm">
-                <button type="button" (click)="adjustRoundTracker(-1)" [disabled]="(c.roundTracker ?? 0) <= 0" class="flex h-11 w-11 items-center justify-center rounded-lg bg-surface-container-high text-lg text-primary transition-colors hover:bg-primary-container hover:text-on-primary-container focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-35" aria-label="Decrease round"><app-ui-icon name="minus" /></button>
-                <input id="mobile-combat-round" type="number" inputmode="numeric" min="0" [value]="c.roundTracker ?? 0" (input)="updateRoundTracker($any($event.target).value)" class="h-11 w-14 appearance-none rounded-lg bg-surface text-center text-lg font-bold tabular-nums text-on-surface focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [appearance:textfield]" aria-label="Round tracker value" />
-                <button type="button" (click)="adjustRoundTracker(1)" class="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-container text-lg text-on-primary-container transition-colors hover:brightness-110 focus-visible:outline-2 focus-visible:outline-primary" aria-label="Increase round"><app-ui-icon name="plus" /></button>
-                @if ((c.roundTracker ?? 0) !== 0) {
-                  <button type="button" (click)="resetRoundTracker()" title="Reset" aria-label="Reset round tracker" class="flex h-11 w-11 items-center justify-center rounded-lg border border-outline-variant bg-surface-container-high text-lg text-on-surface transition-colors hover:bg-primary-container hover:text-on-primary-container focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="reset" /></button>
-                }
+            <div class="mb-4 flex flex-wrap items-center gap-2" role="group" aria-label="Concentration &amp; Round Tracker">
+              <h4 class="w-full text-xs font-semibold tracking-wide text-on-surface-variant">Concentration &amp; Round Tracker</h4>
+              @if (characterData(); as sheet) { <app-concentration-control class="min-w-0 flex-1 border-r border-outline-variant pr-3" [sheet]="sheet" /> }
+              <div class="inline-flex shrink-0 items-center gap-1">
+                <div class="inline-flex items-center gap-1 rounded-xl border border-outline-variant bg-surface-container p-1 shadow-sm">
+                <button type="button" (click)="adjustRoundTracker(-1)" [disabled]="(c.roundTracker ?? 0) <= 0" class="flex h-11 w-10 items-center justify-center rounded-lg bg-surface-container-high text-lg text-primary transition-colors hover:bg-primary-container hover:text-on-primary-container focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-35" aria-label="Decrease round"><app-ui-icon name="minus" /></button>
+                <input id="mobile-combat-round" type="number" inputmode="numeric" min="0" [value]="c.roundTracker ?? 0" (input)="updateRoundTracker($any($event.target).value)" class="h-11 w-9 appearance-none rounded-lg bg-surface text-center text-lg font-bold tabular-nums text-on-surface focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [appearance:textfield]" aria-label="Round tracker value" />
+                <button type="button" (click)="adjustRoundTracker(1)" class="flex h-11 w-10 items-center justify-center rounded-lg bg-primary-container text-lg text-on-primary-container transition-colors hover:brightness-110 focus-visible:outline-2 focus-visible:outline-primary" aria-label="Increase round"><app-ui-icon name="plus" /></button>
+                </div>
+                <button type="button" (click)="resetRoundTracker()" [class.invisible]="(c.roundTracker ?? 0) === 0" [disabled]="(c.roundTracker ?? 0) === 0" title="Reset" aria-label="Reset round tracker" class="flex h-11 w-10 items-center justify-center rounded-lg border border-outline-variant bg-surface-container-high text-lg text-on-surface transition-colors hover:bg-primary-container hover:text-on-primary-container focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="reset" /></button>
               </div>
             </div>
             @if (combatActions().length > 0) {

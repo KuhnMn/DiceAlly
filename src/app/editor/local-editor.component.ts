@@ -118,8 +118,6 @@ export class LocalEditorComponent implements OnInit {
     if (!routeApproved && !this.canLeave()) return;
     this.sheet = structuredClone(entry.sheet);
     this.character.level ??= 1; this.character.maxHp ??= 0; this.character.armorClass ??= 10;
-    this.character.maxHp = this.character.maxHpOverride ?? this.character.maxHp;
-    this.character.armorClass = this.character.armorClassOverride ?? this.character.armorClass;
     this.character.resistances ??= []; this.character.senses ??= {}; this.character.speeds ??= { walk: 30 };
     this.character.speeds.walk ??= 30;
     this.normalizeAbilities();
@@ -142,8 +140,6 @@ export class LocalEditorComponent implements OnInit {
     try {
       validateBasicInfo(this.sheet);
       if (this.character.calculateAC) this.character.armorClass = this.basicInfo.calculatedAc.ac;
-      this.character.armorClassOverride = null;
-      this.character.maxHpOverride = null;
       const snapshot = structuredClone(this.sheet);
       this.version = await this.library.save(snapshot, this.version);
       this.view.markForCheck();

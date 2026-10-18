@@ -13,7 +13,7 @@ import { CharacterSessionService } from '../characters/character-session.service
 import { ThemePickerComponent } from '../theme-picker.component';
 import { ScrollableTabsDirective } from '../scrollable-tabs.directive';
 import { AppDialogService } from '../services/app-dialog.service';
-import { Component, inject, signal, ElementRef, viewChild, OnDestroy, effect } from '@angular/core';
+import { Component, inject, signal, ElementRef, viewChild, OnDestroy, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { CharacterLibraryService } from '../characters/character-library.service';
@@ -207,7 +207,10 @@ export class CharacterSheetComponent implements OnDestroy {
       });
     }
   }
-  ngOnDestroy() { if (typeof window !== 'undefined') cancelAnimationFrame(this.scrollFrame); }
+  @HostListener('window:beforeunload', ['$event']) beforeUnload(event: BeforeUnloadEvent) {
+    if (this.hasUnsavedChanges()) { event.preventDefault(); event.returnValue = ''; }
+  }
+  ngOnDestroy() { this.store.noteDraft.set(null); if (typeof window !== 'undefined') cancelAnimationFrame(this.scrollFrame); }
   isSaving = signal(false);
   readonly isOpeningEditor = signal(false);
   saveStatus = signal(false);
@@ -253,17 +256,7 @@ export class CharacterSheetComponent implements OnDestroy {
     }
   }
 
-  onCharacterRested(_restType: 'short' | 'long') {
-    const character = this.characterData();
-    if (!character) return;
-    
-    // Deep clone to trigger change detection and preserve all mutations
-    const updatedCharacter = JSON.parse(JSON.stringify(character)) as ExportedCharacter;
-    
-    // Notify the store with the new reference
-    this.store.setCharacter(updatedCharacter);
-    
-  }
+  onCharacterRested(restType: 'short' | 'long') { return this.confirmRest(restType); }
 
   async editCharacter() {
     if (this.isSaving() || this.isOpeningEditor() || !this.characterData()) return;
@@ -278,6 +271,8 @@ export class CharacterSheetComponent implements OnDestroy {
   }
 
   async quickSave(): Promise<void> {
+    if (this.isSaving()) return;
+    this.store.applyNoteDraft();
     const data = this.characterData();
     if (!data || this.isSaving()) return;
     const character = structuredClone(data);
@@ -300,31 +295,29 @@ export class CharacterSheetComponent implements OnDestroy {
     finally { this.isSaving.set(false); }
   }
 
-  performShortRest() {
+  performShortRest() { return this.confirmRest('short'); }
+  performLongRest() { return this.confirmRest('long'); }
+  private restPending = false;
+  private async confirmRest(type: 'short' | 'long') {
     const character = this.characterData();
-    if (!character) return;
-
-    this.restService.performShortRest(character);
-    
-    // Deep clone to trigger change detection and preserve all mutations
-    const updatedCharacter = JSON.parse(JSON.stringify(character)) as ExportedCharacter;
-    
-    // Notify the store that character data has changed to trigger reactivity
-    this.store.setCharacter(updatedCharacter);
+    if (!character || this.restPending) return;
+    this.restPending = true;
+    try {
+      const before = JSON.stringify(character);
+      const changes = this.restService.previewRest(character, type);
+      const policy = type === 'long'
+        ? 'Current recovery policy: restore all spent Hit Dice, heal to maximum HP, clear temporary HP, and recover eligible resources.'
+        : 'Current recovery policy: recover resources marked for a short rest. HP and Hit Dice are adjusted manually.';
+      const accepted = await this.dialogs.confirm(policy + '\n\n' + (changes.join('\n') || 'No resources need restoring.'),
+        type === 'long' ? 'Preview Long Rest' : 'Preview Short Rest', 'Apply Rest');
+      if (!accepted) return;
+      if (this.characterData() !== character || JSON.stringify(character) !== before) {
+        await this.dialogs.alert('The character changed while the preview was open. Open the rest preview again.');
+        return;
+      }
+      if (type === 'long') this.restService.performLongRest(character);
+      else this.restService.performShortRest(character);
+      this.store.setCharacter(structuredClone(character));
+    } finally { this.restPending = false; }
   }
-
-  performLongRest() {
-    const character = this.characterData();
-    if (!character) return;
-
-    this.restService.performLongRest(character);
-    
-    // Deep clone to trigger change detection and preserve all mutations
-    const updatedCharacter = JSON.parse(JSON.stringify(character)) as ExportedCharacter;
-    
-    // Notify the store that character data has changed to trigger reactivity
-    this.store.setCharacter(updatedCharacter);
-  }
-
-
 }

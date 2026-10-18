@@ -1,6 +1,7 @@
 import { Component, input } from '@angular/core';
 
 const ICON_PATHS: Record<string, string | undefined> = {
+  head: 'M8 21v-4a7 7 0 1 1 11-6l2 3h-3v3h-4v4M10 7h4M12 5v4',
   backpack: 'M8 5V3h8v2M7 5h10a3 3 0 0 1 3 3v12H4V8a3 3 0 0 1 3-3ZM8 14h8v6M8 10h8',
   flame: 'M12 2c1 5 7 7 7 13a7 7 0 0 1-14 0c0-3 1-5 4-8 0 4 2 5 3 5 2-3 1-7 0-10Z',
   save: 'M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12l4 4v12a2 2 0 0 1-2 2ZM7 3v6h10V3M7 21v-8h10v8',

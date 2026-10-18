@@ -31,6 +31,10 @@ import { contentReference } from './editor-content-helpers';
 })
 export class SpellsEditorComponent implements OnInit, OnDestroy {
   readonly sheet = input.required<ExportedCharacter>();
+  setConcentrationReminder(enabled: boolean) {
+    const character = this.sheet().character;
+    if (character) { character.concentrationReminderEnabled = enabled; this.change(); }
+  }
   readonly edited = output<void>();
   private readonly cache = new IndexedDbContentCache();
   private readonly catalog = new EditorCatalog(this.cache);

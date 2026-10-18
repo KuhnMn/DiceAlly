@@ -1,3 +1,4 @@
+import { AppDialogService } from '../services/app-dialog.service';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
@@ -15,16 +16,38 @@ describe('Sheet navigation and mobile health integration', () => {
   it('keeps rest changes unsaved until an explicit save', async () => {
     const { component, store } = setup(true);
     store.nativeCharacterId.set(store.characterData()!.character!.characterUuid!);
-    component.performShortRest();
+    vi.spyOn(TestBed.inject(AppDialogService), 'confirm').mockResolvedValue(true);
+    await component.performShortRest();
     expect(store.nativeSave).not.toHaveBeenCalled();
-    component.performLongRest();
+    await component.performLongRest();
     expect(store.characterData()?.character?.currentHp).toBe(30);
     expect(component.hasUnsavedChanges()).toBe(true);
     expect(store.nativeSave).not.toHaveBeenCalled();
-    component.onCharacterRested('long');
+    await component.onCharacterRested('long');
     expect(store.nativeSave).not.toHaveBeenCalled();
     await component.quickSave();
     expect(store.nativeSave).toHaveBeenCalledOnce();
+    expect(component.hasUnsavedChanges()).toBe(false);
+  });
+
+  it('previews rest without changing data and cancels safely', async () => {
+    const { component, store } = setup(true);
+    const before = structuredClone(store.characterData());
+    const confirm = vi.spyOn(TestBed.inject(AppDialogService), 'confirm').mockResolvedValue(false);
+    await component.performLongRest();
+    expect(confirm.mock.calls[0][0]).toContain('restore all spent Hit Dice');
+    expect(confirm.mock.calls[0][0]).toContain('HP: 10 restored');
+    expect(store.characterData()).toEqual(before);
+    expect(component.hasUnsavedChanges()).toBe(false);
+  });
+
+  it('saves an open note draft and protects it before saving', async () => {
+    const { component, store } = setup(true);
+    store.noteDraft.set({ id: 1, title: 'Session', body: 'Keep this draft' });
+    expect(component.hasUnsavedChanges()).toBe(true);
+    await component.quickSave();
+    expect(store.nativeSave).toHaveBeenCalledWith(expect.objectContaining({ notes: [expect.objectContaining({ body: 'Keep this draft' })] }));
+    expect(store.noteDraft()).toBeNull();
     expect(component.hasUnsavedChanges()).toBe(false);
   });
   function setup(mobile = false) {
@@ -38,6 +61,7 @@ describe('Sheet navigation and mobile health integration', () => {
     sheet.character!.currentHp = 20;
     sheet.character!.maxHp = 30;
     store.setCharacter(sheet);
+    store.nativeCharacterId.set(sheet.character!.characterUuid!);
     store.nativeSave = vi.fn(async () => {});
     const fixture = TestBed.createComponent(CharacterSheetComponent);
     vi.spyOn(fixture.componentInstance, 'mobile').mockReturnValue(mobile);

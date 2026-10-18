@@ -47,18 +47,23 @@ describe('Sheet inventory interactions', () => {
     expect(decrease.disabled).toBe(false);
   });
 
-  it('updates equipped/attuned filters immediately after unequipping', () => {
+  it('preserves attunement when unequipping and offers a separate end action', () => {
     const { fixture, items, component } = setup();
     component.inventoryFilter.set('attuned'); fixture.detectChanges();
     expect(component.visibleInventory().length).toBe(1);
     const equipped = fixture.nativeElement.querySelector('button[aria-label="Unequip Sword"]') as HTMLButtonElement;
     equipped.click(); fixture.detectChanges();
     expect(items[1].isEquipped).toBe(false);
+    expect(items[1].isAttuned).toBe(true);
+    expect(component.attunedCount).toBe(1);
+    expect(component.visibleInventory()).toEqual([items[1]]);
+    (fixture.nativeElement.querySelector('button[aria-label="Unattune Sword"]') as HTMLButtonElement).click(); fixture.detectChanges();
     expect(items[1].isAttuned).toBe(false);
+    expect(component.attunedCount).toBe(0);
     expect(component.visibleInventory()).toEqual([]);
   });
 
-  it('fills equipment icons when active and offers attunement only while equipped', () => {
+  it('fills equipment icons when active and offers attunement independently of equipment', () => {
     const { fixture, component } = setup();
     const icon = (action: string) => fixture.nativeElement.querySelector(`button[aria-label="${action} Sword"]`);
     expect(icon('Unequip').querySelector('svg').getAttribute('fill')).toBe('currentColor');
@@ -67,7 +72,7 @@ describe('Sheet inventory interactions', () => {
     expect(icon('Attune').querySelector('svg').getAttribute('fill')).toBe('none');
     icon('Unequip').click(); fixture.detectChanges();
     expect(icon('Equip').querySelector('svg').getAttribute('fill')).toBe('none');
-    expect(icon('Attune')).toBeNull();
+    expect(icon('Attune')).not.toBeNull();
     expect(component.expandedItems().size).toBe(0);
     icon('Equip').click(); fixture.detectChanges();
     expect(icon('Attune')).not.toBeNull();

@@ -18,10 +18,10 @@ import { DialogScrollLockService } from './editor/dialog-scroll-lock.service';
           <textarea readonly aria-label="Value to copy" class="editor-input mt-3" rows="3" [value]="value" (focus)="select($event)"></textarea>
         }
         <footer class="flex flex-wrap justify-end gap-2 mt-4">
-          @if (request().cancellable) {
-            <button type="button" class="secondary-button" cdkFocusInitial (click)="dialogs.finish(false)">Cancel</button>
+          @if (request().cancellable || request().secondaryLabel) {
+            <button type="button" class="secondary-button" [attr.cdkFocusInitial]="request().secondaryLabel ? null : ''" (click)="dialogs.finish(false)">{{ request().secondaryLabel || 'Cancel' }}</button>
           }
-          <button type="button" class="action-button" (click)="dialogs.finish(true)">{{ request().confirmLabel }}</button>
+          <button type="button" class="action-button" [attr.cdkFocusInitial]="request().secondaryLabel ? '' : null" (click)="dialogs.finish(true)">{{ request().confirmLabel }}</button>
         </footer>
       </section>
     </div>

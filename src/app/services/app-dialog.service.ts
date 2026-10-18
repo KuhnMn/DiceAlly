@@ -6,6 +6,7 @@ export interface AppDialogRequest {
   confirmLabel: string;
   cancellable: boolean;
   copyValue?: string;
+  secondaryLabel?: string;
   resolve: (accepted: boolean) => void;
 }
 
@@ -20,6 +21,10 @@ export class AppDialogService {
   }
   alert(message: string): Promise<boolean> {
     return this.open({ title: 'Notice', message, confirmLabel: 'OK', cancellable: false });
+  }
+  /** True acknowledges the notice; false selects the explicit secondary action. Dismissal acknowledges it. */
+  alertWithAction(message: string, title: string, secondaryLabel: string): Promise<boolean> {
+    return this.open({ title, message, confirmLabel: 'Okay', secondaryLabel, cancellable: false });
   }
   showCopy(message: string, value: string): Promise<boolean> {
     return this.open({ title: 'Copy Manually', message, copyValue: value, confirmLabel: 'Close', cancellable: false });

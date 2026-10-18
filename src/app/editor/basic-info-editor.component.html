@@ -26,6 +26,7 @@
 
 <section class="editor-card">
   <h2>Combat Stats</h2>
+  @if (editor.character.maxHpOverride != null) { <p class="mb-3 text-sm text-on-surface-variant">Temporary maximum HP override: {{ editor.character.maxHpOverride }}. Edit the base below; manage the override on the sheet.</p> }
   <div class="divide-y divide-outline-variant">
     @for (field of editor.combatFields; track field.key) {
       <div class="stepper-field flex items-center justify-between gap-3 py-3">
@@ -79,6 +80,7 @@
 
 <section class="editor-card">
   <h2>Armor Class</h2>
+  @if (editor.character.armorClassOverride != null) { <p class="mb-3 text-sm text-on-surface-variant">Temporary AC override: {{ editor.character.armorClassOverride }}. Edit the base below; manage the override on the sheet.</p> }
   <label class="flex items-center justify-between gap-4"><span class="font-medium">Calculate Automatically</span><input name="calculate-ac" type="checkbox" [ngModel]="editor.character.calculateAC" (ngModelChange)="editor.setAutomaticAc($event)" /></label>
   @if (!editor.character.calculateAC) {
     <div class="stepper-field flex flex-wrap items-center justify-between gap-3 mt-4"><label for="manual-ac" class="font-medium">Armor Class</label>

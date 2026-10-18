@@ -659,6 +659,14 @@ export interface MinimalSpellSlotInfo {
   r?: string;
 }
 
+export interface CombatSourceSnapshot {
+  name?: string;
+  range?: string;
+  hitOrDc?: string;
+  damageOrHeal?: string;
+  actionType?: string;
+}
+
 export interface CombatAction {
   editorId?: string;
   name?: string;
@@ -666,6 +674,9 @@ export interface CombatAction {
   hitOrDc?: string;
   damageOrHeal?: string;
   actionType?: string;
+  sourceSnapshot?: CombatSourceSnapshot;
+  sourceOption?: number;
+  sourceOptionName?: string;
   linkedResourceType?: string;
   linkedResource?: { name?: string; source?: string; editorId?: string };
   orderIndex?: number;
@@ -686,6 +697,8 @@ export interface Proficiencies {
 }
 
 export interface CharacterData {
+  concentrationEffect?: string;
+  concentrationReminderEnabled?: boolean;
   initiativeOverride?: number | null;
   name?: string;
   level?: number;

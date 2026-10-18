@@ -1,3 +1,4 @@
+import { AppDialogService } from '../services/app-dialog.service';
 import { UiIconComponent } from '../ui-icon.component';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -20,7 +21,8 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
 export class NotesPageComponent {
   readonly characterData = input.required<ExportedCharacter | null>();
   private readonly store = inject(CharacterStore);
-  readonly draft = signal<Note | null>(null);
+  private readonly dialogs = inject(AppDialogService);
+  readonly draft = this.store.noteDraft;
   readonly pendingRemoval = signal<Note | null>(null);
   readonly collapsed = signal(new Set<string>());
   readonly preview = signal(false);
@@ -43,24 +45,31 @@ export class NotesPageComponent {
     });
   }
 
-  add(title = '') {
+  async add(title = '') {
+    if (this.store.hasNoteDraftChanges() && !await this.canReplaceDraft()) return;
     const notes = this.characterData()?.notes ?? [];
     this.draft.set({ id: Math.max(0, ...notes.map(note => note.id)) + 1, title, body: '',
       orderIndex: Math.max(-1, ...notes.map(note => note.orderIndex ?? 0)) + 1 });
     this.preview.set(false);
   }
 
-  edit(note: Note) { this.draft.set({ ...note }); this.preview.set(false); }
+  async edit(note: Note) {
+    if (this.store.hasNoteDraftChanges() && !await this.canReplaceDraft()) return;
+    this.draft.set({ ...note }); this.preview.set(false);
+  }
+  private canReplaceDraft() {
+    return !this.store.hasNoteDraftChanges() || this.dialogs.confirm('Discard the unfinished note draft?', 'Unfinished Note', 'Discard Draft');
+  }
+  updateDraft(field: 'title' | 'body', value: string) {
+    const draft = this.draft();
+    if (draft) this.draft.set({ ...draft, [field]: value });
+  }
 
   apply() {
     const draft = this.draft();
-    if (!draft || !draft.body.trim()) return;
-    const note = { ...draft, title: draft.title.trim() || 'Untitled' };
-    const notes = this.characterData()?.notes ?? [];
-    this.saveNotes(notes.some(entry => entry.id === note.id)
-      ? notes.map(entry => entry.id === note.id ? note : entry) : [...notes, note]);
-    this.collapsed.update(current => { const next = new Set(current); next.delete(note.title); return next; });
-    this.draft.set(null);
+    if (!draft) return;
+    this.collapsed.update(current => { const next = new Set(current); next.delete(draft.title.trim() || 'Untitled'); return next; });
+    this.store.applyNoteDraft();
   }
 
   remove() {

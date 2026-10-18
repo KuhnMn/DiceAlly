@@ -90,6 +90,8 @@ export function prefillCombatAction(sheet: ExportedCharacter, resource: CombatRe
     }
   }
   return { editorId: newEditorId(), name, range, actionType, hitOrDc, damageOrHeal,
+    sourceSnapshot: { name, range, actionType, hitOrDc, damageOrHeal }, sourceOption: monsterOption,
+    sourceOptionName: type === 'MONSTER' ? monsterCombatOptions(resource as Monster)[monsterOption]?.name : undefined,
     linkedResourceType: type, linkedResource: { editorId: resource.editorId, name: resource.name, source: resource.source } };
 }
 
@@ -102,4 +104,26 @@ export function resolveCombatResource(sheet: ExportedCharacter, action: CombatAc
   if (!link) return;
   return link.editorId ? candidates.find(value => value.editorId === link.editorId)
     : candidates.find(value => value.name === link.name && (value.source ?? '') === (link.source ?? ''));
+}
+
+export const COMBAT_SNAPSHOT_FIELDS = [
+  { key: 'name', label: 'Name' }, { key: 'actionType', label: 'Action type' },
+  { key: 'range', label: 'Range' }, { key: 'hitOrDc', label: 'Attack / save' },
+  { key: 'damageOrHeal', label: 'Damage / effect' },
+] as const;
+export function combatSourceSuggestion(sheet: ExportedCharacter, action: CombatAction, helpers: CharacterHelpersService): CombatAction | undefined {
+  const resource = resolveCombatResource(sheet, action);
+  if (!resource || !action.linkedResourceType) return;
+  // Old monster bookmarks have no reliable action identity. Require a new bookmark rather than guessing.
+  if (action.linkedResourceType === 'MONSTER' && action.sourceOption == null) return;
+  let option = action.sourceOption ?? 0;
+  if (action.linkedResourceType === 'MONSTER' && action.sourceOptionName) {
+    option = monsterCombatOptions(resource as Monster).findIndex(value => value.name === action.sourceOptionName);
+    if (option < 0) return;
+  }
+  return prefillCombatAction(sheet, resource, action.linkedResourceType as CombatResourceType, helpers, option);
+}
+export function combatSourceChanged(sheet: ExportedCharacter, action: CombatAction, helpers: CharacterHelpersService): boolean {
+  const suggestion = combatSourceSuggestion(sheet, action, helpers);
+  return !!suggestion && COMBAT_SNAPSHOT_FIELDS.some(({ key }) => (suggestion[key] ?? '') !== ((action.sourceSnapshot ?? action)[key] ?? ''));
 }

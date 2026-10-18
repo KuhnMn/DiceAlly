@@ -1,3 +1,5 @@
+import { ConcentrationService } from '../services/concentration.service';
+import { CharacterStore } from '../stores/character.store';
 import { SheetAcControlComponent } from './sheet-ac-control.component';
 import { SheetHealthDetailsComponent } from './sheet-health-details.component';
 import { SheetStatBadgeComponent } from './sheet-stat-badge.component';
@@ -77,6 +79,8 @@ import { DialogScrollLockService } from '../editor/dialog-scroll-lock.service';
   `,
 })
 export class MobileSheetStatusComponent implements OnDestroy {
+  private readonly store = inject(CharacterStore);
+  private readonly concentration = inject(ConcentrationService);
   readonly sheet = input.required<ExportedCharacter>();
   readonly saving = input(false);
   readonly dirty = input(false);
@@ -144,6 +148,8 @@ export class MobileSheetStatusComponent implements OnDestroy {
     const amount = Number(this.amount());
     if (!character || !this.amount().trim() || !Number.isFinite(amount) || amount < 0) return;
     applyHealthAdjustment(character, action, amount);
+    this.store.setCharacter({ ...this.sheet() });
+    if (action === 'damage') void this.concentration.remindAfterDamage(this.sheet(), amount);
     this.amount.set('');
     this.feedback.set('Health updated. Save the sheet to keep your changes.');
   }
