@@ -9,7 +9,7 @@ import { FeatureNotes } from '../models/character.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (localNotes().length > 0) {
-        <div class="mt-2 border-t border-outline-variant pt-2 sm:mt-4 sm:pt-4">
+        <div class="mt-1.5 border-t border-outline-variant pt-1.5 sm:mt-2 sm:pt-2">
       <div class="rounded-lg border border-outline-variant bg-surface-variant p-2 sm:mb-2 sm:p-3">
         @for (group of localNotes(); track $index; let i = $index) {
           <div [class]="i < localNotes().length - 1 ? 'mb-2 sm:mb-3' : ''">

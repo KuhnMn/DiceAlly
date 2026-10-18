@@ -1,3 +1,4 @@
+import { SheetListLayoutComponent } from './sheet-list-layout.component';
 import { SheetDetailDialogComponent } from './sheet-detail-dialog.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { SheetSourcePickerComponent } from './sheet-source-picker.component';
@@ -8,13 +9,13 @@ import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { FeatureUsesComponent } from './feature-uses.component';
 import { FeatureNotesComponent } from './feature-notes.component';
 import { CharacterHelpersService } from './character-helpers.service';
-import { ExportedCharacter, FeatureNotes, Speeds } from '../models/character.model';
+import { ExportedCharacter, FeatureEntryFull, FeatureNotes, Speeds } from '../models/character.model';
 import { CharacterStore } from '../stores/character.store';
 import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
 
 @Component({
   selector: 'app-features-page',
-  imports: [SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [SheetListLayoutComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: feature-flash 1.6s ease-out;
@@ -58,8 +59,11 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
     }
   `],
   template: `
-    <div class="bg-surface-container-highest p-3 sm:p-8 rounded-lg border-2 border-outline  shadow-lg">
-      <h2 class="text-xl sm:text-3xl font-bold mb-3 sm:mb-6">Features & Traits</h2>
+    <div class="bg-surface-container-highest p-3 sm:p-5 rounded-lg border-2 border-outline  shadow-lg">
+      <div class="mb-3 flex items-center justify-between gap-2">
+        <h2 class="text-xl sm:text-3xl font-bold">Features & Traits</h2>
+        <app-sheet-list-layout #listLayout />
+      </div>
 
       @if (species()) {
         <h3 class="text-xl font-bold mb-3 mt-6">Species</h3>
@@ -71,7 +75,7 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
           <!-- Header (always visible, clickable) -->
           <button 
             type="button"
-            class="w-full text-left hover:bg-surface-container-low transition-colors rounded py-1 sm:p-2 sm:-m-2"
+            class="w-full text-left hover:bg-surface-container-low transition-colors rounded py-0.5"
             (click)="toggleExpanded('species')" aria-haspopup="dialog">
             <div class="flex flex-wrap items-center justify-between gap-2 w-full">
               <h3 class="text-lg font-bold text-rose sm:text-2xl"> {{ species()?.name ?? 'Unknown' }}</h3>
@@ -80,10 +84,10 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
           </button>
 
           <!-- Basic Info (always visible) -->
-          <div class="mt-1 flex flex-wrap items-center gap-1 sm:mt-2 sm:gap-2">
+          <div class="mt-1 flex flex-wrap items-center gap-1 sm:gap-2">
 
           </div>
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-on-surface-container">
+              <div appHorizontalRow role="region" aria-label="Species details" tabindex="0" class="flex flex-nowrap items-center gap-4 overflow-x-auto overscroll-x-contain py-1 text-sm text-on-surface-container [&>*]:shrink-0 [&>*]:whitespace-nowrap">
                 @if (species()?.entity?.size?.length) {
                   <div>Size: {{ species()?.entity?.size?.join(', ') }}</div>
                 }
@@ -103,7 +107,7 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
 
           <!-- Reference details open in a modal on every screen size. -->
           @if (!isExpanded('species')) {
-                  <div class="space-y-3">
+                  <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
                     @for (use of species()?.uses ?? []; track use) {
                                         <app-feature-uses [uses]="use" (usesUpdated)="use.usedFreeUses = $event.usedFreeUses" />
                                       }
@@ -112,7 +116,7 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
                 <app-feature-notes [notes]="species()?.notes" (notesChanged)="updateSpeciesNotes($event)" />
                 @if (isExpanded('species')) {
           <app-sheet-detail-dialog [title]="species()?.name ?? 'Species'" (closed)="toggleExpanded('species')">
-            <div class="grid grid-cols-2 gap-2 text-sm">
+            <div appHorizontalRow role="region" aria-label="Species details" tabindex="0" class="flex flex-nowrap items-center gap-4 overflow-x-auto overscroll-x-contain py-1 text-sm [&>*]:shrink-0 [&>*]:whitespace-nowrap">
               <span>Size: {{ species()?.entity?.size?.join(', ') || '—' }}</span>
               <span>Speed: {{ formatSpeeds(species()?.entity?.speed ?? null) }}</span>
               @if (species()?.entity?.darkvision) { <span>Darkvision: {{ species()?.entity?.darkvision }} ft.</span> }
@@ -130,7 +134,7 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
             </div>
               @if (species()?.uses?.length) {
                 <div class="mt-2 sm:mt-4 border-t border-outline-variant pt-2 sm:pt-4">
-                  <div class="space-y-3">
+                  <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
                     @for (use of species()?.uses ?? []; track use) {
                                         <app-feature-uses 
                                           [uses]="use"
@@ -150,7 +154,7 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
       }
       <h3 class="text-xl font-bold mb-3 mt-6">Features</h3>
 
-      <div class="mb-6 space-y-4">
+      <div class="mb-3 space-y-2">
         <div appHorizontalRow class="flex flex-wrap items-center gap-2 mb-3 sm:mb-4">
           <span class="text-sm font-semibold text-on-surface">Type:</span>
           @for (type of featureTypes(); track type) {
@@ -181,35 +185,49 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
       <label class="mb-3 block text-sm font-semibold">Search features
         <input type="search" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" placeholder="Search by name" class="mt-1 min-h-11 w-full rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-base font-normal sm:text-sm" />
       </label>
-      <div class="space-y-2 sm:space-y-4">
-        @if (sortedFeatures().length > 0) {
-          @for (feature of sortedFeatures(); track feature.editorId ?? feature) {
+      <ng-template #featureTags let-feature>
+        <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded">{{ helpers.featureTypeLabel(feature).replaceAll('_', ' ') | titlecase }}</span>
+        @if (helpers.featureTypeLabel(feature) === 'CLASS_FEATURE') {
+          <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">Level {{ helpers.featureLevel(feature) }}</span>
+        }
+        @if (helpers.featureTypeLabel(feature) === 'FEAT' && feature.featEntity?.category) {
+          <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded" title="Feat category">{{ feature.featEntity.category }}</span>
+        }
+        @if (helpers.featureTypeLabel(feature) === 'OPTIONAL_FEATURE') {
+          @for (type of feature.optionalFeatureEntity?.featureType ?? []; track $index) {
+            <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded" title="Optional feature type">{{ type }}</span>
+          }
+        }
+      </ng-template>
+      <div class="space-y-4">
+        @for (group of featureGroups(); track group.label) {
+          <section>
+            <h4 class="mb-2 border-b-2 border-blue pb-1 text-lg font-bold text-blue">{{ group.label }}</h4>
+            <div class="sheet-entry-list" [class.sheet-entry-list-two-columns]="listLayout.columns() === 2" [class.sheet-entry-list-three-columns]="listLayout.columns() === 3">
+          @for (feature of group.features; track feature.editorId ?? feature) {
             <div
-              class="border-2 border-blue rounded-lg px-3 py-2 sm:p-4 bg-surface-container transition-colors"
+              class="min-w-0 border-2 border-blue rounded-lg px-3 py-1.5 sm:py-2 bg-surface-container transition-colors"
               [attr.id]="featureAnchorId(feature)"
               [class.flash-highlight]="highlightedId() === featureAnchorId(feature)"
             >
                 <!-- Header (always visible, clickable) -->
                 <button 
                   type="button"
-                  class="w-full text-left hover:bg-surface-container-low transition-colors rounded py-1 sm:p-2 sm:-m-2"
+                  class="w-full text-left hover:bg-surface-container-low transition-colors rounded py-0.5"
                   (click)="toggleExpanded(featureAnchorId(feature) ?? 'feature')" aria-haspopup="dialog"
                   [attr.aria-expanded]="isExpanded(featureAnchorId(feature) ?? 'feature')"
                 >
                   <div class="flex flex-wrap items-center justify-between gap-2 w-full">
                     <div class="flex flex-wrap items-center gap-2">
                       <h3 class="text-base sm:text-xl font-bold text-blue">{{ feature.name }}</h3>
-                      @if (feature.featureType !== undefined) {
-                        <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded">{{ helpers.featureTypeLabel(feature).replaceAll('_', ' ') | titlecase }}</span>
-                      }
+                      <ng-container [ngTemplateOutlet]="featureTags" [ngTemplateOutletContext]="{ $implicit: feature }" />
                     </div>
                     <span class="text-xl text-blue font-bold"><app-ui-icon name="chevron" /></span>
                   </div>
-                  <div class="text-xs text-on-surface-variant mt-1">Level: {{ helpers.featureLevel(feature) }}</div>
                 </button>
 
                 <!-- Basic Info (always visible) -->
-                <div class="mt-1 flex flex-wrap items-center gap-1 sm:mt-2 sm:gap-2">
+                <div class="mt-1 flex flex-wrap items-center gap-1 sm:gap-2">
                   @if (feature.source) {
                     <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ feature.source }}</span>
                   }
@@ -220,7 +238,7 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
 
                 <!-- Reference details open in a modal on every screen size. -->
                 @if (!isExpanded(featureAnchorId(feature) ?? 'feature')) {
-                  <div class="space-y-3">
+                  <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
                     @for (use of feature.uses ?? []; track use) {
                                         <app-feature-uses [uses]="use" (usesUpdated)="use.usedFreeUses = $event.usedFreeUses" />
                                       }
@@ -229,16 +247,18 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
                 <app-feature-notes [notes]="feature.notes" (notesChanged)="updateFeatureNotes(feature, $event)" />
                 @if (isExpanded(featureAnchorId(feature) ?? 'feature')) {
                 <app-sheet-detail-dialog [title]="feature.name" (closed)="toggleExpanded(featureAnchorId(feature) ?? 'feature')">
-                  <p class="text-sm text-on-surface-variant">{{ helpers.featureTypeLabel(feature).replaceAll('_', ' ') | titlecase }} · Level {{ helpers.featureLevel(feature) }} · {{ feature.featureSourceName }} · {{ feature.source }}</p>
-                  <div class="mt-3 pt-3 border-t border-outline-variant">
-                    @if (feature.featEntity?.category) {
-                      <div class="text-base text-on-surface">Feat Category: {{ feature.featEntity?.category }}</div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <ng-container [ngTemplateOutlet]="featureTags" [ngTemplateOutletContext]="{ $implicit: feature }" />
+                    @if (feature.featureSourceName) {
+                      <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">{{ feature.featureSourceName }}</span>
                     }
+                    @if (feature.source) {
+                      <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ feature.source }}</span>
+                    }
+                  </div>
+                  <div class="mt-3 pt-3 border-t border-outline-variant">
                     @if ((feature.featEntity?.prerequisite?.length ?? 0) > 0) {
                       <div class="text-base text-on-surface">Prerequisites: {{ helpers.prerequisiteText(feature.featEntity?.prerequisite ?? []) }}</div>
-                    }
-                    @if (feature.optionalFeatureEntity?.featureType) {
-                      <div class="text-base text-on-surface">Feature Type: {{ feature.optionalFeatureEntity?.featureType }}</div>
                     }
                     @if ((feature.optionalFeatureEntity?.prerequisite?.length ?? 0) > 0) {
                       <div class="text-base text-on-surface">Prerequisites: {{ helpers.prerequisiteText(feature.optionalFeatureEntity?.prerequisite ?? []) }}</div>
@@ -251,7 +271,7 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
 
                     @if (feature.uses?.length) {
                       <div class="mt-2 sm:mt-4 border-t border-outline-variant pt-2 sm:pt-4">
-                        <div class="space-y-3">
+                        <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
                           @for (use of feature.uses; track use) {
                                                     <app-feature-uses
                                                       [uses]="use"
@@ -269,7 +289,9 @@ import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
                 }
             </div>
           }
-        } @else {
+            </div>
+          </section>
+        } @empty {
           <p class="text-on-surface-variant italic">No features listed</p>
         }
       </div>
@@ -348,6 +370,24 @@ export class FeaturesPageComponent {
       if (levelA !== levelB) return levelA - levelB;
       return a.name.localeCompare(b.name);
     });
+  });
+
+  readonly featureGroups = computed(() => {
+    const groups = new Map<string, FeatureEntryFull[]>();
+    for (const feature of this.sortedFeatures()) {
+      const type = this.helpers.featureTypeLabel(feature);
+      const label = type === 'CLASS_FEATURE'
+        ? `Class Features · Level ${this.helpers.featureLevel(feature)}`
+        : type === 'FEAT'
+          ? `Feats · ${feature.featEntity?.category?.trim() || 'Other'}`
+          : `Optional Features · ${[...new Set(feature.optionalFeatureEntity?.featureType ?? [])].sort().join(', ') || 'Other'}`;
+      const entries = groups.get(label) ?? [];
+      entries.push(feature);
+      groups.set(label, entries);
+    }
+    return [...groups].map(([label, features]) => ({ label, features }))
+      .sort((a, b) => this.helpers.featureTypeOrder(a.features[0]) - this.helpers.featureTypeOrder(b.features[0])
+        || a.label.localeCompare(b.label, undefined, { numeric: true }));
   });
 
   toggleExpanded(id: string) {

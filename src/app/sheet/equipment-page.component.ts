@@ -1,3 +1,4 @@
+import { SheetListLayoutComponent } from './sheet-list-layout.component';
 import { ItemRuleTagComponent } from './item-rule-tag.component';
 import { SheetDetailDialogComponent } from './sheet-detail-dialog.component';
 import { HorizontalRowDirective } from './horizontal-row.directive';
@@ -17,7 +18,7 @@ import { CharacterStore } from '../stores/character.store';
 
 @Component({
   selector: 'app-equipment-page',
-  imports: [ItemRuleTagComponent, SheetDetailDialogComponent, HorizontalRowDirective, RuleDetailsComponent, ItemCatalogComponent, UiIconComponent, CommonModule, FormsModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [SheetListLayoutComponent, ItemRuleTagComponent, SheetDetailDialogComponent, HorizontalRowDirective, RuleDetailsComponent, ItemCatalogComponent, UiIconComponent, CommonModule, FormsModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: item-flash 1.6s ease-out;
@@ -56,6 +57,17 @@ export class EquipmentPageComponent {
     const query = this.searchQuery().trim().toLowerCase();
     const filter = this.inventoryFilter();
     return this.inventory().filter(item => item.name.toLowerCase().includes(query) && (filter === 'all' || filter === 'equipped' && item.isEquipped || filter === 'attuned' && item.isAttuned));
+  });
+  readonly inventoryGroups = computed(() => {
+    const groups = new Map<string, InventoryItem[]>();
+    for (const item of this.visibleInventory()) {
+      const label = item.entity?.itemType?.trim() || (item.isDummy ? 'Custom Items' : 'Other Items');
+      const entries = groups.get(label) ?? [];
+      entries.push(item);
+      groups.set(label, entries);
+    }
+    return [...groups].map(([label, items]) => ({ label, items }))
+      .sort((a, b) => a.label.localeCompare(b.label));
   });
   itemKey(item: InventoryItem) { return 'item-' + (item.editorId ?? this.helpers.sourceId(item.name + '-' + (item.source ?? ''))); }
   private readonly dialogs = inject(AppDialogService);

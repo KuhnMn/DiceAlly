@@ -67,7 +67,7 @@ import { UiIconComponent } from '../ui-icon.component';
                             <div class="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,2fr)] gap-2 text-sm">
                               <div class="font-semibold break-words">{{ action.name }}@if (action.range) { <span class="block text-xs font-normal text-on-surface-variant">{{ action.range }}</span> }</div>
                               <div class="min-w-0 line-clamp-2 text-center font-mono text-xs [overflow-wrap:anywhere]" [title]="action.hitOrDc">{{ action.hitOrDc }}</div>
-                              <div class="min-w-0 line-clamp-3 text-right font-mono text-xs [overflow-wrap:anywhere]" [title]="action.damageOrHeal">{{ action.damageOrHeal }}</div>
+                              <div class="min-w-0 line-clamp-5 text-right font-mono text-xs [overflow-wrap:anywhere]" [title]="action.damageOrHeal">{{ action.damageOrHeal }}</div>
                             </div>
                           </button>
                         }

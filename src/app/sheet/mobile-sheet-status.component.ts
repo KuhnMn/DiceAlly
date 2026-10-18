@@ -22,16 +22,34 @@ import { DialogScrollLockService } from '../editor/dialog-scroll-lock.service';
           <div class="mt-1.5 flex h-1.5 overflow-hidden rounded-full bg-surface-container" aria-hidden="true"><div class="h-full shrink-0 bg-primary transition-[width] duration-300" [style.width.%]="healthPercent()"></div><div class="h-full shrink-0 bg-green transition-[width] duration-300" [style.width.%]="temporaryHealthPercent()"></div></div>
         </button>
         <button type="button" (click)="character.hasInspiration = !character.hasInspiration" [attr.aria-pressed]="character.hasInspiration ?? false" [title]="character.hasInspiration ? 'Use Inspiration' : 'Gain Inspiration'" aria-label="Toggle Inspiration" class="col-span-2 flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-outline-variant text-xl" [class.bg-tertiary-container]="character.hasInspiration" [class.text-on-tertiary-container]="character.hasInspiration" [class.text-on-surface-variant]="!character.hasInspiration"><app-ui-icon name="sparkles" [filled]="character.hasInspiration ?? false" /></button>
-        <app-sheet-ac-control class="col-span-3 justify-self-center" [characterData]="sheet()" />
-        <app-sheet-stat-badge class="col-span-3 justify-self-center" label="Init." shape="octagon" [value]="helpers.formatSigned(helpers.initiative(character))" />
-        <app-sheet-stat-badge class="col-span-3 justify-self-center" label="PB" shape="octagon" [value]="helpers.formatSigned(helpers.proficiencyBonus(character))" />
-        <details #restMenu name="sheet-actions" class="relative col-span-3 justify-self-center">
-          <summary aria-label="Rest" title="Rest" class="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center rounded-lg bg-surface-container text-xl [&::-webkit-details-marker]:hidden"><app-ui-icon name="moon" /></summary>
+        <div class="col-span-12 grid grid-cols-5 items-center gap-1">
+        <app-sheet-ac-control class="justify-self-center" [characterData]="sheet()" />
+        <div #speedControl class="relative justify-self-center">
+          <button type="button" (click)="speedOpen.set(!speedOpen())" [disabled]="!additionalSpeeds().length" [attr.aria-expanded]="additionalSpeeds().length ? speedOpen() : null" [attr.aria-label]="'Walking speed: ' + (character.speeds?.walk ?? 30) + ' feet' + (additionalSpeeds().length ? '. Show other speeds' : '')" class="relative flex h-14 w-14 flex-col items-center justify-center rounded-full border-2 border-primary bg-surface-container-low focus-visible:outline-2 focus-visible:outline-primary">
+            <span class="text-lg font-bold leading-tight text-on-surface">{{ character.speeds?.walk ?? 30 }}</span>
+            <span class="text-[10px] font-semibold text-primary">Walk</span>
+            @if (additionalSpeeds().length) {
+              <span class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-green text-sm text-on-green"><app-ui-icon name="plus" /></span>
+            }
+          </button>
+          @if (speedOpen() && additionalSpeeds().length) {
+            <div class="absolute left-1/2 top-full z-50 mt-2 w-40 -translate-x-1/2 rounded-lg border border-outline-variant bg-surface-container-high p-3 text-sm shadow-lg" role="region" aria-label="Other speeds">
+              @for (speed of additionalSpeeds(); track speed.name) {
+                <p class="py-1"><span class="capitalize">{{ speed.name }}</span>: {{ speed.value }} ft.</p>
+              }
+            </div>
+          }
+        </div>
+        <app-sheet-stat-badge class="justify-self-center" label="Init." shape="octagon" [value]="helpers.formatSigned(helpers.initiative(character))" [proficient]="character.proficiencies?.initiative ?? false" />
+        <app-sheet-stat-badge class="justify-self-center" label="PB" shape="octagon" [value]="helpers.formatSigned(helpers.proficiencyBonus(character))" />
+        <details #restMenu name="sheet-actions" class="relative justify-self-center">
+          <summary aria-label="Rest" title="Rest" class="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center rounded-lg bg-surface-container text-xl text-primary [&::-webkit-details-marker]:hidden"><app-ui-icon name="moon" /></summary>
           <div class="absolute right-0 top-full z-50 mt-1 w-44 rounded-lg border border-outline-variant bg-surface-container-high p-1 shadow-lg">
             <button type="button" [disabled]="saving()" (click)="restMenu.open = false; shortRest.emit()" class="min-h-11 w-full rounded px-3 py-2 text-left text-sm hover:bg-surface-container"><app-ui-icon name="campfire" /> Short Rest</button>
             <button type="button" [disabled]="saving()" (click)="restMenu.open = false; longRest.emit()" class="min-h-11 w-full rounded px-3 py-2 text-left text-sm hover:bg-surface-container"><app-ui-icon name="rest" /> Long Rest</button>
           </div>
         </details>
+        </div>
       </div>
       <button type="button" (click)="openHealth()" class="mb-2 flex min-h-9 w-full items-center gap-2 rounded-lg bg-surface-container px-2 text-left text-xs" aria-label="Manage active conditions"><app-ui-icon name="info" /><span class="font-semibold">Conditions & Effects</span><span class="min-w-0 flex-1 truncate text-primary">{{ sheet().conditions?.length ? sheet().conditions?.join(' · ') : 'None' }}</span><app-ui-icon name="chevron" /></button>
       <dialog #healthDialog (close)="releaseScroll()" (click)="closeOnBackdrop($event)" class="fixed inset-x-0 bottom-0 top-auto m-0 max-h-[85dvh] w-full max-w-none overflow-hidden rounded-t-2xl border border-outline-variant bg-surface p-0 text-on-surface open:flex open:flex-col backdrop:bg-black/50 sm:inset-0 sm:m-auto sm:max-w-md sm:rounded-2xl" aria-labelledby="mobile-health-title">
@@ -66,8 +84,26 @@ export class MobileSheetStatusComponent implements OnDestroy {
   readonly shortRest = output<void>();
   readonly longRest = output<void>();
   private readonly restMenu = viewChild<ElementRef<HTMLDetailsElement>>('restMenu');
-  closeRest() { const menu = this.restMenu()?.nativeElement; if (menu) menu.open = false; }
-  dismissRest(event: Event) { if (event.target instanceof Node && !this.restMenu()?.nativeElement.contains(event.target)) this.closeRest(); }
+  private readonly speedControl = viewChild<ElementRef<HTMLElement>>('speedControl');
+  readonly speedOpen = signal(false);
+  additionalSpeeds() {
+    return Object.entries(this.sheet().character?.speeds ?? {})
+      .filter(([name, value]) => name !== 'walk' && typeof value === 'number' && value > 0)
+      .map(([name, value]) => ({ name, value }));
+  }
+  closeRest() {
+    const menu = this.restMenu()?.nativeElement;
+    if (menu) menu.open = false;
+    this.speedOpen.set(false);
+  }
+  dismissRest(event: Event) {
+    if (!(event.target instanceof Node)) return;
+    if (!this.restMenu()?.nativeElement.contains(event.target)) {
+      const menu = this.restMenu()?.nativeElement;
+      if (menu) menu.open = false;
+    }
+    if (!this.speedControl()?.nativeElement.contains(event.target)) this.speedOpen.set(false);
+  }
   readonly helpers = inject(CharacterHelpersService);
   readonly amount = signal('');
   readonly feedback = signal('');

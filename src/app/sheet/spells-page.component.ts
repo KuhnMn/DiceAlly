@@ -1,3 +1,4 @@
+import { SheetListLayoutComponent } from './sheet-list-layout.component';
 import { RecoveryIndicatorComponent } from '../recovery-indicator.component';
 import { SpellDetailsComponent } from './spell-details.component';
 import { SheetDetailDialogComponent } from './sheet-detail-dialog.component';
@@ -30,7 +31,7 @@ type SpellLevelFilter = 'ALL' | number;
 @Component({
   selector: 'app-spells-page',
   host: { class: 'block w-full min-w-0 max-w-full' },
-  imports: [RecoveryIndicatorComponent, SpellDetailsComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, SpellSummaryComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [SheetListLayoutComponent, RecoveryIndicatorComponent, SpellDetailsComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, SpellSummaryComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: spell-flash 1.6s ease-out;
@@ -53,36 +54,39 @@ type SpellLevelFilter = 'ALL' | number;
     }
   `],
   template: `
-    <div class="min-w-0 max-w-full bg-surface-container-highest p-3 sm:p-8 rounded-lg border-2 border-outline shadow-lg [overflow-wrap:anywhere]">
-      <h2 class="text-xl sm:text-3xl font-bold mb-3 sm:mb-6">Spellcasting</h2>
+    <div class="min-w-0 max-w-full bg-surface-container-highest p-3 sm:p-5 rounded-lg border-2 border-outline shadow-lg [overflow-wrap:anywhere]">
+      <div class="mb-3 flex items-center justify-between gap-2">
+        <h2 class="text-xl sm:text-3xl font-bold">Spellcasting</h2>
+        <app-sheet-list-layout #listLayout />
+      </div>
 
       @if (spellSlotGroups().length > 0) {
           <h3 class="mb-2 text-xl font-bold sm:mb-3">Spell Slots</h3>
-          <div class="space-y-2 sm:space-y-4">
+          <div class="space-y-2">
             @for (group of spellSlotGroups(); track group.source) {
-              <div class="border border-surface border-2 rounded-lg p-2 bg-surface-container sm:p-3">
-                <div class="text-sm font-semibold text-on-surface mb-1.5 sm:mb-3">{{ group.source }}</div>
-                <div appHorizontalRow class="grid gap-2 sm:gap-3 sm:grid-cols-[repeat(auto-fit,minmax(11rem,1fr))]">
+              <div class="border border-surface border-2 rounded-lg p-2 bg-surface-container">
+                <div class="text-sm font-semibold text-on-surface mb-1.5">{{ group.source }}</div>
+                <div appHorizontalRow class="grid gap-2 sm:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))]">
                   @for (slot of group.slots; track slot.level) {
                     <div 
-                      class="max-sm:w-44 border-2 border-surface rounded-md px-2 py-1 sm:p-3 bg-surface-container-high"
+                      class="max-sm:w-44 border-2 border-surface rounded-md px-2 py-1 bg-surface-container-high"
 
                     >
-                      <div class="flex items-center justify-between gap-2 text-sm font-semibold text-on-surface-container-high mb-0.5 sm:mb-2">
+                      <div class="flex items-center justify-between gap-2 text-sm font-semibold text-on-surface-container-high mb-0.5 sm:mb-1">
                         <span>Level {{ slot.level }}</span>
                         <span class="ml-auto whitespace-nowrap">{{ slot.total-spellSlotUsed(group.source, slot) }} / {{ slot.total }}</span>
                         <app-recovery-indicator [condition]="slot.regainCondition" />
                       </div>
-                      <div class="hidden sm:block w-full bg-outline-variant rounded-full h-2 mb-0.5">
+                      <div class="hidden sm:block w-full bg-outline-variant rounded-full h-1 mb-0.5">
                         <div
-                          class="bg-purple h-2 rounded-full transition-all"
+                          class="bg-purple h-full rounded-full transition-all"
                           [style.width.%]="spellSlotProgress(group.source, slot)"
                         ></div>
                       </div>
                       @if (slot.total > 0) {
-                        <div class="flex flex-wrap gap-0 sm:gap-1">
+                        <div class="flex flex-wrap gap-0">
                           @for (index of spellSlotIndexes(slot.total); track index) {
-                            <label class="flex min-h-8 min-w-9 sm:min-h-10 items-center justify-center cursor-pointer">
+                            <label class="flex min-h-8 min-w-9 items-center justify-center cursor-pointer">
                               <input
                                 type="checkbox"
                                 [attr.aria-label]="group.source + ' level ' + slot.level + ' slot ' + (index + 1) + ' used'"
@@ -196,11 +200,11 @@ type SpellLevelFilter = 'ALL' | number;
               <h4 class="text-lg font-bold text-purple mb-3 border-b-2 border-purple pb-1">
                 {{ spellLevelHeader(levelGroup.level) }}
               </h4>
-              <div class="space-y-2 sm:space-y-4">
+              <div class="sheet-entry-list" [class.sheet-entry-list-two-columns]="listLayout.columns() === 2" [class.sheet-entry-list-three-columns]="listLayout.columns() === 3">
                 @for (spell of levelGroup.spells; track spell) {
-                  <div class="border-2 border-purple rounded-lg px-3 py-2 sm:p-4 bg-surface-container" [attr.id]="'spell-' + (spell.editorId ?? helpers.sourceId(spell.name + '-' + (spell.source ?? '')))" [class.flash-highlight]="highlightedId() === ('spell-' + (spell.editorId ?? helpers.sourceId(spell.name + '-' + (spell.source ?? ''))))">
+                  <div class="min-w-0 border-2 border-purple rounded-lg px-3 py-1.5 sm:py-2 bg-surface-container" [attr.id]="'spell-' + (spell.editorId ?? helpers.sourceId(spell.name + '-' + (spell.source ?? '')))" [class.flash-highlight]="highlightedId() === ('spell-' + (spell.editorId ?? helpers.sourceId(spell.name + '-' + (spell.source ?? ''))))">
                     <h3>
-                      <button type="button" (click)="toggleExpanded(spellExpansionId(spell))" aria-haspopup="dialog" [attr.aria-expanded]="isExpanded(spellExpansionId(spell))" class="flex min-h-8 w-full items-center justify-between gap-2 rounded text-left text-base font-bold text-purple sm:min-h-11 sm:gap-3 sm:text-xl focus-visible:outline-2 focus-visible:outline-primary">
+                      <button type="button" (click)="toggleExpanded(spellExpansionId(spell))" aria-haspopup="dialog" [attr.aria-expanded]="isExpanded(spellExpansionId(spell))" class="flex min-h-8 w-full items-center justify-between gap-2 rounded text-left text-base font-bold text-purple sm:gap-3 sm:text-xl focus-visible:outline-2 focus-visible:outline-primary">
                         <span class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1"><span class="min-w-0 break-words [overflow-wrap:anywhere]">{{ spell.name }}</span>
                         @if (spell.entity?.level !== undefined) { <span class="shrink-0 whitespace-nowrap rounded bg-purple-container px-2 py-0.5 text-xs font-normal text-on-purple-container">{{ helpers.spellLevelLabel(spell) }}</span> }
                         </span><app-ui-icon class="shrink-0" name="chevron" />
@@ -231,7 +235,7 @@ type SpellLevelFilter = 'ALL' | number;
                     <app-spell-summary [spell]="spell.entity" />
 
                     <!-- Source Tags -->
-                    <div class="mt-1 flex flex-wrap items-center gap-1 sm:mt-2 sm:gap-2">
+                    <div class="mt-1 flex flex-wrap items-center gap-1 sm:gap-2">
                       @if (spell.source) {
                         <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ spell.source }}</span>
                       }
@@ -242,7 +246,7 @@ type SpellLevelFilter = 'ALL' | number;
 
                     <!-- Expandable Content -->
                     @if (!isExpanded(spellExpansionId(spell)) && spellListTypeFilter() === 'PREPARED') {
-                      <div class="space-y-3">
+                      <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
                         @for (use of spell.uses ?? []; track use) {
                                                 <app-feature-uses [uses]="use" (usesUpdated)="use.usedFreeUses = $event.usedFreeUses" />
                                               }
@@ -273,7 +277,7 @@ type SpellLevelFilter = 'ALL' | number;
                       </div>
                         @if (spell.uses?.length) {
                           <div class="mt-2 sm:mt-4 border-t border-outline-variant pt-2 sm:pt-4">
-                            <div class="space-y-3">
+                            <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
                               @for (use of spell.uses; track use) {
                                                             <app-feature-uses 
                                                               [uses]="use"

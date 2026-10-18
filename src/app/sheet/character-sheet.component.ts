@@ -57,7 +57,7 @@ import { NotesPageComponent } from './notes-page.component';
           </div>
         </header>
         <app-character-update-notice [characterId]="store.nativeCharacterId()" [characterName]="characterData()?.character?.name || 'Unnamed Character'" [loadedVersion]="session.loadedVersion()" [busy]="isSaving()" (refresh)="refreshCharacter()" />
-        <app-mobile-sheet-actions [saving]="isSaving()" [dirty]="hasUnsavedChanges()" (save)="quickSave()" (edit)="editCharacter()" />
+        <app-mobile-sheet-actions [saving]="isSaving()" [openingEditor]="isOpeningEditor()" [dirty]="hasUnsavedChanges()" (save)="quickSave()" (edit)="editCharacter()" />
         <app-mobile-character-header [characterData]="characterData()" (navigateToFeatures)="navigateToFeatures($event)" />
         <!-- Desktop action bar -->
         <div class="hidden sm:flex sm:flex-wrap items-center gap-2 mb-4">
@@ -71,10 +71,10 @@ import { NotesPageComponent } from './notes-page.component';
           <app-theme-picker class="min-w-0 sm:order-last sm:w-44" />
           <div class="col-span-2 flex gap-2 sm:col-span-1">
             @if (creatorAvailable) {
-              <button type="button" (click)="editCharacter()" [disabled]="isSaving()"
+              <button type="button" (click)="editCharacter()" [disabled]="isSaving() || isOpeningEditor()" [attr.aria-busy]="isOpeningEditor()"
                 class="min-h-10 flex-1 sm:flex-none rounded-lg bg-primary-container text-on-primary-container px-3 py-2 text-sm font-semibold hover:brightness-110 disabled:opacity-50"
                 title="Save Changes and Open the Character Editor">
-                <span aria-hidden="true"><app-ui-icon name="edit" /></span> Edit
+                <span aria-hidden="true" class="inline-block" [class.animate-spin]="isOpeningEditor()"><app-ui-icon [name]="isOpeningEditor() ? 'loader' : 'edit'" /></span> {{ isOpeningEditor() ? 'Opening…' : 'Edit' }}
               </button>
             }
             <button
@@ -209,6 +209,7 @@ export class CharacterSheetComponent implements OnDestroy {
   }
   ngOnDestroy() { if (typeof window !== 'undefined') cancelAnimationFrame(this.scrollFrame); }
   isSaving = signal(false);
+  readonly isOpeningEditor = signal(false);
   saveStatus = signal(false);
 
   constructor() {
@@ -265,9 +266,15 @@ export class CharacterSheetComponent implements OnDestroy {
   }
 
   async editCharacter() {
-    await this.quickSave();
-    const id = this.store.nativeCharacterId() ?? this.characterData()?.character?.characterUuid;
-    if (this.saveStatus() && id) await this.router.navigate(['/characters', id, 'edit']);
+    if (this.isSaving() || this.isOpeningEditor() || !this.characterData()) return;
+    this.isOpeningEditor.set(true);
+    try {
+      await this.quickSave();
+      const id = this.store.nativeCharacterId() ?? this.characterData()?.character?.characterUuid;
+      if (this.saveStatus() && id) await this.router.navigate(['/characters', id, 'edit']);
+    } finally {
+      this.isOpeningEditor.set(false);
+    }
   }
 
   async quickSave(): Promise<void> {

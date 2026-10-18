@@ -4,6 +4,36 @@ import { MobileCharacterInfoPageComponent } from './mobile-character-info-page.c
 import { MobileSheetStatusComponent } from './mobile-sheet-status.component';
 
 describe('Mobile sheet controls', () => {
+  it('opens other movement speeds on tap and dismisses them outside or with Escape', () => {
+    const fixture = TestBed.createComponent(MobileSheetStatusComponent);
+    fixture.componentRef.setInput('sheet', { character: { speeds: { walk: 30, fly: 60, swim: 20, climb: 0 } } });
+    fixture.detectChanges();
+    const button = fixture.nativeElement.querySelector('button[aria-label^="Walking speed"]') as HTMLButtonElement;
+    expect(button.textContent).toContain('30');
+    expect(button.querySelector('app-ui-icon')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label="Other speeds"]')).toBeNull();
+    button.click(); fixture.detectChanges();
+    const speeds = fixture.nativeElement.querySelector('[aria-label="Other speeds"]');
+    expect(speeds.textContent).toContain('fly: 60 ft.');
+    expect(speeds.textContent).toContain('swim: 20 ft.');
+    expect(speeds.textContent).not.toContain('climb');
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    document.dispatchEvent(new Event('pointerdown', { bubbles: true })); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[aria-label="Other speeds"]')).toBeNull();
+    button.click(); fixture.detectChanges();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); fixture.detectChanges();
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('shows walking speed without an expansion indicator when no other speeds are available', () => {
+    const fixture = TestBed.createComponent(MobileSheetStatusComponent);
+    fixture.componentRef.setInput('sheet', { character: { speeds: { walk: 25 } } }); fixture.detectChanges();
+    const button = fixture.nativeElement.querySelector('button[aria-label^="Walking speed"]') as HTMLButtonElement;
+    expect(button.textContent).toContain('25');
+    expect(button.disabled).toBe(true);
+    expect(button.querySelector('app-ui-icon')).toBeNull();
+  });
+
   it('offers short and long rests from the status icon row', () => {
     const fixture = TestBed.createComponent(MobileSheetStatusComponent);
     fixture.componentRef.setInput('sheet', { character: {} }); fixture.detectChanges();

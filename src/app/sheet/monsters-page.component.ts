@@ -1,3 +1,4 @@
+import { SheetListLayoutComponent } from './sheet-list-layout.component';
 import { SheetDetailDialogComponent } from './sheet-detail-dialog.component';
 import { HorizontalRowDirective } from './horizontal-row.directive';
 import { UiIconComponent } from '../ui-icon.component';
@@ -19,7 +20,7 @@ import { CharacterStore } from '../stores/character.store';
 
 @Component({
   selector: 'app-monsters-page',
-  imports: [SheetDetailDialogComponent, HorizontalRowDirective, UiIconComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent, MonsterStatBlockComponent],
+  imports: [SheetListLayoutComponent, SheetDetailDialogComponent, HorizontalRowDirective, UiIconComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent, MonsterStatBlockComponent],
   styles: [`
     .flash-highlight {
       animation: monster-flash 1.6s ease-out;

@@ -79,16 +79,40 @@ import { UiIconComponent } from '../ui-icon.component';
 
         <details open class="overflow-hidden rounded-xl border border-outline-variant bg-surface p-3 text-sm" aria-label="General Stats">
           <summary class="flex min-h-11 cursor-pointer items-center gap-2 border-b border-outline-variant pb-2 font-bold"><app-ui-icon name="info" /> General Stats</summary>
-          <div class="mt-3">
-          <div class="grid grid-cols-2 gap-2">@for (speed of speedEntries(); track speed) { <p class="rounded-lg bg-surface-container p-2">{{ speed }}</p> }
-          @for (sense of senseEntries(); track sense) { <p class="rounded-lg bg-surface-container p-2">{{ sense }}</p> }</div>
-          @if (resistanceEntries().length) { <h3 class="mt-2 text-xs font-semibold text-on-surface-variant">Resistances</h3>@for (resistance of resistanceEntries(); track resistance) { <p>{{ resistance }}</p> } }
-          @for (advantage of advantageItems(); track advantage.text) {
-            <p class="mt-2 flex items-center gap-2 rounded-lg bg-surface-container p-2">
-              <app-advantage-badge [disadvantage]="advantage.isDisadvantage" />
-              <span class="min-w-0 [overflow-wrap:anywhere]">{{ advantage.text }}</span>
-            </p>
-          }
+          <div class="mt-3 space-y-3">
+            <section aria-label="Senses">
+              <h3 class="mb-2 text-xs font-semibold uppercase text-on-surface-variant">Senses</h3>
+              <div class="flex flex-wrap gap-1">
+                @for (sense of senseEntries(); track sense) {
+                  <p class="max-w-full rounded bg-surface-container px-2 py-1 text-xs [overflow-wrap:anywhere]">{{ sense }}</p>
+                } @empty {
+                  <p class="text-on-surface-variant">None</p>
+                }
+              </div>
+            </section>
+            @if (resistanceEntries().length) {
+              <section aria-label="Resistances">
+                <h3 class="mb-2 text-xs font-semibold uppercase text-on-surface-variant">Resistances</h3>
+                <div class="flex flex-wrap gap-1">
+                  @for (resistance of resistanceEntries(); track resistance) {
+                    <p class="max-w-full rounded bg-surface-container px-2 py-1 text-xs [overflow-wrap:anywhere]">{{ resistance }}</p>
+                  }
+                </div>
+              </section>
+            }
+            @if (advantageItems().length) {
+              <section aria-label="Advantages and disadvantages">
+                <h3 class="mb-1 text-xs font-semibold uppercase text-on-surface-variant">(Dis)Advantages</h3>
+                <div class="flex flex-wrap gap-x-3 gap-y-1">
+                  @for (advantage of advantageItems(); track advantage.text) {
+                    <p class="inline-flex max-w-full items-center gap-1 text-xs">
+                      <app-advantage-badge style="width: 1.5rem; height: 1.5rem" [disadvantage]="advantage.isDisadvantage" />
+                      <span class="min-w-0 [overflow-wrap:anywhere]">{{ advantage.text }}</span>
+                    </p>
+                  }
+                </div>
+              </section>
+            }
           </div>
         </details>
 

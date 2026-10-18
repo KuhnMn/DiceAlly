@@ -361,7 +361,7 @@ import { ConditionsComponent } from './conditions.component';
             <div
               class="border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-24 sm:h-24 bg-surface-container-low flex flex-col items-center justify-center shadow-lg"
             >
-              <div class="text-xs text-on-surface-variant uppercase font-semibold">Initiative</div>
+              <div class="inline-flex items-center gap-1 text-xs text-on-surface-variant uppercase font-semibold">@if (character()?.proficiencies?.initiative) { <span class="text-primary" title="Proficient" aria-label="Proficient">●</span> }Initiative</div>
               <div class="text-2xl font-bold text-tertiary">{{ helpers.formatSigned(initiative()) }}</div>
             </div>
           </div>
