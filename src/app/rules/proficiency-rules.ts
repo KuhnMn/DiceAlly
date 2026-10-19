@@ -6,7 +6,7 @@ export interface ProficiencyPackageChoice { id: string; kind: ProficiencyContrib
 export type ProficiencyCatalogs = Partial<Record<ProficiencyContribution['kind'],Record<string,readonly string[]>>>;
 /** Generate an origin-tagged proficiency ledger; manual entries remain separate from generated grants. */
 export function deriveProficiencyGrants(selections: ContentClassSelection[],index: ContentRulesIndex,
-  answers: Readonly<Record<string,readonly string[]>> = {},speciesKey?: string,manual: ProficiencyContribution[] = [],catalogs: ProficiencyCatalogs = {}, sourceBooks: readonly string[] = []) {
+  answers: Readonly<Record<string,readonly string[]>> = {},speciesKey?: string,manual: ProficiencyContribution[] = [],catalogs: ProficiencyCatalogs = {}, sourceBooks: readonly string[] = [], backgroundKey?: string) {
   const generated: ProficiencyContribution[] = []; const choices: ProficiencyChoice[] = []; const packages: ProficiencyPackageChoice[] = []; const diagnostics: string[] = [];
   const ids = new Set<string>();
   const ownerKeys = new Map<string, string>();
@@ -119,6 +119,17 @@ export function deriveProficiencyGrants(selections: ContentClassSelection[],inde
       const origin = JSON.stringify(['species-proficiency',index.sourceIdentity,speciesKey]);
       ownerKeys.set(origin, speciesKey);
       parse(species.data[field],kind,origin,field);
+    }
+  }
+  if (backgroundKey) {
+    const background = index.records.get(backgroundKey);
+    if (!background || background.kind !== 'background') diagnostics.push('Missing background proficiency source.');
+    else {
+      const origin = JSON.stringify(['background-proficiency', index.sourceIdentity, backgroundKey]);
+      ownerKeys.set(origin, backgroundKey);
+      for (const [field, kind] of [['skillProficiencies', 'skill'], ['languageProficiencies', 'language'], ['toolProficiencies', 'tool'], ['armorProficiencies', 'armor'], ['weaponProficiencies', 'weapon']] as const) {
+        parse(background.data[field], kind, origin, field);
+      }
     }
   }
   return { canAccept: diagnostics.length === 0,diagnostics,choices,packages,manual: structuredClone(manual),generated,

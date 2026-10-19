@@ -4,7 +4,7 @@ import { resolveCopyVariables } from './copy-variables';
 
 export const CONTENT_KINDS = [
   'class', 'subclass', 'classFeature', 'subclassFeature', 'spell', 'feat', 'optionalfeature',
-  'race', 'subrace', 'baseitem', 'item', 'itemGroup', 'magicvariant', 'itemType', 'itemProperty',
+  'race', 'subrace', 'background', 'baseitem', 'item', 'itemGroup', 'magicvariant', 'itemType', 'itemProperty',
   'itemMastery', 'monster', 'monsterTemplate', 'condition', 'variantrule', 'table',
 ] as const;
 

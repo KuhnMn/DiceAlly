@@ -839,6 +839,7 @@ export interface Note {
 export type ConditionName = string;
 
 export interface ExportedCharacter {
+  background?: Background;
   creatorWizard?: {
     revisionId: string;
     classes: { selectionId: string; classKey: string; subclassKey?: string; level: number; spellList?: string; useSpellbook?: boolean }[];
@@ -858,4 +859,12 @@ export interface ExportedCharacter {
   conditions?: ConditionName[];
   monsters?: Monster[];
   notes?: Note[];
+}
+
+/** A name-only custom background or a detached library reference, without automatic grants. */
+export interface Background {
+  name: string;
+  source?: string;
+  contentReference?: ContentReference;
+  entity?: { entries?: Entry[]; [key: string]: unknown };
 }

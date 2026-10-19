@@ -1,5 +1,6 @@
 import { Injectable, OnDestroy, inject, signal } from '@angular/core';
 import { normalizeCharacterEditorIdentity } from '../editor/editor-identity';
+import { characterDescription } from '../character-description';
 import { migrateLegacyCharacterExport } from './legacy-character-import';
 import { CHARACTER_REPOSITORY, CharacterRecord } from './character-repository';
 import { ExportedCharacter } from '../models/character.model';
@@ -75,7 +76,7 @@ export class CharacterLibraryService implements OnDestroy {
     return (await this.list()).map(record => ({
       characterId: record.id, version: record.version,
       name: record.sheet.character?.name || 'Unnamed', level: record.sheet.character?.level ?? 1,
-      description: record.sheet.character?.description ?? '',
+      description: characterDescription(record.sheet),
       lastModified: Date.parse(record.updatedAt),
     }));
   }

@@ -3,7 +3,7 @@
   <h2>Basic Information</h2>
   <div class="space-y-4">
     <label class="block"><span class="field-label">Character Name</span><input class="editor-input" name="name" [(ngModel)]="editor.character.name" (ngModelChange)="editor.changed()" autocomplete="off" /></label>
-    <label class="block"><span class="field-label">Description</span><textarea class="editor-input resize-y" name="description" [(ngModel)]="editor.character.description" (ngModelChange)="editor.changed()" rows="2" placeholder="e.g., Human Fighter"></textarea></label>
+    <app-editor-background class="block" [sheet]="editor.sheet" (edited)="editor.changed()" />
   </div>
 </section>
 

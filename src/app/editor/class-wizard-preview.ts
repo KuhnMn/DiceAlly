@@ -222,11 +222,17 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     }
   }
   // 3. Rule handlers expose candidates and validate answers before producing sheet entries.
-  const proficiencies = deriveProficiencyGrants(state.classes, index, state.answers, state.speciesKey, [], {}, sourceBooks);
+  const backgroundKey = sheet.background?.contentReference?.key;
+  const proficiencyRecords = new Map(records);
+  if (backgroundKey && sheet.background?.entity && !proficiencyRecords.has(backgroundKey)) {
+    proficiencyRecords.set(backgroundKey, { key: backgroundKey, kind: 'background', name: sheet.background.name,
+      publication: sheet.background.source ?? '', file: 'saved-background', data: sheet.background.entity, links: [] });
+  }
+  const proficiencies = deriveProficiencyGrants(state.classes, { ...index, records: proficiencyRecords }, state.answers, state.speciesKey, [], {}, sourceBooks, backgroundKey);
   warnings.push(...proficiencies.diagnostics.filter(message => !message.startsWith('Select ')));
-  choices.push(...proficiencies.choices.map(choice => ({ ownerKey: choice.ownerKey, id: choice.id, label: `${records.get(choice.ownerKey)?.name ?? 'Character'}: ${choice.kind} proficiencies`, count: choice.count, searchable: false,
+  choices.push(...proficiencies.choices.map(choice => ({ ownerKey: choice.ownerKey, id: choice.id, label: `${proficiencyRecords.get(choice.ownerKey)?.name ?? 'Character'}: ${choice.kind} proficiencies`, count: choice.count, searchable: false,
     candidates: choice.candidates.map(value => ({ value, label: records.has(value) ? `${records.get(value)!.name} (${records.get(value)!.publication})` : value })) })));
-  choices.push(...proficiencies.packages.map(choice => ({ ownerKey: choice.ownerKey, id: choice.id, label: `${records.get(choice.ownerKey)?.name ?? 'Character'}: ${choice.kind} options`, count: 1, searchable: false,
+  choices.push(...proficiencies.packages.map(choice => ({ ownerKey: choice.ownerKey, id: choice.id, label: `${proficiencyRecords.get(choice.ownerKey)?.name ?? 'Character'}: ${choice.kind} options`, count: 1, searchable: false,
     candidates: choice.options.map(option => ({ value: option.value, label: `Option ${Number(option.value) + 1}: ${Object.keys(option.data).join(', ')}` })) })));
   for (const entry of proficiencies.generated) {
     if (entry.kind === 'save') put('proficiencies', `${entry.target.toUpperCase()} saving throw`, ['saves', entry.target.toUpperCase()], entry.target.toUpperCase());

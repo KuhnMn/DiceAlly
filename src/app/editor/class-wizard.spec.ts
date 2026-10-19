@@ -49,6 +49,28 @@ function fixture() {
 }
 
 describe('Subclass-granted spell prefill', () => {
+  it('offers selected-background proficiency choices without granting its feats, abilities, equipment or spells', () => {
+    const f = fixture(); f.state.classes = [];
+    const record = mapContent({ background: [{ name: 'Sage', source: 'TEST', entries: ['Reference'],
+      skillProficiencies: [{ arcana: true, choose: { from: ['history', 'religion'], count: 1 } }],
+      languageProficiencies: [{ elvish: true }], feats: [{ 'alert|phb': true }], ability: [{ int: 2 }], additionalSpells: [{ known: { '1': ['Shield|TEST'] } }],
+    }] }, 'backgrounds.json').records[0];
+    f.sheet.background = { name: record.name, source: record.publication, entity: record.data, contentReference: {
+      key: record.key, sourceIdentity: f.revision.sourceIdentity, revisionId: f.revision.id, commit: f.revision.commit,
+    } };
+    // The saved snapshot also works when a pinned library predates background importing.
+    const first = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+    const choice = first.choices.find(choice => choice.ownerKey === record.key)!;
+    expect(choice.label).toBe('Sage: skill proficiencies');
+    f.state.answers[choice.id] = ['history'];
+    const result = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+    expect(result.sheet.character!.proficiencies!.skills).toMatchObject({ ARCANA: 'PROFICIENT', HISTORY: 'PROFICIENT' });
+    expect(result.sheet.character!.proficiencies!.languages).toContain('Elvish');
+    expect(result.sheet.background).toEqual(f.sheet.background);
+    expect(result.sheet.features ?? []).toHaveLength(0); expect(result.sheet.spells ?? []).toHaveLength(0);
+    expect(result.sheet.character!.abilityScores).toEqual(f.sheet.character!.abilityScores);
+    expect(result.sheet.inventory ?? []).toHaveLength(0);
+  });
   it('labels multiclass Bard choices and completes its structured skill and instrument grants', () => {
     const f = fixture();
     const extra = mapContent({

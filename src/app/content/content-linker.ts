@@ -6,6 +6,7 @@ const TAGS: Record<string, { kind: string; source: string }> = {
   spell: { kind: 'spell', source: 'PHB' }, item: { kind: 'item', source: 'DMG' },
   creature: { kind: 'monster', source: 'MM' }, race: { kind: 'species', source: 'PHB' },
   feat: { kind: 'feat', source: 'PHB' }, optfeature: { kind: 'optionalfeature', source: 'PHB' },
+  background: { kind: 'background', source: 'PHB' },
   condition: { kind: 'condition', source: 'PHB' }, variantrule: { kind: 'variantrule', source: 'DMG' },
   table: { kind: 'table', source: 'DMG' }, class: { kind: 'class', source: 'PHB' },
 };

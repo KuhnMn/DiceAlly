@@ -17,6 +17,7 @@ export function emptyBasicCharacter(): ExportedCharacter {
 export function validateBasicInfo(sheet: ExportedCharacter): void {
   canonicalDocument(sheet);
   const character = sheet.character;
+  if (sheet.background && (typeof sheet.background.name !== 'string' || !sheet.background.name.trim())) throw new Error('Enter a background name or clear the background.');
   if (!character?.characterUuid) throw new Error('Character identity is missing.');
   const integer = (value: unknown, label: string, minimum = 0) => {
     if (!Number.isSafeInteger(value) || Number(value) < minimum) throw new Error(`${label} must be a whole number of at least ${minimum}.`);

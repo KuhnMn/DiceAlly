@@ -15,7 +15,7 @@ import { ConditionsComponent } from './conditions.component';
 
 @Component({
   selector: 'app-character-info-page',
-  imports: [ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
+  imports: [BackgroundDetailsComponent, ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
   styles: [`
     .ac-display {
       position: relative;
@@ -117,11 +117,19 @@ import { ConditionsComponent } from './conditions.component';
           <div class="text-2xl font-bold text-on-secondary-container">{{ character()?.level ?? 1 }}</div>
         </div>
         <div class="col-span-5 md:col-span-2 border-2 border-secondary rounded-lg p-2 bg-secondary-container text-center content-center overflow-wrap order-4 md:order-3">
-          <div class="text-xs text-on-secondary-container uppercase font-semibold">Description</div>
-          <div class="text-sm font-medium text-on-secondary-container">{{ character()?.description || '—' }}</div>
+          <div class="text-xs text-on-secondary-container uppercase font-semibold">Background</div>
+          <div class="text-sm font-medium text-on-secondary-container">
+                    @if (characterData()?.background; as background) {
+                      <app-background-details [background]="background" />
+                    } @else {
+                     Unknown
+                    }
+            
+          </div>
         </div>
         <div class="col-span-5 md:col-span-9 border-2 border-primary rounded-lg p-2 bg-primary-container text-center content-center overflow-wrap md:order-0 order-0">
           <div class="text-xl font-bold text-on-primary-container">{{ character()?.name }}</div>
+          @if (classDescription()) { <div class="mt-1 text-xs text-on-primary-container">{{ classDescription() }}</div> }
         </div>
         <div class="col-span-5 md:col-span-2 border-2 border-secondary rounded-lg p-2 bg-secondary-container text-center content-center overflow-wrap order-5 md:order-5">
           <div class="text-xs text-on-secondary-container uppercase font-semibold">Species</div>
@@ -737,6 +745,7 @@ export class CharacterInfoPageComponent {
   characterRested = output<'short' | 'long'>();
 
   character = computed(() => this.characterData()?.character ?? null);
+  readonly classDescription = computed(() => characterClasses(this.characterData()).join(' / '));
   inventory = computed(() => this.characterData()?.inventory ?? []);
   maxHpOverrideInput = signal('');
   isEditingMaxHpOverride = signal(false);
@@ -1261,3 +1270,5 @@ export class CharacterInfoPageComponent {
     }
   }
 }
+import { BackgroundDetailsComponent } from '../background-details.component';
+import { characterClasses } from '../character-description';

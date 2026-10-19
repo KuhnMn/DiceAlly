@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
 import { CharacterInfoPageComponent } from './character-info-page.component';
 import { UiIconComponent } from '../ui-icon.component';
+import { BackgroundDetailsComponent } from '../background-details.component';
 
 @Component({
   selector: 'app-mobile-character-header',
-  imports: [UiIconComponent],
+  imports: [UiIconComponent, BackgroundDetailsComponent],
   host: { class: 'mb-3 block sm:hidden' },
   template: `
     @if (character(); as c) {
@@ -16,7 +17,8 @@ import { UiIconComponent } from '../ui-icon.component';
           <div class="min-w-0 flex-1">
             <h1 class="text-lg font-bold leading-snug [overflow-wrap:anywhere]">{{ c.name || 'Unnamed Character' }}</h1>
             <p class="text-xs text-on-surface-variant">Level <strong>{{ c.level ?? 1 }}</strong> @if (characterData()?.species?.name) { <button type="button" class="ml-1 min-h-8 text-primary underline" (click)="goToSpecies()">{{ characterData()?.species?.name }}</button> }</p>
-            @if (c.description) { <p class="mt-1 whitespace-pre-line text-sm [overflow-wrap:anywhere]">{{ c.description }}</p> }
+            @if (classDescription()) { <p class="mt-1 text-xs [overflow-wrap:anywhere]">{{ classDescription() }}</p> }
+            @if (characterData()?.background; as background) { <div class="mt-1 text-xs [overflow-wrap:anywhere]"><span class="text-on-surface-variant">Background: </span><app-background-details [background]="background" /></div> }
           </div>
         </div>
       </section>

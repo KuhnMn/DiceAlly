@@ -24,7 +24,7 @@ export function rawUrl(source: ContentSource, commit: string, file: string): str
 }
 export const ROOT_FILES = [
   'feats.json', 'conditionsdiseases.json', 'items-base.json', 'optionalfeatures.json',
-  'races.json', 'variantrules.json', 'tables.json', 'items.json', 'magicvariants.json',
+  'races.json', 'backgrounds.json', 'variantrules.json', 'tables.json', 'items.json', 'magicvariants.json',
   'generated/gendata-variantrules.json', 'generated/gendata-tables.json', 'spells/sources.json',
 ];
 export async function discoverFiles(source: ContentSource, commit: string, fetcher = fetchContent, signal?: AbortSignal): Promise<{ files: string[]; bytes: number }> {

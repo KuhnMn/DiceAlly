@@ -28,6 +28,16 @@ function fixture(overrides: Record<string, unknown> = {}, urls: string[] = []): 
   };
 }
 describe('Content importer', () => {
+  it('downloads backgrounds from the original source and retains entries and structured proficiency choices', async () => {
+    const cache = new MemoryCache(), urls: string[] = [];
+    const revision = await importContent(cache, { namespace: 'backgrounds', source: DEFAULT_CONTENT_SOURCE }, fixture({
+      'backgrounds.json': { background: [{ name: 'Sage', source: 'TEST', entries: ['A background.'], skillProficiencies: [{ arcana: true, choose: { from: ['history', 'religion'], count: 1 } }] }] },
+    }, urls));
+    const background = await cache.get(revision.id, entityKey('background', { name: 'Sage', source: 'TEST' }));
+    expect(urls.some(url => url.endsWith('/data/backgrounds.json'))).toBe(true);
+    expect(background!.data['entries']).toEqual(['A background.']);
+    expect(background!.data['skillProficiencies']).toEqual([{ arcana: true, choose: { from: ['history', 'religion'], count: 1 } }]);
+  });
   it('merges sources.json class lists with inline memberships, scoped to source book and spell name', async () => {
     const cache = new MemoryCache();
     const revision = await importContent(cache, { namespace: 'one', source: DEFAULT_CONTENT_SOURCE }, fixture({

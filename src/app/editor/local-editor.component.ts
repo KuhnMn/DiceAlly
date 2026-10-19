@@ -6,6 +6,7 @@ import { ProficienciesEditorComponent } from './proficiencies-editor.component';
 import { ProficienciesEditorModel } from './proficiencies-editor-model';
 import { CombatEditorComponent } from './combat-editor.component';
 import { UiIconComponent } from '../ui-icon.component';
+import { characterDescription } from '../character-description';
 import { ScrollToTopComponent } from '../scroll-to-top.component';
 import { CharacterUpdateNoticeComponent } from '../characters/character-update-notice.component';
 import { ThemePickerComponent } from '../theme-picker.component';
@@ -90,7 +91,7 @@ export class LocalEditorComponent implements OnInit {
     });
   }
 
-  changed() { this.view.markForCheck(); this.message.set(''); this.error.set(''); }
+  changed() { this.character.description = characterDescription(this.sheet, true); this.view.markForCheck(); this.message.set(''); this.error.set(''); }
   canLeave() { return !this.unsaved || this.dialogs.confirm('You have unsaved changes. Leave without saving?', 'Unsaved Changes', 'Leave Without Saving'); }
   async refreshCharacter() {
     if (this.busy()) return;
@@ -139,6 +140,7 @@ export class LocalEditorComponent implements OnInit {
     if (this.busy()) return;
     this.busy.set(true); this.error.set('');
     try {
+      this.character.description = characterDescription(this.sheet, true);
       validateBasicInfo(this.sheet);
       if (this.character.calculateAC) this.character.armorClass = this.basicInfo.calculatedAc.ac;
       const snapshot = structuredClone(this.sheet);
