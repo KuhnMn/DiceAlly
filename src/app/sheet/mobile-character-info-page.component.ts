@@ -10,13 +10,13 @@ import { UiIconComponent } from '../ui-icon.component';
   imports: [AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent],
   template: `
     @if (character(); as c) {
-      <div class="space-y-3 rounded-lg border border-outline-variant bg-surface-container-highest p-3">
-          <section aria-label="Ability modifiers and saving throws" class="grid grid-cols-3 gap-2">
+      <div class="space-y-2 rounded-lg border border-outline-variant bg-surface-container-highest p-2.5">
+          <section aria-label="Ability modifiers and saving throws" class="grid grid-cols-3 gap-1.5">
             @for (ability of abilities(); track ability.name) {
-              <div class="border-2 border-surface rounded-xl p-2 bg-surface-container-low text-center shadow-lg">
+              <div class="border-2 border-surface rounded-xl p-1.5 bg-surface-container-low text-center shadow-lg">
                 <div class="text-xs font-bold text-on-surface-variant uppercase">{{ ability.abbr }}</div>
-                <div class="text-2xl font-bold my-0.5 text-primary">{{ ability.score }}</div>
-                <div class="text-lg font-semibold text-tertiary">
+                <div class="text-xl font-bold text-primary">{{ ability.score }}</div>
+                <div class="text-base font-semibold text-tertiary">
                   {{ helpers.formatSigned(ability.modifier) }}
                 </div>
                 <div class="mt-1 pt-1 border-t-2 border-outline-variant">
@@ -39,31 +39,31 @@ import { UiIconComponent } from '../ui-icon.component';
 
 
 
-          <section aria-label="Skills" class="border-2 border-surface rounded-lg p-3 bg-surface-container-low shadow-lg">
-            <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
+          <section aria-label="Skills" class="border-2 border-surface rounded-lg p-2 bg-surface-container-low shadow-lg">
+            <h3 class="text-sm font-bold uppercase text-center mb-2 border-b-2 border-outline-variant pb-1">
               Skills
             </h3>
-            <ul class="space-y-1 text-sm">
+            <ul class="space-y-0.5 text-sm">
               @for (s of skillList(); track s.name) {
-                <li class="flex min-h-8 items-center gap-2">
+                <li class="flex min-h-7 items-center gap-1.5">
                                   @switch (s.levelLabel) {
                   @case ('NONE') {
-                    <span class="w-6 h-6 border-2 border-outline rounded-full flex items-center justify-center text-xs font-bold text-on-surface-variant">
+                    <span class="w-5 h-5 shrink-0 border-2 border-outline rounded-full flex items-center justify-center text-xs font-bold text-on-surface-variant">
                       
                     </span>
                   }
                   @case ('PROF.') {
-                    <span class="w-6 h-6 border-2 border-outline rounded-full flex items-center justify-center text-xs font-bold text-primary">
+                    <span class="w-5 h-5 shrink-0 border-2 border-outline rounded-full flex items-center justify-center text-xs font-bold text-primary">
                       ●
                     </span>
                   }
                   @case ('EXP.') {
-                    <span class="w-6 h-6 border-2 border-outline rounded-full flex items-center justify-center text-sm font-bold text-tertiary">
+                    <span class="w-5 h-5 shrink-0 border-2 border-outline rounded-full flex items-center justify-center text-xs font-bold text-tertiary">
                       ✪
                     </span>
                   }
                   @default {
-                    <span class="w-6 h-6 border-2 border-outline rounded-full flex items-center justify-center text-xs font-bold text-secondary">
+                    <span class="w-5 h-5 shrink-0 border-2 border-outline rounded-full flex items-center justify-center text-xs font-bold text-secondary">
                       ◐
                     </span>
                   }
@@ -75,7 +75,10 @@ import { UiIconComponent } from '../ui-icon.component';
               }
             </ul>
           </section>
-
+          <div aria-label="Passive Perception" class="flex items-center justify-between gap-2 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 text-sm">
+            <span class="font-medium text-on-surface-variant">Passive Perception</span>
+            <span class="font-bold tabular-nums text-primary">{{ passivePerception() }}</span>
+          </div>
 
         <details open class="overflow-hidden rounded-xl border border-outline-variant bg-surface p-3 text-sm" aria-label="General Stats">
           <summary class="flex min-h-11 cursor-pointer items-center gap-2 border-b border-outline-variant pb-2 font-bold"><app-ui-icon name="info" /> General Stats</summary>

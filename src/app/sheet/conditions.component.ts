@@ -11,6 +11,7 @@ const CONDITION_NAMES = [
   'FRIGHTENED',
   'GRAPPLED',
   'INCAPACITATED',
+  'INVISIBLE',
   'PARALYZED',
   'PETRIFIED',
   'POISONED',
@@ -26,11 +27,11 @@ const CONDITION_NAMES = [
   imports: [UiIconComponent, CommonModule],
   template: `
     <div class="space-y-2" (keydown.escape)="showDropdown.set(false)">
-      <div class="flex flex-wrap gap-2">
+      <div class="flex flex-wrap gap-1.5">
         @for (condition of activeConditions(); track condition) {
-          <button type="button" (click)="removeCondition(condition)" [attr.aria-label]="'Remove ' + getConditionLabel(condition)" class="min-h-11 rounded-lg border border-primary bg-primary-container px-3 py-2 text-sm text-on-primary-container">{{ getConditionLabel(condition) }} <app-ui-icon name="close" /></button>
+          <button type="button" (click)="removeCondition(condition)" [attr.aria-label]="'Remove ' + getConditionLabel(condition)" class="inline-flex min-h-9 min-w-0 max-w-full items-center gap-1 rounded-lg border border-primary bg-primary-container px-2 py-1.5 text-sm text-on-primary-container [overflow-wrap:anywhere] sm:min-h-0 sm:py-1">{{ getConditionLabel(condition) }} <app-ui-icon name="close" /></button>
         }
-        <button type="button" (click)="showDropdown.set(!showDropdown())" [attr.aria-expanded]="showDropdown()" class="min-h-11 rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-sm">{{ showDropdown() ? 'Close picker' : '+ Add condition' }}</button>
+        <button type="button" (click)="showDropdown.set(!showDropdown())" [attr.aria-expanded]="showDropdown()" class="min-h-9 rounded-lg border border-outline-variant bg-surface-container px-2 py-1.5 text-sm sm:min-h-0 sm:py-1">{{ showDropdown() ? 'Close picker' : '+ Add condition' }}</button>
       </div>
       @if (showDropdown()) {
         <div class="rounded-lg border border-outline-variant bg-surface-container-highest p-2">

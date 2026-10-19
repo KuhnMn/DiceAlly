@@ -12,14 +12,14 @@ import { CharacterLibraryService } from '../character-library.service';
     <section class="mx-3 mb-3 rounded-lg bg-secondary-container text-on-secondary-container px-3 py-2 text-sm" aria-label="Character synchronization">
       @if (compact()) {
         <button type="button" class="flex min-h-9 w-full items-center justify-between gap-2 text-left text-xs sm:hidden" [attr.aria-expanded]="detailsOpen()" (click)="detailsOpen.set(!detailsOpen())">
-          <span role="status">{{ sync.busy() || sync.settings.busy() ? 'Syncing…' : sync.conflicts().length ? 'Sync conflicts: ' + sync.conflicts().length : sync.error() || sync.settings.error() ? 'Saved locally · Sync needs attention' : sync.pending() + sync.settings.pending() ? 'Pending changes: ' + (sync.pending() + sync.settings.pending()) : lastSyncText() }}</span>
+          <span role="status" [title]="lastSyncTitle()">{{ sync.busy() || sync.settings.busy() ? 'Syncing…' : sync.conflicts().length ? 'Sync conflicts: ' + sync.conflicts().length : sync.error() || sync.settings.error() ? 'Saved locally · Sync needs attention' : sync.pending() + sync.settings.pending() ? 'Pending changes: ' + (sync.pending() + sync.settings.pending()) : lastSyncText() }}</span>
           <span>{{ detailsOpen() ? 'Hide' : 'Details' }}</span>
         </button>
       }
       <div [class.hidden]="compact() && !detailsOpen()" class="sm:!block">
       <div class="flex flex-wrap items-center gap-2">
-        @if (sync.busy() || sync.settings.busy()) { <app-ui-icon name="loader" class="animate-spin" /> }
-        <span role="status" [title]="lastSyncTitle()">{{ sync.busy() || sync.settings.busy() ? 'Syncing…' : sync.error() || sync.settings.error() ? 'Saved Locally · Sync Needs Attention' : sync.pending() + sync.settings.pending() ? 'Pending Changes: ' + (sync.pending() + sync.settings.pending()) : lastSyncText() }}</span>
+        @if (sync.busy() || sync.settings.busy()) { <app-ui-icon name="loader" class="animate-spin sm:!inline-flex" [class.hidden]="compact()" /> }
+        <span role="status" [title]="lastSyncTitle()" [class.hidden]="compact()" class="sm:!inline">{{ sync.busy() || sync.settings.busy() ? 'Syncing…' : sync.error() || sync.settings.error() ? 'Saved Locally · Sync Needs Attention' : sync.pending() + sync.settings.pending() ? 'Pending Changes: ' + (sync.pending() + sync.settings.pending()) : lastSyncText() }}</span>
         <button class="rounded-lg px-3 py-1 bg-primary text-on-primary disabled:opacity-50" [disabled]="sync.busy()" (click)="sync.sync()">Sync Now</button>
         @if (sync.conflicts().length) {
           <button class="rounded-lg px-3 py-1 bg-surface text-on-surface" (click)="expanded.set(!expanded())">{{ expanded() ? 'Hide Conflicts' : 'Resolve Conflicts' }} ({{ sync.conflicts().length }})</button>

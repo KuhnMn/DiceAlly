@@ -6,13 +6,14 @@ import { DialogScrollLockService } from './dialog-scroll-lock.service';
 @Component({
   selector: 'app-catalog-dialog',
   imports: [A11yModule],
+  host: { '[class.compact]': 'compact()' },
   template: `
     <button type="button" class="catalog-backdrop" tabindex="-1" aria-label="Close catalog"
       [disabled]="closeDisabled()" (click)="close()"></button>
     <section class="catalog-window" role="dialog" aria-modal="true" [attr.aria-label]="title()"
       cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
       <header class="catalog-header">
-        <div><h2>{{ title() }}</h2><p>{{ subtitle() }}</p></div>
+        <div><h2>{{ title() }}</h2>@if (subtitle()) { <p>{{ subtitle() }}</p> }</div>
         <button type="button" class="secondary-button" [disabled]="closeDisabled()" (click)="close()">{{ closeLabel() }}</button>
       </header>
       <div class="catalog-body feature-editor"><ng-content /></div>
@@ -33,10 +34,15 @@ import { DialogScrollLockService } from './dialog-scroll-lock.service';
       :host { padding: 0; }
       .catalog-window { width: 100%; max-height: 100dvh; height: 100dvh; border-radius: 0; }
     }
+    :host(.compact) { padding: 1rem; }
+    :host(.compact) .catalog-window { width: min(100%, 28rem); height: auto; max-height: calc(100dvh - 2rem); border-radius: .5rem; }
+    :host(.compact) .catalog-header { flex-shrink: 0; gap: .5rem; padding: .75rem; }
+    :host(.compact) .catalog-body { min-height: 0; padding: .75rem; }
   `],
 })
 export class CatalogDialogComponent implements OnInit, OnDestroy {
   readonly title = input.required<string>();
+  readonly compact = input(false);
   readonly closeLabel = input('Close');
   readonly subtitle = input('Add entries, then return to your character.');
   readonly closeDisabled = input(false);

@@ -68,7 +68,6 @@ import { DialogScrollLockService } from '../editor/dialog-scroll-lock.service';
         <app-sheet-health-details [characterData]="sheet()" />
         <app-hit-dice-tracker [character]="character" />
         <h3 class="mb-2 text-sm font-semibold">Conditions & Effects ({{ sheet().conditions?.length ?? 0 }})</h3>
-        @if (!sheet().conditions?.length) { <p class="mb-2 text-sm text-on-surface-variant">No active conditions or effects.</p> }
         <app-conditions [activeConditions]="sheet().conditions ?? []" (conditionsChanged)="sheet().conditions = $event" />
         </div>
         <div data-health-footer class="flex shrink-0 justify-end border-t border-outline-variant bg-surface px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">

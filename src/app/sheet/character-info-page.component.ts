@@ -105,62 +105,10 @@ import { ConditionsComponent } from './conditions.component';
       <header class="grid grid-cols-5 md:grid-cols-9 gap-2 mb-6">
         <!-- Profile Picture -->
         <div class="col-span-1 md:col-span-1 border-2 border-surface rounded-lg p-2 bg-surface-container-low text-center content-center overflow-hidden order-2 md:order-4 aspect-square relative">
-          @if (!isEditingProfilePictureUrl()) {
-            @if (characterData()?.portaitUrl) {
-              <div class="relative w-full h-full flex items-center justify-center cursor-pointer group" (click)="startEditingProfilePictureUrl()">
-                <img
-                  [src]="characterData()!.portaitUrl"
-                  alt="Portrait of {{ character()?.name }}"
-                  class="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
-                />
-                <div class="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity flex items-center justify-center">
-                  <span class="text-white text-2xl opacity-0 group-hover:opacity-100 transition-opacity"><app-ui-icon name="edit" /></span>
-                </div>
-              </div>
-              <button
-                (click)="removeProfilePicture(); $event.stopPropagation()"
-                class="absolute top-1 right-1 bg-primary text-on-primary rounded-full w-3 h-3 flex items-center justify-center text-xs hover:bg-error/80 transition-colors"
-                title="Remove profile picture"
-              >
-                <app-ui-icon name="close" />
-              </button>
-            } @else {
-              <button
-                type="button"
-                class="w-full h-full flex flex-col items-center justify-center gap-1 text-on-surface-variant hover:bg-surface-container-highest transition-colors"
-                (click)="startEditingProfilePictureUrl()"
-              >
-                <span class="text-2xl"><app-ui-icon name="image" /></span>
-                <span class="text-xs uppercase font-semibold">Add Picture</span>
-              </button>
-            }
+          @if (characterData()?.portaitUrl) {
+            <img [src]="characterData()!.portaitUrl" alt="Portrait of {{ character()?.name }}" class="w-full h-full object-cover" />
           } @else {
-            <div class="w-full h-full flex flex-col items-center justify-center gap-2 p-2">
-              <input
-                type="text"
-                placeholder="Paste image URL..."
-                [(ngModel)]="profilePictureUrlInput"
-                (keydown)="handleProfilePictureUrlKeydown($event)"
-                class="w-full text-xs px-1 py-0 md:px-2 md:py-1 border-2 border-primary rounded bg-surface outline-none text-on-surface"
-                autofocus
-              />
-              <div class="flex flex-wrap justify-center gap-1">
-                <button
-                  type="button"
-                  class="px-1 py-0 md:px-2 md:py-1 bg-primary text-on-primary text-xs font-semibold rounded hover:bg-primary/80 transition-colors"
-                  (click)="saveProfilePictureUrl()"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  class="px-1 py-0 md:px-2 md:py-1 bg-surface-variant text-on-surface-variant text-xs font-semibold rounded hover:bg-surface-variant/80 transition-colors"
-                  (click)="cancelProfilePictureUrlEdit()"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
+            <span class="text-2xl text-on-surface-variant"><app-ui-icon name="image" /></span>
           }
         </div>
 
@@ -518,7 +466,7 @@ import { ConditionsComponent } from './conditions.component';
 
               <div class="mt-4 pt-4 border-t-2 border-outline-variant">
                 <div class="text-xs text-on-surface-variant uppercase font-semibold mb-2">Death Saves</div>
-                <div class="flex items-center justify-center gap-6">
+                <div class="flex items-center justify-center gap-2">
                   <!-- Failures -->
                   <div class="flex items-center gap-2">
                     
@@ -536,6 +484,7 @@ import { ConditionsComponent } from './conditions.component';
                     </div>
                     <span class="text-xs text-primary font-semibold"><app-ui-icon name="candle" /></span>
                   </div>
+                  <button type="button" (click)="resetDeathSaves()" aria-label="Reset death saves" title="Reset death saves" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-on-surface-variant hover:bg-primary-container hover:text-on-primary focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="reset" /></button>
                   <!-- Successes -->
                   <div class="flex items-center gap-2">
                     <span class="text-xs text-tertiary font-semibold"><app-ui-icon name="heart" /></span>
@@ -794,8 +743,6 @@ export class CharacterInfoPageComponent {
   acOverride = signal<number | null>(null);
   acOverrideInput = signal('');
   isEditingAcOverride = signal(false);
-  isEditingProfilePictureUrl = signal(false);
-  profilePictureUrlInput = signal('');
   activeConditions() { return this.characterData()?.conditions ?? []; }
   hpAdjustmentInput = signal('');
 
@@ -1277,39 +1224,11 @@ export class CharacterInfoPageComponent {
     }
   }
 
-  startEditingProfilePictureUrl() {
-    const url = this.characterData()?.portaitUrl ?? '';
-    this.profilePictureUrlInput.set(url);
-    this.isEditingProfilePictureUrl.set(true);
-  }
-
-  saveProfilePictureUrl() {
-    const char = this.characterData();
+  resetDeathSaves() {
+    const char = this.character();
     if (!char) return;
-    const trimmed = this.profilePictureUrlInput().trim();
-    char.portaitUrl = trimmed.length > 0 ? trimmed : null;
-    this.isEditingProfilePictureUrl.set(false);
-    this.profilePictureUrlInput.set('');
-  }
-
-  cancelProfilePictureUrlEdit() {
-    this.isEditingProfilePictureUrl.set(false);
-    this.profilePictureUrlInput.set('');
-  }
-
-  handleProfilePictureUrlKeydown(event: KeyboardEvent) {
-    if (event.key === 'Enter') {
-      this.saveProfilePictureUrl();
-    } else if (event.key === 'Escape') {
-      this.cancelProfilePictureUrlEdit();
-    }
-  }
-
-  removeProfilePicture() {
-    const char = this.characterData();
-    if (char) {
-      char.portaitUrl = null;
-    }
+    char.deathSavesFailures = 0;
+    char.deathSavesSuccesses = 0;
   }
 
   toggleDeathSaveFailure(index: number) {

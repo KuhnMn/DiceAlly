@@ -21,7 +21,7 @@ import { CharacterInfoPageComponent } from './character-info-page.component';
         </div>
         <div>
           <h3 class="mb-3 border-b border-outline-variant pb-2 text-sm font-bold">Death Saves</h3>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1">
             <div class="min-w-0 rounded-lg bg-surface p-2">
               <p class="flex items-center justify-center gap-2 text-xs font-semibold text-primary"><app-ui-icon name="candle" /> Failures</p>
               <div class="flex flex-row-reverse justify-center">
@@ -30,6 +30,7 @@ import { CharacterInfoPageComponent } from './character-info-page.component';
                 }
               </div>
             </div>
+            <button type="button" (click)="resetDeathSaves()" aria-label="Reset death saves" title="Reset death saves" class="flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant hover:bg-primary-container hover:text-on-primary focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="reset" /></button>
             <div class="min-w-0 rounded-lg bg-surface p-2">
               <p class="flex items-center justify-center gap-2 text-xs font-semibold text-tertiary"><app-ui-icon name="heart" /> Successes</p>
               <div class="flex justify-center">

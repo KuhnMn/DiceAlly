@@ -23,11 +23,11 @@ import { AppDialogService } from '../services/app-dialog.service';
       <span class="min-w-0 truncate text-xs font-medium text-on-surface" [title]="'Concentrating on ' + effect" role="status">{{ effect }}</span>
     }
     @if (open) {
-      <app-catalog-dialog title="Concentration" subtitle="Track a spell or effect." (closed)="open = false">
+      <app-catalog-dialog title="Concentration" subtitle="" [compact]="true" (closed)="open = false">
         @if (sheet().character?.concentrationEffect; as effect) {
-          <div class="mb-3 flex flex-wrap items-center justify-between gap-2"><strong class="break-words">Concentrating: {{ effect }}</strong><button type="button" class="min-h-11 rounded bg-secondary-container px-3 text-on-secondary-container" (click)="setEffect(''); open = false">End Concentration</button></div>
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-2"><strong class="min-w-0 text-sm [overflow-wrap:anywhere]">Concentrating: {{ effect }}</strong><button type="button" class="min-h-11 rounded bg-secondary-container px-3 text-sm text-on-secondary-container" (click)="setEffect(''); open = false">End Concentration</button></div>
         }
-        <form class="flex flex-wrap items-end gap-2" (ngSubmit)="start()"><label class="min-w-0 flex-1">Spell or Effect<input name="concentration-effect" [(ngModel)]="effectName" class="mt-1 min-h-11 w-full rounded border border-outline-variant bg-surface px-2 text-base" /></label><button type="submit" [disabled]="!effectName.trim()" class="min-h-11 rounded bg-primary px-3 text-on-primary disabled:opacity-40">{{ sheet().character?.concentrationEffect ? 'Replace' : 'Start' }}</button></form>
+        <form class="flex flex-wrap items-end gap-2" (ngSubmit)="start()"><label class="min-w-0 flex-1 text-sm">Spell or Effect<input name="concentration-effect" [(ngModel)]="effectName" class="mt-1 min-h-11 w-full rounded border border-outline-variant bg-surface px-2 text-base" /></label><button type="submit" [disabled]="!effectName.trim()" class="min-h-11 rounded bg-primary px-3 text-sm text-on-primary disabled:opacity-40">{{ sheet().character?.concentrationEffect ? 'Replace' : 'Start' }}</button></form>
       </app-catalog-dialog>
     }
   `,

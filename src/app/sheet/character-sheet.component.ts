@@ -51,13 +51,13 @@ import { NotesPageComponent } from './notes-page.component';
             class="min-h-10 min-w-10 inline-flex items-center justify-center shrink-0 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high focus-visible:outline-2 focus-visible:outline-primary">
             <app-ui-icon name="left" />
           </a>
-          <div class="min-w-0">
-            <h1 class="break-words text-lg sm:text-2xl font-bold"><span class="sm:hidden">{{ characterData()?.character?.name || 'Unnamed Character' }}</span><span class="hidden sm:inline">Character Sheet</span></h1>
+          <div class="hidden min-w-0 sm:block">
+            <h1 class="break-words text-2xl font-bold">Character Sheet</h1>
             <p class="hidden sm:block text-xs text-on-surface-variant break-words">{{ characterData()?.character?.name || 'Unnamed Character' }}</p>
           </div>
+          <app-mobile-sheet-actions class="min-w-0 flex-1" [saving]="isSaving()" [openingEditor]="isOpeningEditor()" [dirty]="hasUnsavedChanges()" (save)="quickSave()" (edit)="editCharacter()" />
         </header>
         <app-character-update-notice [characterId]="store.nativeCharacterId()" [characterName]="characterData()?.character?.name || 'Unnamed Character'" [loadedVersion]="session.loadedVersion()" [busy]="isSaving()" (refresh)="refreshCharacter()" />
-        <app-mobile-sheet-actions [saving]="isSaving()" [openingEditor]="isOpeningEditor()" [dirty]="hasUnsavedChanges()" (save)="quickSave()" (edit)="editCharacter()" />
         <app-mobile-character-header [characterData]="characterData()" (navigateToFeatures)="navigateToFeatures($event)" />
         <!-- Desktop action bar -->
         <div class="hidden sm:flex sm:flex-wrap items-center gap-2 mb-4">
@@ -177,7 +177,7 @@ export class CharacterSheetComponent implements OnDestroy {
 
   characterData = this.store.characterData;
   currentPage = signal(1);
-  private readonly standardPages = [{ id: 1, label: 'Sheet' }, { id: 2, label: 'Features' }, { id: 3, label: 'Spells' }, { id: 4, label: 'Equipment' }, { id: 5, label: 'Monsters' }, { id: 6, label: 'Notes' }];
+  private readonly standardPages = [{ id: 1, label: 'Sheet' }, { id: 2, label: 'Features' }, { id: 3, label: 'Spells' }, { id: 4, label: 'Inventory' }, { id: 5, label: 'Monsters' }, { id: 6, label: 'Notes' }];
   private readonly mobilePages = [this.standardPages[0], { id: 7, label: 'Combat' }, ...this.standardPages.slice(1)];
   get pages() { return this.mobile() ? this.mobilePages : this.standardPages; }
   swipePage(direction: number) {
@@ -236,7 +236,7 @@ export class CharacterSheetComponent implements OnDestroy {
     if (targetId.startsWith('spell-')) {
       page = 3; // Spells page
     } else if (targetId.startsWith('item-')) {
-      page = 4; // Equipment page
+      page = 4; // Inventory page
     } else if (targetId.startsWith('monster-')) {
       page = 5; // Monsters page
     } else if (targetId.startsWith('feature-') || targetId === 'species-section') {
