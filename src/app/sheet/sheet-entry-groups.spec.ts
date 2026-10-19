@@ -14,14 +14,23 @@ describe('Viewer list separators', () => {
       { name: 'Another choice', optionalFeatureEntity: { featureType: ['EI', 'MM'] } },
     ] });
     fixture.detectChanges();
-    const groups = fixture.componentInstance.featureGroups();
-    expect(groups.map(group => group.label)).toEqual([
-      'Class Features · Level 2', 'Class Features · Level 10', 'Feats · G', 'Feats · O', 'Optional Features · EI, MM',
-    ]);
-    expect(groups.flatMap(group => group.features)).toHaveLength(6);
-    expect(fixture.nativeElement.querySelectorAll('section > h4').length).toBe(5);
-    fixture.componentInstance.searchQuery.set('Origin'); fixture.detectChanges();
-    expect(fixture.componentInstance.featureGroups().map(group => group.label)).toEqual(['Feats · O']);
+    const page = fixture.componentInstance;
+    expect(page.featureGroups().map(group => group.label)).toEqual(['Class Features \u00b7 Level 2', 'Class Features \u00b7 Level 10']);
+    expect(fixture.nativeElement.querySelector('[aria-label="Feature class filters"]')).toBeNull();
+    page.setFeatureView('FEAT'); fixture.detectChanges();
+    expect(page.featureGroups().map(group => group.label)).toEqual(['Feats \u00b7 G', 'Feats \u00b7 O']);
+    expect(page.activeFilterCount()).toBe(0);
+    expect(fixture.nativeElement.querySelector('[aria-label="Feature level filters"]')).toBeNull();
+    page.featureCategoriesFilter.set(['O']); fixture.detectChanges();
+    expect(page.featureGroups().map(group => group.label)).toEqual(['Feats \u00b7 O']);
+    expect(page.activeFilterCount()).toBe(1);
+    page.clearFilters(); expect(page.featureTypeFilter()).toBe('FEAT');
+    page.setFeatureView('OPTIONAL_FEATURE'); fixture.detectChanges();
+    expect(page.featureGroups()).toHaveLength(1);
+    expect(page.featureGroups()[0].features).toHaveLength(2);
+    expect(page.featureCategoryOptions()).toEqual(['EI', 'MM']);
+    expect(fixture.nativeElement.querySelector('[aria-label="Feature level filters"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label="Feature class filters"]')).toBeNull();
   });
 
   it('groups items by type, retains inventory order within groups and hides filtered groups', () => {

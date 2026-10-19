@@ -9,7 +9,7 @@ function spell(editorId: string, listType = 'KNOWN', level = 0, castingSourceNam
 const change = (id: string, action: PrefillChange['action'] = 'Fill'): PrefillChange => ({ path: ['spells', id], label: id, action });
 
 describe('Wizard review grouping', () => {
-  it('separates stats from spells and groups Known and Prepared spells independently', () => {
+  it('separates stats from spells and groups Spelllist and Prepared spells independently', () => {
     const known = Array.from({ length: 20 }, (_, index) => spell(`cantrip-${index}`));
     const after: ExportedCharacter = { spells: [...known, spell('Mage Hand', 'PREPARED')] };
     const hp: PrefillChange = { path: ['character', 'maxHp'], label: 'Maximum HP', action: 'Update' };
@@ -18,7 +18,7 @@ describe('Wizard review grouping', () => {
     expect(review.map(section => section.label)).toEqual(['Character stats', 'Spells & Slots']);
     expect(review[0].groups[0].entries).toEqual([hp]);
     const groups = review[1].groups;
-    expect(groups.find(group => group.label === 'Arcane Trickster · Known · Cantrips')?.entries).toHaveLength(20);
+    expect(groups.find(group => group.label === 'Arcane Trickster · Spelllist · Cantrips')?.entries).toHaveLength(20);
     expect(groups.find(group => group.label === 'Arcane Trickster · Prepared · Cantrips')?.entries).toEqual([change('Mage Hand')]);
     expect(review[1].count).toBe(21);
   });
@@ -32,7 +32,7 @@ describe('Wizard review grouping', () => {
       change('Protected', 'Keep'), change('Specific')];
     const review = groupWizardReview(changes, before, after);
     const groups = review[0].groups;
-    const protectedGroup = groups.find(group => group.label === 'Arcane Trickster · Known · Cantrips')!;
+    const protectedGroup = groups.find(group => group.label === 'Arcane Trickster · Spelllist · Cantrips')!;
     expect(protectedGroup.entries).toEqual([change('Protected', 'Keep'), change('Specific')]);
     expect(protectedGroup.counts).toEqual([{ action: 'Fill', label: 'added', count: 1 }, { action: 'Keep', label: 'kept', count: 1 }]);
     expect(groups.find(group => group.label.includes('Level 1'))?.counts).toEqual([{ action: 'Remove', label: 'removed', count: 4 }]);

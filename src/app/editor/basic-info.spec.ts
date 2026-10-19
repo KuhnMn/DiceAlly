@@ -85,6 +85,21 @@ describe('Basic Info editor', () => {
     swipe.pageSwipe.emit(-1); expect(editor.page).toBe(editor.pages.length - 1);
   });
 
+  it('uses the mobile selector with the existing page state and preserves unfinished inputs', async () => {
+    const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
+    const editor = fixture.componentInstance;
+    const draft = fixture.nativeElement.querySelector('input[name="sense-name"]') as HTMLInputElement;
+    draft.value = 'Unfinished sense'; draft.dispatchEvent(new Event('input', { bubbles: true }));
+    await fixture.whenStable();
+    const select = fixture.nativeElement.querySelector('select[aria-label="Character editor page"]') as HTMLSelectElement;
+    select.value = '1'; select.dispatchEvent(new Event('change', { bubbles: true })); await fixture.whenStable();
+    expect(editor.page).toBe(1);
+    select.value = '0'; select.dispatchEvent(new Event('change', { bubbles: true })); await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('input[name="sense-name"]').value).toBe('Unfinished sense');
+    editor.busy.set(true); await fixture.whenStable(); expect(select.disabled).toBe(true);
+    fixture.nativeElement.querySelector('[aria-label="Next editor page"]').click(); expect(editor.page).toBe(0);
+  });
+
   it('groups the editor into nine tabs with separate species/features and spells pages', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
     const editor = fixture.componentInstance;

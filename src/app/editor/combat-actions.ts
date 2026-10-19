@@ -2,6 +2,7 @@ import { CombatAction, Entry, ExportedCharacter, FeatureEntryFull, InventoryItem
 import { CharacterHelpersService } from '../sheet/character-helpers.service';
 import { featureSourceStats } from './feature-source-stats';
 import { newEditorId } from './editor-identity';
+import { spellIdentity } from './spell-selection';
 
 export const COMBAT_TYPES = [
   { value: 'ACTION', label: 'Action' }, { value: 'BONUS', label: 'Bonus Action' },
@@ -93,6 +94,15 @@ export function prefillCombatAction(sheet: ExportedCharacter, resource: CombatRe
     sourceSnapshot: { name, range, actionType, hitOrDc, damageOrHeal }, sourceOption: monsterOption,
     sourceOptionName: type === 'MONSTER' ? monsterCombatOptions(resource as Monster)[monsterOption]?.name : undefined,
     linkedResourceType: type, linkedResource: { editorId: resource.editorId, name: resource.name, source: resource.source } };
+}
+
+/** Stored spell-list copies share Combat status within the same casting source. */
+export function combatLinksForResource(sheet: ExportedCharacter, resource: CombatResource): CombatAction[] {
+  const spell = sheet.spells?.includes(resource as SpellEntryFull);
+  return (sheet.combatActions ?? []).filter(action => {
+    const linked = resolveCombatResource(sheet, action);
+    return linked === resource || !!(spell && linked && sheet.spells?.includes(linked as SpellEntryFull) && spellIdentity(linked as SpellEntryFull) === spellIdentity(resource as SpellEntryFull));
+  });
 }
 
 /** Resolve identity first so renaming an entry does not break its bookmark. RAW imports still use names. */

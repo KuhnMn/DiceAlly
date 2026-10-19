@@ -1,20 +1,20 @@
-<main class="max-w-[1000px] mx-auto p-4 my-6 text-on-surface">
-  <header class="flex flex-wrap items-center justify-between gap-2 sm:gap-4 mb-4">
+<main class="max-w-[1000px] mx-auto p-2 sm:p-4 my-2 sm:my-4 text-on-surface">
+  <header class="flex flex-wrap items-center justify-between gap-2 sm:gap-3 mb-3">
     <div class="flex items-center gap-2 min-w-0">
       <a routerLink="/" class="secondary-button" aria-label="Back to characters"><app-ui-icon name="left" /></a>
       <div>
         <h1 class="text-lg sm:text-2xl font-bold">{{ version ? 'Edit Character' : 'Create Character' }}</h1>
-        <p class="text-xs font-semibold uppercase text-on-surface-variant mt-1">{{ pages[page] }}</p>
+        <p class="hidden sm:block text-xs font-semibold uppercase text-on-surface-variant mt-1">{{ pages[page] }}</p>
       </div>
     </div>
-    <div class="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:flex-wrap">
-      <button type="button" class="action-button wizard-button justify-center !min-h-10 !px-3 !text-sm" [disabled]="busy()" aria-haspopup="dialog" (click)="wizardOpen = true">
+    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+      <button type="button" class="action-button wizard-button justify-center !min-h-10 !px-3 !text-sm" [disabled]="busy()" aria-haspopup="dialog" title="Class Wizard" (click)="wizardOpen = true">
         <app-ui-icon name="wand" class="text-lg" />
-        Class Wizard
+        <span class="sr-only sm:not-sr-only">Class Wizard</span>
       </button>
-      <app-theme-picker class="min-w-0 sm:order-last sm:w-44" />
-      <button type="submit" form="basic-info" [disabled]="busy()" class="action-button justify-center !min-h-10 !px-3 !text-sm"><app-ui-icon [name]="busy() ? 'loader' : 'save'" [class.animate-spin]="busy()" />{{ busy() ? 'Saving…' : 'Save' }}</button>
-      <button type="button" class="action-button justify-center !min-h-10 !px-3 !text-sm" [disabled]="busy()" (click)="viewSheet()"><app-ui-icon name="save" />Save &amp; View</button>
+      <app-theme-picker class="min-w-0 flex-1 sm:flex-none sm:order-last sm:w-44" />
+      <button type="submit" form="basic-info" [disabled]="busy()" title="Save character" class="action-button justify-center !min-h-10 !px-3 !text-sm"><app-ui-icon [name]="busy() ? 'loader' : 'save'" [class.animate-spin]="busy()" /><span class="sr-only sm:not-sr-only">{{ busy() ? 'Saving…' : 'Save' }}</span></button>
+      <button type="button" class="action-button justify-center !min-h-10 !px-3 !text-sm" [disabled]="busy()" title="Save and view sheet" (click)="viewSheet()"><app-ui-icon name="right" /><span class="sr-only sm:not-sr-only">Save &amp; View</span></button>
     </div>
   </header>
   <app-character-update-notice [characterId]="character.characterUuid" [characterName]="character.name || 'Unnamed Character'" [loadedVersion]="version" [busy]="busy()" (refresh)="refreshCharacter()" />
@@ -22,7 +22,16 @@
 
   <app-source-book-filter />
 
-  <nav [appScrollableTabs]="page" class="mb-5 sm:border-b-2 border-outline-variant" aria-label="Character editor pages">
+  <div class="sticky top-0 z-30 mb-3 flex min-w-0 items-center gap-2 border-b border-outline-variant bg-surface py-2 lg:hidden" role="navigation" aria-label="Character editor mobile pages">
+    <button type="button" (click)="setPage(page - 1)" [disabled]="busy() || page === 0" aria-label="Previous editor page" class="flex h-10 w-9 shrink-0 items-center justify-center rounded-lg border border-outline-variant disabled:opacity-35"><app-ui-icon name="left" /></button>
+    <label class="min-w-0 flex-1"><span class="sr-only">Character editor page</span>
+      <select aria-label="Character editor page" [value]="page" [disabled]="busy()" (change)="setPage(+$any($event.target).value)" class="min-h-10 w-full min-w-0 rounded-lg border border-outline-variant bg-surface-container px-2 text-base text-on-surface">
+        @for (title of pages; track title; let i = $index) { <option [value]="i">{{ i + 1 }} / {{ pages.length }} · {{ title }}</option> }
+      </select>
+    </label>
+    <button type="button" (click)="setPage(page + 1)" [disabled]="busy() || page === pages.length - 1" aria-label="Next editor page" class="flex h-10 w-9 shrink-0 items-center justify-center rounded-lg border border-outline-variant disabled:opacity-35"><app-ui-icon name="right" /></button>
+  </div>
+  <nav [appScrollableTabs]="page" class="max-lg:!hidden mb-3 sm:border-b-2 border-outline-variant" aria-label="Character editor pages">
     @for (title of pages; track title; let i = $index) {
       <button type="button" class="px-3 py-3 text-sm font-semibold border-b-4 -mb-0.5 transition-colors hover:bg-surface-container" [class.border-primary]="page === i" [class.text-primary]="page === i" [class.border-transparent]="page !== i" [class.text-on-surface-variant]="page !== i" [attr.aria-current]="page === i ? 'page' : null" (click)="setPage(i)">{{ title }}@if (title === 'Proficiencies & More') { <span class="block text-[10px] font-normal mt-1">Languages &amp; Advantages</span> }@if (title === 'Feature Sources') { <span class="block text-[10px] font-normal mt-1">Spell Slots</span> }</button>
     }

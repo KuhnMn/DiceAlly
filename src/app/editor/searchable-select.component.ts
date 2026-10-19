@@ -1,3 +1,4 @@
+import { rankSearchResults } from '../search-ranking';
 import { UiIconComponent } from '../ui-icon.component';
 import { Component, ElementRef, HostListener, ViewChild, inject, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -51,7 +52,7 @@ export class SearchableSelectComponent {
   get selectedLabel() { return this.options().find(option => option.value === this.value())?.label ?? this.placeholder(); }
   get filtered() {
     const query = this.search.trim().toLowerCase();
-    return this.options().filter(option => option.label.toLowerCase().includes(query));
+    return rankSearchResults(this.options().filter(option => option.label.toLowerCase().includes(query)), query, option => option.label);
   }
   toggle() { this.open = !this.open; if (this.open) this.search = ''; }
   choose(value: string) { this.selected.emit(value); this.close(); }

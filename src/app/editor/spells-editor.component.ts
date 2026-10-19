@@ -1,9 +1,16 @@
+import { compareSearchMatches } from '../search-ranking';
+import { EditorEntryRowComponent } from './editor-entry-row.component';
+import { CatalogResultRowComponent } from './catalog-result-row.component';
+import { SpellSchoolFilterComponent } from '../spell-school-filter.component';
+import { SPELL_SCHOOLS, SpellSchool, matchesSpellSchool, shortSpellSchoolLabel } from './spell-selection';
+import { spellSourceCounts } from './spell-selection';
+import { SpellCastingTimeFilterComponent } from '../spell-casting-time-filter.component';
+import { ListControlsComponent } from '../list-controls.component';
 import { EditorListHeaderComponent } from './editor-list-header.component';
 import { DescriptionDialogComponent } from './description-dialog.component';
 import { CombatBookmarkComponent } from './combat-bookmark.component';
 import { HorizontalRowDirective } from '../sheet/horizontal-row.directive';
 import { UiIconComponent } from '../ui-icon.component';
-import { copySpellToList } from './spell-selection';
 import { newEditorId } from './editor-identity';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -15,7 +22,7 @@ import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { CharacterHelpersService } from '../sheet/character-helpers.service';
 import { FeatureSourcePickerComponent } from './feature-source-picker.component';
 import { EntryAnnotationsComponent } from './entry-annotations.component';
-import { SpellCatalogFilter, SpellList, matchesSpell, spellClasses, spellIdentity, spellSnapshot } from './spell-selection';
+import { SpellCastingTime, matchesCastingTime, spellListLabel, copySpellToList, SpellCatalogFilter, SpellList, matchesSpell, spellClasses, spellIdentity, spellSnapshot } from './spell-selection';
 import { SourceBookFilterService } from './source-book-filter.service';
 import { SourceBookFilterComponent } from './source-book-filter.component';
 import { CatalogDialogComponent } from './catalog-dialog.component';
@@ -25,7 +32,7 @@ import { contentReference } from './editor-content-helpers';
 
 @Component({
   selector: 'app-editor-spells',
-  imports: [EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, HorizontalRowDirective, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
+  imports: [EditorEntryRowComponent, CatalogResultRowComponent, SpellSchoolFilterComponent, SpellCastingTimeFilterComponent, ListControlsComponent, EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, HorizontalRowDirective, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
   templateUrl: './spells-editor.component.html',
   styleUrl: './editor.css',
 })
@@ -49,16 +56,21 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
   readonly openSources = output<void>();
   readonly adding = signal(false);
   readonly classNames = signal<string[]>([]);
+  readonly catalogLevels = signal<number[]>([]);
+  readonly catalogSchools = signal<readonly typeof SPELL_SCHOOLS[number][]>([]);
   readonly levels = Array.from({ length: 10 }, (_, level) => level);
   readonly expanded = new Set<SpellEntryFull>();
-  private readonly sourceBooks = inject(SourceBookFilterService);
+  readonly sourceBooks = inject(SourceBookFilterService);
   private readonly view = inject(ChangeDetectorRef);
   readonly helpers = inject(CharacterHelpersService);
   private destroyed = false;
   selectedSource: string | undefined;
   sourceFilter = 'ALL';
-  list: SpellList = 'KNOWN';
+  displayedMemberships: ('PREPARED' | 'SPELLBOOK')[] = [];
   displayedLevels: number[] = [];
+  displayedCastingTimes: SpellCastingTime[] = [];
+  displayedSchools: SpellSchool[] = [];
+  readonly shortSchoolLabel = shortSpellSchoolLabel;
   filter: SpellCatalogFilter = { search: '', classes: [], levels: [] };
   customName = '';
   customLevel = 0;
@@ -75,7 +87,7 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
     effect(() => {
       this.sourceBooks.selected();
       if (initial) { initial = false; return; }
-      untracked(() => this.filterChanged());
+      untracked(() => { void this.refreshContent(); });
     });
   }
 
@@ -84,19 +96,35 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
     return [...new Set(this.spells.map(spell => spell.castingSourceName ?? ''))]
       .filter(name => !this.sources.some(source => source.name === name));
   }
-  get targetSource() { return this.selectedSource === undefined ? this.sources[0]?.name : this.selectedSource || undefined; }
-  get spells() { return this.sheet().spells ?? []; }
-  get showSpellbook() { return this.sources.some(source => source.useSpellbook) || this.spells.some(spell => spell.listType === 'SPELLBOOK'); }
-  get lists(): SpellList[] { return this.showSpellbook ? ['KNOWN', 'SPELLBOOK', 'PREPARED'] : ['KNOWN', 'PREPARED']; }
-  get selected() {
-    return this.spells.filter(spell => spell.listType === this.list
-      && (this.sourceFilter === 'ALL' || (spell.castingSourceName ?? '') === this.sourceFilter)
-      && (!this.displayedLevels.length || this.displayedLevels.includes(spell.entity?.level ?? 0))
-      && spell.name.toLowerCase().includes(this.listSearch.trim().toLowerCase()))
-      .sort((a, b) => (a.entity?.level ?? 0) - (b.entity?.level ?? 0) || a.name.localeCompare(b.name));
+  get targetSource() {
+    return this.selectedSource === undefined ? this.sources[0]?.name : this.sources.find(source => source.name === this.selectedSource)?.name;
   }
-  label(list: SpellList) { return list === 'KNOWN' ? 'Known' : list === 'SPELLBOOK' ? 'Spellbook' : 'Prepared'; }
+  get spells() { return this.sheet().spells ?? []; }
+  get sourceSpellCounts() { return spellSourceCounts(this.spells, this.sources, this.orphanSources); }
+  get showSpellbook() { return this.sources.some(source => source.useSpellbook) || this.spells.some(spell => spell.listType === 'SPELLBOOK'); }
+  get managedSpells() {
+    const entries = new Map<string, SpellEntryFull>();
+    for (const spell of this.spells) {
+      const identity = spellIdentity(spell), previous = entries.get(identity);
+      if (!previous || spell.listType === 'KNOWN' || (previous.listType === 'PREPARED' && spell.listType === 'SPELLBOOK')) entries.set(identity, spell);
+    }
+    return [...entries.values()];
+  }
+  get selected() {
+    return this.managedSpells.filter(spell => (this.sourceFilter === 'ALL' || (spell.castingSourceName ?? '') === this.sourceFilter)
+      && (!this.displayedMemberships.length || this.displayedMemberships.some(list => this.hasList(spell, list)))
+      && (!this.displayedLevels.length || this.displayedLevels.includes(spell.entity?.level ?? 0))
+      && matchesCastingTime(spell.entity?.time, this.displayedCastingTimes)
+      && matchesSpellSchool(spell.entity?.school, this.displayedSchools)
+      && spell.name.toLowerCase().includes(this.listSearch.trim().toLowerCase()))
+      .sort((a, b) => compareSearchMatches(a.name, b.name, this.listSearch)
+        || (a.entity?.level ?? 0) - (b.entity?.level ?? 0) || a.name.localeCompare(b.name));
+  }
+  label(list: string) { return spellListLabel(list as SpellList); }
   listSearch = '';
+  toggleMembershipFilter(list: 'PREPARED' | 'SPELLBOOK') {
+    this.displayedMemberships = this.displayedMemberships.includes(list) ? this.displayedMemberships.filter(value => value !== list) : [...this.displayedMemberships, list];
+  }
   toggleClass(name: string) {
     this.filter.classes = this.filter.classes.includes(name)
       ? this.filter.classes.filter(value => value !== name) : [...this.filter.classes, name];
@@ -105,6 +133,10 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
   toggleCatalogLevel(level: number) {
     this.filter.levels = this.filter.levels.includes(level)
       ? this.filter.levels.filter(value => value !== level) : [...this.filter.levels, level];
+    this.filterChanged();
+  }
+  clearCatalogFilters() {
+    this.filter = { search: '', classes: [], levels: [], schools: [] };
     this.filterChanged();
   }
   toggleDisplayedLevel(level: number) {
@@ -118,12 +150,24 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
   }
   hasList(spell: SpellEntryFull, list: SpellList) { return this.spells.some(entry => spellIdentity(entry) === spellIdentity(spell) && entry.listType === list); }
   usesSpellbook(spell: SpellEntryFull) { return this.sources.some(source => source.name === spell.castingSourceName && source.useSpellbook); }
+  requiresConcentration(spell: SpellEntryFull) { return !!spell.entity?.duration?.some(duration => duration.concentration); }
   change() { this.view.markForCheck(); this.edited.emit(); }
-  toggle(spell: SpellEntryFull) { this.expanded.has(spell) ? this.expanded.delete(spell) : this.expanded.add(spell); }
+  toggle(spell: SpellEntryFull) {
+    const identity = spellIdentity(spell), row = this.managedSpells.find(entry => spellIdentity(entry) === identity) ?? spell;
+    this.expanded.has(row) ? this.expanded.delete(row) : this.expanded.add(row);
+  }
+  preparedEntry(spell: SpellEntryFull) { return this.spells.find(entry => entry.listType === 'PREPARED' && spellIdentity(entry) === spellIdentity(spell)); }
   addToList(spell: SpellEntryFull, list: SpellList) {
     if (this.hasList(spell, list) || (list === 'SPELLBOOK' && !this.usesSpellbook(spell))) return;
     const copy = copySpellToList(spell, list);
     (this.sheet().spells ??= []).push(copy); this.change();
+  }
+  toggleMembership(spell: SpellEntryFull, list: 'PREPARED' | 'SPELLBOOK') {
+    if (list === 'SPELLBOOK' && !this.usesSpellbook(spell)) return;
+    const identity = spellIdentity(spell);
+    const existing = this.spells.find(entry => entry.listType === list && spellIdentity(entry) === identity);
+    if (existing) this.remove(existing);
+    else this.addToList(spell, list);
   }
   remove(spell: SpellEntryFull) {
     // Android retains a known entry while its prepared version exists.
@@ -141,7 +185,7 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
     this.spells.splice(index, 1); this.expanded.delete(spell); this.change();
   }
   isAdded(record: ContentRecord, source = this.targetSource) {
-    return this.spells.some(spell => spell.castingSourceName === source
+    return this.spells.some(spell => (spell.castingSourceName ?? '') === (source ?? '')
       && (spell.contentReference?.key === record.key || (!spell.contentReference && spell.name === record.name && spell.source === record.publication)));
   }
   private entry(record: ContentRecord, revision: ImportRevision, source: string | undefined): SpellEntryFull {
@@ -150,11 +194,13 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
       contentReference: contentReference(record, revision) };
   }
   add(record: ContentRecord) {
+    if (!this.targetSource) return;
     const revision = this.revision();
     if (!revision || record.kind !== 'spell' || this.isAdded(record)) return;
     (this.sheet().spells ??= []).push(this.entry(record, revision, this.targetSource)); this.catalogAdded++; this.change();
   }
   async addMatching() {
+    if (!this.targetSource) return;
     const revision = this.revision(); if (!revision || this.adding()) return;
     // Capture the exact query and destination before awaiting IndexedDB. Commit only after success.
     const filter = structuredClone(this.filter); const source = this.targetSource; const sheet = this.sheet();
@@ -163,18 +209,21 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
     try {
       const result = await this.cache.searchCategory(revision.id, ['spell'], '', 0, Number.MAX_SAFE_INTEGER,
         record => this.sourceBooks.allows(record.publication, books) && matchesSpell(record, filter));
-      if (this.destroyed || this.sheet() !== sheet) return;
+      if (this.destroyed || this.sheet() !== sheet || !this.sources.some(entry => entry.name === source)) return;
       const additions = result.records.filter(record => !this.isAdded(record, source)).map(record => this.entry(record, revision, source));
       (sheet.spells ??= []).push(...additions);
       this.catalogAdded += additions.length;
       if (additions.length) this.change();
-      this.message.set(`Added ${additions.length} spells to Known${source ? ` · ${source}` : ''}. ${result.total - additions.length} already available.`);
+      this.message.set(`Added ${additions.length} spells to Spelllist${source ? ` · ${source}` : ''}. ${result.total - additions.length} already available.`);
     } catch (error) { this.message.set(`Could not add spells: ${String(error)}`); }
     finally { this.adding.set(false); }
   }
   addCustom() {
+    if (!this.targetSource) return;
     const name = this.customName.trim();
     if (!name || !Number.isInteger(this.customLevel) || this.customLevel < 0 || this.customLevel > 9) return;
+    if (this.spells.some(spell => spell.name === name && spell.source === 'Custom'
+      && (spell.castingSourceName ?? '') === (this.targetSource ?? ''))) return;
     const spell: SpellEntryFull = { editorId: newEditorId(), name, source: 'Custom', castingSourceName: this.targetSource,
       listType: 'KNOWN', userAdded: true, notes: [], uses: [], entity: { name, source: 'Custom', level: this.customLevel,
         school: '', time: [], range: {}, components: {}, duration: [], entries: this.customDescription ? [{ text: this.customDescription }] : [] } };
@@ -185,31 +234,43 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
     this.destroyed = true;
     this.catalog.dispose();
   }
+  private refreshTask?: Promise<void>;
   refreshContent() {
     this.classNames.set([]);
-    return this.catalog.refresh(
+    this.catalogLevels.set([]); this.catalogSchools.set([]);
+    const books = this.sourceBooks.selected();
+    return this.refreshTask = this.catalog.refresh(
       'Import content to browse spells. Saved spells remain available without the catalog.',
       () => this.catalogQuery(),
       async (revision, isCurrent) => {
-        const classes = new Set<string>();
+        const classes = new Set<string>(), levels = new Set<number>(), schools = new Set<SpellSchool>();
         // Collect filter options without retaining the entire spell catalog.
         await this.cache.searchCategory(revision.id, ['spell'], '', 0, 0, record => {
-          spellClasses(record.data).forEach(entry => classes.add(entry.name));
+          if (!this.sourceBooks.allows(record.publication, books)) return false;
+          spellClasses(record.data).filter(entry => this.sourceBooks.allows(entry.source ?? record.publication, books)).forEach(entry => classes.add(entry.name));
+          if (typeof record.data['level'] === 'number') levels.add(record.data['level']);
+          SPELL_SCHOOLS.filter(school => matchesSpellSchool(record.data['school'], [school.value])).forEach(school => schools.add(school.value));
           return false;
         });
-        if (isCurrent()) this.classNames.set([...classes].sort());
+        if (isCurrent()) {
+          this.classNames.set([...classes].sort()); this.catalogLevels.set([...levels].sort((a, b) => a - b));
+          this.catalogSchools.set(SPELL_SCHOOLS.filter(school => schools.has(school.value)));
+          this.filter.classes = this.filter.classes.filter(name => classes.has(name));
+          this.filter.levels = this.filter.levels.filter(level => levels.has(level));
+          this.filter.schools = this.filter.schools?.filter(school => schools.has(school));
+        }
       },
     );
   }
   filterChanged() { this.catalog.scheduleSearch(() => this.catalogQuery()); }
-  searchContent() { return this.catalog.search(this.catalogQuery()); }
+  async searchContent() { await this.refreshTask; return this.catalog.search(this.catalogQuery()); }
   nextPage(direction: number) { void this.catalog.nextPage(direction, this.catalogQuery()); }
   private catalogQuery(): CatalogQuery {
     const books = this.sourceBooks.selected();
     const filter = structuredClone(this.filter);
     return {
       kinds: ['spell'],
-      search: '',
+      search: filter.search,
       includes: record => this.sourceBooks.allows(record.publication, books) && matchesSpell(record, filter),
     };
   }

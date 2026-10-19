@@ -1,5 +1,5 @@
 import { newEditorId } from './editor-identity';
-import { ContentRecord, ImportRevision } from '../content/content.model';
+import { ContentRecord, ImportRevision, JsonObject, entityKey } from '../content/content.model';
 import { Entry, FeatEntity, FeatureEntity, FeatureEntryFull, OptionalFeatureEntity } from '../models/character.model';
 import { contentReference } from './editor-content-helpers';
 
@@ -10,11 +10,66 @@ export const FEATURE_TYPES: { value: FeatureType; label: string; kinds: string[]
   { value: 'OPTIONAL_FEATURE', label: 'Optional Features', kinds: ['optionalfeature'] },
 ];
 
+/** Explicit acquisition metadata only; filtering never evaluates character eligibility. */
+export function featureFilterValues(data: unknown): { classes: string[]; levels: number[] } {
+  const value = data && typeof data === 'object' ? data as Record<string, unknown> : {};
+  const classes = new Set<string>(), levels = new Set<number>();
+  const addClass = (name: unknown) => { if (typeof name === 'string' && name.trim()) classes.add(name.trim()); };
+  const addLevel = (level: unknown) => { if (typeof level === 'number' && Number.isInteger(level) && level > 0) levels.add(level); };
+  addClass(value['className']); addLevel(value['level']);
+  for (const prerequisite of Array.isArray(value['prerequisite']) ? value['prerequisite'] : []) {
+    if (!prerequisite || typeof prerequisite !== 'object') continue;
+    const level = prerequisite.level;
+    if (level && typeof level === 'object') { addLevel(level.level); addClass(level.class?.name); }
+    else addLevel(level);
+  }
+  return { classes: [...classes], levels: [...levels] };
+}
+
+export function featureFilterData(feature: FeatureEntryFull): unknown {
+  return feature.featureEntity ?? feature.featEntity ?? feature.optionalFeatureEntity;
+}
+
+export function matchesFeatureFilters(data: unknown, classes: readonly string[], levels: readonly number[]): boolean {
+  const values = featureFilterValues(data);
+  return (!classes.length || values.classes.some(name => classes.some(selected => selected.toLowerCase() === name.toLowerCase())))
+    && (!levels.length || values.levels.some(level => levels.includes(level)));
+}
+
+export function featureFilterOptions(data: unknown[]): { classes: string[]; levels: number[] } {
+  const values = data.map(featureFilterValues);
+  return { classes: [...new Set(values.flatMap(value => value.classes))].sort(), levels: [...new Set(values.flatMap(value => value.levels))].sort((a, b) => a - b) };
+}
+
+export function featureCategories(data: unknown, kind: FeatureType): string[] {
+  const value = data && typeof data === 'object' ? data as Record<string, unknown> : {};
+  const types = kind === 'FEAT' ? [value['category']] : value['featureType'];
+  const categories = (Array.isArray(types) ? types : []).filter((value): value is string => typeof value === 'string' && !!value.trim()).map(value => value.trim());
+  return categories.length ? [...new Set(categories)] : ['Other'];
+}
+
+export function featureCategoryLabel(type: string): string {
+  const labels: Record<string, string> = { O: 'Origin', G: 'General', FS: 'Fighting Style', EB: 'Epic Boon', EI: 'Eldritch Invocation', MM: 'Metamagic', AS: 'Arcane Shot', 'MV:B': 'Battle Master Maneuver', 'FS:F': 'Fighter Fighting Style', 'FS:P': 'Paladin Fighting Style', 'FS:R': 'Ranger Fighting Style' };
+  return labels[type] ?? type;
+}
+
+export function matchesFeatureCategories(data: unknown, kind: FeatureType, selected: readonly string[]): boolean {
+  return !selected.length || featureCategories(data, kind).some(type => selected.includes(type));
+}
+
 /** Existing viewer JSON can identify a feature by its snapshot field or explicit type. */
 export function featureTypeOf(feature: FeatureEntryFull): FeatureType {
   if (feature.featEntity || feature.featureType === 'FEAT') return 'FEAT';
   if (feature.optionalFeatureEntity || feature.featureType === 'OPTIONAL_FEATURE') return 'OPTIONAL_FEATURE';
   return 'CLASS_FEATURE';
+}
+
+/** Definition identity excludes the assigned source and per-instance notes/uses. */
+export function classFeatureKey(feature: FeatureEntryFull): string {
+  if (feature.contentReference) return feature.contentReference.key;
+  const data = feature.featureEntity;
+  const kind = data?.subclassShortName ? 'subclassFeature' : 'classFeature';
+  return entityKey(kind, { name: feature.name, source: feature.source, ...data } as unknown as JsonObject);
 }
 
 export function featureEntries(feature: FeatureEntryFull): Entry[] {

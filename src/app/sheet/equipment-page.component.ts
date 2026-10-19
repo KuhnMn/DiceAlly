@@ -1,3 +1,5 @@
+import { compareSearchMatches, rankSearchResults } from '../search-ranking';
+import { ListControlsComponent } from '../list-controls.component';
 import { SheetListLayoutComponent } from './sheet-list-layout.component';
 import { ItemRuleTagComponent } from './item-rule-tag.component';
 import { SheetDetailDialogComponent } from './sheet-detail-dialog.component';
@@ -18,7 +20,7 @@ import { CharacterStore } from '../stores/character.store';
 
 @Component({
   selector: 'app-equipment-page',
-  imports: [SheetListLayoutComponent, ItemRuleTagComponent, SheetDetailDialogComponent, HorizontalRowDirective, RuleDetailsComponent, ItemCatalogComponent, UiIconComponent, CommonModule, FormsModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [ListControlsComponent, SheetListLayoutComponent, ItemRuleTagComponent, SheetDetailDialogComponent, HorizontalRowDirective, RuleDetailsComponent, ItemCatalogComponent, UiIconComponent, CommonModule, FormsModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: item-flash 1.6s ease-out;
@@ -56,7 +58,7 @@ export class EquipmentPageComponent {
     this.inventoryRevision();
     const query = this.searchQuery().trim().toLowerCase();
     const filter = this.inventoryFilter();
-    return this.inventory().filter(item => item.name.toLowerCase().includes(query) && (filter === 'all' || filter === 'equipped' && item.isEquipped || filter === 'attuned' && item.isAttuned));
+    return rankSearchResults(this.inventory().filter(item => item.name.toLowerCase().includes(query) && (filter === 'all' || filter === 'equipped' && item.isEquipped || filter === 'attuned' && item.isAttuned)), query, item => item.name);
   });
   readonly inventoryGroups = computed(() => {
     const groups = new Map<string, InventoryItem[]>();
@@ -67,7 +69,7 @@ export class EquipmentPageComponent {
       groups.set(label, entries);
     }
     return [...groups].map(([label, items]) => ({ label, items }))
-      .sort((a, b) => a.label.localeCompare(b.label));
+      .sort((a, b) => compareSearchMatches(a.items[0].name, b.items[0].name, this.searchQuery()) || a.label.localeCompare(b.label));
   });
   itemKey(item: InventoryItem) { return 'item-' + (item.editorId ?? this.helpers.sourceId(item.name + '-' + (item.source ?? ''))); }
   private readonly dialogs = inject(AppDialogService);

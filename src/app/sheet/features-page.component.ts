@@ -1,3 +1,8 @@
+import { compareSearchMatches } from '../search-ranking';
+import { FEATURE_TYPES, FeatureType, featureCategories, featureCategoryLabel, matchesFeatureCategories } from '../editor/feature-selection';
+import { FeatureFiltersComponent } from '../feature-filters.component';
+import { featureFilterData, featureFilterOptions, matchesFeatureFilters } from '../editor/feature-selection';
+import { ListControlsComponent } from '../list-controls.component';
 import { SheetListLayoutComponent } from './sheet-list-layout.component';
 import { SheetDetailDialogComponent } from './sheet-detail-dialog.component';
 import { UiIconComponent } from '../ui-icon.component';
@@ -14,7 +19,7 @@ import { CharacterStore } from '../stores/character.store';
 
 @Component({
   selector: 'app-features-page',
-  imports: [SheetListLayoutComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [FeatureFiltersComponent, ListControlsComponent, SheetListLayoutComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: feature-flash 1.6s ease-out;
@@ -65,7 +70,7 @@ import { CharacterStore } from '../stores/character.store';
       </div>
 
       @if (species()) {
-        <h3 class="text-xl font-bold mb-3 mt-6">Species</h3>
+        <h3 class="text-lg font-bold mb-2 mt-4">Species</h3>
         <div
           id="species-section"
           class="mb-4 sm:mb-8 border-2 border-rose rounded-lg px-3 py-2 sm:p-4 bg-surface-container"
@@ -151,26 +156,16 @@ import { CharacterStore } from '../stores/character.store';
           }
         </div>
       }
-      <h3 class="text-xl font-bold mb-3 mt-6">Features</h3>
+      <h3 class="text-lg font-bold mb-2 mt-4">Features</h3>
+      <nav appHorizontalRow aria-label="Feature views" class="mb-3 flex flex-wrap gap-2">
+        @for (view of featureViews; track view.value) {
+          <button type="button" (click)="setFeatureView(view.value)" [attr.aria-pressed]="featureTypeFilter() === view.value"
+            [class.bg-blue-container]="featureTypeFilter() === view.value" [class.text-on-blue-container]="featureTypeFilter() === view.value"
+            class="min-h-11 rounded-lg border border-outline-variant px-3 py-1 text-sm">{{ view.label }}</button>
+        }
+      </nav>
 
       <div class="mb-3 space-y-2">
-        <div appHorizontalRow class="flex flex-wrap items-center gap-2 mb-3 sm:mb-4">
-          <span class="text-sm font-semibold text-on-surface">Type:</span>
-          @for (type of featureTypes(); track type) {
-            <button
-              type="button"
-              class="px-3 py-1 text-sm border rounded-full"
-              [class.bg-blue]="featureTypeFilter() === type"
-              [attr.aria-pressed]="featureTypeFilter() === type"
-              [class.text-on-blue]="featureTypeFilter() === type"
-              [class.border-blue]="featureTypeFilter() === type"
-              [class.border-outline-variant]="featureTypeFilter() !== type"
-              (click)="featureTypeFilter.set(type)"
-            >
-              {{ type.toLowerCase().replaceAll('_', ' ') | titlecase }}
-            </button>
-          }
-        </div>
         <div>
         @if (characterData()?.character; as character) {
           <app-feature-source-picker [character]="character" [sources]="pickerSources()"
@@ -181,20 +176,23 @@ import { CharacterStore } from '../stores/character.store';
         </div>
       </div>
 
-      <label class="mb-3 block text-sm font-semibold">Search features
-        <input type="search" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" placeholder="Search by name" class="mt-1 min-h-11 w-full rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-base font-normal sm:text-sm" />
-      </label>
+      <app-list-controls label="Search features" [query]="searchQuery()" (queryChange)="searchQuery.set($event)"
+        [filterCount]="activeFilterCount()" (cleared)="clearFilters()">
+        <app-feature-filters [kind]="featureTypeFilter() === 'FEAT' ? 'FEAT' : featureTypeFilter() === 'OPTIONAL_FEATURE' ? 'OPTIONAL_FEATURE' : 'CLASS_FEATURE'" [showClasses]="false" [levels]="featureFilterOptions().levels"
+          [categories]="featureCategoryOptions()" [selectedCategories]="featureCategoriesFilter()" (selectedCategoriesChange)="featureCategoriesFilter.set($event)"
+          [selectedLevels]="featureLevels()" (selectedLevelsChange)="featureLevels.set($event)" />
+      </app-list-controls>
       <ng-template #featureTags let-feature>
         <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded">{{ helpers.featureTypeLabel(feature).replaceAll('_', ' ') | titlecase }}</span>
         @if (helpers.featureTypeLabel(feature) === 'CLASS_FEATURE') {
           <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">Level {{ helpers.featureLevel(feature) }}</span>
         }
         @if (helpers.featureTypeLabel(feature) === 'FEAT' && feature.featEntity?.category) {
-          <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded" title="Feat category">{{ feature.featEntity.category }}</span>
+          <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded" title="Feat category">{{ categoryLabel(feature.featEntity.category) }}</span>
         }
         @if (helpers.featureTypeLabel(feature) === 'OPTIONAL_FEATURE') {
           @for (type of feature.optionalFeatureEntity?.featureType ?? []; track $index) {
-            <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded" title="Optional feature type">{{ type }}</span>
+            <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded" title="Optional feature type">{{ categoryLabel(type) }}</span>
           }
         }
       </ng-template>
@@ -306,8 +304,20 @@ export class FeaturesPageComponent {
   expandedItems = signal<Set<string>>(new Set());
 
   readonly searchQuery = signal('');
-  featureTypeFilter = signal<'ALL' | 'CLASS_FEATURE' | 'FEAT' | 'OPTIONAL_FEATURE'>('ALL');
+  featureTypeFilter = signal<'ALL' | FeatureType>('CLASS_FEATURE');
+  readonly featureViews = FEATURE_TYPES;
+  readonly categoryLabel = featureCategoryLabel;
   featureSourceFilter = signal<string>('ALL');
+  readonly featureCategoriesFilter = signal<string[]>([]);
+  readonly featureLevels = signal<number[]>([]);
+  readonly featureFilterOptions = computed(() => featureFilterOptions(this.featuresInContext().map(featureFilterData)));
+  readonly featureCategoryOptions = computed(() => [...new Set(this.featuresInContext().flatMap(feature => featureCategories(featureFilterData(feature), this.featureTypeFilter() === 'FEAT' ? 'FEAT' : 'OPTIONAL_FEATURE')))].sort());
+  private readonly featuresInContext = computed(() => (this.characterData()?.features ?? []).filter(feature => (this.featureTypeFilter() === 'ALL' || this.helpers.featureTypeLabel(feature) === this.featureTypeFilter()) && (this.featureSourceFilter() === 'ALL' || feature.featureSourceName === this.featureSourceFilter())));
+  readonly activeFilterCount = computed(() => this.featureTypeFilter() === 'CLASS_FEATURE' ? this.featureLevels().length : this.featureCategoriesFilter().length);
+  clearFilters() {
+    this.searchQuery.set(''); this.featureCategoriesFilter.set([]); this.featureLevels.set([]);
+  }
+
 
   species = computed(() => this.characterData()?.species ?? null);
   readonly pickerSources = computed(() => this.characterData()?.character?.featureSources?.filter(source => source.isGeneralFeatureSource) ?? []);
@@ -322,8 +332,10 @@ export class FeaturesPageComponent {
       if (targetId === 'species-section') this.expandedItems.set(new Set(['species']));
       if (targetId.startsWith('feature-')) {
         this.searchQuery.set('');
-        this.featureTypeFilter.set('ALL');
+        const target = this.characterData()?.features?.find(feature => 'feature-' + (feature.editorId ?? this.helpers.sourceId(feature.name + '-' + (feature.source ?? ''))) === targetId);
+        if (target) this.setFeatureView(this.helpers.featureTypeLabel(target) as FeatureType);
         this.featureSourceFilter.set('ALL');
+        this.featureCategoriesFilter.set([]); this.featureLevels.set([]);
         this.expandedItems.set(new Set([targetId]));
       }
       if (typeof document === 'undefined') return;
@@ -355,12 +367,15 @@ export class FeaturesPageComponent {
     const items = this.characterData()?.features ?? [];
     const typeFilter = this.featureTypeFilter();
     const sourceFilter = this.featureSourceFilter();
+    const levels = this.featureLevels(), categories = this.featureCategoriesFilter();
     const filtered = items.filter((feature) => {
       const matchesType = typeFilter === 'ALL' || this.helpers.featureTypeLabel(feature) === typeFilter;
       const matchesSource = sourceFilter === 'ALL' || feature.featureSourceName === sourceFilter;
-      return matchesType && matchesSource && feature.name.toLowerCase().includes(this.searchQuery().trim().toLowerCase());
+      return matchesType && matchesSource && (typeFilter === 'CLASS_FEATURE' ? matchesFeatureFilters(featureFilterData(feature), [], levels) : typeFilter === 'ALL' || matchesFeatureCategories(featureFilterData(feature), typeFilter, categories)) && feature.name.toLowerCase().includes(this.searchQuery().trim().toLowerCase());
     });
     return [...filtered].sort((a, b) => {
+      const relevance = compareSearchMatches(a.name, b.name, this.searchQuery());
+      if (relevance) return relevance;
       const typeA = this.helpers.featureTypeOrder(a);
       const typeB = this.helpers.featureTypeOrder(b);
       if (typeA !== typeB) return typeA - typeB;
@@ -385,9 +400,14 @@ export class FeaturesPageComponent {
       groups.set(label, entries);
     }
     return [...groups].map(([label, features]) => ({ label, features }))
-      .sort((a, b) => this.helpers.featureTypeOrder(a.features[0]) - this.helpers.featureTypeOrder(b.features[0])
+      .sort((a, b) => compareSearchMatches(a.features[0].name, b.features[0].name, this.searchQuery())
+        || this.helpers.featureTypeOrder(a.features[0]) - this.helpers.featureTypeOrder(b.features[0])
         || a.label.localeCompare(b.label, undefined, { numeric: true }));
   });
+
+  setFeatureView(type: FeatureType) {
+    this.featureTypeFilter.set(type); this.featureLevels.set([]); this.featureCategoriesFilter.set([]);
+  }
 
   toggleExpanded(id: string) {
     this.expandedItems.set(this.isExpanded(id) ? new Set() : new Set([id]));

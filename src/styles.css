@@ -1105,3 +1105,15 @@ html:has(.app-container.sheet-layout) { scrollbar-gutter: stable; }
     padding-bottom: 0;
   }
 }
+
+/* Shared preparation area in the viewer and creator, using the current theme. */
+.spell-preparation-view {
+  --spell-view-accent: var(--md-extended-color-custom-color5-color);
+  background: color-mix(in srgb, var(--spell-view-accent) 10%, var(--md-sys-color-surface-container-highest));
+  box-shadow: inset 3px 0 0 var(--spell-view-accent);
+  border-radius: .5rem;
+  padding: .5rem;
+}
+.spell-preparation-view[data-spell-view="KNOWN"] {
+  --spell-view-accent: var(--md-extended-color-custom-color2-color);
+}

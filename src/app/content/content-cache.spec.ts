@@ -12,6 +12,30 @@ function row(index: number): ContentRecord {
   return { key: String(index).padStart(5, '0'), kind: 'class', name: `Synthetic ${index}`, publication: 'TEST', file: 'test.json', data: {}, links: [] };
 }
 describe('IndexedDB content cache', () => {
+  it('ranks matches across cursor pages and categories before pagination, retaining filters and totals', async () => {
+    const cache = new IndexedDbContentCache(), imported = revision('search-ranking');
+    const records: ContentRecord[] = [
+      ...Array.from({ length: 65 }, (_, i) => ({ ...row(i), name: `Ascended Longsword ${i}` })),
+      { ...row(900), kind: 'item', name: 'Longsword' },
+      { ...row(901), kind: 'item', name: 'Longsword +1' },
+      { ...row(902), kind: 'item', name: 'Longsword Ward' },
+      { ...row(903), kind: 'item', name: 'Dagger', publication: 'Longsword' },
+      { ...row(904), kind: 'item', name: 'Longsword', publication: 'HIDDEN' },
+    ];
+    await cache.stage(imported); await cache.put(imported.id, records);
+    const allowed = (record: ContentRecord) => record.publication !== 'HIDDEN';
+    const first = await cache.searchCategory(imported.id, ['class', 'item'], ' Longsword ', 0, 2, allowed);
+    const second = await cache.searchCategory(imported.id, ['class', 'item'], 'longsword', 2, 2, allowed);
+    const all = await cache.searchCategory(imported.id, ['class', 'item'], 'longsword', 0, 100, allowed);
+    expect(first.total).toBe(69); expect(second.total).toBe(69);
+    expect(first.records.map(record => record.name)).toEqual(['Longsword', 'Longsword +1']);
+    expect(second.records[0].name).toBe('Longsword Ward');
+    expect([...first.records, ...second.records]).toEqual(all.records.slice(0, 4));
+    expect(all.records.at(-1)!.name).toBe('Dagger');
+    expect(await cache.searchCategory(imported.id, ['class', 'item'], 'longsword', 0, 0, allowed)).toEqual({ records: [], total: 69 });
+    const browse = await cache.searchCategory(imported.id, ['class', 'item'], '', 0, 2, allowed);
+    expect(browse.records.map(record => record.key)).toEqual([row(0).key, row(1).key]);
+  });
   function lockManager(): LockManager {
     const held = new Set<string>();
     return { request: async (name: string, _options: LockOptions, callback: (lock: Lock | null) => Promise<unknown>) => {

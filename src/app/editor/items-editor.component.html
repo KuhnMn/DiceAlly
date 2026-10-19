@@ -7,34 +7,35 @@
     </div>
   </div>
   <div class="space-y-2" [hidden]="!listVisible">
-    <label class="mb-3 block text-sm font-semibold">Search items
-      <input type="search" class="editor-input mt-1" name="selected-item-search" [(ngModel)]="listSearch" placeholder="Search by name" />
-    </label>
+
+    <app-list-controls label="Search items" searchName="selected-item-search" [(query)]="listSearch" [hasFilters]="false" />
+    <div class="rounded-lg bg-surface-container">
     @for (item of filteredItems; track item; let i = $index) {
-      <article class="feature-card rounded-lg border-2 border-secondary bg-surface-container p-2.5">
-        <div class="entry-header">
-          <button type="button" class="flex-1 min-w-0 text-left" (click)="toggle(item)" [attr.aria-expanded]="expanded.has(item)">
-            <span class="text-sm font-semibold">{{ item.name }} @if (item.allowMultiples) { × {{ item.count ?? 1 }} }</span>
-            <span class="block text-xs text-on-surface-variant">{{ item.source }}</span>
-          </button>
-          <app-combat-bookmark [sheet]="sheet()" [resource]="item" type="ITEM" (edited)="change()" />
-          <button type="button" class="secondary-button compact-button" (click)="toggle(item)">{{ expanded.has(item) ? 'Close' : 'Edit' }}</button>
-          <button type="button" class="secondary-button compact-button icon-button" [attr.aria-label]="'Remove ' + item.name" (click)="remove(item)"><app-ui-icon name="close" /></button>
-        </div>
+      <app-editor-entry-row [sheet]="sheet()" [resource]="item" [name]="item.name" [expanded]="expanded.has(item)" (detailsRequested)="toggle(item)" (removeRequested)="remove(item)" [notesCount]="item.notes?.length || 0" [usesCount]="item.uses?.length || 0">
+        <ng-container entry-metadata>
+          @if (item.allowMultiples) { <span class="shrink-0 rounded bg-secondary-container px-1 text-on-secondary-container" [attr.aria-label]="'Quantity ' + (item.count ?? 1)">&times; {{ item.count ?? 1 }}</span> }
+          @if (item.source) { <span class="min-w-0 truncate rounded bg-surface-container-highest px-1 text-on-surface" [title]="item.source">{{ item.source }}</span> }
+        </ng-container>
         @if (expanded.has(item)) {
-          <div class="mt-3 pt-3 border-t border-outline-variant space-y-3">
+          <div class="space-y-3">
+
+
             <div class="flex flex-wrap items-end gap-3">
               @if (item.isDummy) { <label class="flex-1 min-w-36"><span class="field-label">Name</span><input class="editor-input" [(ngModel)]="item.name" (ngModelChange)="change()" [name]="'item-name-' + i" /></label> }
               <label class="flex items-center gap-2 py-2"><input type="checkbox" [ngModel]="item.allowMultiples ?? false" (ngModelChange)="setStackable(item, $event)" [name]="'item-stackable-' + i" /> Stackable</label>
               @if (item.allowMultiples) { <label><span class="field-label">Quantity</span><input class="editor-input !w-24" type="number" min="0" step="1" [ngModel]="item.count ?? 1" (ngModelChange)="setCount(item, $event)" [name]="'item-count-' + i" /></label> }
             </div>
             @if (item.isDummy) { <label class="block"><span class="field-label">Description</span><textarea class="editor-input" rows="3" [name]="'item-description-' + i" [ngModel]="description(item)" (ngModelChange)="setDescription(item, $event)" placeholder="Describe this item…"></textarea></label> }
-            @if (entries(item).length) { <app-description-dialog [title]="item.name" [label]="item.isDummy ? 'Description Preview' : 'Description'"><div class="p-2"><app-entry-renderer [entries]="entries(item)" /></div></app-description-dialog> }
-            <app-entry-annotations-editor [entry]="item" (edited)="change()" />
+
+            <app-entry-annotations-editor [entry]="item" (edited)="change()">
+              <app-combat-bookmark annotation-combat [sheet]="sheet()" [resource]="item" type="ITEM" (edited)="change()" />
+              <ng-container annotation-description>@if (entries(item).length) { <app-description-dialog annotation-description [dense]="true" [title]="item.name" [label]="item.isDummy ? 'Description Preview' : 'Description'"><div class="p-2"><app-entry-renderer [entries]="entries(item)" /></div></app-description-dialog> }</ng-container>
+            </app-entry-annotations-editor>
           </div>
         }
-      </article>
+      </app-editor-entry-row>
     } @empty { <p class="text-sm text-on-surface-variant py-2">{{ items.length ? 'No items match this search.' : 'No items selected yet.' }}</p> }
+    </div>
   </div>
 </section>
 @if (catalogOpen) {

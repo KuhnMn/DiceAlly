@@ -6,11 +6,13 @@ import { ExportedCharacter, FeatureSource } from '../models/character.model';
 import { CharacterHelpersService } from '../sheet/character-helpers.service';
 import { featureSourceStats } from './feature-source-stats';
 import { SearchableSelectComponent } from './searchable-select.component';
+import { UiIconComponent } from '../ui-icon.component';
+import { SpellSourceCount } from './spell-selection';
 
 /** One source selector: cards for list filtering, compact searchable dropdowns for assignment. */
 @Component({
   selector: 'app-feature-source-picker',
-  imports: [HorizontalRowDirective, NgClass, SearchableSelectComponent, SourceStatsComponent],
+  imports: [HorizontalRowDirective, NgClass, SearchableSelectComponent, SourceStatsComponent, UiIconComponent],
   styleUrl: './editor.css',
   template: `
     <div class="source-picker" [class.selector-panel]="!compact()" [class.mb-3]="mode() === 'cards'" [attr.data-tone]="tone()">
@@ -34,8 +36,19 @@ import { SearchableSelectComponent } from './searchable-select.component';
             [ngClass]="value() === option.value ? activeClasses : 'border-outline-variant bg-surface-container'"
             [attr.aria-pressed]="value() === option.value" (click)="selected.emit(option.value)">
             <span class="font-semibold">{{ option.label }}</span>
-            @if (option.source; as source) {
-              <app-source-stats [stats]="stats(source)" />
+            @if (showStats()) {
+              @if (option.source; as source) { <app-source-stats [stats]="stats(source)" /> }
+            }
+            @if (spellCounts(); as counts) {
+              @if (counts[option.value]; as count) {
+                <span class="mt-1 flex items-center justify-center gap-3 text-xs">
+                  <span class="inline-flex items-center gap-1" role="img" [attr.aria-label]="count.preparedCantrips + ' prepared cantrips'" title="Prepared cantrips"><app-ui-icon name="copyright" /><span class="font-semibold">{{ count.preparedCantrips }}</span></span>
+                  <span class="inline-flex items-center gap-1" role="img" [attr.aria-label]="count.prepared + ' prepared spells'" title="Prepared spells (level 1+)"><app-ui-icon name="clipboard-check" /><span class="font-semibold">{{ count.prepared }}</span></span>
+                  @if (count.spellbook !== undefined) {
+                    <span class="inline-flex items-center gap-1" role="img" [attr.aria-label]="count.spellbook + ' spells in spellbook'" title="Spellbook"><app-ui-icon name="book" /><span class="font-semibold">{{ count.spellbook }}</span></span>
+                  }
+                </span>
+              }
             }
           </button>
         }
@@ -62,6 +75,8 @@ export class FeatureSourcePickerComponent {
   readonly value = input('');
   readonly heading = input('Source');
   readonly tone = input<'features' | 'spells'>('features');
+  readonly spellCounts = input<Record<string, SpellSourceCount> | null>(null);
+  readonly showStats = input(true);
   readonly selected = output<string>();
   readonly manageSources = output<void>();
   private readonly helpers = inject(CharacterHelpersService);

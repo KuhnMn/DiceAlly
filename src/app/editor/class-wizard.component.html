@@ -30,7 +30,7 @@
             @if (selection.classKey) {
               <label class="block mt-2"><span class="field-label">Matching subclass</span><app-searchable-select [id]="'wizard-subclass-' + position" label="Subclass" [options]="subclassChoices(selection)" [value]="selection.subclassKey ?? ''" (selected)="selection.subclassKey = $event || undefined; rebuild()" /></label>
               <div class="grid sm:grid-cols-2 gap-2 mt-2">
-                <label><span class="field-label">Prefill Known spell list</span><app-searchable-select label="Known spell list" [options]="spellListChoices" [value]="selection.spellList ?? ''" (selected)="selection.spellList = $event; rebuild()" /></label>
+                <label><span class="field-label">Prefill Spelllist</span><app-searchable-select label="Spelllist" [options]="spellListChoices" [value]="selection.spellList ?? ''" (selected)="selection.spellList = $event; rebuild()" /></label>
                 <label class="flex items-center gap-2 text-sm"><input type="checkbox" [name]="'wizard-spellbook-' + position" [(ngModel)]="selection.useSpellbook" (ngModelChange)="rebuild()" />Use a spellbook</label>
               </div>
             }

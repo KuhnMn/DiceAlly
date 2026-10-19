@@ -1,3 +1,5 @@
+import { rankSearchResults } from '../search-ranking';
+import { ListControlsComponent } from '../list-controls.component';
 import { SheetListLayoutComponent } from './sheet-list-layout.component';
 import { SheetDetailDialogComponent } from './sheet-detail-dialog.component';
 import { HorizontalRowDirective } from './horizontal-row.directive';
@@ -18,7 +20,7 @@ import { CharacterStore } from '../stores/character.store';
 
 @Component({
   selector: 'app-monsters-page',
-  imports: [SheetListLayoutComponent, SheetDetailDialogComponent, HorizontalRowDirective, UiIconComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent, MonsterStatBlockComponent],
+  imports: [ListControlsComponent, SheetListLayoutComponent, SheetDetailDialogComponent, HorizontalRowDirective, UiIconComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent, MonsterStatBlockComponent],
   styles: [`
     .flash-highlight {
       animation: monster-flash 1.6s ease-out;
@@ -51,7 +53,7 @@ export class MonstersPageComponent extends MonsterPresentation {
   readonly visibleMonsters = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
     const filter = this.monsterFilter();
-    return this.monsters().filter(monster => (monster.name ?? '').toLowerCase().includes(query) && (filter === 'all' || filter === 'companions' && monster.hpEnabled || filter === 'reference' && !monster.hpEnabled));
+    return rankSearchResults(this.monsters().filter(monster => (monster.name ?? '').toLowerCase().includes(query) && (filter === 'all' || filter === 'companions' && monster.hpEnabled || filter === 'reference' && !monster.hpEnabled)), query, monster => monster.name ?? '');
   });
   monsterKey(monster: Monster) { return 'monster-' + (monster.editorId ?? this.helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? ''))); }
   characterData = input.required<ExportedCharacter | null>();

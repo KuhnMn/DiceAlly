@@ -1,25 +1,70 @@
-<div class="feature-editor space-y-3">
-  <section class="feature-section">
+<div class="min-w-0">
+  <div appHorizontalRow role="group" aria-label="Entry tools" class="flex flex-wrap items-center gap-1.5">
+    <button type="button" class="annotation-button disabled:opacity-50" [disabled]="!annotationsEnabled()" [title]="annotationsEnabled() ? 'Edit use trackers' : 'Prepare this spell to edit uses'" [attr.aria-expanded]="activePanel === 'uses' && annotationsEnabled()" [attr.aria-pressed]="activePanel === 'uses'" [attr.aria-controls]="'uses-panel-' + i" [class.bg-secondary-container]="activePanel === 'uses'" (click)="togglePanel('uses')"><app-ui-icon name="tally" /> Uses @if (entry().uses?.length) { <span>({{ entry().uses?.length }})</span> }</button>
+    <button type="button" class="annotation-button disabled:opacity-50" [disabled]="!annotationsEnabled()" [title]="annotationsEnabled() ? 'Edit notes' : 'Prepare this spell to edit notes'" [attr.aria-expanded]="activePanel === 'notes' && annotationsEnabled()" [attr.aria-pressed]="activePanel === 'notes'" [attr.aria-controls]="'notes-panel-' + i" [class.bg-secondary-container]="activePanel === 'notes'" (click)="togglePanel('notes')"><app-ui-icon name="file" /> Notes @if (entry().notes?.length) { <span>({{ entry().notes?.length }})</span> }</button>
+    <ng-content select="[annotation-combat]" />
+    <ng-content select="[annotation-description]" />
+  </div>
+  <section class="annotation-panel" [hidden]="activePanel !== 'uses' || !annotationsEnabled()" [id]="'uses-panel-' + i" aria-label="Uses editor">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+      <h3 class="font-semibold">Uses</h3>
+      <button type="button" class="annotation-button" aria-label="Add use tracker" (click)="addUses(entry())"><app-ui-icon name="plus" /> Counter</button>
+    </div>
+    <div class="space-y-2">
+      @for (uses of entry().uses ?? []; track uses; let u = $index) {
+        <div class="rounded border border-outline-variant bg-surface-container-lowest p-1.5">
+          <div class="grid min-w-0 grid-cols-[minmax(0,1fr)_4rem_2rem] items-end gap-1.5 sm:grid-cols-[minmax(0,1fr)_4rem_minmax(8rem,1fr)_2rem]">
+            <label class="min-w-0">
+              <span class="field-label">Label</span>
+              <input class="editor-input" [name]="'uses-label-' + i + '-' + u" [(ngModel)]="uses.tag"
+                (ngModelChange)="change()" placeholder="Uses" />
+            </label>
+            <label class="min-w-0">
+              <span class="field-label">Total</span>
+              <input class="editor-input text-center" [name]="'uses-total-' + i + '-' + u" type="number"
+                min="0" required step="1" [(ngModel)]="uses.totalFreeUses" (ngModelChange)="change()" />
+            </label>
+            <label class="col-span-2 row-start-2 min-w-0 sm:col-span-1 sm:row-start-auto">
+              <span class="field-label">Recovery</span>
+              <span class="relative block"><app-recovery-indicator class="pointer-events-none absolute inset-y-0 left-2 flex items-center" [condition]="uses.freeUsesRegainCondition" /><select class="editor-input !pl-8" [name]="'uses-recovery-' + i + '-' + u"
+                [ngModel]="uses.freeUsesRegainCondition || 'LONG_REST'"
+                (ngModelChange)="uses.freeUsesRegainCondition = $event; change()">
+                @for (option of recoveryOptions; track option.value) {
+                  <option [value]="option.value">{{ option.label }}</option>
+                }
+              </select></span>
+            </label>
+            <button type="button" class="annotation-remove col-start-3 row-start-1 sm:col-start-4" aria-label="Remove use tracker"
+              (click)="removeUses(entry(), u)"><app-ui-icon name="close" /></button>
+          </div>
+          @if ((uses.usedFreeUses ?? 0) > (uses.totalFreeUses ?? 1)) {
+            <p class="text-xs text-on-surface-variant mt-1">The existing used count exceeds this total and will be kept unchanged.</p>
+          }
+        </div>
+      }
+    </div>
+  </section>
+  <section class="annotation-panel" [hidden]="activePanel !== 'notes' || !annotationsEnabled()" [id]="'notes-panel-' + i" aria-label="Notes editor">
     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
       <h3 class="font-semibold">Notes</h3>
-      <button type="button" class="secondary-button compact-button" (click)="addNote(entry())">Add Heading</button>
+      <button type="button" class="annotation-button" aria-label="Add note group" (click)="addNote(entry())"><app-ui-icon name="plus" /> Note group</button>
     </div>
     <div class="space-y-2">
       @for (group of entry().notes ?? []; track group; let n = $index) {
-        <div class="note-group rounded border border-tertiary p-2">
-          <div class="flex gap-2 mb-1">
+        <div class="note-group rounded border border-outline-variant p-1.5">
+          <div class="flex items-center gap-1 mb-1">
             <label class="flex-1 min-w-0">
               <span class="sr-only">Note Heading</span>
               <input class="editor-input" [name]="'note-label-' + i + '-' + n" [(ngModel)]="group.tag"
                 (ngModelChange)="change()" placeholder="Notes" />
             </label>
-            <button type="button" class="secondary-button icon-button" aria-label="Remove note group"
+            <button type="button" class="annotation-remove" aria-label="Remove note group"
               (click)="removeNote(entry(), n)"><app-ui-icon name="close" /></button>
           </div>
-          <label class="flex items-center gap-2 text-xs text-on-surface-variant mb-2">
+          <label class="flex items-center gap-1 text-[11px] text-on-surface-variant mb-1">
             <input type="checkbox" [name]="'note-editable-' + i + '-' + n" [ngModel]="group.isEditable ?? true"
               (ngModelChange)="group.isEditable = $event; change()" />
-            Editable on the character sheet
+            Editable on sheet
           </label>
           <div class="note-entries" data-horizontal-row role="region" [attr.aria-label]="(group.tag || 'Notes') + ' entries'" tabindex="0">
             @for (note of group.notes; track $index; let e = $index) {
@@ -31,7 +76,7 @@
               </span>
             }
             @if (editingNoteGroup !== group) {
-              <button type="button" class="secondary-button compact-button shrink-0 whitespace-nowrap" (click)="addNoteEntry(group)">+ Add Entry</button>
+              <button type="button" class="annotation-button shrink-0 whitespace-nowrap" (click)="addNoteEntry(group)"><app-ui-icon name="plus" /> Entry</button>
             }
           </div>
           @if (editingNoteGroup === group) {
@@ -43,52 +88,12 @@
                   (blur)="editingNoteGroup === group && commitNote()" (keydown)="noteKeydown($event)"></textarea>
               </label>
               <div class="flex gap-1">
-                <button type="button" class="secondary-button compact-button" [disabled]="!noteDraft.trim()"
+                <button type="button" class="annotation-button" [disabled]="!noteDraft.trim()"
                   (mousedown)="$event.preventDefault()" (click)="commitNote()">Save Entry</button>
-                <button type="button" class="secondary-button compact-button"
+                <button type="button" class="annotation-button"
                   (mousedown)="$event.preventDefault()" (click)="cancelNote()">Cancel</button>
               </div>
             </div>
-          }
-        </div>
-      }
-    </div>
-  </section>
-
-  <section class="feature-section">
-    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-      <h3 class="font-semibold">Uses</h3>
-      <button type="button" class="secondary-button compact-button" (click)="addUses(entry())">Add Uses</button>
-    </div>
-    <div class="space-y-2">
-      @for (uses of entry().uses ?? []; track uses; let u = $index) {
-        <div class="rounded border border-outline-variant bg-surface-container-lowest p-2">
-          <div class="flex items-end flex-wrap gap-2">
-            <label class="flex-1 min-w-24">
-              <span class="field-label">Label</span>
-              <input class="editor-input" [name]="'uses-label-' + i + '-' + u" [(ngModel)]="uses.tag"
-                (ngModelChange)="change()" placeholder="Uses" />
-            </label>
-            <label class="w-20">
-              <span class="field-label">Total</span>
-              <input class="editor-input text-center" [name]="'uses-total-' + i + '-' + u" type="number"
-                min="0" required step="1" [(ngModel)]="uses.totalFreeUses" (ngModelChange)="change()" />
-            </label>
-            <label class="flex-1 min-w-32">
-              <span class="field-label">Recovery</span>
-              <span class="relative block"><app-recovery-indicator class="pointer-events-none absolute inset-y-0 left-2 flex items-center" [condition]="uses.freeUsesRegainCondition" /><select class="editor-input !pl-12" [name]="'uses-recovery-' + i + '-' + u"
-                [ngModel]="uses.freeUsesRegainCondition || 'LONG_REST'"
-                (ngModelChange)="uses.freeUsesRegainCondition = $event; change()">
-                @for (option of recoveryOptions; track option.value) {
-                  <option [value]="option.value">{{ option.label }}</option>
-                }
-              </select></span>
-            </label>
-            <button type="button" class="secondary-button icon-button" aria-label="Remove use tracker"
-              (click)="removeUses(entry(), u)"><app-ui-icon name="close" /></button>
-          </div>
-          @if ((uses.usedFreeUses ?? 0) > (uses.totalFreeUses ?? 1)) {
-            <p class="text-xs text-on-surface-variant mt-1">The existing used count exceeds this total and will be kept unchanged.</p>
           }
         </div>
       }

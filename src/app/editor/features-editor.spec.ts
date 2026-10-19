@@ -18,6 +18,14 @@ import { mapContent } from '../content/content-adapter';
 import { DEFAULT_CONTENT_SOURCE, ImportRevision, sourceIdentity } from '../content/content.model';
 import { RestService } from '../services/rest.service';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
+import { createFeatureEntry, featureFilterValues, matchesFeatureFilters } from './feature-selection';
+import { FeaturesPageComponent } from '../sheet/features-page.component';
+
+function featureSheet() {
+  const sheet = emptyBasicCharacter();
+  sheet.character!.featureSources = ['General', 'First'].map(name => ({ name, isGeneralFeatureSource: true }));
+  return sheet;
+}
 
 async function catalog() {
   const source = { ...DEFAULT_CONTENT_SOURCE, owner: 'feature-editor-test' };
@@ -38,9 +46,100 @@ async function catalog() {
 describe('Feature editor', () => {
   beforeEach(() => TestBed.configureTestingModule({ imports: [FeaturesEditorComponent], providers: [provideRouter([])] }));
 
+  it('requires a real feature source for catalog and custom additions', async () => {
+    const data = await catalog(), fixture = TestBed.createComponent(FeaturesEditorComponent), sheet = emptyBasicCharacter();
+    fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
+    const editor = fixture.componentInstance; await editor.refreshContent();
+    const record = data.records.find(record => record.kind === 'classFeature')!;
+    editor.customName = 'Custom'; editor.add(record); editor.addCustom();
+    expect(sheet.features ?? []).toHaveLength(0);
+    sheet.character!.featureSources = [{ name: 'General', isGeneralFeatureSource: true }];
+    for (const source of ['', 'Missing']) {
+      editor.selectedSource = source; editor.add(record); editor.addCustom();
+      expect(sheet.features ?? []).toHaveLength(0);
+    }
+    editor.selectedSource = 'General'; editor.add(record); editor.addCustom();
+    expect(sheet.features).toHaveLength(2);
+    expect(sheet.features!.every(feature => feature.featureSourceName === 'General')).toBe(true);
+    editor.openCatalog(); fixture.changeDetectorRef.markForCheck(); fixture.detectChanges();
+    const picker = fixture.debugElement.queryAll(By.directive(FeatureSourcePickerComponent))
+      .map(element => element.componentInstance as FeatureSourcePickerComponent).find(component => component.mode() === 'dropdown')!;
+    expect(picker.options.some(option => option.value === '')).toBe(false);
+  });
+
+  it('keeps source assignment in the Add dialog only and preserves existing assignments', async () => {
+    const data = await catalog(), fixture = TestBed.createComponent(FeaturesEditorComponent), sheet = featureSheet();
+    sheet.character!.featureSources = ['First', 'Second', 'Third'].map(name => ({ name, isGeneralFeatureSource: true }));
+    const record = data.records.find(record => record.kind === 'subclassFeature')!;
+    const first = createFeatureEntry(record, data.revision, { sourceName: 'First' });
+    const second = createFeatureEntry(record, data.revision, { sourceName: 'Second' });
+    delete second.contentReference;
+    const unassigned = createFeatureEntry(record, data.revision);
+    sheet.features = [first, second, unassigned];
+    fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
+    const editor = fixture.componentInstance;
+    editor.toggle(first); fixture.changeDetectorRef.markForCheck(); fixture.detectChanges();
+    const dropdowns = () => fixture.debugElement.queryAll(By.directive(FeatureSourcePickerComponent))
+      .map(element => element.componentInstance as FeatureSourcePickerComponent).filter(component => component.mode() === 'dropdown');
+    expect(dropdowns()).toHaveLength(0);
+    editor.openCatalog(); fixture.changeDetectorRef.markForCheck(); fixture.detectChanges();
+    expect(dropdowns()).toHaveLength(1);
+    const picker = dropdowns()[0]; expect(picker.heading()).toBe('Add to Source');
+    picker.selected.emit('Third'); expect(editor.targetSource).toBe('Third');
+    expect(sheet.features!.map(feature => feature.featureSourceName)).toEqual(['First', 'Second', undefined]);
+  });
+
+  it('allows repeat feats and optional features with independent state and shared source assignments', async () => {
+    const data = await catalog(), fixture = TestBed.createComponent(FeaturesEditorComponent), sheet = featureSheet();
+    fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
+    const editor = fixture.componentInstance; await editor.refreshContent();
+    for (const [kind, type] of [['feat', 'FEAT'], ['optionalfeature', 'OPTIONAL_FEATURE']] as const) {
+      editor.selectedType = type; editor.selectedSource = 'First';
+      const record = data.records.find(record => record.kind === kind)!;
+      editor.add(record); editor.add(record);
+      const [first, second] = sheet.features!.slice(-2);
+      expect(editor.isSelected(record)).toBe(false);
+      expect(editor.hasExisting(record)).toBe(true);
+      expect(first.editorId).not.toBe(second.editorId);
+      annotationEditor(editor).addNote(first); annotationEditor(editor).addUses(first);
+      expect(second.notes).toEqual([]); expect(second.uses).toEqual([]);
+      expect(first.featureSourceName).toBe('First'); expect(second.featureSourceName).toBe('First');
+    }
+    expect(sheet.features).toHaveLength(4);
+  });
+
+  it('combines class and exact level filters in the catalog, editor and playing sheet', async () => {
+    const data = await catalog(), fixture = TestBed.createComponent(FeaturesEditorComponent), sheet = featureSheet();
+    fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
+    const editor = fixture.componentInstance; editor.sourceBooks.setSelection([]); await fixture.whenStable(); await editor.refreshContent();
+    expect(editor.catalogOptions()).toEqual({ classes: ['Fighter', 'Rogue'], levels: [1, 3], categories: [] });
+    editor.catalogClasses = ['Fighter']; editor.catalogLevels = [3]; await editor.searchContent();
+    expect(editor.results().map(record => record.name)).toEqual(['Improved Training']);
+    editor.catalogClasses = ['Fighter', 'Rogue']; editor.catalogLevels = [1]; await editor.searchContent();
+    expect(editor.results()).toHaveLength(2);
+    sheet.features = data.records.filter(record => ['classFeature', 'subclassFeature'].includes(record.kind)).map(record => createFeatureEntry(record, data.revision));
+    editor.displayedClasses = ['Fighter']; editor.displayedLevels = [3]; expect(editor.selected.map(feature => feature.name)).toEqual(['Improved Training']);
+    fixture.changeDetectorRef.markForCheck(); fixture.detectChanges();
+    const viewer = TestBed.createComponent(FeaturesPageComponent); viewer.componentRef.setInput('characterData', sheet); viewer.detectChanges();
+    viewer.componentInstance.featureLevels.set([3]); viewer.detectChanges();
+    expect(viewer.componentInstance.sortedFeatures().map(feature => feature.name)).toEqual(['Improved Training']);
+    expect(viewer.componentInstance.activeFilterCount()).toBe(1);
+    viewer.componentInstance.clearFilters(); expect(viewer.componentInstance.sortedFeatures()).toHaveLength(3);
+    editor.clearCatalogFilters(); await fixture.whenStable(); await editor.searchContent(); expect(editor.results()).toHaveLength(3);
+  });
+
+  it('filters explicit prerequisites without inferring eligibility for custom or unclassified features', () => {
+    const data = { prerequisite: [{ level: { level: 5, class: { name: 'Warlock' } } }, { level: 4 }] };
+    expect(featureFilterValues(data)).toEqual({ classes: ['Warlock'], levels: [5, 4] });
+    expect(matchesFeatureFilters(data, ['warlock'], [5])).toBe(true);
+    expect(matchesFeatureFilters(data, ['Wizard'], [5])).toBe(false);
+    expect(matchesFeatureFilters({}, [], [])).toBe(true);
+    expect(matchesFeatureFilters({}, [], [1])).toBe(false);
+  });
+
   it('keeps annotated features until removal is confirmed in the themed dialog', async () => {
     const fixture = TestBed.createComponent(FeaturesEditorComponent);
-    const sheet = emptyBasicCharacter();
+    const sheet = featureSheet();
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
     const editor = fixture.componentInstance; const notes = annotationEditor(editor);
     editor.customName = 'Tracked feature'; editor.addCustom();
@@ -62,7 +161,7 @@ describe('Feature editor', () => {
     const renderer = TestBed.createComponent(EntryRendererComponent);
     renderer.componentRef.setInput('entries', ['Plain description']); await renderer.whenStable();
     expect(renderer.nativeElement.textContent.trim()).toBe('Plain description');
-    const fixture = TestBed.createComponent(FeaturesEditorComponent); const sheet = emptyBasicCharacter();
+    const fixture = TestBed.createComponent(FeaturesEditorComponent); const sheet = featureSheet();
     sheet.character!.abilityScores!.intelligence = 16;
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
     const editor = fixture.componentInstance; const notes = annotationEditor(editor);
@@ -87,7 +186,7 @@ describe('Feature editor', () => {
     expect(page.total).toBe(45); expect(page.records).toHaveLength(15);
     const fighter = await data.cache.searchCategory(data.revision.id, ['classFeature', 'subclassFeature'], 'Training Fighter PHB');
     expect(fighter.total).toBe(2);
-    const fixture = TestBed.createComponent(FeaturesEditorComponent); const sheet = emptyBasicCharacter();
+    const fixture = TestBed.createComponent(FeaturesEditorComponent); const sheet = featureSheet();
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
     const editor = fixture.componentInstance; const notes = annotationEditor(editor); await editor.refreshContent();
     const classes = data.records.filter(r => r.kind === 'classFeature');
@@ -102,7 +201,7 @@ describe('Feature editor', () => {
   });
 
   it('retains snapshots, editable notes and multiple independent uses through save and missing cache', async () => {
-    const data = await catalog(); const sheet = emptyBasicCharacter();
+    const data = await catalog(); const sheet = featureSheet();
     const fixture = TestBed.createComponent(FeaturesEditorComponent); fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
     const editor = fixture.componentInstance; const notes = annotationEditor(editor); await editor.refreshContent(); editor.add(data.records.find(r => r.kind === 'classFeature')!);
     const feature = sheet.features![0]; notes.addNote(feature); notes.setNoteEntry(feature.notes![0], 0, 'Remember this');
@@ -124,12 +223,12 @@ describe('Feature editor', () => {
   });
 
   it('supports custom features and feature rest recovery without requiring content', async () => {
-    const fixture = TestBed.createComponent(FeaturesEditorComponent); const sheet = emptyBasicCharacter();
+    const fixture = TestBed.createComponent(FeaturesEditorComponent); const sheet = featureSheet();
     sheet.character!.featureSources = [{ name: 'General', isGeneralFeatureSource: true }];
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
-    const editor = fixture.componentInstance; const notes = annotationEditor(editor); editor.selectedSource = ''; editor.selectedType = 'FEAT';
+    const editor = fixture.componentInstance; const notes = annotationEditor(editor); editor.selectedSource = 'General'; editor.selectedType = 'FEAT';
     editor.customName = 'Custom feat'; editor.customDescription = 'Private description'; editor.addCustom();
-    const feature = sheet.features![0]; expect(feature.featureSourceName).toBeUndefined();
+    const feature = sheet.features![0]; expect(feature.featureSourceName).toBe('General');
     notes.addUses(feature); feature.uses![0].totalFreeUses = 3; feature.uses![0].usedFreeUses = 3;
     feature.uses![0].freeUsesRegainCondition = 'SHORT_REST_ONE';
     TestBed.inject(RestService).performShortRest(sheet); expect(feature.uses![0].usedFreeUses).toBe(2);

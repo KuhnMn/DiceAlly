@@ -1,6 +1,10 @@
 import { Component, input } from '@angular/core';
 
 const ICON_PATHS: Record<string, string | undefined> = {
+  search: 'm21 21-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',
+  filter: 'M4 6h16M7 12h10M10 18h4',
+  list: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
+  'list-plus': 'M8 6h13M8 12h7M8 18h5M3 6h.01M3 12h.01M3 18h.01M19 15v6M16 18h6',
   head: 'M8 21v-4a7 7 0 1 1 11-6l2 3h-3v3h-4v4',
   backpack: 'M8 5V3h8v2M7 5h10a3 3 0 0 1 3 3v12H4V8a3 3 0 0 1 3-3ZM8 14h8v6M8 10h8',
   flame: 'M12 2c1 5 7 7 7 13a7 7 0 0 1-14 0c0-3 1-5 4-8 0 4 2 5 3 5 2-3 1-7 0-10Z',
@@ -33,7 +37,12 @@ const ICON_PATHS: Record<string, string | undefined> = {
   heart: 'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z',
   lock: 'M5 10h14v11H5ZM8 10V6a4 4 0 0 1 8 0v4M12 14v3',
   check: 'm5 12 4 4L19 6',
+  'circle-check': 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM8 12l3 3 5-6',
+  'clipboard-check': 'M9 5H6a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3M9 2h6v6H9ZM8 15l3 3 5-6',
+  copyright: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM15 8.5a5 5 0 1 0 0 7',
   reset: 'M3 10a9 9 0 1 1 1 7M3 3v7h7',
+  tally: 'M5 4v16M10 4v16M15 4v16M20 4v16M2 17l20-10',
+  swords: 'M3 3l5 1 13 13-4 4L4 8ZM3 21l4-4M2 16l6 6M21 3l-5 1-5 5M15 13l5-5 1-5M17 17l4 4M16 22l6-6',
   candle: 'M9 10h6v11H9ZM12 2c-4 4-1 7 0 7s4-3 0-7ZM6 21h12',
   wand: 'm3 17 12-12 4 4L7 21ZM12 8l4 4M5 3v4M3 5h4M21 2v4M19 4h4M21 17v4M19 19h4',
   bookmark: 'M6 3h12v18l-6-4-6 4V3Z',

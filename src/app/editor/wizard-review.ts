@@ -28,7 +28,7 @@ export function groupWizardReview(changes: PrefillChange[], before: ExportedChar
       section = 'Features'; group = `${feature?.featureSourceName || 'Unassigned Source'} · ${type}`;
     } else if (kind === 'spells') {
       const spell = sheet.spells?.find(entry => entry.editorId === id) ?? other.spells?.find(entry => entry.editorId === id);
-      const list = spell?.listType === 'PREPARED' ? 'Prepared' : spell?.listType === 'SPELLBOOK' ? 'Spellbook' : 'Known';
+      const list = spell?.listType === 'PREPARED' ? 'Prepared' : spell?.listType === 'SPELLBOOK' ? 'Spellbook' : 'Spelllist';
       const level = spell?.entity?.level;
       section = 'Spells & Slots';
       group = `${spell?.castingSourceName || 'Unassigned Source'} · ${list} · ${level === 0 ? 'Cantrips' : level == null ? 'Spells' : `Level ${level}`}`;

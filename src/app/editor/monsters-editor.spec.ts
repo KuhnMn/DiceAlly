@@ -34,18 +34,24 @@ describe('Monster creator', () => {
     expect(monster.monsterMaxHP).toBeUndefined(); expect(monster.monsterCurrentHP).toBeUndefined();
     expect(monster.entity!.hp!.average).toBe(11);
   });
-  it('adds once, saves HP/annotations, and confirms removal of annotated monsters', async () => {
+  it('adds independent copies, saves HP/annotations, and confirms removal of annotated monsters', async () => {
     const fixture = TestBed.createComponent(MonstersEditorComponent); const sheet = emptyBasicCharacter();
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
     const editor = fixture.componentInstance; await editor.refreshContent(); editor.catalog.revision.set(revision());
-    const source = record(); editor.add(source); editor.add(source); expect(sheet.monsters).toHaveLength(1);
+    const source = record(); editor.add(source); editor.add(source); expect(sheet.monsters).toHaveLength(2);
+    const second = sheet.monsters![1];
+    expect(editor.hasExisting(source)).toBe(true);
+    expect(second.editorId).not.toBe(sheet.monsters![0].editorId);
     const monster = sheet.monsters![0]; editor.setMaxHp(monster, 25);
     monster.notes = [{ tag: 'Commands', notes: ['Guard', 'Follow'], isEditable: true }];
     monster.uses = [{ tag: 'Summon', totalFreeUses: 2, usedFreeUses: 1, freeUsesRegainCondition: 'SHORT_REST_ONE' }];
+    expect(second.notes).toEqual([]); expect(second.uses).toEqual([]);
+    expect(second.monsterMaxHP).toBeUndefined();
+    monster.entity!.name = 'First wolf'; expect(second.entity!.name).toBe('Wolf');
     validateBasicInfo(sheet); const library = TestBed.inject(CharacterLibraryService); await library.save(sheet, 0);
     expect((await library.get(sheet.character!.characterUuid!))!.sheet.monsters).toEqual(sheet.monsters);
-    editor.remove(monster); expect(editor.pendingRemoval).toBe(monster); expect(sheet.monsters).toHaveLength(1);
-    editor.confirmRemoval(); expect(sheet.monsters).toHaveLength(0);
+    editor.remove(monster); expect(editor.pendingRemoval).toBe(monster); expect(sheet.monsters).toHaveLength(2);
+    editor.confirmRemoval(); expect(sheet.monsters).toEqual([second]);
     sheet.monsters = [monster]; monster.monsterMaxHP = -1;
     expect(() => validateBasicInfo(sheet)).toThrow('maximum HP');
   });

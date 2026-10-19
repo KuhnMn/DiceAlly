@@ -27,17 +27,18 @@ describe('Notes on sheet cards', () => {
     expect(card.querySelector('app-feature-notes').textContent).toContain('Flight');
   });
 
-  it('shows notes on known spells as well as prepared spells', () => {
+  it('shows prepared spell notes inline and keeps Spelllist notes in full details', () => {
     const fixture = TestBed.createComponent(SpellsPageComponent);
     fixture.componentRef.setInput('characterData', { character: {}, spells: [
-      { editorId: 'known', name: 'Known Spell', listType: 'KNOWN', notes: notes() },
+      { editorId: 'known', name: 'Spelllist Spell', listType: 'KNOWN', notes: notes() },
       { editorId: 'prepared', name: 'Prepared Spell', listType: 'PREPARED', notes: notes() },
     ] });
-    for (const type of ['PREPARED', 'KNOWN'] as const) {
-      fixture.componentInstance.spellListTypeFilter.set(type); fixture.detectChanges();
-      expect(fixture.nativeElement.querySelector('dialog')).toBeNull();
-      expect(fixture.nativeElement.querySelector('app-feature-notes').textContent).toContain('Healing');
-    }
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-feature-notes').textContent).toContain('Healing');
+    fixture.componentInstance.spellView.set('KNOWN'); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-feature-notes')).toBeNull();
+    fixture.nativeElement.querySelector('#spell-known h3 button').click(); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('dialog app-feature-notes').textContent).toContain('Healing');
   });
 
   it('places editable item and monster notes after their use trackers on the compact cards', () => {

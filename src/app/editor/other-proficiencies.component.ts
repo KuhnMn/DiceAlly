@@ -15,6 +15,31 @@ import { EntryRendererComponent } from '../entries/entry-renderer.component';
 @Component({
   selector: 'app-other-proficiencies', imports: [UiIconComponent, FormsModule, RouterLink, SearchableSelectComponent, EntryRendererComponent],
   templateUrl: './other-proficiencies.component.html', styleUrl: './editor.css',
+  styles: [`
+    .source-editor { container-type: inline-size; }
+    .source-editor .editor-input { min-width: 0; padding: .375rem .5rem; }
+    .source-editor .field-label { margin-bottom: .375rem; }
+    .source-option { display: flex; align-items: center; justify-content: center; gap: .375rem;
+      min-height: 2.25rem; padding: .375rem; border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: .5rem; cursor: pointer; font-size: .75rem; }
+    .source-option:has(input:checked), .source-ability:has(input:checked) {
+      background: var(--md-extended-color-custom-color3-color-container);
+      color: var(--md-extended-color-custom-color3-on-color-container);
+      border-color: var(--md-extended-color-custom-color3-color); }
+    .source-casting:has(input:checked) { background: var(--md-extended-color-custom-color5-color-container);
+      color: var(--md-extended-color-custom-color5-on-color-container);
+      border-color: var(--md-extended-color-custom-color5-color); }
+    .source-ability { display: grid; place-items: center; min-height: 2.25rem;
+      border: 1px solid var(--md-sys-color-outline-variant); border-radius: .375rem;
+      font-size: .6875rem; font-weight: 600; cursor: pointer; }
+    .source-ability:has(input:checked) span { text-decoration: underline; text-underline-offset: .2rem; }
+    .source-ability:focus-within { outline: 2px solid var(--md-sys-color-primary); outline-offset: 2px; }
+    .source-option span { white-space: nowrap; }
+    @container (max-width: 15rem) {
+      .source-option { font-size: .6875rem; gap: .25rem; padding-inline: .25rem; }
+      .source-option app-ui-icon { display: none; }
+    }
+  `],
 })
 export class OtherProficienciesComponent implements OnInit {
   private readonly dialogs = inject(AppDialogService);

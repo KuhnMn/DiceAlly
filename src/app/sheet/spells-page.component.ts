@@ -1,3 +1,10 @@
+import { compareSearchMatches } from '../search-ranking';
+import { SpellViewSwitcherComponent } from '../spell-view-switcher.component';
+import { SpellSchoolFilterComponent } from '../spell-school-filter.component';
+import { SpellSchool, matchesSpellSchool, shortSpellSchoolLabel, spellSourceCounts } from '../editor/spell-selection';
+import { SpellCastingTimeFilterComponent } from '../spell-casting-time-filter.component';
+import { SpellCastingTime, matchesCastingTime, spellListLabel, copySpellToList, preparationLocked, spellIdentity } from '../editor/spell-selection';
+import { ListControlsComponent } from '../list-controls.component';
 import { SheetListLayoutComponent } from './sheet-list-layout.component';
 import { RecoveryIndicatorComponent } from '../recovery-indicator.component';
 import { SpellDetailsComponent } from './spell-details.component';
@@ -6,7 +13,6 @@ import { SpellSummaryComponent } from './spell-summary.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { SheetSourcePickerComponent } from './sheet-source-picker.component';
 import { HorizontalRowDirective } from './horizontal-row.directive';
-import { copySpellToList } from '../editor/spell-selection';
 import { Component, inject, computed, signal, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
@@ -15,7 +21,6 @@ import { FeatureNotesComponent } from './feature-notes.component';
 import { CharacterHelpersService } from './character-helpers.service';
 import { ExportedCharacter, FeatureNotes } from '../models/character.model';
 import { CharacterStore } from '../stores/character.store';
-import { preparationLocked, spellIdentity } from '../editor/spell-selection';
 import { AppDialogService } from '../services/app-dialog.service';
 
 type SpellBonusItemOverview = {
@@ -31,8 +36,21 @@ type SpellLevelFilter = 'ALL' | number;
 @Component({
   selector: 'app-spells-page',
   host: { class: 'block w-full min-w-0 max-w-full' },
-  imports: [SheetListLayoutComponent, RecoveryIndicatorComponent, SpellDetailsComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, SpellSummaryComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [SpellSchoolFilterComponent, SpellViewSwitcherComponent, SpellCastingTimeFilterComponent, ListControlsComponent, SheetListLayoutComponent, RecoveryIndicatorComponent, SpellDetailsComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, SpellSummaryComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
+    .spell-page-header app-spell-view-switcher { margin-bottom: 0; }
+    .spell-page.spell-preparation-view { padding: .75rem; }
+    @media (min-width: 640px) { .spell-page.spell-preparation-view { padding: 1.25rem; } }
+    .preparation-card { padding: .375rem .5rem; border: 0; border-radius: 0; background: transparent; border-bottom: 1px solid var(--md-sys-color-outline-variant); }
+    .preparation-card:last-child { border-bottom: 0; }
+    .preparation-list { gap: 0; overflow: hidden; border-radius: .5rem; background: var(--md-sys-color-surface-container); }
+    .compact-preparation-toggle { display: flex; align-self: stretch; width: 2.75rem; height: auto; gap: .125rem; padding: 0; border-radius: 9999px; font-size: 1rem; }
+    .normal-preparation-toggle { display: inline-flex; min-width: 1.75rem; height: 1.25rem; gap: .125rem; padding: 0 .25rem; font-size: 1rem; }
+    .spell-preparation-view .preparation-name { font-size: .875rem; color: var(--md-sys-color-on-surface); }
+    .spell-preparation-view .preparation-metadata { font-size: .6875rem; }
+    .spell-preparation-view .preparation-level { font-size: .8125rem; margin-bottom: .25rem; padding-bottom: .125rem; border-bottom-width: 1px; }
+    .spell-preparation-view .preparation-groups > :not([hidden]) ~ :not([hidden]) { margin-top: .75rem; }
+
     .flash-highlight {
       animation: spell-flash 1.6s ease-out;
     }
@@ -54,13 +72,27 @@ type SpellLevelFilter = 'ALL' | number;
     }
   `],
   template: `
-    <div class="min-w-0 max-w-full bg-surface-container-highest p-3 sm:p-5 rounded-lg border-2 border-outline shadow-lg [overflow-wrap:anywhere]">
-      <div class="mb-3 flex items-center justify-between gap-2">
-        <h2 class="text-xl sm:text-3xl font-bold">Spellcasting</h2>
-        <app-sheet-list-layout #listLayout />
+    <ng-template #prepareControl let-spell let-compact="compact">
+      @let prepared = hasSpellListType(spell, 'PREPARED');
+      @let locked = isPreparationLocked(spell);
+      <button type="button" (click)="togglePreparedSpell(spell, $event)" [disabled]="locked" [attr.aria-pressed]="prepared"
+        [attr.aria-label]="locked ? spell.name + (prepared ? ' is prepared and cannot be unprepared because it has use trackers' : ' preparation is locked because it has use trackers') : (prepared ? 'Unprepare ' : 'Prepare ') + spell.name"
+        [title]="locked ? 'Preparation is locked because this spell has use trackers.' : prepared ? 'Prepared: click to unprepare' : 'Click to prepare this spell'"
+        [class.bg-blue-container]="prepared" [class.text-on-blue-container]="prepared" [class.border-blue]="prepared" [class.bg-surface-container]="!prepared" [class.border-outline-variant]="!prepared"
+        [class.compact-preparation-toggle]="compact" [class.normal-preparation-toggle]="!compact" class="shrink-0 items-center px-2 py-1 justify-center rounded-full border text-xs disabled:opacity-60">
+        <app-ui-icon [name]="locked ? 'lock' : 'clipboard-check'" />
+        @if (!locked) { <app-ui-icon [name]="prepared ? 'close' : 'plus'" class="text-xs" /> }
+
+      </button>
+    </ng-template>
+    <div class="spell-page min-w-0 max-w-full bg-surface-container-highest p-3 sm:p-5 rounded-lg border-2 border-outline shadow-lg [overflow-wrap:anywhere]" [class.spell-preparation-view]="spellView() !== 'PREPARED'" [attr.data-spell-view]="spellView()">
+      <div class="spell-page-header mb-3 flex items-center justify-between gap-2">
+        <app-spell-view-switcher class="min-w-0 flex-1" preparedHeading="Spellcasting" [view]="spellView()" (viewChange)="spellView.set($event)" [showSpellbook]="showSpellbook()" />
+        <app-sheet-list-layout #listLayout class="sm:ml-2 sm:border-l sm:border-outline-variant sm:pl-4" />
       </div>
 
-      @if (spellSlotGroups().length > 0) {
+      @if (spellView() === 'PREPARED' && spellSlotGroups().length > 0) {
+        <div id="preparation-spell-slots">
           <h3 class="mb-2 text-xl font-bold sm:mb-3">Spell Slots</h3>
           <div class="space-y-2">
             @for (group of spellSlotGroups(); track group.source) {
@@ -108,74 +140,22 @@ type SpellLevelFilter = 'ALL' | number;
               </div>
             }
           </div>
+        </div>
       }
 
-      <h3 class="text-xl font-bold mb-3 mt-6">Spells</h3>
-      <div appHorizontalRow class="mb-3 sm:mb-6 flex flex-wrap items-center gap-2">
-        <span class="text-sm font-semibold text-on-surface">List Type:</span>
-        @for (type of spellListTypes(); track type) {
-          <button
-            type="button"
-            class="min-h-11 px-3 py-1 text-sm border rounded-full"
-            [class.bg-purple]="spellListTypeFilter() === type"
-            [attr.aria-pressed]="spellListTypeFilter() === type"
-            [class.text-on-purple]="spellListTypeFilter() === type"
-            [class.border-purple]="spellListTypeFilter() === type"
-            [class.border-outline-variant]="spellListTypeFilter() !== type"
-            (click)="spellListTypeFilter.set(type)"
-          >
-            {{ type.toLowerCase() | titlecase }}
-          </button>
-        }
-      </div>
-      <div appHorizontalRow class="mb-3 sm:mb-6 flex flex-wrap items-center gap-2">
-        <span class="text-sm font-semibold text-on-surface">Spell Level:</span>
-        @for (levelFilter of spellLevelFilterOptions(); track levelFilter.value) {
-          <button
-            type="button"
-            class="px-3 py-1 text-sm border rounded-full"
-            [class.bg-purple]="spellLevelFilter() === levelFilter.value"
-            [attr.aria-pressed]="spellLevelFilter() === levelFilter.value"
-            [class.text-on-purple]="spellLevelFilter() === levelFilter.value"
-            [class.border-purple]="spellLevelFilter() === levelFilter.value"
-            [class.border-outline-variant]="spellLevelFilter() !== levelFilter.value"
-            [class.bg-surface-container]="spellLevelFilter() !== levelFilter.value"
-            [class.text-on-surface]="spellLevelFilter() !== levelFilter.value"
-            (click)="spellLevelFilter.set(levelFilter.value)"
-          >
-            {{ levelFilter.label }}
-          </button>
-        }
-      </div>
-      <div appHorizontalRow class="mb-3 sm:mb-6 flex flex-wrap items-center gap-2">
-        <span class="text-sm font-semibold text-on-surface">Rituals:</span>
-        <button
-          type="button"
-          class="px-3 py-1 text-sm border rounded-full transition-colors"
-          [class.bg-green-container]="spellRitualFilter() === 'RITUAL'"
-          [class.text-on-green-container]="spellRitualFilter() === 'RITUAL'"
-          [class.border-green]="spellRitualFilter() === 'RITUAL'"
-          [class.bg-surface-container]="spellRitualFilter() === 'ALL'"
-          [class.text-on-surface]="spellRitualFilter() === 'ALL'"
-          [class.border-outline-variant]="spellRitualFilter() === 'ALL'"
-          [class.bg-rose-container]="spellRitualFilter() === 'NON_RITUAL'"
-          [class.text-on-rose-container]="spellRitualFilter() === 'NON_RITUAL'"
-          [class.border-rose]="spellRitualFilter() === 'NON_RITUAL'"
-          (click)="cycleSpellRitualFilter()"
-        >
-          {{ spellRitualFilterLabel() }}
-        </button>
-      </div>
-      <div class="mb-6">
+      <section class="mt-4 min-w-0" aria-label="Spells">
+      @if (spellView() === 'PREPARED') { <h3 class="mb-2 text-lg font-bold">Prepared Spells</h3> }
+      <div class="mb-3">
         @if (characterData()?.character; as character) {
           <app-feature-source-picker [character]="character" [sources]="pickerSources()"
             heading="Casting Source" tone="spells" [showManage]="false"
+            [spellCounts]="spellView() === 'PREPARED' ? null : sourceSpellCounts()" [showStats]="spellView() === 'PREPARED'"
             [value]="spellCastingSourceFilter()" [orphanNames]="spellCastingSourcesList().slice(1)"
             (selected)="spellCastingSourceFilter.set($event)" />
         }
       </div>
-      @if (spellBonusItemsOverview().length > 0) {
-        <div class="mb-6 mt-4 p-3 border border-tertiary rounded-lg bg-tertiary-container">
+      @if (spellView() === 'PREPARED' && spellBonusItemsOverview().length > 0) {
+        <div class="mb-3 mt-2 p-2 border border-tertiary rounded-lg bg-tertiary-container">
           <div class="text-xs font-semibold text-on-tertiary-container mb-2">Item Spell Bonuses</div>
           <div class="space-y-1">
             @for (entry of spellBonusItemsOverview(); track entry.key) {
@@ -190,19 +170,93 @@ type SpellLevelFilter = 'ALL' | number;
           </div>
         </div>
       }
-      <label class="mb-3 block text-sm font-semibold">Search spells
-        <input type="search" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" placeholder="Search by name" class="mt-1 min-h-11 w-full rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-base font-normal sm:text-sm" />
-      </label>
-      <div class="space-y-4 sm:space-y-6">
+      <app-list-controls label="Search spells" [query]="searchQuery()" (queryChange)="searchQuery.set($event)"
+        [filterCount]="activeFilterCount()" (cleared)="clearFilters()">
+      <ng-container list-toolbar-action>
+        @if (spellView() === 'SPELLBOOK') {
+          <button type="button" aria-label="Only ritual spells" title="Only ritual spells" [attr.aria-pressed]="spellRitualFilter() === 'RITUAL'"
+            (click)="spellRitualFilter.set(spellRitualFilter() === 'RITUAL' ? 'ALL' : 'RITUAL')"
+            [class.bg-green-container]="spellRitualFilter() === 'RITUAL'" [class.text-on-green-container]="spellRitualFilter() === 'RITUAL'"
+            class="min-h-11 shrink-0 rounded-lg border border-outline-variant px-2 text-xs">Ritual</button>
+        }
+      </ng-container>
+      <div appHorizontalRow class="mb-2 flex flex-wrap items-center gap-2">
+        <span class="text-sm font-semibold text-on-surface">Spell Level:</span>
+        @for (levelFilter of spellLevelFilterOptions(); track levelFilter.value) {
+          <button
+            type="button"
+            class="min-h-11 px-3 py-1 text-sm border rounded-full"
+            [class.bg-purple]="isSpellLevelSelected(levelFilter.value)"
+            [attr.aria-pressed]="isSpellLevelSelected(levelFilter.value)"
+            [class.text-on-purple]="isSpellLevelSelected(levelFilter.value)"
+            [class.border-purple]="isSpellLevelSelected(levelFilter.value)"
+            [class.border-outline-variant]="!isSpellLevelSelected(levelFilter.value)"
+            [class.bg-surface-container]="!isSpellLevelSelected(levelFilter.value)"
+            [class.text-on-surface]="!isSpellLevelSelected(levelFilter.value)"
+            (click)="toggleSpellLevel(levelFilter.value)"
+          >
+            {{ levelFilter.label }}
+          </button>
+        }
+      </div>
+      <app-spell-casting-time-filter [selected]="spellCastingTimes()" (selectedChange)="spellCastingTimes.set($event)" />
+      <app-spell-school-filter [selected]="spellSchools()" (selectedChange)="spellSchools.set($event)" />
+      <div appHorizontalRow class="mb-2 flex flex-wrap items-center gap-2">
+        <span class="text-sm font-semibold text-on-surface">Rituals:</span>
+        <button
+          type="button"
+          class="min-h-11 px-3 py-1 text-sm border rounded-full transition-colors"
+          [class.bg-green-container]="spellRitualFilter() === 'RITUAL'"
+          [class.text-on-green-container]="spellRitualFilter() === 'RITUAL'"
+          [class.border-green]="spellRitualFilter() === 'RITUAL'"
+          [class.bg-surface-container]="spellRitualFilter() === 'ALL'"
+          [class.text-on-surface]="spellRitualFilter() === 'ALL'"
+          [class.border-outline-variant]="spellRitualFilter() === 'ALL'"
+          [class.bg-rose-container]="spellRitualFilter() === 'NON_RITUAL'"
+          [class.text-on-rose-container]="spellRitualFilter() === 'NON_RITUAL'"
+          [class.border-rose]="spellRitualFilter() === 'NON_RITUAL'"
+          (click)="cycleSpellRitualFilter()"
+        >
+          {{ spellRitualFilterLabel() }}
+        </button>
+      </div>
+      </app-list-controls>
+      <div class="preparation-groups space-y-4 sm:space-y-6">
         @if (spellsByLevel().length > 0) {
           @for (levelGroup of spellsByLevel(); track levelGroup.level) {
             <div>
-              <h4 class="text-lg font-bold text-purple mb-3 border-b-2 border-purple pb-1">
+              <h4 class="preparation-level text-lg font-bold text-purple mb-3 border-b-2 border-purple pb-1">
                 {{ spellLevelHeader(levelGroup.level) }}
               </h4>
-              <div class="sheet-entry-list" [class.sheet-entry-list-two-columns]="listLayout.columns() === 2" [class.sheet-entry-list-three-columns]="listLayout.columns() === 3">
+              <div class="sheet-entry-list" [class.preparation-list]="spellView() !== 'PREPARED'" [class.sheet-entry-list-two-columns]="listLayout.columns() === 2" [class.sheet-entry-list-three-columns]="listLayout.columns() === 3">
                 @for (spell of levelGroup.spells; track spell) {
-                  <div class="min-w-0 border-2 border-purple rounded-lg px-3 py-1.5 sm:py-2 bg-surface-container" [attr.id]="'spell-' + (spell.editorId ?? helpers.sourceId(spell.name + '-' + (spell.source ?? '')))" [class.flash-highlight]="highlightedId() === ('spell-' + (spell.editorId ?? helpers.sourceId(spell.name + '-' + (spell.source ?? ''))))">
+                  <div class="min-w-0 border-2 border-purple rounded-lg px-3 py-1.5 sm:py-2 bg-surface-container" [attr.id]="'spell-' + (spell.editorId ?? helpers.sourceId(spell.name + '-' + (spell.source ?? '')))" [class.preparation-card]="spellView() !== 'PREPARED'" [class.flash-highlight]="highlightedId() === ('spell-' + (spell.editorId ?? helpers.sourceId(spell.name + '-' + (spell.source ?? ''))))">
+                    @if (spellView() !== 'PREPARED') {
+                      <div class="flex min-w-0 items-stretch gap-2">
+                        <div class="relative min-w-0 flex-1 pr-8">
+                      <div class="flex min-w-0 items-center gap-1">
+                        <h3 class="min-w-0 flex-1">
+                          <button type="button" (click)="toggleExpanded(spellExpansionId(spell))" aria-haspopup="dialog" [attr.aria-expanded]="isExpanded(spellExpansionId(spell))" [title]="spell.name"
+                            class="preparation-name flex min-h-6 w-full min-w-0 items-center gap-1 rounded text-left text-xs font-semibold text-purple after:absolute after:inset-0 after:rounded focus-visible:outline-2 focus-visible:outline-primary">
+                            <span class="min-w-0 flex-1 truncate">{{ spell.name }}</span>
+                            <span class="absolute inset-y-0 right-0 flex w-7 items-center justify-center rounded text-base text-on-surface-variant hover:bg-surface-container-high"><app-ui-icon name="chevron" /></span>
+                          </button>
+                        </h3>
+                      </div>
+                      <div class="preparation-metadata mt-0.5 flex min-w-0 items-center gap-1 text-[10px] leading-4">
+                        @if (spell.entity?.school; as school) { <span class="shrink-0 rounded bg-teal-container px-1 text-on-teal-container" [attr.aria-label]="helpers.spellSchoolLabel(school)" [title]="helpers.spellSchoolLabel(school)">{{ compactSchoolLabel(school) }}</span> }
+                        @if (hasSpellListType(spell, 'SPELLBOOK')) { <span role="img" aria-label="In Spellbook" title="In Spellbook" class="inline-flex shrink-0 rounded bg-purple-container px-0.5 text-xs text-on-purple-container"><app-ui-icon name="book" /></span> }
+                        @if (spellView() === 'SPELLBOOK') {
+                          @if (spell.entity?.meta?.ritual) { <span class="shrink-0 rounded bg-green-container px-1 text-on-green-container" aria-label="Ritual" title="Ritual">Ritual</span> }
+                          @if (requiresConcentration(spell)) { <span class="shrink-0 rounded bg-tertiary-container px-1 text-on-tertiary-container" aria-label="Concentration" title="Concentration">C</span> }
+                        }
+                        @if (spell.castingSourceName) { <span class="min-w-0 truncate rounded bg-secondary-container px-1 text-on-secondary-container" [title]="spell.castingSourceName">{{ spell.castingSourceName }}</span> }
+                        @if (spell.source) { <span class="min-w-0 max-w-[35%] truncate rounded bg-surface-container-highest px-1 text-on-surface" [title]="spell.source">{{ spell.source }}</span> }
+                      </div>
+                        </div>
+                        <ng-container [ngTemplateOutlet]="prepareControl" [ngTemplateOutletContext]="{ $implicit: spell, compact: true }" />
+                      </div>
+                    } @else {
                     <h3>
                       <button type="button" (click)="toggleExpanded(spellExpansionId(spell))" aria-haspopup="dialog" [attr.aria-expanded]="isExpanded(spellExpansionId(spell))" class="flex min-h-8 w-full items-center justify-between gap-2 rounded text-left text-base font-bold text-purple sm:gap-3 sm:text-xl focus-visible:outline-2 focus-visible:outline-primary">
                         <span class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1"><span class="min-w-0 break-words [overflow-wrap:anywhere]">{{ spell.name }}</span>
@@ -211,28 +265,25 @@ type SpellLevelFilter = 'ALL' | number;
                       </button>
                     </h3>
                     <div class="flex flex-wrap items-center gap-1 sm:gap-2">
-                      @if (spell.entity?.school) { <span class="rounded bg-teal-container px-2 py-0.5 text-xs text-on-teal-container">{{ helpers.spellSchoolLabel(spell.entity?.school ?? '') }}</span> }
-                      @if (spell.entity?.meta?.ritual) { <span class="rounded bg-green-container px-2 py-0.5 text-xs text-on-green-container">Ritual</span> }
-                      @if (requiresConcentration(spell)) { <span class="rounded bg-tertiary-container px-2 py-0.5 text-xs text-on-tertiary-container" title="Concentration" aria-label="Concentration">C</span> }
+                      @if (spellView() === 'PREPARED') {
+                        @if (spell.entity?.school) { <span class="rounded bg-teal-container px-2 py-0.5 text-xs text-on-teal-container">{{ helpers.spellSchoolLabel(spell.entity?.school ?? '') }}</span> }
+                        @if (spell.entity?.meta?.ritual) { <span class="rounded bg-green-container px-2 py-0.5 text-xs text-on-green-container">Ritual</span> }
+                        @if (requiresConcentration(spell)) { <span class="rounded bg-tertiary-container px-2 py-0.5 text-xs text-on-tertiary-container" title="Concentration" aria-label="Concentration">C</span> }
+                      }
                       @for (type of listTypesForSpell(spell); track type) {
                         @if (type === 'PREPARED') {
-                          @let prepared = hasSpellListType(spell, 'PREPARED');
-                          @let locked = isPreparationLocked(spell);
-                          <button type="button" (click)="togglePreparedSpell(spell, $event)" [disabled]="locked" [attr.aria-pressed]="prepared"
-                            [attr.aria-label]="locked ? spell.name + (prepared ? ' is prepared and cannot be unprepared because it has use trackers' : ' preparation is locked because it has use trackers') : (prepared ? 'Unprepare ' : 'Prepare ') + spell.name"
-                            [title]="locked ? 'Preparation is locked because this spell has use trackers.' : prepared ? 'Prepared: click to unprepare' : 'Click to prepare this spell'"
-                            [class.bg-blue-container]="prepared" [class.text-on-blue-container]="prepared" [class.border-blue]="prepared" [class.bg-surface-container]="!prepared" [class.border-outline-variant]="!prepared"
-                            class="shrink-0 items-center px-2 py-1 justify-center rounded-full border text-xs disabled:opacity-60">
-                            Prep.
-                            <app-ui-icon [name]="locked ? 'lock' : prepared ? 'check' : 'plus'" />
-
-                          </button>
-                        } @else { <span class="rounded bg-surface-container-highest px-2 py-0.5 text-xs capitalize sm:py-1">{{ type.toLowerCase() | titlecase }}</span> }
+                          <ng-container [ngTemplateOutlet]="prepareControl" [ngTemplateOutletContext]="{ $implicit: spell, compact: false }" />
+                        } @else if (type === 'SPELLBOOK' && hasSpellListType(spell, type)) {
+                          <span role="img" [attr.aria-label]="'In ' + spellListLabel(type)" [title]="'In ' + spellListLabel(type)"
+                            class="inline-flex h-5 w-7 shrink-0 items-center justify-center rounded bg-purple-container text-base text-on-purple-container">
+                            <app-ui-icon name="book" />
+                          </span>
+                        }
                       }
                     </div>
 
                     <!-- Basic information stays visible when descriptions are collapsed. -->
-                    <app-spell-summary [spell]="spell.entity" />
+                    @if (spellView() === 'PREPARED') { <app-spell-summary [spell]="spell.entity" /> }
 
                     <!-- Source Tags -->
                     <div class="mt-1 flex flex-wrap items-center gap-1 sm:gap-2">
@@ -244,15 +295,17 @@ type SpellLevelFilter = 'ALL' | number;
                       }
                     </div>
 
+                    }
+
                     <!-- Expandable Content -->
-                    @if (!isExpanded(spellExpansionId(spell)) && spellListTypeFilter() === 'PREPARED') {
+                    @if (!isExpanded(spellExpansionId(spell)) && spellView() === 'PREPARED') {
                       <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
                         @for (use of spell.uses ?? []; track use) {
                                                 <app-feature-uses [uses]="use" (usesUpdated)="use.usedFreeUses = $event.usedFreeUses" />
                                               }
                       </div>
                     }
-                    <app-feature-notes [notes]="spell.notes" (notesChanged)="updateSpellNotes(spell, $event)" />
+                    @if (spellView() === 'PREPARED') { <app-feature-notes [notes]="spell.notes" (notesChanged)="updateSpellNotes(spell, $event)" /> }
                     @if (isExpanded(spellExpansionId(spell))) {
                       <app-sheet-detail-dialog [title]="spell.name" (closed)="toggleExpanded(spellExpansionId(spell))">
                       <p class="text-sm text-on-surface-variant">{{ helpers.spellLevelLabel(spell) }} · {{ helpers.spellSchoolLabel(spell.entity?.school ?? '') }} · {{ spell.castingSourceName }} · {{ spell.source }}</p>
@@ -302,6 +355,7 @@ type SpellLevelFilter = 'ALL' | number;
           <p class="text-on-surface-variant italic">No spells for this filter.</p>
         }
       </div>
+      </section>
     </div>
   `,
 })
@@ -314,22 +368,33 @@ export class SpellsPageComponent {
   highlightedId = signal<string | null>(null);
 
   readonly searchQuery = signal('');
-  spellListTypeFilter = signal<'PREPARED' | 'KNOWN' | 'SPELLBOOK'>('PREPARED');
+  spellView = signal<'PREPARED' | 'KNOWN' | 'SPELLBOOK'>('PREPARED');
+  readonly sourceSpellCounts = computed(() => {
+    return spellSourceCounts(this.characterData()?.spells ?? [], this.pickerSources(), this.spellCastingSourcesList().slice(1));
+  });
   spellRitualFilter = signal<SpellRitualFilter>('ALL');
-  spellLevelFilter = signal<SpellLevelFilter>('ALL');
+  readonly spellLevelFilters = signal<number[]>([]);
+  readonly spellCastingTimes = signal<SpellCastingTime[]>([]);
+  readonly spellSchools = signal<SpellSchool[]>([]);
+  readonly spellListLabel = spellListLabel;
   spellCastingSourceFilter = signal<string>('ALL');
   expandedItems = signal<Set<string>>(new Set());
+  readonly activeFilterCount = computed(() => this.spellSchools().length + this.spellCastingTimes().length + this.spellLevelFilters().length + Number(this.spellRitualFilter() !== 'ALL'));
+
+  clearFilters() {
+    this.searchQuery.set('');
+    this.spellLevelFilters.set([]);
+    this.spellCastingTimes.set([]);
+    this.spellSchools.set([]);
+    this.spellRitualFilter.set('ALL');
+  }
+
 
   character = computed(() => this.characterData()?.character ?? null);
   readonly pickerSources = computed(() => this.characterData()?.character?.featureSources?.filter(source => source.isSpellcastingSource) ?? []);
 
-  spellListTypes = computed(() => {
-    const spells = this.characterData()?.spells ?? [];
-    const useSpellbook = this.character()?.featureSources?.some((fs) => fs.useSpellbook) ?? false;
-    const types = new Set(spells.map((spell) => spell.listType).filter(Boolean) as string[]);
-    const result: Array<'PREPARED' | 'KNOWN' | 'SPELLBOOK'> = [...Array.from(types)] as any;
-    return useSpellbook ? result : result.filter((t) => t !== 'SPELLBOOK');
-  });
+  readonly showSpellbook = computed(() => this.character()?.featureSources?.some(source => source.useSpellbook) ||
+    this.characterData()?.spells?.some(spell => spell.listType === 'SPELLBOOK') || this.spellView() === 'SPELLBOOK');
 
   spellCastingSourcesList = computed(() => {
     const spells = this.characterData()?.spells ?? [];
@@ -347,6 +412,17 @@ export class SpellsPageComponent {
         return 'All';
     }
   });
+
+  isSpellLevelSelected(level: SpellLevelFilter): boolean {
+    const selected = this.spellLevelFilters();
+    return level === 'ALL' ? selected.length === 0 : selected.includes(level);
+  }
+
+  toggleSpellLevel(level: SpellLevelFilter): void {
+    if (level === 'ALL') { this.spellLevelFilters.set([]); return; }
+    this.spellLevelFilters.update(selected => selected.includes(level)
+      ? selected.filter(value => value !== level) : [...selected, level]);
+  }
 
   spellLevelFilterOptions = computed(() => {
     const levels = new Set((this.characterData()?.spells ?? []).map((spell) => spell.entity?.level ?? 0));
@@ -410,10 +486,12 @@ export class SpellsPageComponent {
 
   spells = computed(() => {
     const spells = this.characterData()?.spells ?? [];
-    const listTypeFilter = this.spellListTypeFilter();
+    const listTypeFilter = this.spellView();
     const ritualFilter = this.spellRitualFilter();
-    const levelFilter = this.spellLevelFilter();
+    const levelFilters = this.spellLevelFilters();
     const sourceFilter = this.spellCastingSourceFilter();
+    const castingTimes = this.spellCastingTimes();
+    const schools = this.spellSchools();
     const filtered = spells.filter((spell) => {
       const matchesListType = spell.listType === listTypeFilter;
       const isRitual = spell.entity?.meta?.ritual ?? false;
@@ -421,11 +499,13 @@ export class SpellsPageComponent {
         || (ritualFilter === 'RITUAL' && isRitual)
         || (ritualFilter === 'NON_RITUAL' && !isRitual);
       const spellLevel = spell.entity?.level ?? 0;
-      const matchesLevel = levelFilter === 'ALL' || spellLevel === levelFilter;
+      const matchesLevel = !levelFilters.length || levelFilters.includes(spellLevel);
       const matchesSource = sourceFilter === 'ALL' || spell.castingSourceName === sourceFilter;
-      return matchesListType && matchesRitual && matchesLevel && matchesSource;
+      return matchesListType && matchesRitual && matchesLevel && matchesSource && matchesCastingTime(spell.entity?.time, castingTimes) && matchesSpellSchool(spell.entity?.school, schools);
     });
     return [...filtered].sort((a, b) => {
+      const relevance = compareSearchMatches(a.name, b.name, this.searchQuery());
+      if (relevance) return relevance;
       // Sort by casting source first
       const sourceA = a.castingSourceName ?? '';
       const sourceB = b.castingSourceName ?? '';
@@ -454,7 +534,7 @@ export class SpellsPageComponent {
 
     return Array.from(grouped.entries())
       .map(([level, spells]) => ({ level, spells }))
-      .sort((a, b) => a.level - b.level);
+      .sort((a, b) => compareSearchMatches(a.spells[0].name, b.spells[0].name, this.searchQuery()) || a.level - b.level);
   });
 
   constructor() {
@@ -465,10 +545,12 @@ export class SpellsPageComponent {
       if (targetId.startsWith('spell-')) {
         const target = this.characterData()?.spells?.find(spell => `spell-${spell.editorId ?? this.helpers.sourceId(spell.name + '-' + (spell.source ?? ''))}` === targetId);
         if (target) {
-          this.spellListTypeFilter.set((target.listType ?? 'KNOWN') as 'PREPARED' | 'KNOWN' | 'SPELLBOOK');
+          this.spellView.set((target.listType ?? 'KNOWN') as 'PREPARED' | 'KNOWN' | 'SPELLBOOK');
           this.searchQuery.set('');
           this.spellCastingSourceFilter.set('ALL');
-          this.spellLevelFilter.set('ALL');
+          this.spellLevelFilters.set([]);
+          this.spellCastingTimes.set([]);
+          this.spellSchools.set([]);
           this.spellRitualFilter.set('ALL');
           this.expandedItems.set(new Set([this.spellExpansionId(target)]));
         }
@@ -562,6 +644,10 @@ export class SpellsPageComponent {
 
   requiresConcentration(spell: any): boolean {
     return spell.entity?.duration?.some((duration: { concentration?: boolean }) => duration.concentration) ?? false;
+  }
+
+  compactSchoolLabel(school: string): string {
+    return shortSpellSchoolLabel(school);
   }
 
   spellLevelHeader(level: number): string {

@@ -21,14 +21,14 @@
     </div>
     <button type="button" (click)="isAddingItem.set(true)" aria-haspopup="dialog" class="min-h-11 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-on-primary"><app-ui-icon name="plus" /> Add item</button>
   </div>
-  <label class="mb-3 block text-sm font-semibold">Search items
-    <input type="search" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" placeholder="Search by name" class="mt-1 min-h-11 w-full rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-base font-normal sm:text-sm" />
-  </label>
-  <div appHorizontalRow class="mb-3 flex flex-wrap gap-2" aria-label="Inventory filters">
+  <app-list-controls label="Search items" [query]="searchQuery()" (queryChange)="searchQuery.set($event)"
+    [filterCount]="inventoryFilter() === 'all' ? 0 : 1" (cleared)="inventoryFilter.set('all')">
+  <div appHorizontalRow class="flex flex-wrap gap-2" aria-label="Inventory filters">
     @for (filter of inventoryFilters; track filter.value) {
       <button type="button" (click)="inventoryFilter.set(filter.value)" [attr.aria-pressed]="inventoryFilter() === filter.value" [class.bg-green-container]="inventoryFilter() === filter.value" [class.text-on-green-container]="inventoryFilter() === filter.value" class="min-h-11 rounded-full border border-outline-variant px-3 py-2 text-sm">{{ filter.label }}</button>
     }
   </div>
+  </app-list-controls>
   @if (isAddingItem()) { <app-item-catalog [sheet]="characterData()!" (edited)="inventoryChanged()" (closed)="isAddingItem.set(false)" /> }
   <div class="space-y-4">
     @for (group of inventoryGroups(); track group.label) {

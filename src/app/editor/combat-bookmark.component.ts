@@ -3,7 +3,7 @@ import { CombatAction, ExportedCharacter, Monster } from '../models/character.mo
 import { CharacterHelpersService } from '../sheet/character-helpers.service';
 import { UiIconComponent } from '../ui-icon.component';
 import { CombatActionDialogComponent } from './combat-action-dialog.component';
-import { CombatResource, CombatResourceType, monsterCombatOptions, prefillCombatAction, resolveCombatResource } from './combat-actions';
+import { CombatResource, CombatResourceType, combatLinksForResource, monsterCombatOptions, prefillCombatAction } from './combat-actions';
 import { AppDialogService } from '../services/app-dialog.service';
 
 @Component({
@@ -12,19 +12,19 @@ import { AppDialogService } from '../services/app-dialog.service';
   imports: [UiIconComponent, CombatActionDialogComponent],
   styleUrl: './editor.css',
   template: `
-    <span class="inline-flex max-w-full flex-wrap items-center gap-1 rounded-lg" [class.outline]="isBookmarked()"
-      [class.outline-1]="isBookmarked()" [class.outline-outline-variant]="isBookmarked()" [class.outline-offset-2]="isBookmarked()"
+    <span class="inline-flex max-w-full items-center gap-1 rounded-lg"
       role="group" [attr.aria-label]="resource().name + ' Combat Entries'">
-    <button type="button" class="compact-button icon-button" [class.secondary-button]="!isBookmarked()" [class.action-button]="isBookmarked()"
+    <button type="button" class="combat-tool-button" [class.secondary-button]="!isBookmarked()" [class.action-button]="isBookmarked()"
       [title]="isBookmarked() ? 'In Combat · Click to Remove' : 'Add to Combat'" [attr.aria-pressed]="isBookmarked()"
       [attr.aria-label]="(isBookmarked() ? 'Remove ' : 'Add ') + resource().name + (isBookmarked() ? ' from Combat' : ' to Combat')"
-      aria-haspopup="dialog" (click)="toggle()"><app-ui-icon name="bookmark" /></button>
+      aria-haspopup="dialog" (click)="toggle()"><app-ui-icon name="swords" /><span>Combat</span>@if (isBookmarked()) { <span class="tabular-nums">({{ linkedActions().length }})</span> }</button>
     @if (isBookmarked()) {
-      <button type="button" class="secondary-button compact-button inline-flex items-center gap-1" [title]="'Add Another Combat Entry for ' + resource().name" [attr.aria-label]="'Add another combat entry for ' + resource().name" (click)="open()"><app-ui-icon name="plus" /><span>Entry</span></button>
+      <button type="button" class="secondary-button combat-tool-button" [title]="'Add Another Combat Entry for ' + resource().name" [attr.aria-label]="'Add another combat entry for ' + resource().name" (click)="open()"><app-ui-icon name="plus" /></button>
     }
     </span>
     @if (draft; as action) { <app-combat-action-dialog [entry]="action" [suggestions]="suggestions" (saved)="add($event)" (cancelled)="draft = undefined" /> }
   `,
+  styles: [`button.combat-tool-button { display: inline-flex; align-items: center; justify-content: center; gap: .25rem; min-height: 2rem; padding: .25rem .5rem; border: 1px solid var(--md-sys-color-outline-variant); border-radius: .375rem; font-size: .75rem; }`],
 })
 export class CombatBookmarkComponent {
   readonly sheet = input.required<ExportedCharacter>();
@@ -36,7 +36,7 @@ export class CombatBookmarkComponent {
   draft?: CombatAction;
   suggestions: { label: string; action: CombatAction }[] = [];
   linkedActions() {
-    return (this.sheet().combatActions ?? []).filter(action => resolveCombatResource(this.sheet(), action) === this.resource());
+    return combatLinksForResource(this.sheet(), this.resource());
   }
   isBookmarked() { return this.linkedActions().length > 0; }
   async toggle() {

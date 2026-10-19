@@ -1,4 +1,7 @@
+import { EditorEntryRowComponent } from './editor-entry-row.component';
 import { DescriptionDialogComponent } from './description-dialog.component';
+import { CatalogResultRowComponent } from './catalog-result-row.component';
+import { ListControlsComponent } from '../list-controls.component';
 import { CombatBookmarkComponent } from './combat-bookmark.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { newEditorId } from './editor-identity';
@@ -19,7 +22,7 @@ import { CatalogQuery, EditorCatalog } from './editor-catalog';
 
 @Component({
   selector: 'app-editor-species',
-  imports: [DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent],
+  imports: [EditorEntryRowComponent, CatalogResultRowComponent, ListControlsComponent, DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent],
   templateUrl: './species-editor.component.html',
   styleUrl: './editor.css',
 })
@@ -36,7 +39,7 @@ export class SpeciesEditorComponent implements OnDestroy {
   readonly pageSize = this.catalog.pageSize;
   get offset() { return this.catalog.offset; }
   set offset(value: number) { this.catalog.offset = value; }
-  private readonly books = inject(SourceBookFilterService);
+  readonly books = inject(SourceBookFilterService);
   private readonly view = inject(ChangeDetectorRef);
   catalogOpen = false;
   expanded = false;

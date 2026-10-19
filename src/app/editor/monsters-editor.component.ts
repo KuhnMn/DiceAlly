@@ -1,3 +1,7 @@
+import { rankSearchResults } from '../search-ranking';
+import { EditorEntryRowComponent } from './editor-entry-row.component';
+import { CatalogResultRowComponent } from './catalog-result-row.component';
+import { ListControlsComponent } from '../list-controls.component';
 import { EditorListHeaderComponent } from './editor-list-header.component';
 import { DescriptionDialogComponent } from './description-dialog.component';
 import { CombatBookmarkComponent } from './combat-bookmark.component';
@@ -20,14 +24,14 @@ import { createMonsterEntry, setMonsterMaxHp } from './monster-selection';
 
 @Component({
   selector: 'app-editor-monsters',
-  imports: [EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, RemoveEntryDialogComponent, EntryAnnotationsComponent, MonsterStatBlockComponent, SourceBookFilterComponent],
+  imports: [EditorEntryRowComponent, CatalogResultRowComponent, ListControlsComponent, EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, RemoveEntryDialogComponent, EntryAnnotationsComponent, MonsterStatBlockComponent, SourceBookFilterComponent],
   templateUrl: './monsters-editor.component.html', styleUrl: './editor.css',
 })
 export class MonstersEditorComponent implements OnInit, OnDestroy {
   readonly sheet = input.required<ExportedCharacter>();
   readonly edited = output<void>();
   readonly catalog = new EditorCatalog(new IndexedDbContentCache());
-  private readonly books = inject(SourceBookFilterService);
+  readonly books = inject(SourceBookFilterService);
   private readonly view = inject(ChangeDetectorRef);
   readonly expanded = new Set<Monster>();
   private readonly previews = new WeakMap<ContentRecord, Monster>();
@@ -49,7 +53,7 @@ export class MonstersEditorComponent implements OnInit, OnDestroy {
     });
   }
   get monsters() { return this.sheet().monsters ?? []; }
-  get filteredMonsters() { return this.monsters.filter(monster => (monster.name ?? '').toLowerCase().includes(this.listSearch.trim().toLowerCase())); }
+  get filteredMonsters() { return rankSearchResults(this.monsters.filter(monster => (monster.name ?? '').toLowerCase().includes(this.listSearch.trim().toLowerCase())), this.listSearch, monster => monster.name ?? ''); }
   ngOnInit() { void this.refreshContent(); }
   ngOnDestroy() { this.catalog.dispose(); }
   change() { this.view.markForCheck(); this.edited.emit(); }
@@ -62,7 +66,7 @@ export class MonstersEditorComponent implements OnInit, OnDestroy {
   refreshContent() { return this.catalog.refresh('Import game data to browse monsters. Your saved companions remain editable.', () => this.query()); }
   searchChanged() { this.catalog.scheduleSearch(() => this.query()); }
   nextPage(direction: number) { void this.catalog.nextPage(direction, this.query()); }
-  isSelected(record: ContentRecord) {
+  hasExisting(record: ContentRecord) {
     return this.monsters.some(monster => monster.contentReference?.key === record.key
       || (!monster.contentReference && monster.name === record.name && monster.source === record.publication));
   }
@@ -78,7 +82,7 @@ export class MonstersEditorComponent implements OnInit, OnDestroy {
   }
   add(record: ContentRecord) {
     const revision = this.catalog.revision();
-    if (!revision || record.kind !== 'monster' || this.isSelected(record)) return;
+    if (!revision || record.kind !== 'monster') return;
     (this.sheet().monsters ??= []).push(createMonsterEntry(record, revision));
     this.catalogAdded++; this.change();
   }

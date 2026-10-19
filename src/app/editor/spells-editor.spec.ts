@@ -40,6 +40,79 @@ describe('Spell creator and playing sheet', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
   });
 
+  it('requires an existing casting source for individual, custom and bulk additions', async () => {
+    const data = await catalog(), fixture = TestBed.createComponent(SpellsEditorComponent), sheet = emptyBasicCharacter();
+    fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
+    const editor = fixture.componentInstance; await editor.refreshContent();
+    const record = data.records[0]; editor.customName = 'Custom';
+    editor.add(record); editor.addCustom(); await editor.addMatching();
+    expect(sheet.spells ?? []).toHaveLength(0);
+    sheet.character!.featureSources = [{ name: 'Wizard', isSpellcastingSource: true }, { name: 'General', isGeneralFeatureSource: true }];
+    for (const source of ['', 'Missing', 'General']) {
+      editor.selectedSource = source; editor.add(record); editor.addCustom(); await editor.addMatching();
+      expect(sheet.spells ?? []).toHaveLength(0);
+    }
+    editor.selectedSource = 'Wizard'; editor.add(record); editor.addCustom();
+    expect(sheet.spells).toHaveLength(2);
+    expect(sheet.spells!.every(spell => spell.castingSourceName === 'Wizard')).toBe(true);
+  });
+
+  it('toggles preparation and spellbook membership independently per source and confirms removal of annotations', async () => {
+    const fixture = TestBed.createComponent(SpellsEditorComponent), sheet = emptyBasicCharacter();
+    sheet.character!.featureSources = [{ name: 'Wizard', isSpellcastingSource: true, useSpellbook: true }, { name: 'Bard', isSpellcastingSource: true }];
+    sheet.spells = ['Wizard', 'Bard'].map(castingSourceName => ({ name: 'Shared spell', source: 'TEST', castingSourceName, listType: 'KNOWN' }));
+    fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
+    const editor = fixture.componentInstance;
+    const row = (name: string) => (Array.from(fixture.nativeElement.querySelectorAll('app-editor-entry-row')) as HTMLElement[]).find(row => row.textContent?.includes(name))!;
+    const wizard = sheet.spells[0], bard = sheet.spells[1];
+    expect(row('Bard').querySelector('[aria-label*="to Spellbook"]')).toBeNull();
+    row('Wizard').querySelector<HTMLButtonElement>('[aria-label="Prepare Shared spell"]')!.click(); fixture.detectChanges();
+    expect(editor.hasList(wizard, 'PREPARED')).toBe(true); expect(editor.hasList(bard, 'PREPARED')).toBe(false);
+    expect(editor.expanded.size).toBe(0);
+    row('Wizard').querySelector<HTMLButtonElement>('[aria-label="Add Shared spell to Spellbook"]')!.click(); fixture.detectChanges();
+    expect(editor.hasList(wizard, 'SPELLBOOK')).toBe(true);
+    row('Wizard').querySelector<HTMLButtonElement>('[aria-label="Remove Shared spell from Spellbook"]')!.click(); fixture.detectChanges();
+    expect(editor.hasList(wizard, 'SPELLBOOK')).toBe(false); expect(editor.hasList(wizard, 'PREPARED')).toBe(true);
+    const prepared = sheet.spells.find(spell => spell.listType === 'PREPARED')!;
+    prepared.notes = [{ tag: 'Keep', notes: ['Prepared reminder'] }];
+    row('Wizard').querySelector<HTMLButtonElement>('[aria-label="Unprepare Shared spell"]')!.click(); fixture.detectChanges();
+    expect(editor.pendingRemoval).toBe(prepared); expect(editor.hasList(wizard, 'PREPARED')).toBe(true);
+    editor.pendingRemoval = undefined; fixture.changeDetectorRef.markForCheck(); fixture.detectChanges();
+    expect(editor.hasList(wizard, 'PREPARED')).toBe(true);
+    row('Wizard').querySelector<HTMLButtonElement>('[aria-label="Unprepare Shared spell"]')!.click(); fixture.detectChanges(); editor.confirmRemoval(); fixture.detectChanges();
+    expect(editor.hasList(wizard, 'PREPARED')).toBe(false); expect(sheet.spells).toHaveLength(2);
+    row('Wizard').querySelector<HTMLButtonElement>('[aria-label="Edit Shared spell"]')!.click(); fixture.detectChanges();
+    expect(editor.expanded.has(wizard)).toBe(true);
+    expect(row('Wizard').querySelector('app-combat-bookmark')).not.toBeNull();
+    expect(sheet.spells.every(spell => spell.listType === 'KNOWN')).toBe(true);
+  });
+
+  it('filters catalog schools, keeps compact descriptions separate from addition, and applies schools to bulk additions', async () => {
+    await catalog();
+    const fixture = TestBed.createComponent(SpellsEditorComponent), sheet = emptyBasicCharacter();
+    sheet.character!.featureSources = [{ name: 'Bard', isSpellcastingSource: true }];
+    fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
+    const editor = fixture.componentInstance;
+    editor.openCatalog(); fixture.changeDetectorRef.markForCheck(); fixture.detectChanges(); await fixture.whenStable();
+    await editor.refreshContent();
+    editor.filter.schools = ['E']; await editor.searchContent(); fixture.detectChanges();
+    expect(editor.results().map(record => record.name)).toEqual(['Bard only']);
+    const root = fixture.nativeElement.querySelector('app-catalog-dialog');
+    const row = root.querySelector('app-catalog-result-row');
+    const description = row.querySelector('[aria-label="View description for Bard only"]');
+    expect(description.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(sheet.spells ?? []).toHaveLength(0);
+    row.querySelector('[aria-label="Add Bard only to Spelllist"]').click(); fixture.detectChanges();
+    expect(sheet.spells!.map(spell => spell.name)).toEqual(['Bard only']);
+    expect(row.querySelector('button[title="Already added"]').disabled).toBe(true);
+    await editor.addMatching(); expect(sheet.spells).toHaveLength(1);
+    editor.filter.schools = ['V', 'E']; editor.filter.classes = ['Wizard']; editor.filter.levels = [0];
+    await editor.searchContent(); expect(editor.total()).toBe(11);
+    await editor.addMatching(); expect(sheet.spells).toHaveLength(12);
+    expect(sheet.spells!.slice(1).every(spell => spell.entity?.school === 'V' && spell.entity.level === 0)).toBe(true);
+    editor.clearCatalogFilters(); await fixture.whenStable(); await editor.searchContent(); expect(editor.total()).toBe(43);
+  });
+
   it('combines multiple classes and non-contiguous levels for browsing and bulk addition', async () => {
     const data = await catalog();
     const records = mapContent({ spell: [
@@ -51,7 +124,9 @@ describe('Spell creator and playing sheet', () => {
     ] }, 'multiselect.json').records;
     await data.cache.put(data.revision.id, records);
     const fixture = TestBed.createComponent(SpellsEditorComponent);
-    const sheet = emptyBasicCharacter(); fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
+    const sheet = emptyBasicCharacter();
+    sheet.character!.featureSources = [{ name: 'Wizard', isSpellcastingSource: true }];
+    fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
     const editor = fixture.componentInstance; await editor.refreshContent();
     editor.filter.search = 'Multi';
     editor.toggleClass('Wizard'); editor.toggleClass('Artificer');
@@ -71,7 +146,7 @@ describe('Spell creator and playing sheet', () => {
     await catalog();
     const fixture = TestBed.createComponent(SpellsEditorComponent);
     const sheet = emptyBasicCharacter();
-    sheet.character!.featureSources = [{ name: 'Wizard', isSpellcastingSource: true, useSpellbook: true }];
+    sheet.character!.featureSources = [{ name: 'Wizard', isSpellcastingSource: true, useSpellbook: true }, { name: 'Bard', isSpellcastingSource: true }];
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
     const editor = fixture.componentInstance;
     await editor.refreshContent();
@@ -101,12 +176,14 @@ describe('Spell creator and playing sheet', () => {
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
     const editor = fixture.componentInstance;
     await editor.refreshContent();
-    editor.add(data.records[0]); const known = sheet.spells![0];
+    editor.add(data.records[0]); editor.add(data.records[0]);
+    expect(sheet.spells).toHaveLength(1);
+    const known = sheet.spells![0];
     editor.addToList(known, 'SPELLBOOK'); const book = sheet.spells![1];
     editor.addToList(book, 'PREPARED'); editor.addToList(known, 'PREPARED');
     expect(sheet.spells!.map(spell => spell.listType)).toEqual(['KNOWN', 'SPELLBOOK', 'PREPARED']);
     const prepared = sheet.spells![2];
-    editor.list = 'PREPARED'; editor.toggle(prepared); fixture.detectChanges(); await fixture.whenStable();
+    editor.displayedMemberships = ['PREPARED']; editor.toggle(prepared); fixture.detectChanges(); await fixture.whenStable();
     const annotations = fixture.debugElement.query(By.directive(EntryAnnotationsComponent)).componentInstance as EntryAnnotationsComponent;
     annotations.addNote(prepared); const group = prepared.notes![0]; group.tag = 'Tactics'; group.isEditable = false;
     annotations.addNoteEntry(group); annotations.noteDraft = 'First note'; annotations.commitNote();

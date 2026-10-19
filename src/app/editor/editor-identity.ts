@@ -8,7 +8,7 @@ export function newEditorId(): string { return crypto.randomUUID(); }
 /**
  * Called by class-wizard-preview.ts when proposing sources, features, spells and species.
  * The seed is JSON [kind, ...parts]: typically library identity, class selection ID,
- * and content key; spells also include casting source and list (Known/Prepared/Spellbook).
+ * and content key; spells also include casting source and list (Spelllist/Prepared/Spellbook).
  * We hash its UTF-8 bytes using FNV-1a 128, format the result as a version-8 UUID,
  * and prefix it with "hash:". Equal seeds produce equal IDs across wizard runs.
  * Revision/commit and editable descriptions are excluded so library updates do not

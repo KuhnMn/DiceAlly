@@ -3,14 +3,14 @@
     <h2 class="text-xl font-bold sm:text-3xl">Monsters & Companions</h2>
     <app-sheet-list-layout #listLayout />
   </div>
-  <label class="mb-3 block text-sm font-semibold">Search monsters
-    <input type="search" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" placeholder="Search by name" class="mt-1 min-h-11 w-full rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-base font-normal sm:text-sm" />
-  </label>
-  <div appHorizontalRow class="mb-3 flex flex-wrap gap-2" aria-label="Monster filters">
+  <app-list-controls label="Search monsters" [query]="searchQuery()" (queryChange)="searchQuery.set($event)"
+    [filterCount]="monsterFilter() === 'all' ? 0 : 1" (cleared)="monsterFilter.set('all')">
+  <div appHorizontalRow class="flex flex-wrap gap-2" aria-label="Monster filters">
     @for (filter of monsterFilters; track filter.value) {
       <button type="button" (click)="monsterFilter.set(filter.value)" [attr.aria-pressed]="monsterFilter() === filter.value" [class.bg-teal-container]="monsterFilter() === filter.value" [class.text-on-teal-container]="monsterFilter() === filter.value" class="min-h-11 rounded-full border border-outline-variant px-3 py-2 text-sm">{{ filter.label }}</button>
     }
   </div>
+  </app-list-controls>
   <div class="sheet-entry-list" [class.sheet-entry-list-two-columns]="listLayout.columns() === 2" [class.sheet-entry-list-three-columns]="listLayout.columns() === 3">
     @for (monster of visibleMonsters(); track monster.editorId ?? monster) {
       <article [id]="monsterKey(monster)" [class.flash-highlight]="highlightedId() === monsterKey(monster)" class="min-w-0 rounded-lg border border-teal bg-surface-container px-3 py-1.5 sm:py-2">

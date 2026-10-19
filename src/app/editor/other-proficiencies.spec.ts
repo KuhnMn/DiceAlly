@@ -20,16 +20,16 @@ describe('Other Proficiencies', () => {
     const input = (label: string) => Array.from(fixture.nativeElement.querySelectorAll('label') as NodeListOf<HTMLLabelElement>)
       .find(element => element.textContent?.trim() === label)?.querySelector('input');
     expect(input('Custom attack bonus')).toBeUndefined();
-    input('Custom')!.click(); await fixture.whenStable();
+    input('Use custom values')!.click(); await fixture.whenStable();
     expect(input('Custom attack bonus')).toBeDefined();
     source.customToHit = 0; source.customDc = 14;
     expect(fixture.componentInstance.usesCustomValues(source)).toBe(true);
-    input('Custom')!.click(); await fixture.whenStable();
+    input('Use custom values')!.click(); await fixture.whenStable();
     expect(source.customToHit).toBeNull(); expect(source.customDc).toBeNull();
     expect(input('Custom save DC')).toBeUndefined();
     source.customToHit = 0;
     fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
-    expect(input('Custom')!.checked).toBe(true);
+    expect(input('Use custom values')!.checked).toBe(true);
     expect(input('Custom attack bonus')).toBeDefined();
   });
 

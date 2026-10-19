@@ -1,3 +1,4 @@
+import { rankSearchResults } from '../search-ranking';
 import { UiIconComponent } from '../ui-icon.component';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -21,7 +22,7 @@ export class SourceBookFilterComponent implements OnInit {
   search = '';
   get visibleBooks() {
     const query = this.search.trim().toLowerCase();
-    return [...new Set([...this.books(), ...this.filter.selected()])].sort().filter(book => book.toLowerCase().includes(query));
+    return rankSearchResults([...new Set([...this.books(), ...this.filter.selected()])].sort().filter(book => book.toLowerCase().includes(query)), query, book => book);
   }
   async ngOnInit() { await this.refresh(); }
   refresh(): Promise<void> {

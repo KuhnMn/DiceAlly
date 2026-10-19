@@ -1,3 +1,5 @@
+import { ListControlsComponent } from '../list-controls.component';
+import { CatalogResultRowComponent } from './catalog-result-row.component';
 import { DescriptionDialogComponent } from './description-dialog.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, effect, inject, input, output, untracked } from '@angular/core';
@@ -17,7 +19,7 @@ import { newEditorId } from './editor-identity';
 /** Shared acquisition dialog for play and creation. Annotation editing belongs only to the creator. */
 @Component({
   selector: 'app-item-catalog',
-  imports: [DescriptionDialogComponent, UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, SourceBookFilterComponent, EntryRendererComponent],
+  imports: [ListControlsComponent, CatalogResultRowComponent, DescriptionDialogComponent, UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, SourceBookFilterComponent, EntryRendererComponent],
   templateUrl: './item-catalog.component.html', styleUrl: './editor.css',
 })
 export class ItemCatalogComponent implements OnInit, OnDestroy {
@@ -26,7 +28,7 @@ export class ItemCatalogComponent implements OnInit, OnDestroy {
   readonly closed = output<void>();
   private readonly cache = new IndexedDbContentCache();
   readonly catalog = new EditorCatalog(this.cache);
-  private readonly books = inject(SourceBookFilterService);
+  readonly books = inject(SourceBookFilterService);
   private readonly view = inject(ChangeDetectorRef);
   search = '';
   customName = '';
@@ -54,6 +56,10 @@ export class ItemCatalogComponent implements OnInit, OnDestroy {
   refreshContent() { return this.catalog.refresh('Import game data to browse items. You can still add a custom item.', () => this.query()); }
   searchChanged() { this.catalog.scheduleSearch(() => this.query()); }
   nextPage(direction: number) { void this.catalog.nextPage(direction, this.query()); }
+  hasExisting(record: ContentRecord) {
+    return (this.sheet().inventory ?? []).some(item => item.contentReference?.key === record.key
+      || (!item.contentReference && item.name === record.name && item.source === record.publication));
+  }
   catalogEntries(record: ContentRecord): Entry[] { return Array.isArray(record.data['entries']) ? record.data['entries'] as Entry[] : []; }
   private append(sheet: ExportedCharacter, item: InventoryItem) {
     item.allowMultiples = this.stackable;

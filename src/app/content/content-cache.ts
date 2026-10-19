@@ -1,3 +1,4 @@
+import { compareSearchMatches } from '../search-ranking';
 import { ContentRecord, ContentSource, ImportRevision, sourceIdentity } from './content.model';
 
 export interface ContentCache {
@@ -132,10 +133,13 @@ export class IndexedDbContentCache implements ContentCache {
     const tx = (await this.db()).transaction('records');
     return request(tx.objectStore('records').index('category').getAll([revisionId, kind], limit));
   }
-  /** Bounded catalog search. Only the requested page of matching records is retained. */
+  /** Rank before paging, retaining at most offset + limit candidates for a search. */
   async searchCategory(revisionId: string, kinds: readonly string[], search: string, offset = 0, limit = 30, matches?: (record: ContentRecord) => boolean): Promise<{ records: ContentRecord[]; total: number }> {
     const db = await this.db();
     const query = search.trim().toLowerCase();
+    const retained = Math.max(0, offset + limit);
+    const compare = (a: ContentRecord, b: ContentRecord) => compareSearchMatches(a.name, b.name, query)
+      || a.name.localeCompare(b.name) || a.publication.localeCompare(b.publication) || a.key.localeCompare(b.key);
     return new Promise((resolve, reject) => {
       const tx = db.transaction('records');
       const records: ContentRecord[] = []; let total = 0;
@@ -149,14 +153,26 @@ export class IndexedDbContentCache implements ContentCache {
           const text = [record.name, record.publication, record.data['className'], record.data['subclassShortName'],
             record.data['level'], record.data['featureType']].join(' ').toLowerCase();
           if (query.split(/\s+/).every(term => text.includes(term)) && (!matches || matches(record))) {
-            if (total >= offset && records.length < limit) records.push(record);
+            if (query && limit > 0) {
+              // Keep the best candidates across the entire corpus, not just this cursor page.
+              let low = 0, high = records.length;
+              while (low < high) {
+                const middle = (low + high) >>> 1;
+                if (compare(records[middle], record) <= 0) low = middle + 1;
+                else high = middle;
+              }
+              if (low < retained) {
+                records.splice(low, 0, record);
+                if (records.length > retained) records.pop();
+              }
+            } else if (!query && total >= offset && records.length < limit) records.push(record);
             total++;
           }
           row.continue();
         };
       };
       next(0);
-      tx.oncomplete = () => resolve({ records, total });
+      tx.oncomplete = () => resolve({ records: query ? records.slice(offset, offset + limit) : records, total });
       tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('Could not search content.'));
     });
   }

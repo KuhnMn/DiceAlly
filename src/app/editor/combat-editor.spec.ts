@@ -98,7 +98,7 @@ describe('Combat creator', () => {
     fixture.componentInstance.spellCastingSourceFilter.set('Different');
     TestBed.inject(CharacterStore).setFeatureScrollTarget('spell-test-spell');
     await fixture.whenStable();
-    expect(fixture.componentInstance.spellListTypeFilter()).toBe('KNOWN');
+    expect(fixture.componentInstance.spellView()).toBe('KNOWN');
     expect(fixture.componentInstance.spellCastingSourceFilter()).toBe('ALL');
     expect(fixture.componentInstance.spells()).toHaveLength(1);
   });

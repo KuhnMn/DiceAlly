@@ -1,3 +1,6 @@
+import { rankSearchResults } from '../search-ranking';
+import { EditorEntryRowComponent } from './editor-entry-row.component';
+import { ListControlsComponent } from '../list-controls.component';
 import { DescriptionDialogComponent } from './description-dialog.component';
 import { CombatBookmarkComponent } from './combat-bookmark.component';
 import { ChangeDetectorRef, Component, inject, input, output } from '@angular/core';
@@ -12,7 +15,7 @@ import { setCustomItemDescription } from './item-selection';
 
 @Component({
   selector: 'app-editor-items',
-  imports: [DescriptionDialogComponent, CombatBookmarkComponent, FormsModule, EntryAnnotationsComponent, RemoveEntryDialogComponent, EntryRendererComponent, UiIconComponent, ItemCatalogComponent],
+  imports: [EditorEntryRowComponent, ListControlsComponent, DescriptionDialogComponent, CombatBookmarkComponent, FormsModule, EntryAnnotationsComponent, RemoveEntryDialogComponent, EntryRendererComponent, UiIconComponent, ItemCatalogComponent],
   templateUrl: './items-editor.component.html', styleUrl: './editor.css',
 })
 export class ItemsEditorComponent {
@@ -25,7 +28,7 @@ export class ItemsEditorComponent {
   listSearch = '';
   pendingRemoval?: InventoryItem;
   get items() { return this.sheet().inventory ?? []; }
-  get filteredItems() { return this.items.filter(item => item.name.toLowerCase().includes(this.listSearch.trim().toLowerCase())); }
+  get filteredItems() { return rankSearchResults(this.items.filter(item => item.name.toLowerCase().includes(this.listSearch.trim().toLowerCase())), this.listSearch, item => item.name); }
   change() { this.view.markForCheck(); this.edited.emit(); }
   toggle(item: InventoryItem) { this.expanded.has(item) ? this.expanded.delete(item) : this.expanded.add(item); }
   openCatalog() { this.catalogOpen = true; }

@@ -99,12 +99,12 @@ import { ConditionsComponent } from './conditions.component';
   `],
   template: `
     <div
-      class="character-sheet bg-surface-container-highest p-3 sm:p-6 rounded-lg border-2 border-outline"
+      class="character-sheet bg-surface-container-highest p-3 sm:p-4 rounded-lg border-2 border-outline"
     >
       <!-- Header Banner -->
-      <header class="grid grid-cols-5 md:grid-cols-9 gap-2 mb-6">
+      <header class="grid grid-cols-5 md:grid-cols-9 gap-2 mb-4">
         <!-- Profile Picture -->
-        <div class="col-span-1 md:col-span-1 border-2 border-surface rounded-lg p-2 bg-surface-container-low text-center content-center overflow-hidden order-2 md:order-4 aspect-square relative">
+        <div class="col-span-1 md:col-span-1 border-2 border-surface rounded-lg p-2 bg-surface-container-low text-center content-center overflow-hidden order-2 md:order-4 h-20 w-20 justify-self-center relative">
           @if (characterData()?.portaitUrl) {
             <img [src]="characterData()!.portaitUrl" alt="Portrait of {{ character()?.name }}" class="w-full h-full object-cover" />
           } @else {
@@ -155,15 +155,15 @@ import { ConditionsComponent } from './conditions.component';
         <!-- Left Column: Ability Scores & Skills -->
         <div class="space-y-4 order-2 md:order-1" >
           <!-- Ability Scores -->
-          <div class="grid grid-cols-3 gap-3">
+          <div class="grid grid-cols-3 gap-2">
             @for (ability of abilities(); track ability.name) {
-              <div class="border-2 sm:border-4 border-surface rounded-lg sm:rounded-2xl p-2 sm:p-3 bg-surface-container-low text-center shadow-lg">
+              <div class="border-2 border-surface rounded-lg sm:rounded-xl p-2 bg-surface-container-low text-center shadow-lg">
                 <div class="text-xs font-bold text-on-surface-variant uppercase">{{ ability.abbr }}</div>
-                <div class="text-3xl font-bold my-1 text-primary">{{ ability.score }}</div>
+                <div class="text-2xl font-bold my-0.5 text-primary">{{ ability.score }}</div>
                 <div class="text-lg font-semibold text-tertiary">
                   {{ helpers.formatSigned(ability.modifier) }}
                 </div>
-                <div class="mt-2 pt-2 border-t-2 border-outline-variant">
+                <div class="mt-1 pt-1 border-t-2 border-outline-variant">
                   <div class="text-xs">
                       @if (ability.proficient) {
                       <span class="text-primary font-bold"
@@ -222,13 +222,13 @@ import { ConditionsComponent } from './conditions.component';
           <!-- Proficiency & Perception -->
           <div class="grid grid-cols-2 gap-3 justify-items-center">
             <div
-              class="border-4 border-surface w-32 h-32 rounded-full aspect-square p-4 bg-surface-container-low text-center flex flex-col items-center justify-center shadow-lg"
+              class="border-4 border-surface w-24 h-24 rounded-full aspect-square p-2 bg-surface-container-low text-center flex flex-col items-center justify-center shadow-lg"
             >
               <div class="text-xs text-on-surface-variant uppercase font-semibold">Proficiency</div>
               <div class="text-3xl font-bold text-tertiary">{{ helpers.formatSigned(proficiencyBonus()) }}</div>
             </div>
             <div
-              class="border-4 border-surface w-32 h-32 rounded-full aspect-square p-4 bg-surface-container-low text-center flex flex-col items-center justify-center shadow-lg"
+              class="border-4 border-surface w-24 h-24 rounded-full aspect-square p-2 bg-surface-container-low text-center flex flex-col items-center justify-center shadow-lg"
             >
               <div class="text-xs text-on-surface-variant uppercase font-semibold">Passive Per.</div>
               <div class="text-3xl font-bold text-primary">{{ passivePerception() }}</div>
@@ -247,9 +247,9 @@ import { ConditionsComponent } from './conditions.component';
         <!-- Center Column: Combat Stats & HP -->
         <div class="space-y-4 order-1 md:order-2">
           <!-- Top Combat Stats -->
-          <div class="flex justify-center gap-4 mb-4">
+          <div class="flex justify-center gap-3 mb-3">
             <div
-              class="border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-24 sm:h-24 bg-surface-container-low flex flex-col items-center justify-center shadow-lg ac-display relative"
+              class="border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-20 sm:h-20 bg-surface-container-low flex flex-col items-center justify-center shadow-lg ac-display relative"
               [class.cursor-pointer]="!isEditingAcOverride()"
               (click)="!isEditingAcOverride() && startEditingAc()"
             >
@@ -284,7 +284,7 @@ import { ConditionsComponent } from './conditions.component';
               }
             </div>
             <div
-              class="border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-24 sm:h-24 bg-surface-container-low flex flex-col items-center justify-center shadow-lg speed-display relative"
+              class="border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-20 sm:h-20 bg-surface-container-low flex flex-col items-center justify-center shadow-lg speed-display relative"
             >
               <div class="text-xs text-on-surface-variant uppercase font-semibold">
                 <span class="inline-flex items-center gap-1">
@@ -309,7 +309,7 @@ import { ConditionsComponent } from './conditions.component';
               }
             </div>
             <div
-              class="border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-24 sm:h-24 bg-surface-container-low flex flex-col items-center justify-center shadow-lg"
+              class="border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-20 sm:h-20 bg-surface-container-low flex flex-col items-center justify-center shadow-lg"
             >
               <div class="inline-flex items-center gap-1 text-xs text-on-surface-variant uppercase font-semibold">@if (character()?.proficiencies?.initiative) { <span class="text-primary" title="Proficient" aria-label="Proficient">●</span> }Initiative</div>
               <div class="text-2xl font-bold text-tertiary">{{ helpers.formatSigned(initiative()) }}</div>

@@ -1,3 +1,4 @@
+import { rankSearchResults } from '../search-ranking';
 import { UiIconComponent } from '../ui-icon.component';
 import { groupWizardReview, REVIEW_ACTION_LABELS } from './wizard-review';
 import { isCompleteSelection } from '../rules/spell-choice';
@@ -115,8 +116,8 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
       && (record.key === this.state.speciesKey || this.sourceBooks.allows(record.publication)))
       .sort((a, b) => this.label(a.key).localeCompare(this.label(b.key)));
   }
-  get spellLists() { return [...new Set([...this.records.values()].filter(record => record.kind === 'spell')
-    .flatMap(record => spellClasses(record.data).map(entry => entry.name)))].sort(); }
+  get spellLists() { return [...new Set([...this.records.values()].filter(record => record.kind === 'spell' && this.sourceBooks.allows(record.publication))
+    .flatMap(record => spellClasses(record.data).filter(entry => this.sourceBooks.allows(entry.source ?? record.publication)).map(entry => entry.name)))].sort(); }
   classChoices(selection: WizardClass): SelectOption[] {
     return [{ value: '', label: 'Select a class' }, ...this.classOptions(selection).map(record => ({
       value: record.key, label: this.label(record.key), disabled: this.isTaken(record.key, selection),
@@ -153,7 +154,7 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
   }
   choices(choice: WizardChoice) {
     const query = choice.searchable === false ? '' : normalize(this.choiceSearch[choice.id] ?? '');
-    return choice.candidates.filter(candidate => normalize(candidate.label).includes(query) || this.state.answers[choice.id]?.includes(candidate.value));
+    return rankSearchResults(choice.candidates.filter(candidate => normalize(candidate.label).includes(query) || this.state.answers[choice.id]?.includes(candidate.value)), query, candidate => candidate.label);
   }
   friendlyMessage(message: string) {
     if (message.includes('Missing qualified feature')) return 'A selected class feature is missing from this import. Refresh your content or select another class version.';

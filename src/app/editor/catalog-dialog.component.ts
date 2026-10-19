@@ -1,11 +1,12 @@
 import { Component, HostListener, OnDestroy, OnInit, inject, input, output } from '@angular/core';
 import { A11yModule } from '@angular/cdk/a11y';
 import { DialogScrollLockService } from './dialog-scroll-lock.service';
+import { UiIconComponent } from '../ui-icon.component';
 
 /** Catalog workspace shared by feature and spell editors. */
 @Component({
   selector: 'app-catalog-dialog',
-  imports: [A11yModule],
+  imports: [A11yModule, UiIconComponent],
   host: { '[class.compact]': 'compact()' },
   template: `
     <button type="button" class="catalog-backdrop" tabindex="-1" aria-label="Close catalog"
@@ -14,7 +15,7 @@ import { DialogScrollLockService } from './dialog-scroll-lock.service';
       cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
       <header class="catalog-header">
         <div><h2>{{ title() }}</h2>@if (subtitle()) { <p>{{ subtitle() }}</p> }</div>
-        <button type="button" class="secondary-button" [disabled]="closeDisabled()" (click)="close()">{{ closeLabel() }}</button>
+        <button type="button" class="secondary-button catalog-close" [attr.aria-label]="closeLabel()" [title]="closeLabel()" [disabled]="closeDisabled()" (click)="close()"><span class="catalog-close-label">{{ closeLabel() }}</span><app-ui-icon class="catalog-close-icon" name="close" /></button>
       </header>
       <div class="catalog-body feature-editor"><ng-content /></div>
       <div class="catalog-footer"><ng-content select="[catalog-footer]" /></div>
@@ -22,15 +23,22 @@ import { DialogScrollLockService } from './dialog-scroll-lock.service';
   `,
   styleUrl: './editor.css',
   styles: [`
+    .catalog-window { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
     :host { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 1rem; }
     .catalog-backdrop { position: absolute; inset: 0; background: rgb(0 0 0 / .55); cursor: default; }
     .catalog-window { position: relative; width: min(100%, 56rem); max-height: calc(100dvh - 2rem); display: flex; flex-direction: column; overflow: hidden; border: 2px solid var(--md-sys-color-outline-variant); border-radius: .5rem; background: var(--md-sys-color-surface-container-low); color: var(--md-sys-color-on-surface); box-shadow: 0 1rem 3rem rgb(0 0 0 / .3); }
     .catalog-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem; border-bottom: 2px solid var(--md-sys-color-outline-variant); background: var(--md-sys-color-surface-container); }
     .catalog-header h2 { font-size: 1.125rem; font-weight: 700; color: var(--md-sys-color-primary); }
     .catalog-header p { font-size: .75rem; color: var(--md-sys-color-on-surface-variant); margin-top: .25rem; }
+    .catalog-header > div { min-width: 0; flex: 1; }
+    .catalog-close { flex-shrink: 0; white-space: nowrap; }
+    .catalog-close-icon { display: none; }
     .catalog-body { padding: 1rem; overflow-y: auto; overscroll-behavior: contain; }
     .catalog-footer:not(:empty) { padding: .75rem 1rem; border-top: 2px solid var(--md-sys-color-outline-variant); background: var(--md-sys-color-surface-container); }
     @media (max-width: 600px) {
+      .catalog-close { display: flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; padding: 0; font-size: 1.25rem; }
+      .catalog-close-label { display: none; }
+      .catalog-close-icon { display: inline-flex; }
       :host { padding: 0; }
       .catalog-window { width: 100%; max-height: 100dvh; height: 100dvh; border-radius: 0; }
     }

@@ -9,8 +9,9 @@ import { HorizontalRowDirective } from './horizontal-row.directive';
   host: { class: 'block w-full min-w-0 max-w-full' },
   imports: [EntryRendererComponent, HorizontalRowDirective],
   styles: [`
-    .summary-field { min-width: 0; }
-    .summary-value { position: relative; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; white-space: normal; }
+    .summary-field { display: flex; align-items: baseline; gap: .25rem; min-width: 0; }
+    .summary-field > span:first-child { flex-shrink: 0; white-space: nowrap; }
+    .summary-value { position: relative; min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; white-space: normal; }
     .summary-value.is-truncated::after { content: '...'; position: absolute; right: 0; bottom: 0; padding-left: .15em; background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface); font-weight: 900; letter-spacing: .04em; pointer-events: none; }
     @media (max-width: 639px) {
       .summary-field { max-width: 12rem; }
@@ -31,8 +32,9 @@ import { HorizontalRowDirective } from './horizontal-row.directive';
         }
         @if (value.duration?.length) {
           <div class="summary-field">
-            <span class="hidden sm:block">Duration: <span class="summary-value" [title]="helpers.spellDurationLabel(value.duration ?? [])">{{ helpers.spellDurationLabel(value.duration ?? []) }}</span></span>
-            <span class="sm:hidden"><span class="summary-value" [attr.aria-label]="'Duration: ' + helpers.spellDurationLabel(value.duration ?? [])">{{ helpers.compactSpellDurationLabel(value.duration ?? []) }}</span></span>
+            <span class="sr-only sm:not-sr-only">Duration: </span>
+            <span class="hidden min-w-0 sm:block"><span class="summary-value" [title]="helpers.spellDurationLabel(value.duration ?? [])">{{ helpers.spellDurationLabel(value.duration ?? []) }}</span></span>
+            <span class="min-w-0 sm:hidden"><span class="summary-value" [attr.aria-label]="'Duration: ' + helpers.spellDurationLabel(value.duration ?? [])">{{ helpers.compactSpellDurationLabel(value.duration ?? []) }}</span></span>
           </div>
         }
       </div>

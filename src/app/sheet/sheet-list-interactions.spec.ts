@@ -146,10 +146,10 @@ describe('Spell controls', () => {
       { editorId: 'known', name: 'Light', listType: 'KNOWN' },
       { editorId: 'prepared', name: 'Light', listType: 'PREPARED' },
     ] });
-    fixture.componentInstance.spellListTypeFilter.set('KNOWN'); fixture.detectChanges();
+    fixture.componentInstance.spellView.set('KNOWN'); fixture.detectChanges();
     const unprepare = fixture.nativeElement.querySelector('button[aria-label="Unprepare Light"]') as HTMLButtonElement;
     expect(unprepare.querySelector('svg')).not.toBeNull();
-    expect(unprepare.textContent).toContain('Prep.');
+    expect(unprepare.title).toContain('Prepared');
     expect(unprepare.getAttribute('aria-pressed')).toBe('true');
     unprepare.click();
     TestBed.inject(AppDialogService).finish(true);
@@ -177,10 +177,13 @@ describe('Spell controls', () => {
   it('prepares independently of expansion and retains the summary when collapsed', () => {
     const fixture = TestBed.createComponent(SpellsPageComponent);
     fixture.componentRef.setInput('characterData', { character: {}, spells: [{ editorId: 'light', name: 'Light', listType: 'KNOWN', entity: { name: 'Light', level: 0, meta: { ritual: true }, time: [{ number: 1, unit: 'action' }], duration: [{ type: 'timed', duration: { amount: 10, type: 'minute' }, concentration: true }] } }] });
-    fixture.componentInstance.spellListTypeFilter.set('KNOWN'); fixture.detectChanges();
+    fixture.componentInstance.spellView.set('KNOWN'); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('button button')).toBeNull();
     fixture.nativeElement.querySelector('button[aria-label="Prepare Light"]').click(); fixture.detectChanges();
     expect(fixture.componentInstance.expandedItems().size).toBe(0);
+    expect(fixture.nativeElement.querySelector('app-spell-summary')).toBeNull();
+    fixture.componentRef.setInput('characterData', TestBed.inject(CharacterStore).characterData());
+    fixture.componentInstance.spellView.set('PREPARED'); fixture.detectChanges();
     const concentration = fixture.nativeElement.querySelector('span[aria-label="Concentration"]');
     expect(concentration.textContent).toBe('C');
     expect(concentration.previousElementSibling.textContent).toBe('Ritual');

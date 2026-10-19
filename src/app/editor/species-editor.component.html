@@ -4,33 +4,35 @@
     <button type="button" class="action-button" aria-haspopup="dialog" (click)="openCatalog()">{{ selected ? 'Change Species' : '+ Select Species' }}</button>
   </div>
   @if (selected; as species) {
-    <article class="rounded-lg border-2 border-rose bg-surface-container p-2.5">
-      <div class="entry-header">
-        <button type="button" class="flex-1 min-w-0 text-left" [attr.aria-expanded]="expanded" (click)="expanded = !expanded"><span class="text-sm font-semibold">{{ species.name }}</span><span class="block text-xs text-on-surface-variant mt-0.5">{{ species.source }}</span></button>
-        <app-combat-bookmark [sheet]="sheet()" [resource]="species" type="SPECIES" (edited)="change()" />
-        <button type="button" class="secondary-button compact-button" (click)="expanded = !expanded">{{ expanded ? 'Close' : 'Edit' }}</button>
-        <button type="button" class="secondary-button compact-button icon-button" aria-label="Remove species" (click)="remove()"><app-ui-icon name="close" /></button>
-      </div>
-      @if (!expanded && (species.notes?.length || species.uses?.length)) { <p class="text-xs text-on-surface-variant mt-1">{{ species.notes?.length || 0 }} note groups · {{ species.uses?.length || 0 }} use trackers</p> }
+    <div class="rounded-lg bg-surface-container">
+    <app-editor-entry-row [sheet]="sheet()" [resource]="species" [name]="species.name || 'Unnamed species'" [expanded]="expanded" (detailsRequested)="expanded = !expanded" (removeRequested)="remove()" [notesCount]="species.notes?.length || 0" [usesCount]="species.uses?.length || 0">
+      <span entry-metadata class="min-w-0 truncate rounded bg-surface-container-highest px-1 text-on-surface" [title]="species.source">{{ species.source }}</span>
       @if (expanded) {
-        <div class="mt-3 pt-3 border-t border-outline-variant space-y-3">
-          <app-description-dialog [title]="species.name || 'Species Abilities'" label="Species Abilities"><div class="p-3"><app-entry-renderer [entries]="species.entity?.entries ?? []" /></div></app-description-dialog>
-          <app-entry-annotations-editor [entry]="species" (edited)="change()" />
+        <div class="space-y-3">
+
+
+          <app-entry-annotations-editor [entry]="species" (edited)="change()">
+              <app-combat-bookmark annotation-combat [sheet]="sheet()" [resource]="species" type="SPECIES" (edited)="change()" />
+              <app-description-dialog annotation-description [dense]="true" [title]="species.name || 'Species Abilities'" label="Species Abilities"><div class="p-3"><app-entry-renderer [entries]="species.entity?.entries ?? []" /></div></app-description-dialog>
+            </app-entry-annotations-editor>
         </div>
       }
-    </article>
+    </app-editor-entry-row>
+    </div>
   } @else { <p class="text-sm text-on-surface-variant">No species selected. Choose one from your library or create a custom species.</p> }
   @if (catalogOpen) {
     <app-catalog-dialog title="Select Species" subtitle="Selecting a species replaces the current selection." (closed)="catalogOpen = false">
       <app-source-book-filter />
-      <div class="flex gap-2 mb-3"><label class="flex-1 min-w-0"><span class="sr-only">Search species</span><input class="editor-input" name="species-search" [(ngModel)]="search" (ngModelChange)="searchChanged()" placeholder="Search name or source book…" /></label><button type="button" class="secondary-button" [disabled]="loading()" (click)="refreshContent()">Refresh</button></div>
+      <app-list-controls label="Search species" searchName="species-search" [query]="search" (queryChange)="search = $event; searchChanged()" [hasFilters]="false" (cleared)="search = ''; searchChanged()">
+        <button list-toolbar-action type="button" class="flex h-11 w-8 shrink-0 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high" aria-label="Refresh species catalog" title="Refresh species catalog" [disabled]="loading()" (click)="refreshContent()"><app-ui-icon name="reset" /></button>
+        </app-list-controls>
       @if (message()) { <p role="status" class="text-sm text-on-surface-variant mb-3">{{ message() }} @if (!revision()) { <a routerLink="/content" class="text-primary underline">Content imports</a> }</p> }
       @if (loading()) { <p role="status" class="text-xs text-on-surface-variant mb-2">Searching…</p> }
-      <div class="space-y-2">@for (record of results(); track record.key) {
-        <article class="rounded border border-outline-variant p-2">
-          <div class="flex justify-between gap-2"><div class="min-w-0"><p class="font-semibold text-sm">{{ record.name }}</p><p class="text-xs text-on-surface-variant">{{ record.publication }}</p></div><button type="button" class="secondary-button compact-button" [disabled]="isSelected(record)" (click)="select(record)">{{ isSelected(record) ? 'Selected' : 'Select' }}</button></div>
-          <app-description-dialog [title]="record.name" label="Species Abilities"><div class="p-2"><app-entry-renderer [entries]="$any(record.data['entries'] ?? [])" /></div></app-description-dialog>
-        </article>
+      <div class="overflow-hidden rounded-lg bg-surface-container">@for (record of results(); track record.key) {
+        <app-catalog-result-row [name]="record.name" [selection]="true" [selected]="isSelected(record)" [disabled]="loading()" (addRequested)="select(record)">
+          <span catalog-metadata class="min-w-0 truncate rounded bg-surface-container-highest px-1" [title]="record.publication">{{ record.publication }}</span>
+          <app-description-dialog catalog-description class="shrink-0 self-stretch" [title]="record.name" label="Species Abilities" [compact]="true"><div class="p-2"><app-entry-renderer [entries]="$any(record.data['entries'] ?? [])" /></div></app-description-dialog>
+        </app-catalog-result-row>
       }</div>
       @if (revision()) { <div class="flex flex-wrap justify-between items-center gap-2 mt-3 text-xs"><span>{{ total() }} matches</span><div class="flex gap-2"><button type="button" class="secondary-button compact-button" [disabled]="loading() || offset === 0" (click)="nextPage(-1)">Previous</button><button type="button" class="secondary-button compact-button" [disabled]="loading() || offset + pageSize >= total()" (click)="nextPage(1)">Next</button></div></div> }
       <details class="mt-4"><summary class="cursor-pointer text-sm text-primary">Create Custom Species</summary><div class="space-y-2 mt-2"><label><span class="field-label">Name</span><input class="editor-input" name="custom-species-name" [(ngModel)]="customName" /></label><label><span class="field-label">Abilities / Description</span><textarea class="editor-input" name="custom-species-description" rows="3" [(ngModel)]="customDescription"></textarea></label><button type="button" class="action-button" [disabled]="!customName.trim()" (click)="addCustom()">Select Species</button></div></details>

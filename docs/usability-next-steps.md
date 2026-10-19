@@ -83,6 +83,101 @@ discoverable; 320 px layouts remain contained; tab changes preserve drafts and
 filter state. Compare before/after with the same content rather than adopting the
 old review's pixel measurements as fixed targets.
 
+**Implemented — 19 October 2026:**
+
+- Features, Spells, Inventory, and Monsters share an icon-based search toolbar,
+  active-filter count, and explicit Clear action. Advanced filter rows start
+  collapsed and remain mounted so closing them preserves their selections.
+  Casting/source statistics and spell slots remain visible in Prepared Spells.
+  Preparation views omit spell slots and retain the original source-card selector,
+  replacing casting stats with prepared and spellbook counts. Source selections
+  are context: spell and feature sources do not contribute to filter badges, and
+  Clear preserves the selected source in both viewer and creator lists. On the sheet, Prepared Spells,
+  Spelllist, and Spellbook are separate views, switched using list/book icons and
+  a return arrow rather than filter chips. Views do not contribute to filter
+  counts, and Clear preserves the current view. Casting Time supports multiple
+  Action, Bonus, and Reaction choices alongside multi-select spell levels and schools. Search
+  stays immediately above results and the optional filter panel.
+- The creator reuses that toolbar for its existing feature, spell, item, and
+  monster searches. Spell-level and casting-time filters use the same disclosure;
+  primary feature types and casting-source selectors stay visible. Lists without extra filters show search and
+  Clear without an unnecessary Filters button.
+- Spells, Features, Items, Monsters, and Species share compact acquisition rows
+  with metadata tags, a full-row details target, and independent Add/Select icons.
+  Source Books stays above other catalog controls. Catalog filter options are
+  derived only from permitted books, including spell-class membership sources;
+  changing books removes unavailable selections. Clear preserves this book scope.
+  Each filter group uses its own horizontally scrolling row on mobile.
+- Already-added entries use compact two-line management rows with metadata tags,
+  whole-row editing, and independent removal controls. Notes, trackers, combat
+  bookmarks, and other editing controls stay in the expanded row. Spell rows have
+  separate preparation and source-enabled spellbook toggles; removing annotated
+  list copies retains the existing confirmation and source identity boundaries.
+  The spell editor uses one deduplicated management list, with Prepared and/or
+  Spellbook membership filters instead of play-view switches or preparation tint.
+  Selecting both memberships shows their union. Legacy prepared/book-only entries
+  remain visible, and prepared notes/trackers can be edited from the unified row.
+  Uses, Notes, and linked Combat indicators sit beside entry names, with tally
+  marks for counters. Expanded rows share a compact Uses/Notes/Combat/Description
+  toolbar; only one annotation panel is visible at a time, with drafts retained.
+  Combat entry creation reuses the compact dialog and existing confirmation flow.
+- The sheet separates Class Features, Feats, and Optional Features into view
+  buttons outside the filter panel. Class Features filters by level; the creator
+  and catalog also offer class. Feats filter by category and Optional Features by
+  feature type; those views show type tags instead of class/level metadata.
+  Switching views is not counted as filtering, and Clear preserves the view.
+- Spelllist and Spellbook use compact two-row checklist entries with subtle dividers:
+  readable names and rounded preparation controls above small school abbreviations,
+  membership icons, and truncated content/casting-source labels. Levels appear in
+  group headings. Spellbook also shows Ritual/Concentration tags and a Ritual-only
+  toggle beside search, sharing the advanced ritual filter. Full
+  rules, notes, and trackers remain in the detail overlay; Prepared Spells keeps
+  its play-time summaries. The view icons sit at the top of the spell page; a
+  theme-aware tint and accent edge cover the whole page in either preparation
+  view, without an extra inset panel. User-facing ?Known?
+  labels are now ?Spelllist,? including creator/wizard labels, while stored
+  `KNOWN` values remain compatible with existing characters.
+- Creator header actions take less mobile space, using labeled icons for Wizard,
+  Save, and Save & View. A sticky page selector with previous/next arrows replaces
+  the scrolling tabs below 1024 px, sharing the existing page state, save guards,
+  and guarded swipes. Desktop keeps the existing tabs.
+- Desktop sheet padding, portrait size, ability-card spacing, and circular stat
+  badges are smaller while retaining their existing arrangement and visual style.
+
+- Features choose their source when added; existing entries cannot be reassigned.
+  Spell casting-source cards in the creator retain ability/attack/DC stats and add
+  separate Prepared spell (level 1+), Prepared cantrip (C), and Spellbook icon counts. Viewer preparation views share those
+  icons and totals; counts remain independent of list filters and update with membership.
+  Source creation uses compact cards in a responsive grid, with grouped Features/
+  Spellcasting controls, one row of ability toggles, and Spellbook under Spellcasting.
+  Custom attack/DC overrides are expandable and open automatically for saved overrides.
+  New features and spells require an existing feature/casting source, respectively;
+  catalog, custom, and bulk additions cannot create unassigned entries. Add dialogs
+  offer source management when no valid destination is selected. Older entries are retained.
+  To change a feature's source, remove it and add it to the correct source.
+  Class features remain unique per source. Spells remain unique per casting source, with separate
+  Spelllist/Prepared/Spellbook memberships. Feats, Optional Features, items, and
+  monsters allow independent repeat copies. Their catalog Add buttons retain a
+  subtle tint when a copy already exists and remain available to add another.
+
+- Searches rank exact names first, then matching names with fewer extra characters.
+  Catalogs rank across all matches before pagination; editor lists, sheet groups,
+  wizard choices, and searchable selectors use the same ranking. Empty searches
+  preserve the existing ordering, and filtering rules remain unchanged.
+
+Validation: 414 tests pass across 84 files, including shared search/clear behavior,
+closed-filter counts, and creator draft preservation through the new selector.
+Production build succeeds with the existing initial-bundle and editor stylesheet
+budget warnings. The repeatable
+[layout check](../scripts/usability-layout-acceptance.mjs) uses synthetic in-memory
+character data in an isolated Chrome profile, without account login or cloud writes.
+Checks at 320, 390, 768, and 1366 px found no document overflow with filters open or
+closed; filtering and viewing preserved the character data. On that fixture,
+closing advanced filters saves 270 px on mobile Spells and 74–84 px on the other
+mobile lists, and 70–286 px on desktop/tablet. These compare open and closed panels in
+the new layout, not the earlier review's historical character/layout measurements.
+Physical-device keyboard and gesture behavior remains unverified.
+
 ### 2. Bring limited-use abilities closer to their counters (F15, F16)
 
 **Priority: second. Effort: medium; persistent favorites would make it larger.**
@@ -153,7 +248,7 @@ through them rather than turning them into a mandatory character-building workfl
   entry point. Retain its preview and manual-override behavior.
 - Explain Feature Source with class/item examples, and separately explain casting
   ability and slot pool. Describe what the implementation actually supports.
-- Explain Known, Spellbook, and Prepared at the point of use. Short help text is
+- Explain Spelllist, Spellbook, and Prepared at the point of use. Short help text is
   feasible now; class/rules-aware list behavior is a separate, deferred feature.
 - Make unresolved wizard choices easy to find. Verify existing preview and option
   descriptions before adding anything. Keep species and class/feat sections clear.
@@ -185,7 +280,7 @@ Work roughly from the top down; combine nearby changes when convenient.
 | Q2 | F15 | Make unlinked/custom combat entries open a full-text detail view. The mobile and desktop action buttons currently depend on `isActionClickable`. Retain compact row truncation. | Long custom text is readable by touch and keyboard; linked entries keep their source navigation; no resource is spent. |
 | Q3 | F09 | Enlarge remaining frequent-action hit areas, especially the equipment controls currently using `h-8 w-8`, toward 44 px. Audit proficiency and use controls too. | Increase interactive area without shrinking text or causing overflow; separate spend, restore, and delete. |
 | Q4 (implemented) | F14 | Added Invisible to the condition presets. Desktop condition tags and the Add control use compact language/tool-tag sizing; explanatory text was removed at the user's request. | Preserves custom-condition compatibility; all condition labels are reminders only and do not affect calculations. |
-| Q5 | F26 | On initial creator Spells entry, select a populated list if Known is empty. Preserve an explicit later user selection. | Prepared-only characters show their spells; fully empty characters retain a helpful empty state. |
+| Q5 | F26 | On initial creator Spells entry, select a populated list if Spelllist is empty. Preserve an explicit later user selection. | Prepared-only characters show their spells; fully empty characters retain a helpful empty state. |
 | Q6 | F11, F33 | Standardize wording around Apply to Character, Saved on This Device, and Synced to Account where those states are accurate. Rename “Share via Code Sync” to “Share a Copy by Code.” | Keep actual local save and cloud status distinct; retain the existing independent-copy explanation. |
 | Q7 | F21, F24, F29, F30 | Move Portrait below essential setup, group HP/AC/Hit Dice, and add short help for calculated AC, feature sources, and what a combat bookmark stores. Rename the existing wizard entry point for leveling. | Describe current calculations and refresh behavior precisely; no new formulas, wizard, or rules system. |
 | Q8 | F23 | Offer a direct proficiency-rank select using the same existing update path as the cycling icon; add a short explanation of the displayed total. | Reuse supported ranks; do not introduce expertise/half proficiency into saving throws if unsupported. |

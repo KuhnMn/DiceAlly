@@ -3,49 +3,52 @@
     [count]="monsters.length" controlsId="added-monsters"
     [(visible)]="listVisible" (add)="openCatalog()" />
   <div id="added-monsters" class="space-y-2" [hidden]="!listVisible">
-    <label class="mb-3 block text-sm font-semibold">Search monsters
-      <input type="search" class="editor-input mt-1" name="selected-monster-search" [(ngModel)]="listSearch" placeholder="Search by name" />
-    </label>
+
+    <app-list-controls label="Search monsters" searchName="selected-monster-search" [(query)]="listSearch" [hasFilters]="false" />
+    <div class="rounded-lg bg-surface-container">
     @for (monster of filteredMonsters; track monster; let i = $index) {
-      <article class="feature-card rounded-lg border-2 border-secondary bg-surface-container p-2.5">
-        <div class="entry-header">
-          <button type="button" class="flex-1 min-w-0 text-left" [attr.aria-expanded]="expanded.has(monster)" (click)="toggle(monster)">
-            <span class="text-sm font-semibold">{{ monster.name }}</span>
-            <span class="block text-xs text-on-surface-variant mt-0.5">{{ monster.source }} &middot; @if (monster.hpEnabled) { Max HP {{ monster.monsterMaxHP }} } @else { Stat Block Only }</span>
-          </button>
-          <app-combat-bookmark [sheet]="sheet()" [resource]="monster" type="MONSTER" (edited)="change()" />
-          <button type="button" class="secondary-button compact-button" (click)="toggle(monster)">{{ expanded.has(monster) ? 'Close' : 'Edit' }}</button>
-          <button type="button" class="secondary-button compact-button icon-button" [attr.aria-label]="'Remove ' + monster.name" (click)="remove(monster)"><app-ui-icon name="close" /></button>
-        </div>
+      <app-editor-entry-row [sheet]="sheet()" [resource]="monster" [name]="monster.name || 'Unnamed monster'" [expanded]="expanded.has(monster)" (detailsRequested)="toggle(monster)" (removeRequested)="remove(monster)" [notesCount]="monster.notes?.length || 0" [usesCount]="monster.uses?.length || 0">
+        <ng-container entry-metadata>
+          <span class="shrink-0 rounded bg-secondary-container px-1 text-on-secondary-container">@if (monster.hpEnabled) { Max HP {{ monster.monsterMaxHP }} } @else { Stat Block Only }</span>
+          @if (monster.source) { <span class="min-w-0 truncate rounded bg-surface-container-highest px-1 text-on-surface" [title]="monster.source">{{ monster.source }}</span> }
+        </ng-container>
         @if (expanded.has(monster)) {
-          <div class="mt-3 pt-3 border-t border-outline-variant space-y-3">
+          <div class="space-y-3">
+
+
             <label class="block"><span class="field-label">Maximum HP (Optional)</span>
               <input class="editor-input !w-36" type="number" min="0" step="1" [name]="'monster-max-hp-' + i" [ngModel]="monster.hpEnabled ? monster.monsterMaxHP : null" (ngModelChange)="setMaxHp(monster, $event)" placeholder="Not tracked" />
               <span class="block text-xs text-on-surface-variant mt-1">Leave empty to show the stat block without tracking HP.</span>
             </label>
-            <app-description-dialog [title]="monster.name || 'Monster'" label="Stat Block"><div class="p-3">
+
+            <app-entry-annotations-editor [entry]="monster" (edited)="change()">
+              <app-combat-bookmark annotation-combat [sheet]="sheet()" [resource]="monster" type="MONSTER" (edited)="change()" />
+              <app-description-dialog annotation-description [dense]="true" [title]="monster.name || 'Monster'" label="Stat Block"><div class="p-3">
               <app-monster-stat-block [value]="monster" [compact]="true" />
             </div></app-description-dialog>
-            <app-entry-annotations-editor [entry]="monster" (edited)="change()" />
+            </app-entry-annotations-editor>
           </div>
         }
-      </article>
+      </app-editor-entry-row>
     } @empty { <p class="text-sm text-on-surface-variant py-2">{{ monsters.length ? 'No monsters match this search.' : 'No monsters selected yet.' }}</p> }
+    </div>
   </div>
 </section>
 @if (catalogOpen) {
   <app-catalog-dialog title="Add Monsters" subtitle="Browse the library or add a custom companion." (closed)="catalogOpen = false">
-    <details class="rounded-lg bg-surface-container-high px-3 py-2 mb-3"><summary class="cursor-pointer text-sm font-semibold text-primary py-1">Add Custom Monster</summary><div class="mt-2 space-y-2"><label><span class="field-label">Name</span><input class="editor-input" name="custom-monster-name" [(ngModel)]="customName" /></label><button type="button" class="action-button" [disabled]="!customName.trim()" (click)="addCustom()">Add</button></div></details>
       <app-source-book-filter />
+    <details class="rounded-lg bg-surface-container-high px-3 py-2 mb-3"><summary class="cursor-pointer text-sm font-semibold text-primary py-1">Add Custom Monster</summary><div class="mt-2 space-y-2"><label><span class="field-label">Name</span><input class="editor-input" name="custom-monster-name" [(ngModel)]="customName" /></label><button type="button" class="action-button" [disabled]="!customName.trim()" (click)="addCustom()">Add</button></div></details>
     <p role="status" class="text-xs font-semibold text-secondary mb-2">{{ catalogAdded }} added this visit</p>
-    <div class="flex items-center gap-2 mb-3"><label class="flex-1 min-w-0"><span class="sr-only">Search monsters</span><input class="editor-input" name="monster-search" [(ngModel)]="search" (ngModelChange)="searchChanged()" placeholder="Search monsters or source book…" /></label><button type="button" class="secondary-button" [disabled]="catalog.loading()" (click)="refreshContent()">Refresh</button></div>
+    <app-list-controls label="Search monsters" searchName="monster-search" [query]="search" (queryChange)="search = $event; searchChanged()" [hasFilters]="false" (cleared)="search = ''; searchChanged()">
+      <button list-toolbar-action type="button" class="flex h-11 w-8 shrink-0 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high" aria-label="Refresh monster catalog" title="Refresh monster catalog" [disabled]="catalog.loading()" (click)="refreshContent()"><app-ui-icon name="reset" /></button>
+    </app-list-controls>
     @if (catalog.message()) { <p role="status" class="text-sm text-on-surface-variant mb-3">{{ catalog.message() }} <a routerLink="/content" class="text-primary underline">Manage Game Data</a></p> }
     @if (catalog.loading()) { <p role="status" class="text-xs text-on-surface-variant">Searching…</p> }
-    <div class="space-y-1">@for (record of catalog.results(); track record.key) {
-      <div class="rounded border border-outline-variant p-2">
-        <div class="flex justify-between gap-2"><div class="min-w-0"><p class="font-semibold text-sm">{{ record.name }}</p><p class="text-xs text-on-surface-variant">{{ record.publication }} &middot; HP {{ $any(record.data['hp'])?.average ?? 'Special' }}</p></div><button type="button" class="secondary-button compact-button" [disabled]="catalog.loading() || isSelected(record)" (click)="add(record)">{{ isSelected(record) ? 'Added' : 'Add' }}</button></div>
-        <app-description-dialog [title]="record.name" label="Stat Block"><div class="p-2"><app-monster-stat-block [value]="preview(record)" [compact]="true" /></div></app-description-dialog>
-      </div>
+    <div class="overflow-hidden rounded-lg bg-surface-container">@for (record of catalog.results(); track record.key) {
+      <app-catalog-result-row [name]="record.name" [alreadyAdded]="hasExisting(record)" [disabled]="catalog.loading()" (addRequested)="add(record)">
+        <ng-container catalog-metadata><span class="shrink-0 rounded bg-secondary-container px-1 text-on-secondary-container">HP {{ $any(record.data['hp'])?.average ?? 'Special' }}</span><span class="min-w-0 truncate rounded bg-surface-container-highest px-1 text-on-surface" [title]="record.publication">{{ record.publication }}</span></ng-container>
+        <app-description-dialog catalog-description class="shrink-0 self-stretch" [title]="record.name" label="Stat Block" [compact]="true"><div class="p-2"><app-monster-stat-block [value]="preview(record)" [compact]="true" /></div></app-description-dialog>
+      </app-catalog-result-row>
     }</div>
     @if (catalog.revision()) { <div class="flex flex-wrap items-center justify-between gap-2 text-xs mt-3"><span>{{ catalog.total() }} matches</span><div class="flex gap-2"><button type="button" class="secondary-button compact-button" [disabled]="catalog.loading() || catalog.offset === 0" (click)="nextPage(-1)">Previous</button><button type="button" class="secondary-button compact-button" [disabled]="catalog.loading() || catalog.offset + catalog.pageSize >= catalog.total()" (click)="nextPage(1)">Next</button></div></div> }
   </app-catalog-dialog>
