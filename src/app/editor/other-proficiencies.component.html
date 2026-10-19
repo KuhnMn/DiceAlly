@@ -62,7 +62,7 @@
   @if (panel() === 'sources') {
   <section class="editor-card">
     <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-      <h2 class="!mb-0">Feature Sources</h2>
+      <div class="flex items-center gap-1"><h2 class="!mb-0">Feature Sources</h2><app-info-button title="Feature sources"><p>A source groups where your features or spells come from, such as Ranger, Cleric, a background, or a magic item. Enable Features, Spellcasting, or both, then choose that source when adding entries.</p><p>Associated abilities supply the source's displayed ability modifier, spell attack bonus, and save DC. Custom attack/DC values can override those displayed values. Sources do not add features or spells automatically.</p><p>A spell's source and its spell-slot pool are separate. Record shared multiclass slots once under a source you choose; keep Pact Magic in a separate pool with its own recovery setting. Slot totals and pools are configured manually here.</p></app-info-button></div>
       <div class="flex flex-wrap items-center gap-2">
         <button type="button" class="secondary-button compact-button" [attr.aria-expanded]="sourcesVisible" aria-controls="added-feature-sources" (click)="sourcesVisible = !sourcesVisible">{{ sourcesVisible ? 'Hide List' : 'Show List' }} ({{ sources.length }})</button>
         <button type="button" class="action-button" (click)="sourcesVisible = true; addSource()">Add Source</button>

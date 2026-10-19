@@ -1,5 +1,6 @@
 import { rankSearchResults } from '../search-ranking';
 import { UiIconComponent } from '../ui-icon.component';
+import { InfoButtonComponent } from '../info-button.component';
 import { groupWizardReview, REVIEW_ACTION_LABELS } from './wizard-review';
 import { isCompleteSelection } from '../rules/spell-choice';
 import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
@@ -21,7 +22,7 @@ import { activeContentRevision } from './active-content-revision';
 
 @Component({
   selector: 'app-class-wizard',
-  imports: [UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, SourceBookFilterComponent, SearchableSelectComponent, CapitalizeFirstPipe],
+  imports: [InfoButtonComponent, UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, SourceBookFilterComponent, SearchableSelectComponent, CapitalizeFirstPipe],
   templateUrl: './class-wizard.component.html',
   styleUrl: './editor.css',
 })

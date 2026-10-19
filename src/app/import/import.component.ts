@@ -2,7 +2,8 @@ import { UiIconComponent } from '../ui-icon.component';
 import { Component, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { NavigationCancel, NavigationEnd, NavigationError, NavigationSkipped, NavigationStart, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CharacterLibraryService, CharacterSummary, CharacterImportResult } from '../characters/character-library.service';
 
 import { CharacterSharingService } from '../characters/character-sharing.service';
@@ -21,7 +22,7 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
       <!-- Saved Characters Section -->
       @let characters = savedCharacters();
       @if (characters.length >= 0) {
-        <section class="mb-12">
+        <section class="mb-12" [attr.aria-busy]="loadingCharacters() || !!openingCharacter()">
           <div class="flex flex-col sm:flex-row justify-between items-start mb-4">
             <div class="flex flex-col items-start justify-between">
               <h2 class="text-3xl font-bold mb-2">Your Characters</h2>
@@ -58,10 +59,14 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
             </div>
           </div>
 
+          @if (loadingCharacters()) {
+            <p role="status" class="mb-4 flex items-center gap-2 text-sm text-on-surface-variant"><app-ui-icon name="loader" class="animate-spin" />Loading characters…</p>
+          }
+          @if (openingCharacter()) { <p role="status" class="mb-4 flex items-center gap-2 text-sm text-on-surface-variant"><app-ui-icon name="loader" class="animate-spin" />Opening character…</p> }
           @if (characters.length > 0) {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               @for (char of characters; track char.characterId) {
-                <div class="bg-surface-container border-2 border-outline-variant rounded-lg p-4 hover:bg-surface-container-high transition-colors">
+                <div class="bg-surface-container border-2 border-outline-variant rounded-lg p-4 hover:bg-surface-container-high transition-colors" [attr.aria-busy]="openingCharacter()?.id === char.characterId">
                   <div class="flex items-start justify-between mb-3">
                     <div>
                       <h3 class="text-lg font-semibold text-on-surface">{{ char.name }}</h3>
@@ -75,11 +80,12 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
                   <div class="grid gap-2" [class.grid-cols-3]="creatorAvailable" [class.grid-cols-2]="!creatorAvailable">
                     <button
                       (click)="loadCharacter(char.characterId)"
-                      class="col-span-full px-4 py-2 bg-primary text-on-primary font-medium rounded text-sm hover:bg-primary-container transition-colors"
+                      [disabled]="!!openingCharacter()"
+                      class="col-span-full flex items-center justify-center gap-2 px-4 py-2 bg-primary text-on-primary font-medium rounded text-sm hover:bg-primary-container transition-colors disabled:opacity-60"
                     >
-                      Load
+                      @if (openingCharacter()?.id === char.characterId && !openingCharacter()?.editing) { <app-ui-icon name="loader" class="animate-spin" />Opening… } @else { Load }
                     </button>
-                    @if (creatorAvailable) { <a [routerLink]="['/characters', char.characterId, 'edit']" class="px-2 py-2 rounded bg-secondary-container text-on-secondary-container text-center text-sm">Edit</a> }
+                    @if (creatorAvailable) { <a [routerLink]="openingCharacter() ? null : ['/characters', char.characterId, 'edit']" [attr.aria-disabled]="openingCharacter() ? true : null" [attr.tabindex]="openingCharacter() ? -1 : null" class="flex items-center justify-center gap-1 px-2 py-2 rounded bg-secondary-container text-on-secondary-container text-center text-sm" [class.opacity-60]="!!openingCharacter()">@if (openingCharacter()?.id === char.characterId && openingCharacter()?.editing) { <app-ui-icon name="loader" class="animate-spin" /><span class="sr-only">Opening character editor…</span> } @else { Edit }</a> }
                     <button
                       (click)="downloadCharacter(char.characterId)"
                       class="px-2 py-2 bg-secondary-container text-on-secondary-container font-medium rounded text-sm hover:bg-secondary transition-colors"
@@ -88,7 +94,7 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
                     </button>
                     <button
                       (click)="requestDeleteCharacter(char)"
-                      [disabled]="deleting()"
+                      [disabled]="deleting() || !!openingCharacter()"
                       class="px-2 py-2 bg-rose-container text-on-rose-container font-medium rounded text-sm hover:bg-rose transition-colors"
                     >
                       Delete
@@ -101,7 +107,7 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
             <div class="mt-4 text-xs text-on-surface-variant">
               Storage used: {{ getStorageUsage() | number:'1.2-2' }} KB
             </div>
-          } @else {
+          } @else if (!loadingCharacters()) {
             <div class="bg-surface-container-low p-6 rounded-lg text-center">
               <p class="text-on-surface-variant">No saved characters yet. Import or create one below.</p>
             </div>
@@ -254,6 +260,8 @@ export class ImportComponent {
   raw = '';
   importUrl = '';
   savedCharacters = signal<CharacterSummary[]>([]);
+  readonly loadingCharacters = signal(true);
+  readonly openingCharacter = signal<{ id: string; editing: boolean } | null>(null);
   importError = signal<{ code: string; message: string } | null>(null);
   pendingImport = signal<{ json: string; override: boolean; legacy?: boolean } | null>(null);
   readonly isConvertingLegacy = signal(false);
@@ -263,8 +271,17 @@ export class ImportComponent {
   deleting = signal(false);
 
   constructor() {
-    // Reload saved characters list
-    this.reload();
+    this.router.events.pipe(takeUntilDestroyed()).subscribe(event => {
+      if (event instanceof NavigationStart) {
+        const segments = this.router.parseUrl(event.url).root.children['primary']?.segments ?? [];
+        if (segments[0]?.path === 'characters' && segments[1] && segments[1].path !== 'new') {
+          this.openingCharacter.set({ id: segments[1].path, editing: segments[2]?.path === 'edit' });
+        }
+      } else if (event instanceof NavigationEnd || event instanceof NavigationCancel || event instanceof NavigationError || event instanceof NavigationSkipped) {
+        if (event instanceof NavigationError) this.library.error.set(String(event.error));
+        this.openingCharacter.set(null);
+      }
+    });
     // Watch for save events and reload
     effect(() => {
       this.library.changed();
@@ -274,10 +291,12 @@ export class ImportComponent {
 
   async reload() {
     const request = ++this.reloadVersion;
+    this.loadingCharacters.set(true);
     try {
       const characters = await this.library.summaries();
       if (request === this.reloadVersion) this.savedCharacters.set(characters);
-    } catch (error) { this.library.error.set(String(error)); }
+    } catch (error) { if (request === this.reloadVersion) this.library.error.set(String(error)); }
+    finally { if (request === this.reloadVersion) this.loadingCharacters.set(false); }
   }
 
   async onFile(event: Event, legacy = false) {
@@ -337,8 +356,12 @@ export class ImportComponent {
     }
   }
 
-  loadCharacter(characterId: string) {
-    void this.router.navigate(['/characters', characterId]);
+  async loadCharacter(characterId: string) {
+    if (this.openingCharacter()) return;
+    this.openingCharacter.set({ id: characterId, editing: false });
+    try { await this.router.navigate(['/characters', characterId]); }
+    catch (error) { this.library.error.set(String(error)); }
+    finally { this.openingCharacter.set(null); }
   }
 
   downloadCharacter(characterId: string) {

@@ -2,6 +2,7 @@ import { Component, inject, input, output } from '@angular/core';
 import { CombatAction, ExportedCharacter, Monster } from '../models/character.model';
 import { CharacterHelpersService } from '../sheet/character-helpers.service';
 import { UiIconComponent } from '../ui-icon.component';
+import { InfoButtonComponent } from '../info-button.component';
 import { CombatActionDialogComponent } from './combat-action-dialog.component';
 import { CombatResource, CombatResourceType, combatLinksForResource, monsterCombatOptions, prefillCombatAction } from './combat-actions';
 import { AppDialogService } from '../services/app-dialog.service';
@@ -9,7 +10,7 @@ import { AppDialogService } from '../services/app-dialog.service';
 @Component({
   selector: 'app-combat-bookmark',
   host: { class: 'flex min-w-0 max-w-full' },
-  imports: [UiIconComponent, CombatActionDialogComponent],
+  imports: [UiIconComponent, CombatActionDialogComponent, InfoButtonComponent],
   styleUrl: './editor.css',
   template: `
     <span class="inline-flex max-w-full items-center gap-1 rounded-lg"
@@ -21,6 +22,7 @@ import { AppDialogService } from '../services/app-dialog.service';
     @if (isBookmarked()) {
       <button type="button" class="secondary-button combat-tool-button" [title]="'Add Another Combat Entry for ' + resource().name" [attr.aria-label]="'Add another combat entry for ' + resource().name" (click)="open()"><app-ui-icon name="plus" /></button>
     }
+    <app-info-button title="Combat bookmarks"><p>Adding to Combat creates a separate, editable reminder with suggested name, action type, range, attack/save text, and damage or effect text. It keeps a link to the original entry for reference.</p><p>Saved text does not update automatically when your character changes. In Combat references, use Refresh from Source to review supported suggestions and choose which fields to replace. Unchecked fields keep your text; unsupported formulas stay manual.</p><p>Removing the Combat entry keeps the original feature, spell, item, or monster. A bookmark does not roll attacks, apply effects, or spend resources.</p></app-info-button>
     </span>
     @if (draft; as action) { <app-combat-action-dialog [entry]="action" [suggestions]="suggestions" (saved)="add($event)" (cancelled)="draft = undefined" /> }
   `,

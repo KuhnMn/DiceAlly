@@ -1,5 +1,6 @@
 import { RecoveryIndicatorComponent } from '../recovery-indicator.component';
 import { UiIconComponent } from '../ui-icon.component';
+import { InfoButtonComponent } from '../info-button.component';
 import { Component, input, output } from '@angular/core';
 import { FormsModule, NgModel } from '@angular/forms';
 import { ExportedCharacter, SpellSlot } from '../models/character.model';
@@ -8,7 +9,7 @@ import { RECOVERY_OPTIONS } from './recovery-options';
 import { FeatureSourcePickerComponent } from './feature-source-picker.component';
 
 @Component({
-  selector: 'app-editor-spell-slots', imports: [RecoveryIndicatorComponent, UiIconComponent, FormsModule, FeatureSourcePickerComponent],
+  selector: 'app-editor-spell-slots', imports: [InfoButtonComponent, RecoveryIndicatorComponent, UiIconComponent, FormsModule, FeatureSourcePickerComponent],
   templateUrl: './spell-slots.component.html', styleUrl: './editor.css',
 })
 export class SpellSlotsComponent {

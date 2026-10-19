@@ -198,6 +198,17 @@ try {
     await send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false},session);
     await evaluate(session, 'c.setPage(0); ng.applyChanges(c); window.scrollTo(0,0)'); await delay(100);
     const metric=await evaluate(session, `(()=>{const form=document.querySelector('#basic-info');return {contentTop:Math.round(form.getBoundingClientRect().top+scrollY),width:innerWidth,documentWidth:document.documentElement.scrollWidth}})()`);
+    assert.deepEqual(await evaluate(session, `[...document.querySelectorAll('app-editor-basic-info h2')].map(heading=>heading.textContent.trim())`),['Basic Information','Combat Stats','Armor Class','Hit Dice','General Stats','Portrait']);
+    if(width===390||width===1366){
+      await evaluate(session, `document.querySelector('[aria-label="About Calculated armor class"]').click()`);
+      await until(()=>evaluate(session,`!!document.querySelector('app-info-button [role="dialog"]')`));
+      const info=await evaluate(session,`(()=>{const dialog=document.querySelector('app-info-button [role="dialog"]'),box=dialog.getBoundingClientRect(),body=dialog.querySelector('.catalog-body');return {width:box.width,height:box.height,overflow:body.scrollWidth>body.clientWidth+1,hasText:dialog.textContent.includes('Light armor uses Dexterity')}})()`);
+      assert(info.width<=width&&info.height<=900&&!info.overflow&&info.hasText,JSON.stringify(info));
+      const shot=await send('Page.captureScreenshot',{format:'png'},session);await writeFile('tmp/info-ac-'+width+'.png',Buffer.from(shot.data,'base64'));
+      await evaluate(session,`document.querySelector('app-info-button .catalog-header button').click()`);
+      await until(()=>evaluate(session,`!document.querySelector('app-info-button [role="dialog"]')`));
+      await evaluate(session,'window.scrollTo(0,0)');
+    }
     assert(metric.documentWidth<=width+1,JSON.stringify(metric)); report.measurements.push({area:'creator',...metric});
     if(width===390){const shot=await send('Page.captureScreenshot',{format:'png'},session);await writeFile('tmp/usability-creator-mobile.png',Buffer.from(shot.data,'base64'));}
     if(width===390||width===1366) await checkScrollToTop('app-local-editor',width);

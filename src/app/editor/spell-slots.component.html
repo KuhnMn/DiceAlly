@@ -1,6 +1,6 @@
 <section class="editor-card spell-slot-editor">
   <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-    <h2 class="!mb-0">Spell Slots</h2>
+    <div class="flex items-center gap-1"><h2 class="!mb-0">Spell Slots</h2><app-info-button title="Spell-slot pools"><p>Slots track how many casts you have available at each slot level. The source assigned to a spell supplies its casting stats; it does not force that spell to use a particular slot pool.</p><p>For shared multiclass spellcasting, enter the combined slot totals once under one source. Keep Pact Magic in a separate pool, usually with Short Rest recovery. This panel edits the recorded pools; it does not enforce which pool a spell can use.</p><p>Set totals and recovery here; track spent slots on the sheet.</p></app-info-button></div>
     <div class="flex flex-wrap items-center gap-2">
     <button type="button" class="secondary-button compact-button" [attr.aria-expanded]="listVisible" aria-controls="spell-slot-content" (click)="listVisible = !listVisible">{{ listVisible ? 'Hide List' : 'Show List' }}</button>
     <button type="button" class="action-button compact-button" [disabled]="!sources.length" (click)="add()">Add Spell Slots</button>

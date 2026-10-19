@@ -6,14 +6,15 @@ import { CombatActionDialogComponent } from './combat-action-dialog.component';
 import { COMBAT_TYPES, resolveCombatResource } from './combat-actions';
 import { newEditorId } from './editor-identity';
 import { UiIconComponent } from '../ui-icon.component';
+import { InfoButtonComponent } from '../info-button.component';
 
 @Component({
   selector: 'app-editor-combat',
-  imports: [CombatSourceReviewComponent, CombatActionDialogComponent, UiIconComponent],
+  imports: [CombatSourceReviewComponent, CombatActionDialogComponent, UiIconComponent, InfoButtonComponent],
   styleUrl: './editor.css',
   template: `
     <section class="editor-card">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-3"><div><h2 class="!mb-0">Combat</h2><p class="text-xs text-on-surface-variant mt-1">Quick references on the sheet. Bookmark features, spells, items, or monsters to prefill an entry.</p></div><button type="button" class="action-button" (click)="create()"><app-ui-icon name="plus" /> Add Custom Entry</button></div>
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3"><div class="flex items-center gap-1"><h2 class="!mb-0">Combat</h2><app-info-button title="Combat reminders"><p>Bookmark features, spells, items, or monsters to prefill an editable Combat entry, or add a custom entry. These are quick references for the sheet.</p><p>Linked values are saved suggestions. After character changes, use Combat references and Refresh from Source to review supported fields. Only the fields you select are replaced; other text stays as you wrote it.</p><p>Track rolls, effects, and resource spending manually. Removing a Combat entry keeps its original source entry.</p></app-info-button></div><button type="button" class="action-button" (click)="create()"><app-ui-icon name="plus" /> Add Custom Entry</button></div>
       <app-combat-source-review [sheet]="sheet()" (edited)="edited.emit()" />
       @for (type of types; track type.value) {
         @let group = entries(type.value);

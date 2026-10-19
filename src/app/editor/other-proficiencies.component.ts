@@ -1,4 +1,5 @@
 import { UiIconComponent } from '../ui-icon.component';
+import { InfoButtonComponent } from '../info-button.component';
 import { AppDialogService } from '../services/app-dialog.service';
 import { newEditorId } from './editor-identity';
 import { Component, OnInit, inject, input, output, signal } from '@angular/core';
@@ -13,7 +14,7 @@ import { SearchableSelectComponent, SelectOption } from './searchable-select.com
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
 
 @Component({
-  selector: 'app-other-proficiencies', imports: [UiIconComponent, FormsModule, RouterLink, SearchableSelectComponent, EntryRendererComponent],
+  selector: 'app-other-proficiencies', imports: [InfoButtonComponent, UiIconComponent, FormsModule, RouterLink, SearchableSelectComponent, EntryRendererComponent],
   templateUrl: './other-proficiencies.component.html', styleUrl: './editor.css',
   styles: [`
     .source-editor { container-type: inline-size; }

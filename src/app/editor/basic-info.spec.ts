@@ -146,12 +146,30 @@ describe('Basic Info editor', () => {
     editor.proficiencies.setSaveBonus('wis', null); expect(editor.proficiencies.saveBonus('wis')).toBe(0);
   });
 
+  it('keeps setup help behind info buttons and retains the Class Wizard label for saved characters', async () => {
+    const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
+    const editor = fixture.componentInstance, before = JSON.stringify(editor.sheet);
+    const page = fixture.nativeElement as HTMLElement;
+    expect(page.textContent).not.toContain('Light armor uses Dexterity');
+    const help = page.querySelector<HTMLButtonElement>('[aria-label="About Calculated armor class"]')!;
+    expect(help.getAttribute('aria-haspopup')).toBe('dialog'); help.click(); await fixture.whenStable();
+    const dialog = page.querySelector<HTMLElement>('app-info-button [role="dialog"]')!;
+    expect(dialog.textContent).toContain('Light armor uses Dexterity');
+    expect(dialog.textContent).toContain('Conditions and reminders do not add automatic modifiers');
+    dialog.querySelector<HTMLButtonElement>('.catalog-header button')!.click(); await fixture.whenStable();
+    expect(page.querySelector('app-info-button [role="dialog"]')).toBeNull();
+    expect(JSON.stringify(editor.sheet)).toBe(before);
+    editor.version = 1; fixture.changeDetectorRef.markForCheck(); fixture.detectChanges();
+    expect(page.querySelector('.wizard-button')!.getAttribute('aria-label')).toBe('Class Wizard');
+    expect(page.querySelectorAll('app-class-wizard')).toHaveLength(0);
+  });
+
   it('opens without imported content and renders only the requested first page', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent);
     await fixture.whenStable();
     const page = fixture.nativeElement as HTMLElement;
     expect([...page.querySelectorAll('h2')].map(h => h.textContent?.trim())).toEqual([
-      'Basic Information', 'Portrait', 'Combat Stats', 'Hit Dice', 'Armor Class', 'General Stats',
+      'Basic Information', 'Combat Stats', 'Armor Class', 'Hit Dice', 'General Stats', 'Portrait',
     ]);
     expect(page.querySelector('#speed-walk')).toBeTruthy();
     expect(page.textContent).not.toMatch(/grant|preview|structured editing/i);

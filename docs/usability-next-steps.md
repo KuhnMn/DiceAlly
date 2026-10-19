@@ -169,7 +169,7 @@ old review's pixel measurements as fixed targets.
   navigation, and returns to the current tab's content with keyboard focus restored.
   Reduced-motion preferences disable smooth scrolling.
 
-Validation: 419 tests pass across 85 files, including shared search/clear behavior,
+Validation: 424 tests pass across 85 files, including shared search/clear behavior,
 closed-filter counts, and creator draft preservation through the new selector.
 Production build succeeds with the existing initial-bundle and editor stylesheet
 budget warnings. The repeatable
@@ -286,7 +286,7 @@ Work roughly from the top down; combine nearby changes when convenient.
 | Q4 (implemented) | F14 | Added Invisible to the condition presets. Desktop condition tags and the Add control use compact language/tool-tag sizing; explanatory text was removed at the user's request. | Preserves custom-condition compatibility; all condition labels are reminders only and do not affect calculations. |
 | Q5 | F26 | On initial creator Spells entry, select a populated list if Spelllist is empty. Preserve an explicit later user selection. | Prepared-only characters show their spells; fully empty characters retain a helpful empty state. |
 | Q6 | F11, F33 | Standardize wording around Apply to Character, Saved on This Device, and Synced to Account where those states are accurate. Rename “Share via Code Sync” to “Share a Copy by Code.” | Keep actual local save and cloud status distinct; retain the existing independent-copy explanation. |
-| Q7 | F21, F24, F29, F30 | Move Portrait below essential setup, group HP/AC/Hit Dice, and add short help for calculated AC, feature sources, and what a combat bookmark stores. Rename the existing wizard entry point for leveling. | Describe current calculations and refresh behavior precisely; no new formulas, wizard, or rules system. |
+| Q7 (implemented) | F21, F24, F29, F30 | Portrait follows essential setup; HP, AC, and Hit Dice are adjacent. Small info buttons open compact help for calculated AC, sources/slot pools, Combat snapshots and refresh, and class setup/leveling. The entry point remains **Class Wizard** by request. | Reuses existing dialogs and calculations; no new formulas, wizard, or rules system. |
 | Q8 | F23 | Offer a direct proficiency-rank select using the same existing update path as the cycling icon; add a short explanation of the displayed total. | Reuse supported ranks; do not introduce expertise/half proficiency into saving throws if unsupported. |
 | Q9 | F31 | Recheck the reported 320 px library/share-code overflow; if still present, use shrinkable inputs and wrapping/stacked input-button layout. | Verify at 320 and 390 px; do not hide overflow globally. Historical evidence needs fresh confirmation. |
 | Q10 | F33 | Align export/share modal focus containment, Escape handling, and focus return with the existing dialog pattern. | Check nested confirmations and return focus to the opener. If converting the modal needs lifecycle changes, budget as medium. |

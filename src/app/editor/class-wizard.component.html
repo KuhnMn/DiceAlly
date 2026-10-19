@@ -1,16 +1,15 @@
-<app-catalog-dialog title="Class Wizard" closeLabel="Cancel" subtitle="Optional prefill. Your manual edits stay in control." (closed)="closed.emit()">
-  <nav class="flex flex-wrap gap-2 mb-4" aria-label="Wizard steps">
+<app-catalog-dialog title="Class Wizard" closeLabel="Cancel" subtitle="" (closed)="closed.emit()">
+  <div class="flex items-start justify-between gap-2 mb-4"><nav class="flex flex-wrap gap-2" aria-label="Wizard steps">
     @for (label of ['Classes & Species', 'Choices', 'Review']; track label; let position = $index) {
       <span class="spell-filter-chip" [class.spell-filter-active]="stage === position" [attr.aria-current]="stage === position ? 'step' : null">{{ position + 1 }}. {{ label }}</span>
     }
-  </nav>
+  </nav><app-info-button title="Class setup and leveling"><p>This is the existing class wizard, also used for leveling. Choose your classes and levels, finish the choices, then review proposed changes before applying them to your draft. Save the character to keep those changes.</p><p>The first class determines starting proficiencies and first-level HP. Later levels use average HP plus your current Constitution modifier.</p><p>Backgrounds and starting equipment are configured manually in the editor. The wizard is optional; you can also edit the character yourself.</p></app-info-button></div>
   @if (loading()) { <p role="status" class="text-sm">Loading your imported class library…</p> }
   @if (error()) { <p role="alert" class="rounded border border-error bg-error-container text-on-error-container p-3 text-sm mb-3">{{ error() }}</p> }
   @if (!revision() && !loading()) { <a routerLink="/content" class="text-primary underline" (click)="closed.emit()">Open content imports</a> }
   @if (revision() && !loading()) {
     @if (stage === 0) {
       <app-source-book-filter />
-      <p class="text-xs text-on-surface-variant mb-3">The first class determines starting proficiencies and first-level HP. Later levels use average HP plus your current Constitution modifier.</p>
       <div class="flex justify-end mb-3"><button type="button" class="secondary-button compact-button" (click)="loadContent(true)">Use Current Library</button></div>
       <div class="space-y-3">
         @for (selection of state.classes; track selection.selectionId; let position = $index) {

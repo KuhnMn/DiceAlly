@@ -2,10 +2,11 @@ import { Component, input } from '@angular/core';
 import { FormsModule, ControlContainer, NgForm } from '@angular/forms';
 import { UiIconComponent } from '../ui-icon.component';
 import { BasicInfoEditorModel } from './basic-info-editor-model';
+import { InfoButtonComponent } from '../info-button.component';
 
 @Component({
   selector: 'app-editor-basic-info',
-  imports: [FormsModule, UiIconComponent],
+  imports: [FormsModule, UiIconComponent, InfoButtonComponent],
   templateUrl: './basic-info-editor.component.html',
   styleUrl: './editor.css',
   host: { class: 'block min-w-0 space-y-4' },
