@@ -6,6 +6,7 @@ import { ProficienciesEditorComponent } from './proficiencies-editor.component';
 import { ProficienciesEditorModel } from './proficiencies-editor-model';
 import { CombatEditorComponent } from './combat-editor.component';
 import { UiIconComponent } from '../ui-icon.component';
+import { ScrollToTopComponent } from '../scroll-to-top.component';
 import { CharacterUpdateNoticeComponent } from '../characters/character-update-notice.component';
 import { ThemePickerComponent } from '../theme-picker.component';
 import { ScrollableTabsDirective } from '../scrollable-tabs.directive';
@@ -33,7 +34,7 @@ import { SpeciesEditorComponent } from './species-editor.component';
 
 @Component({
   selector: 'app-local-editor',
-  imports: [SwipePagesDirective, CombatEditorComponent, CharacterUpdateNoticeComponent, UiIconComponent, ThemePickerComponent, ScrollableTabsDirective, FormsModule, RouterLink, BasicInfoEditorComponent, AbilityScoresEditorComponent, ProficienciesEditorComponent, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, ClassWizardComponent, SpeciesEditorComponent, ItemsEditorComponent, MonstersEditorComponent],
+  imports: [ScrollToTopComponent, SwipePagesDirective, CombatEditorComponent, CharacterUpdateNoticeComponent, UiIconComponent, ThemePickerComponent, ScrollableTabsDirective, FormsModule, RouterLink, BasicInfoEditorComponent, AbilityScoresEditorComponent, ProficienciesEditorComponent, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, ClassWizardComponent, SpeciesEditorComponent, ItemsEditorComponent, MonstersEditorComponent],
   templateUrl: './local-editor.component.html',
   styleUrl: './editor.css',
 })

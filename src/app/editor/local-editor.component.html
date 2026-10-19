@@ -22,7 +22,7 @@
 
   <app-source-book-filter />
 
-  <div class="sticky top-0 z-30 mb-3 flex min-w-0 items-center gap-2 border-b border-outline-variant bg-surface py-2 lg:hidden" role="navigation" aria-label="Character editor mobile pages">
+  <div #pageNavigation class="sticky top-0 z-30 mb-3 flex min-w-0 items-center gap-2 border-b border-outline-variant bg-surface py-2 lg:hidden" role="navigation" aria-label="Character editor mobile pages">
     <button type="button" (click)="setPage(page - 1)" [disabled]="busy() || page === 0" aria-label="Previous editor page" class="flex h-10 w-9 shrink-0 items-center justify-center rounded-lg border border-outline-variant disabled:opacity-35"><app-ui-icon name="left" /></button>
     <label class="min-w-0 flex-1"><span class="sr-only">Character editor page</span>
       <select aria-label="Character editor page" [value]="page" [disabled]="busy()" (change)="setPage(+$any($event.target).value)" class="min-h-10 w-full min-w-0 rounded-lg border border-outline-variant bg-surface-container px-2 text-base text-on-surface">
@@ -40,7 +40,8 @@
   @if (message()) { <p role="status" class="mb-4 rounded-lg border-2 border-secondary bg-secondary-container text-on-secondary-container p-3">{{ message() }}</p> }
   @if (error()) { <p role="alert" class="mb-4 rounded-lg border-2 border-error bg-error-container text-on-error-container p-3">{{ error() }}</p> }
 
-  <form id="basic-info" appSwipePages (pageSwipe)="setPage(page + $event)" (ngSubmit)="save()">
+  <form #tabContent id="basic-info" tabindex="-1" [attr.aria-label]="pages[page]" appSwipePages (pageSwipe)="setPage(page + $event)" (ngSubmit)="save()">
+    <app-scroll-to-top [target]="tabContent" [navigation]="pageNavigation" [page]="page" />
     <fieldset [disabled]="busy()" class="min-w-0 space-y-4">
       @if (pages[page] === 'Basic Info') {
         <app-editor-basic-info [model]="basicInfo" />

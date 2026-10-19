@@ -164,8 +164,12 @@ old review's pixel measurements as fixed targets.
   Catalogs rank across all matches before pagination; editor lists, sheet groups,
   wizard choices, and searchable selectors use the same ranking. Empty searches
   preserve the existing ordering, and filtering rules remain unchanged.
+- Sheet and creator tabs share a floating scroll-up button near the upper right.
+  It appears after the tab's start scrolls out of view, stays below mobile sticky
+  navigation, and returns to the current tab's content with keyboard focus restored.
+  Reduced-motion preferences disable smooth scrolling.
 
-Validation: 414 tests pass across 84 files, including shared search/clear behavior,
+Validation: 419 tests pass across 85 files, including shared search/clear behavior,
 closed-filter counts, and creator draft preservation through the new selector.
 Production build succeeds with the existing initial-bundle and editor stylesheet
 budget warnings. The repeatable

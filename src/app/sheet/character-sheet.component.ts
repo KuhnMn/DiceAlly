@@ -8,6 +8,7 @@ import { map } from 'rxjs';
 import { MobileSheetActionsComponent } from './mobile-sheet-actions.component';
 import { SwipePagesDirective } from './swipe-pages.directive';
 import { UiIconComponent } from '../ui-icon.component';
+import { ScrollToTopComponent } from '../scroll-to-top.component';
 import { CharacterUpdateNoticeComponent } from '../characters/character-update-notice.component';
 import { CharacterSessionService } from '../characters/character-session.service';
 import { ThemePickerComponent } from '../theme-picker.component';
@@ -31,7 +32,7 @@ import { NotesPageComponent } from './notes-page.component';
 @Component({
   selector: 'app-character-sheet',
   host: { class: 'block w-full min-w-0 max-w-full' },
-  imports: [MobileCharacterHeaderComponent, MobileCombatPageComponent, MobileCharacterInfoPageComponent, MobileSheetStatusComponent, MobileSheetActionsComponent, SwipePagesDirective, CharacterUpdateNoticeComponent, UiIconComponent,
+  imports: [ScrollToTopComponent, MobileCharacterHeaderComponent, MobileCombatPageComponent, MobileCharacterInfoPageComponent, MobileSheetStatusComponent, MobileSheetActionsComponent, SwipePagesDirective, CharacterUpdateNoticeComponent, UiIconComponent,
     ThemePickerComponent,
     ScrollableTabsDirective,
     CommonModule,
@@ -112,7 +113,7 @@ import { NotesPageComponent } from './notes-page.component';
         @if (!mobile()) { <ng-container [ngTemplateOutlet]="restReport" /> }
 
         <div #navigation></div>
-        <div class="sticky top-0 z-30 bg-surface pt-2 sm:static sm:pt-0">
+        <div #pageNavigation class="sticky top-0 z-30 bg-surface pt-2 sm:static sm:pt-0">
           @if (characterData(); as sheet) { <app-mobile-sheet-status [sheet]="sheet" [saving]="isSaving()" [dirty]="hasUnsavedChanges()" (save)="quickSave()" (shortRest)="performShortRest()" (longRest)="performLongRest()" /> }
           @if (mobile()) { <ng-container [ngTemplateOutlet]="restReport" /> }
           <nav [appScrollableTabs]="currentPage()" class="justify-between mb-3 sm:mb-6 items-stretch" aria-label="Character sheet pages">
@@ -125,7 +126,8 @@ import { NotesPageComponent } from './notes-page.component';
             }
           </nav>
         </div>
-        <div appSwipePages (pageSwipe)="swipePage($event)" class="min-w-0">
+        <div #tabContent tabindex="-1" role="region" aria-label="Current character sheet tab" appSwipePages (pageSwipe)="swipePage($event)" class="min-w-0">
+          <app-scroll-to-top [target]="tabContent" [navigation]="pageNavigation" [page]="currentPage()" />
           @if (visitedPages().has(1)) {
             <div [class.hidden]="currentPage() !== 1">
               @if (mobile()) {

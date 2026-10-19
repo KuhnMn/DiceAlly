@@ -176,6 +176,23 @@ try {
     }
   }
   report.checks.push('All five management lists and catalogs: compact tagged rows, full-row details, independent membership/Add/Select actions, source scope first, and horizontally scrolling mobile filter groups.');
+  async function checkScrollToTop(ownerSelector, width) {
+    console.log(`Checking scroll-to-top: ${ownerSelector} at ${width}px`);
+    await evaluate(session, `globalThis.scrollControl=ng.getComponent(document.querySelector('${ownerSelector} app-scroll-to-top'));globalThis.scrollStart=scrollControl.target();globalThis.scrollCheckPage=scrollControl.page();globalThis.scrollSpacer=document.createElement('div');scrollSpacer.style.height='1400px';scrollStart.append(scrollSpacer);window.scrollTo(0,0);`);
+    await until(()=>evaluate(session,`!document.querySelector('${ownerSelector} app-scroll-to-top button')`));
+    await evaluate(session, `window.scrollTo(0,scrollStart.getBoundingClientRect().top+scrollY+350)`);
+    await until(()=>evaluate(session,`!!document.querySelector('${ownerSelector} app-scroll-to-top button')`));
+    const placement=await evaluate(session,`(()=>{const button=document.querySelector('${ownerSelector} app-scroll-to-top button'),box=button.getBoundingClientRect(),nav=scrollControl.navigation(),offset=getComputedStyle(nav).position==='sticky'?Math.max(0,nav.getBoundingClientRect().bottom):0;return {top:box.top,offset,width:box.width,height:box.height}})()`);
+    assert(placement.top >= placement.offset && placement.top < placement.offset+60,JSON.stringify(placement));
+    assert(placement.width>=44&&placement.height>=44);
+    const shot=await send('Page.captureScreenshot',{format:'png'},session);await writeFile(`tmp/scroll-top-${ownerSelector}-${width}.png`,Buffer.from(shot.data,'base64'));
+    await evaluate(session,`document.querySelector('${ownerSelector} app-scroll-to-top button').click()`);
+    await until(()=>evaluate(session,`(()=>{const nav=scrollControl.navigation(),offset=getComputedStyle(nav).position==='sticky'?Math.max(0,nav.getBoundingClientRect().bottom):0;return Math.abs(scrollStart.getBoundingClientRect().top-offset-12)<2&&!document.querySelector('${ownerSelector} app-scroll-to-top button')})()`));
+    assert.equal(await evaluate(session,'document.activeElement===scrollStart'),true);
+    assert.equal(await evaluate(session,'scrollControl.page()===scrollCheckPage'),true);
+    await evaluate(session,'scrollSpacer.remove();window.scrollTo(0,0)');
+    console.log(`PASS scroll-to-top: ${ownerSelector} at ${width}px`);
+  }
   const fixture = await evaluate(session, 'JSON.stringify(c.sheet)');
   for(const width of [320,390,768,1366]) {
     await send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false},session);
@@ -183,6 +200,7 @@ try {
     const metric=await evaluate(session, `(()=>{const form=document.querySelector('#basic-info');return {contentTop:Math.round(form.getBoundingClientRect().top+scrollY),width:innerWidth,documentWidth:document.documentElement.scrollWidth}})()`);
     assert(metric.documentWidth<=width+1,JSON.stringify(metric)); report.measurements.push({area:'creator',...metric});
     if(width===390){const shot=await send('Page.captureScreenshot',{format:'png'},session);await writeFile('tmp/usability-creator-mobile.png',Buffer.from(shot.data,'base64'));}
+    if(width===390||width===1366) await checkScrollToTop('app-local-editor',width);
      {
       await evaluate(session, `const select=document.querySelector('select[aria-label="Character editor page"]'); if(select && getComputedStyle(select).display!=='none') {select.value='1';select.dispatchEvent(new Event('change',{bubbles:true}));} else c.setPage(1);ng.applyChanges(c);`);
       assert.equal(await evaluate(session,'c.page'),1); await evaluate(session,'c.setPage(0);ng.applyChanges(c)');
@@ -193,6 +211,7 @@ try {
   await evaluate(session,"globalThis.v=ng.getComponent(document.querySelector('app-character-sheet'));void 0");
   for(const width of [320,390,768,1366]) {
     await send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false},session); await delay(150);
+    if(width===390||width===1366){await evaluate(session,'v.switchPage(3,false);ng.applyChanges(v)');await checkScrollToTop('app-character-sheet',width);}
     for(const [page,selector,card] of [[1,'app-character-info-page','header'],[3,'app-spells-page','.sheet-entry-list'],[2,'app-features-page','.sheet-entry-list'],[4,'app-equipment-page','.sheet-entry-list'],[5,'app-monsters-page','.sheet-entry-list']]) {
       if(width<640&&page===1)continue;
       await evaluate(session,`v.switchPage(${page},false);ng.applyChanges(v);window.scrollTo(0,0)`); await delay(100);
@@ -243,6 +262,7 @@ try {
     report.checks.push('All four list disclosures open without overflow; clear restores results; creator selector shares page state and save guard.');
   }
   report.fixtureUnchanged=await evaluate(session,`JSON.stringify(v.characterData())===${JSON.stringify(fixture)}`);
+  report.checks.push('Scroll to top: creator and sheet at 390/1366 px, hidden at tab start, positioned below sticky navigation, returns to current tab with focus and without editing character data.');
   assert(report.fixtureUnchanged,'Viewing and filtering changed sheet data');
   const shot=await send('Page.captureScreenshot',{format:'png'},session);await writeFile('tmp/usability-layout-'+report.phase+'.png',Buffer.from(shot.data,'base64'));
   console.log(`PASS layout checks at 320, 390, 768, and 1366 px; report: tmp/usability-layout-after.json`);
