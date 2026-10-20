@@ -3,6 +3,7 @@ import { ContentRulesIndex } from './feature-rules';
 import { ResourcePool } from './level-rules';
 import { RestPool } from './session-rules';
 import { SpellInstance } from './spell-rules';
+import { resolveSpellUsageCount, spellUsageCount } from './spell-usage';
 export interface CastingSource {
   id: string;
   label: string;
@@ -86,14 +87,17 @@ export function deriveResourcesAndActions(input: {
       if (!['daily','rest'].includes(frequency) || typeof grant.usage['casts'] !== 'undefined') {
         diagnostics.push(`Innate resource handler required: ${grant.path}`); continue;
       }
-      const count = string(grant.usage['count']); const match = /^([1-9]\d*)(e)?$/.exec(count);
-      if (!match || !Number.isSafeInteger(Number(match[1]))) { diagnostics.push(`Invalid innate use count: ${count}`); continue; }
+      const count = string(grant.usage['count']); const parsed = spellUsageCount(count);
+      let total: number;
+      try { total = resolveSpellUsageCount(count, input.modifiers); }
+      catch (error) { diagnostics.push(String(error)); continue; }
+      if (!parsed || total < 1) { diagnostics.push(`Invalid innate use count: ${count}`); continue; }
       // 'e' means each spell; otherwise the list shares its usage pool.
-      const group = match[2] ? spell.id : grant.path.replace(/\[\d+\]$/, '');
+      const group = parsed.each ? spell.id : grant.path.replace(/\[\d+\]$/, '');
       const id = JSON.stringify(['innate-uses',spell.castingSourceId,frequency,count,group]);
       let pool = pools.find(p => p.id === id);
       if (!pool) {
-        pool = { id,kind: 'feature-uses',total: Number(match[1]),regain: frequency === 'daily' ? 'LONG_REST' : 'SHORT_REST',origins: [],manual: false };
+        pool = { id,kind: 'feature-uses',total,regain: frequency === 'daily' ? 'LONG_REST' : 'SHORT_REST',origins: [],manual: false };
         pools.push(pool);
       }
       if (!pool.origins.includes(spell.id)) pool.origins.push(spell.id);

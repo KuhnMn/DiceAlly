@@ -1,6 +1,7 @@
 import { ContentRecord, entityKey, JsonObject, object } from '../content/content.model';
 import { ContentRulesIndex } from './feature-rules';
 import { describeSpellChoice, isCompleteSelection, isSpellRequirementMet, spellChoiceQuery } from './spell-choice';
+import { spellUsageCount } from './spell-usage';
 
 export interface SpellGrantOwner {
   selectionId: string;
@@ -152,7 +153,7 @@ export function deriveSpellGrants(owners: SpellGrantOwner[], index: ContentRules
           else if (['daily','rest','resource'].includes(frequency)) {
             const counts = object(child); if (!counts) throw new Error(`Invalid spell frequency: ${frequency}`);
             for (const [count, spells] of Object.entries(counts)) {
-              if (frequency !== 'resource' && !/^\d+e?$/.test(count)) throw new Error('Invalid spell usage count.');
+              if (frequency !== 'resource' && !spellUsageCount(count)) throw new Error(`Invalid spell usage count: ${count} at ${path}.${frequency}`);
               walk(spells,list,`${path}.${frequency}.${count}`,{ ...usage, frequency, count, resourceName: block['resourceName'] });
             }
           } else throw new Error(`Unsupported spell grant structure at ${path}.${frequency}`);

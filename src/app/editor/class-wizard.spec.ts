@@ -49,6 +49,24 @@ function fixture() {
 }
 
 describe('Subclass-granted spell prefill', () => {
+  it('imports prepared spells and ability-based innate uses together, with a minimum of one', () => {
+    const f = fixture();
+    f.find('subclass', 'School').data['additionalSpells'] = [{
+      prepared: { '3': ['Spark|TEST'] },
+      innate: { '9': { daily: { int: ['Shield|TEST'] } } },
+    }];
+    f.state.classes[0].level = 9;
+    for (const [score, expected] of [[18, 4], [10, 1], [8, 1]]) {
+      f.sheet.character!.abilityScores!.intelligence = score;
+      const result = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+      expect(result.warnings).toEqual([]);
+      expect(result.sheet.spells!.some(spell => spell.name === 'Spark')).toBe(true);
+      expect(result.sheet.spells!.find(spell => spell.name === 'Shield' && spell.uses?.length)?.uses![0])
+        .toMatchObject({ totalFreeUses: expected, freeUsesRegainCondition: 'LONG_REST' });
+    }
+    f.state.classes[0].level = 8;
+    expect(previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet.spells!.some(spell => spell.name === 'Shield' && spell.uses?.length)).toBe(false);
+  });
   it('offers selected-background proficiency choices without granting its feats, abilities, equipment or spells', () => {
     const f = fixture(); f.state.classes = [];
     const record = mapContent({ background: [{ name: 'Sage', source: 'TEST', entries: ['Reference'],

@@ -1,6 +1,7 @@
 import { ContentRecord, ImportRevision, object, string } from '../content/content.model';
 import { FeatureSource, SpeciesEntity, SpellEntryFull } from '../models/character.model';
 import { SpellGrant } from '../rules/spell-rules';
+import { resolveSpellUsageCount } from '../rules/spell-usage';
 import { DEFENSE_ABILITIES } from './basic-info';
 
 /** Exact provenance travels with snapshots so saved characters can work without the library. */
@@ -45,13 +46,13 @@ export function averageClassHp(hitDie: number, level: number, constitutionModifi
 }
 
 /** Daily/rest casting becomes a normal use tracker in the portable sheet. */
-export function spellUseTrackers(grants: readonly SpellGrant[]): NonNullable<SpellEntryFull['uses']> {
+export function spellUseTrackers(grants: readonly SpellGrant[], modifiers: Readonly<Record<string, number>> = {}): NonNullable<SpellEntryFull['uses']> {
   return grants.flatMap(grant => {
     const frequency = grant.usage['frequency'];
     if (frequency !== 'daily' && frequency !== 'rest') return [];
     return [{
       tag: 'Free Uses',
-      totalFreeUses: parseInt(String(grant.usage['count']), 10),
+      totalFreeUses: resolveSpellUsageCount(String(grant.usage['count']), modifiers),
       usedFreeUses: 0,
       freeUsesRegainCondition: frequency === 'rest' ? 'SHORT_REST' : 'LONG_REST',
       userAdded: false,

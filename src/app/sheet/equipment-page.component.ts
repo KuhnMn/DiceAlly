@@ -22,6 +22,35 @@ import { CharacterStore } from '../stores/character.store';
   selector: 'app-equipment-page',
   imports: [ListControlsComponent, SheetListLayoutComponent, ItemRuleTagComponent, SheetDetailDialogComponent, HorizontalRowDirective, RuleDetailsComponent, ItemCatalogComponent, UiIconComponent, CommonModule, FormsModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
+    /* Theme colors are plain CSS utilities, not Tailwind responsive utilities. */
+    @media (min-width: 768px) {
+      .currency-tracker .currency-row {
+        background-color: var(--md-sys-color-surface-variant);
+        border-color: var(--md-sys-color-outline);
+      }
+      .currency-tracker [data-coin="gold"] {
+        --coin-color: var(--md-sys-color-tertiary);
+      }
+      .currency-tracker [data-coin="silver"] {
+        --coin-color: var(--md-sys-color-secondary);
+      }
+      .currency-tracker [data-coin="copper"] {
+        --coin-color: var(--md-sys-color-primary);
+      }
+      .currency-tracker [data-coin] {
+        color: var(--coin-color);
+      }
+      .currency-tracker input {
+        background-color: transparent;
+        border-color: var(--coin-color);
+        color: var(--md-sys-color-on-surface);
+      }
+      .currency-tracker input:focus {
+        border-color: var(--coin-color);
+        outline: 2px solid var(--coin-color);
+        outline-offset: 0;
+      }
+    }
     .flash-highlight {
       animation: item-flash 1.6s ease-out;
     }
@@ -48,7 +77,11 @@ import { CharacterStore } from '../stores/character.store';
   templateUrl: './equipment-page.component.html',
 })
 export class EquipmentPageComponent {
-  readonly coins = [{ kind: 'gold', label: 'Gold (GP)' }, { kind: 'silver', label: 'Silver (SP)' }, { kind: 'copper', label: 'Copper (CP)' }];
+  readonly coins = [
+    { kind: 'gold', label: 'Gold (GP)', name: 'Gold', unit: 'GP' },
+    { kind: 'silver', label: 'Silver (SP)', name: 'Silver', unit: 'SP' },
+    { kind: 'copper', label: 'Copper (CP)', name: 'Copper', unit: 'CP' },
+  ];
   readonly searchQuery = signal('');
   readonly inventoryFilter = signal<'all' | 'equipped' | 'attuned'>('all');
   readonly inventoryFilters = [{ value: 'all', label: 'All' }, { value: 'equipped', label: 'Equipped' }, { value: 'attuned', label: 'Attuned' }] as const;

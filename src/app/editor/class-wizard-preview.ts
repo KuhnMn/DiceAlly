@@ -246,6 +246,8 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
       put('proficiencies', label, ['custom', label], label);
     }
   }
+  const modifiers = Object.fromEntries(DEFENSE_ABILITIES.map(({ key }) =>
+    [key.slice(0, 3), Math.floor(((sheet.character?.abilityScores?.[key] ?? 10) - 10) / 2)]));
   for (const { owner, label, source: sourceName } of owners) {
     const result = deriveSpellGrants([owner], index, [], state.answers);
     warnings.push(...result.diagnostics.filter(message => !message.includes('Select ') && !message.includes('Choose additionalSpells'))
@@ -254,7 +256,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
       candidates: choice.candidates.map(value => ({ value, label: `${records.get(value)?.name} (${records.get(value)?.publication})` })) })));
     for (const expanded of result.expanded) addSpell(records.get(expanded.contentKey)!, sourceName);
     for (const instance of result.instances) {
-      const uses = spellUseTrackers(instance.grants);
+      const uses = spellUseTrackers(instance.grants, modifiers);
       addSpell(instance.snapshot, sourceName);
       // Explicit additionalSpells grants are usable spells, including known cantrips such
       // as Arcane Trickster's Mage Hand. Expanded lists above only provide eligibility.

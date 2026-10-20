@@ -2,6 +2,25 @@ import { mapContent } from '../content/content-adapter';
 import { deriveSpellGrants } from './spell-rules';
 import { deriveResourcesAndActions } from './resource-action-rules';
 describe('Innate resource definitions', () => {
+  it('resolves symbolic ability uses without changing spell or pool identity', () => {
+    const records = mapContent({ feat: [{ name: 'Gift', source: 'TEST',
+      additionalSpells: [{ innate: { '9': { daily: { int: ['A'] } } } }] }],
+      spell: [{ name: 'A', source: 'PHB' }] }, 'test.json').records;
+    const index = { sourceIdentity: 'source', revisionId: 'revision', records: new Map(records.map(r => [r.key, r])) };
+    const preview = deriveSpellGrants([{ selectionId: 'selection', ownerKey: records.find(r => r.kind === 'feat')!.key, level: 9 }], index);
+    expect(preview.diagnostics).toEqual([]);
+    const spells = preview.instances;
+    const input = { pools: [], spells, manualPools: [], previousSources: [], manualSources: [],
+      overrides: { pools: [], sources: [] }, actions: [], instanceIds: spells.map(s => s.id), proficiencyBonus: 4 };
+    const high = deriveResourcesAndActions({ ...input, modifiers: { int: 4 } }, index);
+    const low = deriveResourcesAndActions({ ...input, modifiers: { int: -1 } }, index);
+    expect(high.diagnostics).toEqual([]);
+    expect(low.diagnostics).toEqual([]);
+    expect(high.pools[0].total).toBe(4);
+    expect(low.pools[0].total).toBe(1);
+    expect(low.pools[0].id).toBe(high.pools[0].id);
+    expect(deriveResourcesAndActions({ ...input, modifiers: {} }, index).canAccept).toBe(false);
+  });
   it('shares a daily list pool and separates each-spell pools without touching usage', () => {
     const records = mapContent({ feat: [{ name: 'Gift',source: 'TEST',additionalSpells: [{ ability: 'wis',innate: { '1': { daily: { '2': ['A','B'],'1e': ['A','B'] } } } }] }],
       spell: [{ name: 'A',source: 'PHB' },{ name: 'B',source: 'PHB' }] },'test.json').records;
