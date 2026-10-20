@@ -12,6 +12,24 @@ function row(index: number): ContentRecord {
   return { key: String(index).padStart(5, '0'), kind: 'class', name: `Synthetic ${index}`, publication: 'TEST', file: 'test.json', data: {}, links: [] };
 }
 describe('IndexedDB content cache', () => {
+  it('applies level ordering across the full catalog before paging, with alphabetical ties', async () => {
+    const cache = new IndexedDbContentCache(), imported = revision('level-order');
+    const records = [
+      { ...row(1), name: 'Alpha', data: { level: 3 } },
+      { ...row(2), name: 'Zulu', data: { level: 0 } },
+      { ...row(3), name: 'Beta', data: { level: 1 } },
+      { ...row(4), name: 'Able', data: { level: 1 } },
+    ];
+    await cache.stage(imported); await cache.put(imported.id, records);
+    const order = (a: ContentRecord, b: ContentRecord) => Number(a.data['level']) - Number(b.data['level']);
+    const first = await cache.searchCategory(imported.id, ['class'], '', 0, 2, undefined, order);
+    const second = await cache.searchCategory(imported.id, ['class'], '', 2, 2, undefined, order);
+    expect(first.records.map(record => record.name)).toEqual(['Zulu', 'Able']);
+    expect(second.records.map(record => record.name)).toEqual(['Beta', 'Alpha']);
+    expect(first.total).toBe(4);
+    const searched = await cache.searchCategory(imported.id, ['class'], 'Alpha', 0, 2, undefined, order);
+    expect(searched.records[0].name).toBe('Alpha');
+  });
   it('ranks matches across cursor pages and categories before pagination, retaining filters and totals', async () => {
     const cache = new IndexedDbContentCache(), imported = revision('search-ranking');
     const records: ContentRecord[] = [

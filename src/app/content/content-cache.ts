@@ -134,12 +134,12 @@ export class IndexedDbContentCache implements ContentCache {
     return request(tx.objectStore('records').index('category').getAll([revisionId, kind], limit));
   }
   /** Rank before paging, retaining at most offset + limit candidates for a search. */
-  async searchCategory(revisionId: string, kinds: readonly string[], search: string, offset = 0, limit = 30, matches?: (record: ContentRecord) => boolean): Promise<{ records: ContentRecord[]; total: number }> {
+  async searchCategory(revisionId: string, kinds: readonly string[], search: string, offset = 0, limit = 30, matches?: (record: ContentRecord) => boolean, order?: (a: ContentRecord, b: ContentRecord) => number): Promise<{ records: ContentRecord[]; total: number }> {
     const db = await this.db();
     const query = search.trim().toLowerCase();
     const retained = Math.max(0, offset + limit);
     const compare = (a: ContentRecord, b: ContentRecord) => compareSearchMatches(a.name, b.name, query)
-      || a.name.localeCompare(b.name) || a.publication.localeCompare(b.publication) || a.key.localeCompare(b.key);
+      || (order?.(a, b) ?? 0) || a.name.localeCompare(b.name) || a.publication.localeCompare(b.publication) || a.key.localeCompare(b.key);
     return new Promise((resolve, reject) => {
       const tx = db.transaction('records');
       const records: ContentRecord[] = []; let total = 0;
@@ -153,7 +153,7 @@ export class IndexedDbContentCache implements ContentCache {
           const text = [record.name, record.publication, record.data['className'], record.data['subclassShortName'],
             record.data['level'], record.data['featureType']].join(' ').toLowerCase();
           if (query.split(/\s+/).every(term => text.includes(term)) && (!matches || matches(record))) {
-            if (query && limit > 0) {
+            if ((query || order) && limit > 0) {
               // Keep the best candidates across the entire corpus, not just this cursor page.
               let low = 0, high = records.length;
               while (low < high) {
@@ -172,7 +172,7 @@ export class IndexedDbContentCache implements ContentCache {
         };
       };
       next(0);
-      tx.oncomplete = () => resolve({ records: query ? records.slice(offset, offset + limit) : records, total });
+      tx.oncomplete = () => resolve({ records: query || order ? records.slice(offset, offset + limit) : records, total });
       tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('Could not search content.'));
     });
   }

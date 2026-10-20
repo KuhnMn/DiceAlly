@@ -40,10 +40,10 @@ describe('Optional backgrounds', () => {
     await cache.saveSource('development-local', DEFAULT_CONTENT_SOURCE);
     const fixture = TestBed.createComponent(BackgroundEditorComponent), sheet = emptyBasicCharacter();
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
-    const editor = fixture.componentInstance; editor.books.setSelection(['PHB']); await editor.openCatalog();
+    const editor = fixture.componentInstance; editor.books.setSelection(['PHB']); await fixture.whenStable(); await editor.openCatalog();
     expect(editor.catalog.results().map(record => record.name)).toEqual(['Sage']);
     editor.search = 'sailor'; await editor.catalog.search(editor.query()); expect(editor.catalog.results()).toHaveLength(0);
-    editor.books.setSelection([]); await editor.openCatalog(); expect(editor.catalog.results()[0].name).toBe('Sailor');
+    editor.books.setSelection([]); await fixture.whenStable(); await editor.openCatalog(); expect(editor.catalog.results()[0].name).toBe('Sailor');
     editor.select(data[0]); expect(sheet.background!.entity!.entries).toEqual(['Background reference text.']);
     data[0].data['entries'] = ['Changed library']; expect(sheet.background!.entity!.entries).toEqual(['Background reference text.']);
     const repository = new IndexedDbCharacterRepository(); await repository.save(sheet, 0);

@@ -7,6 +7,7 @@ export interface CatalogQuery {
   kinds: string[];
   search: string;
   includes: (record: ContentRecord) => boolean;
+  order?: (a: ContentRecord, b: ContentRecord) => number;
 }
 
 /**
@@ -54,7 +55,7 @@ export class EditorCatalog {
     this.loading.set(true);
     try {
       const page = await this.cache.searchCategory(
-        revision.id, query.kinds, query.search, this.offset, this.pageSize, query.includes,
+        revision.id, query.kinds, query.search, this.offset, this.pageSize, query.includes, query.order,
       );
       if (version !== this.searchVersion) return;
       this.results.set(page.records);

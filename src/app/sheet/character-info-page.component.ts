@@ -1,3 +1,5 @@
+import { characterClasses } from '../character-description';
+import { BackgroundDetailsComponent } from '../background-details.component';
 import { ConcentrationControlComponent } from './concentration-control.component';
 import { ConcentrationService } from '../services/concentration.service';
 import { CharacterStore } from '../stores/character.store';
@@ -115,6 +117,7 @@ import { ConditionsComponent } from './conditions.component';
         <div class="col-span-2 md:col-span-2 border-2 border-secondary rounded-lg p-2 bg-secondary-container text-center content-center overflow-wrap order-1 md:order-2">
           <div class="text-xs text-on-secondary-container uppercase font-semibold overflow-wrap">Level</div>
           <div class="text-2xl font-bold text-on-secondary-container">{{ character()?.level ?? 1 }}</div>
+          @for (entry of characterData()?.classes ?? []; track $index) { <div class="mt-1 text-xs text-on-secondary-container">{{ entry.name }}@if (entry.subclass) { ({{ entry.subclass }}) } · {{ entry.level }}</div> }
         </div>
         <div class="col-span-5 md:col-span-2 border-2 border-secondary rounded-lg p-2 bg-secondary-container text-center content-center overflow-wrap order-4 md:order-3">
           <div class="text-xs text-on-secondary-container uppercase font-semibold">Background</div>
@@ -129,7 +132,7 @@ import { ConditionsComponent } from './conditions.component';
         </div>
         <div class="col-span-5 md:col-span-9 border-2 border-primary rounded-lg p-2 bg-primary-container text-center content-center overflow-wrap md:order-0 order-0">
           <div class="text-xl font-bold text-on-primary-container">{{ character()?.name }}</div>
-          @if (classDescription()) { <div class="mt-1 text-xs text-on-primary-container">{{ classDescription() }}</div> }
+          @if (classDescription()) { <div class="mt-1 text-xs text-on-primary-container md:hidden">{{ classDescription() }}</div> }
         </div>
         <div class="col-span-5 md:col-span-2 border-2 border-secondary rounded-lg p-2 bg-secondary-container text-center content-center overflow-wrap order-5 md:order-5">
           <div class="text-xs text-on-secondary-container uppercase font-semibold">Species</div>
@@ -1270,5 +1273,3 @@ export class CharacterInfoPageComponent {
     }
   }
 }
-import { BackgroundDetailsComponent } from '../background-details.component';
-import { characterClasses } from '../character-description';

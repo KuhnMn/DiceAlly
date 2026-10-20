@@ -40,6 +40,31 @@ describe('Spell creator and playing sheet', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
   });
 
+  it('indexes membership lookups once for large lists and refreshes after in-place edits', () => {
+    const fixture = TestBed.createComponent(SpellsEditorComponent), sheet = emptyBasicCharacter();
+    let nameReads = 0;
+    sheet.spells = Array.from({ length: 300 }, (_, index) => ['KNOWN', 'PREPARED', 'SPELLBOOK'].map(listType => ({
+      get name() { nameReads++; return `Spell ${index}`; }, source: 'TEST', castingSourceName: 'Wizard', listType,
+    }))).flat();
+    fixture.componentRef.setInput('sheet', sheet);
+    const editor = fixture.componentInstance;
+    for (const spell of sheet.spells) {
+      expect(editor.hasList(spell, 'PREPARED')).toBe(true);
+      expect(editor.hasList(spell, 'SPELLBOOK')).toBe(true);
+      expect(editor.preparedEntry(spell)?.listType).toBe('PREPARED');
+    }
+    // A full-list scan per button grows quadratically; these lookups stay linear.
+    expect(nameReads).toBeLessThan(sheet.spells.length * 10);
+    const known = sheet.spells[0];
+    sheet.spells[1].listType = 'SPELLBOOK';
+    editor.ngDoCheck();
+    expect(editor.hasList(known, 'PREPARED')).toBe(false);
+    expect(editor.preparedEntry(known)).toBeUndefined();
+    expect(editor.managedSpells).toHaveLength(300);
+    editor.addToList(known, 'PREPARED');
+    expect(editor.hasList(known, 'PREPARED')).toBe(true);
+  });
+
   it('requires an existing casting source for individual, custom and bulk additions', async () => {
     const data = await catalog(), fixture = TestBed.createComponent(SpellsEditorComponent), sheet = emptyBasicCharacter();
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();

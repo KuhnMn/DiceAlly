@@ -3,7 +3,7 @@
     @for (label of ['Classes & Species', 'Choices', 'Review']; track label; let position = $index) {
       <span class="spell-filter-chip" [class.spell-filter-active]="stage === position" [attr.aria-current]="stage === position ? 'step' : null">{{ position + 1 }}. {{ label }}</span>
     }
-  </nav><app-info-button title="Class setup and leveling"><p>This is the existing class wizard, also used for leveling. Choose your classes and levels, finish the choices, then review proposed changes before applying them to your draft. Save the character to keep those changes.</p><p>The first class determines starting proficiencies and first-level HP. Later levels use average HP plus your current Constitution modifier.</p><p>Choose a background in Basic Info. Library background proficiency choices can be reviewed here; its feats, ability scores, equipment, and spells remain manual. The wizard is optional; you can also edit the character yourself.</p></app-info-button></div>
+  </nav><app-info-button title="Class setup and leveling"><p>This is the existing class wizard, also used for leveling. Choose your classes and levels, finish the choices, then review proposed changes before applying them to your draft. Save the character to keep those changes.</p><p>The first class determines starting proficiencies and first-level HP. Later levels use average HP plus your current Constitution modifier.</p><p>Choose a background beside Species here to include its proficiency choices. Your current library classes, levels, subclasses, species, and background prefill this wizard whenever it opens. Custom class text stays outside wizard selections. Applying replaces the displayed background and library classes, while keeping custom class text; its feats, ability scores, equipment, and spells remain manual. The wizard is optional; you can also edit the character yourself.</p></app-info-button></div>
   @if (loading()) { <p role="status" class="text-sm">Loading your imported class library…</p> }
   @if (error()) { <p role="alert" class="rounded border border-error bg-error-container text-on-error-container p-3 text-sm mb-3">{{ error() }}</p> }
   @if (!revision() && !loading()) { <a routerLink="/content" class="text-primary underline" (click)="closed.emit()">Open content imports</a> }
@@ -38,10 +38,12 @@
       </div>
       <button type="button" class="action-button mt-3" (click)="addClass()">+ Add Class</button>
       <details class="mt-4 rounded-lg border-2 border-outline-variant p-3">
-        <summary class="cursor-pointer font-semibold text-sm">Species (optional)</summary>
+        <summary class="cursor-pointer font-semibold text-sm">Species &amp; Background (optional)</summary>
         <div class="space-y-2 mt-3">
 
           <label><span class="field-label">Species</span><app-searchable-select label="Species" [options]="speciesChoices" [value]="state.speciesKey ?? ''" (selected)="state.speciesKey = $event || undefined; rebuild()" /></label>
+          <label class="block"><span class="field-label">Background</span><app-searchable-select label="Wizard background" [options]="backgroundChoices" [value]="backgroundChoice" (selected)="selectBackground($event)" /></label>
+          @if (backgroundChoice === 'CUSTOM') { <label class="block"><span class="field-label">Custom background name</span><input class="editor-input" name="wizard-background-name" [(ngModel)]="state.customBackgroundName" (ngModelChange)="rebuild()" /></label> }
         </div>
       </details>
       @if (differentRevision) {

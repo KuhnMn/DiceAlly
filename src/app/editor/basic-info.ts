@@ -23,6 +23,10 @@ export function validateBasicInfo(sheet: ExportedCharacter): void {
     if (!Number.isSafeInteger(value) || Number(value) < minimum) throw new Error(`${label} must be a whole number of at least ${minimum}.`);
   };
   integer(character.level, 'Level', 1);
+  for (const entry of sheet.classes ?? []) {
+    if (typeof entry.name !== 'string' || !entry.name.trim()) throw new Error('Enter a class name or remove the empty class row.');
+    integer(entry.level, 'Class level', 1);
+  }
   integer(character.maxHp, 'Maximum HP');
   integer(character.speeds?.walk, 'Walk speed');
   for (const ability of DEFENSE_ABILITIES) integer(character.abilityScores?.[ability.key], ability.label);

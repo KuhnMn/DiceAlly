@@ -58,7 +58,8 @@ describe('Subclass-granted spell prefill', () => {
     f.sheet.background = { name: record.name, source: record.publication, entity: record.data, contentReference: {
       key: record.key, sourceIdentity: f.revision.sourceIdentity, revisionId: f.revision.id, commit: f.revision.commit,
     } };
-    // The saved snapshot also works when a pinned library predates background importing.
+    expect(previewClassWizard(f.sheet, f.state, f.revision, f.index).choices.some(choice => choice.ownerKey === record.key)).toBe(false);
+    f.index.set(record.key, record); f.state.backgroundKey = record.key;
     const first = previewClassWizard(f.sheet, f.state, f.revision, f.index);
     const choice = first.choices.find(choice => choice.ownerKey === record.key)!;
     expect(choice.label).toBe('Sage: skill proficiencies');
@@ -70,6 +71,23 @@ describe('Subclass-granted spell prefill', () => {
     expect(result.sheet.features ?? []).toHaveLength(0); expect(result.sheet.spells ?? []).toHaveLength(0);
     expect(result.sheet.character!.abilityScores).toEqual(f.sheet.character!.abilityScores);
     expect(result.sheet.inventory ?? []).toHaveLength(0);
+  });
+  it('replaces display selections while preserving custom class text, without taking editor rows as wizard inputs', () => {
+    const f = fixture();
+    f.sheet.classes = [{ name: 'Storyteller', subclass: 'Lorekeeper', level: 2, custom: true },
+      { name: 'Display-only class', level: 8, classKey: 'display-only' }];
+    f.sheet.background = { name: 'Editor background' };
+    const before = structuredClone(f.sheet);
+    const first = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+    expect(first.sheet.background).toBeUndefined();
+    expect(first.sheet.classes!.map(entry => entry.name)).toEqual(['Storyteller', 'Mage', 'Fighter']);
+    expect(first.sheet.classes![0]).toEqual(before.classes![0]);
+    expect(first.sheet.character!.level).toBe(6);
+    expect(f.sheet).toEqual(before);
+    expect(first.changes.some(change => change.path[0] === 'background' && change.action === 'Remove')).toBe(true);
+    f.state.customBackgroundName = 'Wizard custom background';
+    expect(previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet.background).toEqual({ name: 'Wizard custom background' });
+    expect(f.state.classes.map(entry => entry.classKey)).not.toContain('display-only');
   });
   it('labels multiclass Bard choices and completes its structured skill and instrument grants', () => {
     const f = fixture();
@@ -264,7 +282,7 @@ describe('Optional class wizard prefill', () => {
     f.sheet.character!.level = 25; f.sheet.character!.maxHp = 55;
     f.sheet.character!.proficiencies = { languages: ['Common'], skills: { ARCANA: 'EXPERTISE' } };
     const result = previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet;
-    expect(result.character!.level).toBe(25); expect(result.character!.maxHp).toBe(55);
+    expect(result.character!.level).toBe(4); expect(result.character!.maxHp).toBe(55);
     expect(result.character!.speeds!.walk).toBe(25); expect(result.character!.senses!['Darkvision']).toBe(60);
     expect(result.character!.proficiencies!.languages).toEqual(['Common', 'Elvish']);
     expect(result.character!.proficiencies!.skills!['ARCANA']).toBe('EXPERTISE');
@@ -363,6 +381,45 @@ describe('Optional class wizard prefill', () => {
     expect((next.character!.hitDice as { dieType: string; used: number }[]).find(die => die.dieType === 'd6')!.used).toBe(1);
     expect(next.character!.spellSlots!['Mage (TEST)'][0].used).toBe(1);
     expect(next.character!.featureSources!.some(source => source.name === 'Mage (TEST)')).toBe(true);
+  });
+
+  it('prefills current identity on each opening while preserving class choices and custom rows', async () => {
+    const f = fixture(); const cache = new IndexedDbContentCache();
+    await cache.stage({ ...f.revision, status: 'staging' });
+    await cache.put(f.revision.id, f.records); await cache.activate(f.revision);
+    await cache.saveSource('development-local', f.revision.source);
+    f.sheet.creatorWizard = structuredClone(f.state);
+    f.sheet.classes = [
+      { name: 'Mage', classKey: f.state.classes[0].classKey, level: 7 },
+      { name: 'Storyteller', custom: true, level: 2 },
+    ];
+    f.sheet.species = { name: 'Elf', contentReference: { key: 'species-test', revisionId: f.revision.id, sourceIdentity: f.revision.sourceIdentity, commit: f.revision.commit } };
+    f.sheet.background = { name: 'Custom history' };
+    const original = structuredClone(f.sheet);
+    const open = async () => {
+      const component = TestBed.createComponent(ClassWizardComponent);
+      component.componentRef.setInput('sheet', f.sheet); await component.whenStable();
+      await component.componentInstance.loadContent();
+      return component;
+    };
+    const first = await open(); const wizard = first.componentInstance;
+    expect(wizard.state.classes).toEqual([{ ...f.state.classes[0], level: 7, subclassKey: undefined }]);
+    expect(wizard.state.speciesKey).toBe('species-test');
+    expect(wizard.state.customBackgroundName).toBe('Custom history');
+    expect(wizard.state.backgroundKey).toBeUndefined();
+    expect(f.sheet).toEqual(original);
+    wizard.state.classes[0].level = 9;
+    await wizard.loadContent(true);
+    expect(wizard.state.classes[0].level).toBe(9);
+    first.destroy();
+    f.sheet.classes[0].level = 8;
+    f.sheet.classes[0].subclassKey = f.find('subclass', 'School').key;
+    delete f.sheet.species; delete f.sheet.background;
+    const second = await open();
+    expect(second.componentInstance.state.classes[0].level).toBe(8);
+    expect(second.componentInstance.state.classes[0].subclassKey).toBe(f.find('subclass', 'School').key);
+    expect(second.componentInstance.state.speciesKey).toBeUndefined();
+    expect(second.componentInstance.state.customBackgroundName).toBeUndefined();
   });
 
   it('can switch to the current library and back to the saved library without applying', async () => {

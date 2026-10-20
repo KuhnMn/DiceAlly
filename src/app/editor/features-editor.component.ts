@@ -1,3 +1,5 @@
+import { EditorCombatIndex } from './editor-combat-index';
+import { CatalogMembershipIndex } from './catalog-membership-index';
 import { compareSearchMatches } from '../search-ranking';
 import { EditorEntryRowComponent } from './editor-entry-row.component';
 import { FeatureFiltersComponent } from '../feature-filters.component';
@@ -11,7 +13,7 @@ import { DescriptionDialogComponent } from './description-dialog.component';
 import { CombatBookmarkComponent } from './combat-bookmark.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { newEditorId } from './editor-identity';
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { ChangeDetectorRef, Component, DoCheck, OnDestroy, OnInit, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { IndexedDbContentCache } from '../content/content-cache';
@@ -28,11 +30,15 @@ import { CatalogQuery, EditorCatalog } from './editor-catalog';
 import { FEATURE_TYPES, FeatureType, classFeatureKey, createFeatureEntry, featureEntries, featureTypeOf } from './feature-selection';
 
 @Component({
+  providers: [EditorCombatIndex],
   selector: 'app-editor-features', imports: [EditorEntryRowComponent, FeatureFiltersComponent, HorizontalRowDirective, CatalogResultRowComponent, ListControlsComponent, EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
   templateUrl: './features-editor.component.html', styleUrl: './editor.css',
 })
-export class FeaturesEditorComponent implements OnInit, OnDestroy {
+export class FeaturesEditorComponent implements OnInit, OnDestroy, DoCheck {
+  private readonly combatIndex = inject(EditorCombatIndex);
   readonly sheet = input.required<ExportedCharacter>();
+  private readonly membership = new CatalogMembershipIndex<FeatureEntryFull>();
+  ngDoCheck() { this.combatIndex.clear(); this.membership.clear(); this.displayedCache = undefined; }
   readonly edited = output<void>();
   readonly openSources = output<void>();
   readonly types = FEATURE_TYPES;
@@ -62,8 +68,17 @@ export class FeaturesEditorComponent implements OnInit, OnDestroy {
   readonly categories = featureCategories;
   readonly filterData = featureFilterData;
   readonly catalogOptions = signal<{ classes: string[]; levels: number[]; categories: string[] }>({ classes: [], levels: [], categories: [] });
-  get displayedOptions() { return featureFilterOptions((this.sheet().features ?? []).filter(feature => featureTypeOf(feature) === this.selectedType).map(featureFilterData)); }
-  get displayedCategoryOptions() { return [...new Set((this.sheet().features ?? []).filter(feature => featureTypeOf(feature) === this.selectedType).flatMap(feature => featureCategories(featureFilterData(feature), this.selectedType)))].sort(); }
+  private displayedCache?: { type: FeatureType; options: ReturnType<typeof featureFilterOptions>; categories: string[] };
+  private get displayedMetadata() {
+    if (!this.displayedCache || this.displayedCache.type !== this.selectedType) {
+      const data = (this.sheet().features ?? []).filter(feature => featureTypeOf(feature) === this.selectedType).map(featureFilterData);
+      this.displayedCache = { type: this.selectedType, options: featureFilterOptions(data),
+        categories: [...new Set(data.flatMap(value => featureCategories(value, this.selectedType)))].sort() };
+    }
+    return this.displayedCache;
+  }
+  get displayedOptions() { return this.displayedMetadata.options; }
+  get displayedCategoryOptions() { return this.displayedMetadata.categories; }
   listSearch = '';
   customName = '';
   customDescription = '';
@@ -99,7 +114,7 @@ export class FeaturesEditorComponent implements OnInit, OnDestroy {
   qualifier(record: ContentRecord): string {
     return [record.data['className'], record.data['subclassShortName'], record.data['level'] != null ? `Level ${record.data['level']}` : '', record.publication].filter(Boolean).join(' · ');
   }
-  change() { this.view.markForCheck(); this.edited.emit(); }
+  change() { this.membership.clear(); this.displayedCache = undefined; this.combatIndex.clear(); this.view.markForCheck(); this.edited.emit(); }
   openCatalog() {
     if (this.sourceFilter !== 'ALL') this.selectedSource = this.sourceFilter;
     this.catalogAdded = 0; this.catalogOpen = true;
@@ -154,6 +169,7 @@ export class FeaturesEditorComponent implements OnInit, OnDestroy {
     const kind = this.selectedType, categories = [...this.catalogCategories];
     return {
       kinds: this.types.find(type => type.value === this.selectedType)!.kinds,
+      order: (a, b) => Math.min(...featureFilterValues(a.data).levels, Infinity) - Math.min(...featureFilterValues(b.data).levels, Infinity),
       search: this.search,
       includes: record => this.sourceBooks.allows(record.publication, books) && (kind === 'CLASS_FEATURE' ? matchesFeatureFilters(record.data, classes, levels) : matchesFeatureCategories(record.data, kind, categories)),
     };
@@ -163,12 +179,14 @@ export class FeaturesEditorComponent implements OnInit, OnDestroy {
   }
   hasExisting(record: ContentRecord) {
     const source = this.targetSource;
-    return (this.sheet().features ?? []).some(feature => {
-      if ((feature.featureSourceName ?? '') !== (source ?? '')) return false;
-      if (feature.contentReference) return feature.contentReference.key === record.key;
-      const snapshot = record.kind === 'feat' ? feature.featEntity : record.kind === 'optionalfeature' ? feature.optionalFeatureEntity : feature.featureEntity;
-      return !!snapshot && entityKey(record.kind, snapshot as unknown as JsonObject) === record.key;
-    });
+    return this.membership.has(this.sheet().features ?? [], feature => {
+      const source = feature.featureSourceName ?? '';
+      if (feature.contentReference) return [JSON.stringify([source, feature.contentReference.key])];
+      return [
+        ['feat', feature.featEntity], ['optionalfeature', feature.optionalFeatureEntity],
+        ['classFeature', feature.featureEntity], ['subclassFeature', feature.featureEntity],
+      ].flatMap(([kind, snapshot]) => snapshot ? [JSON.stringify([source, entityKey(kind as string, snapshot as unknown as JsonObject)])] : []);
+    }, JSON.stringify([source ?? '', record.key]));
   }
   add(record: ContentRecord) {
     if (!this.targetSource) return;

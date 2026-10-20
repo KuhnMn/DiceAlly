@@ -1,8 +1,9 @@
+import { CatalogMembershipIndex, catalogEntryKeys } from './catalog-membership-index';
 import { ListControlsComponent } from '../list-controls.component';
 import { CatalogResultRowComponent } from './catalog-result-row.component';
 import { DescriptionDialogComponent } from './description-dialog.component';
 import { UiIconComponent } from '../ui-icon.component';
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, effect, inject, input, output, untracked } from '@angular/core';
+import { ChangeDetectorRef, Component, DoCheck, OnDestroy, OnInit, effect, inject, input, output, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Entry, ExportedCharacter, InventoryItem } from '../models/character.model';
@@ -22,8 +23,10 @@ import { newEditorId } from './editor-identity';
   imports: [ListControlsComponent, CatalogResultRowComponent, DescriptionDialogComponent, UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, SourceBookFilterComponent, EntryRendererComponent],
   templateUrl: './item-catalog.component.html', styleUrl: './editor.css',
 })
-export class ItemCatalogComponent implements OnInit, OnDestroy {
+export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
   readonly sheet = input.required<ExportedCharacter>();
+  private readonly membership = new CatalogMembershipIndex<InventoryItem>();
+  ngDoCheck() { this.membership.clear(); }
   readonly edited = output<void>();
   readonly closed = output<void>();
   private readonly cache = new IndexedDbContentCache();
@@ -57,8 +60,9 @@ export class ItemCatalogComponent implements OnInit, OnDestroy {
   searchChanged() { this.catalog.scheduleSearch(() => this.query()); }
   nextPage(direction: number) { void this.catalog.nextPage(direction, this.query()); }
   hasExisting(record: ContentRecord) {
-    return (this.sheet().inventory ?? []).some(item => item.contentReference?.key === record.key
-      || (!item.contentReference && item.name === record.name && item.source === record.publication));
+    const entries = this.sheet().inventory ?? [];
+    return this.membership.has(entries, catalogEntryKeys, JSON.stringify(['key', record.key]))
+      || this.membership.has(entries, catalogEntryKeys, JSON.stringify(['name', record.name, record.publication]));
   }
   catalogEntries(record: ContentRecord): Entry[] { return Array.isArray(record.data['entries']) ? record.data['entries'] as Entry[] : []; }
   private append(sheet: ExportedCharacter, item: InventoryItem) {

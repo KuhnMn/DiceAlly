@@ -3,6 +3,7 @@ import { ExportedCharacter } from './models/character.model';
 /** Derive a short identity line; never interpret arbitrary feature-source names as classes. */
 export function characterClasses(sheet: ExportedCharacter | null | undefined): string[] {
   if (!sheet) return [];
+  if (sheet.classes !== undefined) return sheet.classes.filter(entry => entry.name.trim()).map(entry => `${entry.name}${entry.subclass ? ` (${entry.subclass})` : ''} ${entry.level}`);
   const classes = (sheet.creatorWizard?.classes ?? []).flatMap(selection => {
     try {
       const key = JSON.parse(selection.classKey);

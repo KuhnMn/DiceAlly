@@ -1,3 +1,4 @@
+import { EditorCombatIndex } from './editor-combat-index';
 import { compareSearchMatches } from '../search-ranking';
 import { EditorEntryRowComponent } from './editor-entry-row.component';
 import { CatalogResultRowComponent } from './catalog-result-row.component';
@@ -12,7 +13,7 @@ import { CombatBookmarkComponent } from './combat-bookmark.component';
 import { HorizontalRowDirective } from '../sheet/horizontal-row.directive';
 import { UiIconComponent } from '../ui-icon.component';
 import { newEditorId } from './editor-identity';
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { ChangeDetectorRef, Component, DoCheck, OnDestroy, OnInit, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { IndexedDbContentCache } from '../content/content-cache';
@@ -31,12 +32,14 @@ import { CatalogQuery, EditorCatalog } from './editor-catalog';
 import { contentReference } from './editor-content-helpers';
 
 @Component({
+  providers: [EditorCombatIndex],
   selector: 'app-editor-spells',
   imports: [EditorEntryRowComponent, CatalogResultRowComponent, SpellSchoolFilterComponent, SpellCastingTimeFilterComponent, ListControlsComponent, EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, HorizontalRowDirective, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
   templateUrl: './spells-editor.component.html',
   styleUrl: './editor.css',
 })
-export class SpellsEditorComponent implements OnInit, OnDestroy {
+export class SpellsEditorComponent implements OnInit, OnDestroy, DoCheck {
+  private readonly combatIndex = inject(EditorCombatIndex);
   readonly sheet = input.required<ExportedCharacter>();
   setConcentrationReminder(enabled: boolean) {
     const character = this.sheet().character;
@@ -100,15 +103,40 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
     return this.selectedSource === undefined ? this.sources[0]?.name : this.sources.find(source => source.name === this.selectedSource)?.name;
   }
   get spells() { return this.sheet().spells ?? []; }
-  get sourceSpellCounts() { return spellSourceCounts(this.spells, this.sources, this.orphanSources); }
+  private counts?: ReturnType<typeof spellSourceCounts>;
+  private index?: {
+    spells: SpellEntryFull[]; length: number;
+    memberships: Map<string, Map<string, SpellEntryFull>>;
+    managed: SpellEntryFull[];
+    added: Set<string>;
+  };
+  // The draft is edited in place, including by nested annotation editors. Rebuild
+  // once per check rather than relying on signal/reference changes alone.
+  ngDoCheck() { this.combatIndex.clear(); this.index = undefined; this.counts = undefined; }
+  private get spellIndex() {
+    const spells = this.spells;
+    if (this.index?.spells === spells && this.index.length === spells.length) return this.index;
+    this.counts = undefined;
+    const memberships = new Map<string, Map<string, SpellEntryFull>>();
+    const entries = new Map<string, SpellEntryFull>(), added = new Set<string>();
+    for (const spell of spells) {
+      const identity = spellIdentity(spell), previous = entries.get(identity);
+      let lists = memberships.get(identity);
+      if (!lists) { lists = new Map(); memberships.set(identity, lists); }
+      if (spell.listType && !lists.has(spell.listType)) lists.set(spell.listType, spell);
+      if (!previous || spell.listType === 'KNOWN' || (previous.listType === 'PREPARED' && spell.listType === 'SPELLBOOK')) entries.set(identity, spell);
+      added.add(JSON.stringify([spell.castingSourceName ?? '', spell.contentReference
+        ? ['key', spell.contentReference.key] : ['name', spell.name, spell.source]]));
+    }
+    return this.index = { spells, length: spells.length, memberships, managed: [...entries.values()], added };
+  }
+  get sourceSpellCounts() {
+    this.spellIndex;
+    return this.counts ??= spellSourceCounts(this.spells, this.sources, this.orphanSources);
+  }
   get showSpellbook() { return this.sources.some(source => source.useSpellbook) || this.spells.some(spell => spell.listType === 'SPELLBOOK'); }
   get managedSpells() {
-    const entries = new Map<string, SpellEntryFull>();
-    for (const spell of this.spells) {
-      const identity = spellIdentity(spell), previous = entries.get(identity);
-      if (!previous || spell.listType === 'KNOWN' || (previous.listType === 'PREPARED' && spell.listType === 'SPELLBOOK')) entries.set(identity, spell);
-    }
-    return [...entries.values()];
+    return this.spellIndex.managed;
   }
   get selected() {
     return this.managedSpells.filter(spell => (this.sourceFilter === 'ALL' || (spell.castingSourceName ?? '') === this.sourceFilter)
@@ -148,15 +176,15 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
     this.sourceFilter = name;
     if (name === '' || this.sources.some(source => source.name === name)) this.selectedSource = name;
   }
-  hasList(spell: SpellEntryFull, list: SpellList) { return this.spells.some(entry => spellIdentity(entry) === spellIdentity(spell) && entry.listType === list); }
+  hasList(spell: SpellEntryFull, list: SpellList) { return this.spellIndex.memberships.get(spellIdentity(spell))?.has(list) ?? false; }
   usesSpellbook(spell: SpellEntryFull) { return this.sources.some(source => source.name === spell.castingSourceName && source.useSpellbook); }
   requiresConcentration(spell: SpellEntryFull) { return !!spell.entity?.duration?.some(duration => duration.concentration); }
-  change() { this.view.markForCheck(); this.edited.emit(); }
+  change() { this.combatIndex.clear(); this.index = undefined; this.counts = undefined; this.view.markForCheck(); this.edited.emit(); }
   toggle(spell: SpellEntryFull) {
     const identity = spellIdentity(spell), row = this.managedSpells.find(entry => spellIdentity(entry) === identity) ?? spell;
     this.expanded.has(row) ? this.expanded.delete(row) : this.expanded.add(row);
   }
-  preparedEntry(spell: SpellEntryFull) { return this.spells.find(entry => entry.listType === 'PREPARED' && spellIdentity(entry) === spellIdentity(spell)); }
+  preparedEntry(spell: SpellEntryFull) { return this.spellIndex.memberships.get(spellIdentity(spell))?.get('PREPARED'); }
   addToList(spell: SpellEntryFull, list: SpellList) {
     if (this.hasList(spell, list) || (list === 'SPELLBOOK' && !this.usesSpellbook(spell))) return;
     const copy = copySpellToList(spell, list);
@@ -185,8 +213,9 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
     this.spells.splice(index, 1); this.expanded.delete(spell); this.change();
   }
   isAdded(record: ContentRecord, source = this.targetSource) {
-    return this.spells.some(spell => (spell.castingSourceName ?? '') === (source ?? '')
-      && (spell.contentReference?.key === record.key || (!spell.contentReference && spell.name === record.name && spell.source === record.publication)));
+    const added = this.spellIndex.added;
+    return added.has(JSON.stringify([source ?? '', ['key', record.key]]))
+      || added.has(JSON.stringify([source ?? '', ['name', record.name, record.publication]]));
   }
   private entry(record: ContentRecord, revision: ImportRevision, source: string | undefined): SpellEntryFull {
     return { editorId: newEditorId(), name: record.name, source: record.publication, castingSourceName: source,
@@ -270,6 +299,7 @@ export class SpellsEditorComponent implements OnInit, OnDestroy {
     const filter = structuredClone(this.filter);
     return {
       kinds: ['spell'],
+      order: (a, b) => Number(a.data['level'] ?? 0) - Number(b.data['level'] ?? 0),
       search: filter.search,
       includes: record => this.sourceBooks.allows(record.publication, books) && matchesSpell(record, filter),
     };

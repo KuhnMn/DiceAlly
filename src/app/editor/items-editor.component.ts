@@ -1,9 +1,10 @@
+import { EditorCombatIndex } from './editor-combat-index';
 import { rankSearchResults } from '../search-ranking';
 import { EditorEntryRowComponent } from './editor-entry-row.component';
 import { ListControlsComponent } from '../list-controls.component';
 import { DescriptionDialogComponent } from './description-dialog.component';
 import { CombatBookmarkComponent } from './combat-bookmark.component';
-import { ChangeDetectorRef, Component, inject, input, output } from '@angular/core';
+import { ChangeDetectorRef, Component, DoCheck, inject, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ExportedCharacter, InventoryItem, Entry } from '../models/character.model';
 import { EntryAnnotationsComponent } from './entry-annotations.component';
@@ -14,11 +15,14 @@ import { ItemCatalogComponent } from './item-catalog.component';
 import { setCustomItemDescription } from './item-selection';
 
 @Component({
+  providers: [EditorCombatIndex],
   selector: 'app-editor-items',
   imports: [EditorEntryRowComponent, ListControlsComponent, DescriptionDialogComponent, CombatBookmarkComponent, FormsModule, EntryAnnotationsComponent, RemoveEntryDialogComponent, EntryRendererComponent, UiIconComponent, ItemCatalogComponent],
   templateUrl: './items-editor.component.html', styleUrl: './editor.css',
 })
-export class ItemsEditorComponent {
+export class ItemsEditorComponent implements DoCheck {
+  ngDoCheck() { this.combatIndex.clear(); }
+  private readonly combatIndex = inject(EditorCombatIndex);
   readonly sheet = input.required<ExportedCharacter>();
   readonly edited = output<void>();
   private readonly view = inject(ChangeDetectorRef);
@@ -29,7 +33,7 @@ export class ItemsEditorComponent {
   pendingRemoval?: InventoryItem;
   get items() { return this.sheet().inventory ?? []; }
   get filteredItems() { return rankSearchResults(this.items.filter(item => item.name.toLowerCase().includes(this.listSearch.trim().toLowerCase())), this.listSearch, item => item.name); }
-  change() { this.view.markForCheck(); this.edited.emit(); }
+  change() { this.combatIndex.clear(); this.view.markForCheck(); this.edited.emit(); }
   toggle(item: InventoryItem) { this.expanded.has(item) ? this.expanded.delete(item) : this.expanded.add(item); }
   openCatalog() { this.catalogOpen = true; }
   entries(item: InventoryItem): Entry[] { return item.entity?.item.entries ?? item.entity?.baseItem?.entries ?? []; }

@@ -45,12 +45,12 @@ export function averageClassHp(hitDie: number, level: number, constitutionModifi
 }
 
 /** Daily/rest casting becomes a normal use tracker in the portable sheet. */
-export function spellUseTrackers(grants: readonly SpellGrant[], label: string): NonNullable<SpellEntryFull['uses']> {
+export function spellUseTrackers(grants: readonly SpellGrant[]): NonNullable<SpellEntryFull['uses']> {
   return grants.flatMap(grant => {
     const frequency = grant.usage['frequency'];
     if (frequency !== 'daily' && frequency !== 'rest') return [];
     return [{
-      tag: `${label} ${frequency}`,
+      tag: 'Free Uses',
       totalFreeUses: parseInt(String(grant.usage['count']), 10),
       usedFreeUses: 0,
       freeUsesRegainCondition: frequency === 'rest' ? 'SHORT_REST' : 'LONG_REST',

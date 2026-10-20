@@ -14,12 +14,15 @@
     @for (field of editor.combatFields; track field.key) {
       <div class="stepper-field flex items-center justify-between gap-3 py-3">
         <label [for]="field.key" class="font-medium">{{ field.label }}</label>
+        @if (field.key === 'level' && editor.sheet.classes?.length) { <strong class="text-xl tabular-nums">{{ editor.character.level }}</strong> } @else {
         <div class="stat-stepper">
           <button type="button" class="stepper-button" [attr.aria-label]="'Decrease ' + field.label" (click)="editor.adjust(field.key, -1)"><app-ui-icon name="minus" /></button>
           <input [id]="field.key" [name]="field.key" type="number" required [min]="field.minimum" step="1" class="editor-input text-center" [(ngModel)]="editor.character[field.key]" (ngModelChange)="editor.changed()" />
           <button type="button" class="stepper-button" [attr.aria-label]="'Increase ' + field.label" (click)="editor.adjust(field.key, 1)"><app-ui-icon name="plus" /></button>
         </div>
+        }
       </div>
+      @if (field.key === 'level') { <div class="py-3"><app-editor-classes [sheet]="editor.sheet" (edited)="editor.changed()" /></div> }
     }
   </div>
 </section>

@@ -169,7 +169,16 @@ old review's pixel measurements as fixed targets.
   navigation, and returns to the current tab's content with keyboard focus restored.
   Reduced-motion preferences disable smooth scrolling.
 
-Validation: 424 tests pass across 85 files, including shared search/clear behavior,
+- Backgrounds are optional library references or name-only custom labels. Their saved
+  entries open in a compact sheet dialog. Refresh Game Data to import backgrounds.
+  Basic Info background and class/subclass rows are display inputs; class-row levels
+  supply the displayed total and prefill the wizard on opening, alongside species and background. Custom class text is preserved separately. The wizard has
+  its own optional background beside Species, and only that choice supplies background
+  proficiency suggestions. Applying the wizard replaces the displayed background and
+  library-class rows, while preserving custom class rows and their levels. Its review
+  explicitly lists these replacements. Identity summaries use the displayed selections.
+
+Validation: 434 tests pass across 87 files, including shared search/clear behavior,
 closed-filter counts, and creator draft preservation through the new selector.
 Production build succeeds with the existing initial-bundle and editor stylesheet
 budget warnings. The repeatable

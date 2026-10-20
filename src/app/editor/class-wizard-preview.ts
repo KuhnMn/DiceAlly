@@ -222,12 +222,8 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     }
   }
   // 3. Rule handlers expose candidates and validate answers before producing sheet entries.
-  const backgroundKey = sheet.background?.contentReference?.key;
+  const backgroundKey = state.backgroundKey;
   const proficiencyRecords = new Map(records);
-  if (backgroundKey && sheet.background?.entity && !proficiencyRecords.has(backgroundKey)) {
-    proficiencyRecords.set(backgroundKey, { key: backgroundKey, kind: 'background', name: sheet.background.name,
-      publication: sheet.background.source ?? '', file: 'saved-background', data: sheet.background.entity, links: [] });
-  }
   const proficiencies = deriveProficiencyGrants(state.classes, { ...index, records: proficiencyRecords }, state.answers, state.speciesKey, [], {}, sourceBooks, backgroundKey);
   warnings.push(...proficiencies.diagnostics.filter(message => !message.startsWith('Select ')));
   choices.push(...proficiencies.choices.map(choice => ({ ownerKey: choice.ownerKey, id: choice.id, label: `${proficiencyRecords.get(choice.ownerKey)?.name ?? 'Character'}: ${choice.kind} proficiencies`, count: choice.count, searchable: false,
@@ -258,7 +254,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
       candidates: choice.candidates.map(value => ({ value, label: `${records.get(value)?.name} (${records.get(value)?.publication})` })) })));
     for (const expanded of result.expanded) addSpell(records.get(expanded.contentKey)!, sourceName);
     for (const instance of result.instances) {
-      const uses = spellUseTrackers(instance.grants, label);
+      const uses = spellUseTrackers(instance.grants);
       addSpell(instance.snapshot, sourceName);
       // Explicit additionalSpells grants are usable spells, including known cantrips such
       // as Arcane Trickster's Mage Hand. Expanded lists above only provide eligibility.
@@ -273,6 +269,21 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
   });
   // 4. Reconcile with the last baseline. Manual changes and annotations take precedence.
   const proposal = mergeWizardPrefill(sheet, state, values, overrideSections);
+  const background = backgroundKey ? records.get(backgroundKey) : undefined;
+  if (backgroundKey && background?.kind !== 'background') errors.push('The selected background is missing from this import.');
+  const nextBackground = background?.kind === 'background'
+    ? { name: background.name, source: background.publication, entity: structuredClone(background.data), contentReference: reference(background) }
+    : state.customBackgroundName?.trim() ? { name: state.customBackgroundName.trim() } : undefined;
+  if (JSON.stringify(sheet.background) !== JSON.stringify(nextBackground)) proposal.changes.push({ path: ['background'], label: 'Background', action: nextBackground ? sheet.background ? 'Update' : 'Fill' : 'Remove' });
+  if (nextBackground) proposal.sheet.background = nextBackground; else delete proposal.sheet.background;
+  const classRows = [...(sheet.classes ?? []).filter(entry => entry.custom).map(entry => structuredClone(entry)), ...state.classes.flatMap(selection => {
+    const record = records.get(selection.classKey); if (!record) return [];
+    const subclass = selection.subclassKey ? records.get(selection.subclassKey) : undefined;
+    return [{ name: record.name, subclass: subclass?.name, level: selection.level, classKey: record.key, subclassKey: subclass?.key }];
+  })];
+  if (JSON.stringify(sheet.classes) !== JSON.stringify(classRows)) proposal.changes.push({ path: ['classes'], label: 'Displayed classes and levels', action: sheet.classes?.length ? 'Update' : 'Fill' });
+  proposal.sheet.classes = classRows;
+  if (classRows.length) proposal.sheet.character!.level = classRows.reduce((total, entry) => total + entry.level, 0);
   // Notes follow the species that was actually applied, not a manually retained different species.
   if (state.options['species'] !== false && state.speciesKey
     && proposal.sheet.species?.contentReference?.key === state.speciesKey) {
@@ -280,6 +291,6 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
       uniqueChoices.filter(choice => choice.ownerKey === state.speciesKey), state.answers);
   }
   return { ...proposal, errors: [...new Set(errors)], warnings: [...new Set(warnings)], choices: uniqueChoices, unresolved,
-    summary: { level: state.classes.reduce((sum, entry) => sum + entry.level, 0), maxHp: Math.max(0, maxHp),
+    summary: { level: proposal.sheet.character?.level ?? state.classes.reduce((sum, entry) => sum + entry.level, 0), maxHp: Math.max(0, maxHp),
       features: values.filter(entry => entry.path[0] === 'features').length, spells: spells.size } };
 }

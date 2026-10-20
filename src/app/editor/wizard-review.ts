@@ -21,7 +21,9 @@ export function groupWizardReview(changes: PrefillChange[], before: ExportedChar
     const [kind, id, field] = change.path;
     let section = 'Character stats';
     let group = kind === 'dice' ? 'Hit dice' : 'Level & health';
-    if (kind === 'features') {
+    if (kind === 'background' || kind === 'classes') {
+      section = 'Character identity'; group = kind === 'background' ? 'Background' : 'Displayed classes';
+    } else if (kind === 'features') {
       const feature = sheet.features?.find(entry => entry.editorId === id) ?? other.features?.find(entry => entry.editorId === id);
       const type = feature?.featEntity || feature?.featureType === 'FEAT' ? 'Feats'
         : feature?.optionalFeatureEntity || feature?.featureType === 'OPTIONAL_FEATURE' ? 'Optional Features' : 'Class Features';

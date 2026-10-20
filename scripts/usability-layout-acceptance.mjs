@@ -67,6 +67,8 @@ try {
     c.sheet.features[0].uses=[1,2,3].map(number=>({tag:'Counter '+number,totalFreeUses:5,usedFreeUses:1,freeUsesRegainCondition:'LONG_REST'}));
     c.sheet.combatActions=[{editorId:'feature-action',name:'Arcane Recovery',actionType:'OTHER',damageOrHeal:'Synthetic reminder.',linkedResourceType:'CLASS_FEATURE',linkedResource:{editorId:'feature-1',name:'Arcane Recovery',source:'TEST'}}];
     c.sheet.species={name:'Elf',source:'TEST',entity:{name:'Elf',source:'TEST',entries:['Synthetic species reference.']},notes:[],uses:[]};
+    c.sheet.background={name:'Sage',source:'TEST',entity:{entries:['Synthetic background reference.']}};
+    c.sheet.classes=[{name:'Wizard',subclass:'Evoker',level:5,classKey:'["class","wizard","test"]'}];
     c.sheet.inventory=[{name:'Staff',editorId:'item-1',isEquipped:true}];
     c.sheet.monsters=[{name:'Owl',editorId:'monster-1',hpEnabled:true,monsterMaxHP:4,monsterCurrentHP:4,entity:{name:'Owl',size:['T'],type:'beast',ac:[11],hp:{average:4},speed:{walk:5,fly:60}}}]; ng.applyChanges(c);`);
   // Source setup stays compact at narrow widths, with abilities on one row.
@@ -200,6 +202,11 @@ try {
     const metric=await evaluate(session, `(()=>{const form=document.querySelector('#basic-info');return {contentTop:Math.round(form.getBoundingClientRect().top+scrollY),width:innerWidth,documentWidth:document.documentElement.scrollWidth}})()`);
     assert.deepEqual(await evaluate(session, `[...document.querySelectorAll('app-editor-basic-info h2')].map(heading=>heading.textContent.trim())`),['Basic Information','Combat Stats','Armor Class','Hit Dice','General Stats','Portrait']);
     if(width===390||width===1366){
+      await evaluate(session, `document.querySelector('app-editor-background [aria-label="View background Sage"]').click()`);
+      await until(()=>evaluate(session,`!!document.querySelector('app-background-details [role="dialog"]')`));
+      assert.equal(await evaluate(session,`document.querySelector('app-background-details [role="dialog"]').textContent.includes('Synthetic background reference.')`),true);
+      assert.equal(await evaluate(session,`document.querySelector('app-background-details .catalog-body').scrollWidth<=document.querySelector('app-background-details .catalog-body').clientWidth+1`),true);
+      await evaluate(session,`document.querySelector('app-background-details .catalog-header button').click()`);
       await evaluate(session, `document.querySelector('[aria-label="About Calculated armor class"]').click()`);
       await until(()=>evaluate(session,`!!document.querySelector('app-info-button [role="dialog"]')`));
       const info=await evaluate(session,`(()=>{const dialog=document.querySelector('app-info-button [role="dialog"]'),box=dialog.getBoundingClientRect(),body=dialog.querySelector('.catalog-body');return {width:box.width,height:box.height,overflow:body.scrollWidth>body.clientWidth+1,hasText:dialog.textContent.includes('Light armor uses Dexterity')}})()`);

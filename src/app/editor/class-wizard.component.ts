@@ -58,6 +58,7 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
   differentRevision = false;
   savedRevisionAvailable = false;
   private destroyed = false;
+  private seededFromSheet = false;
 
   constructor() {
     effect(() => {
@@ -89,9 +90,36 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
       this.differentRevision = !!savedRevision && savedRevision !== revision.id;
       this.revision.set(revision);
       this.state.revisionId = revision.id;
+      if (!this.seededFromSheet) {
+        this.seedFromSheet();
+        this.seededFromSheet = true;
+      }
       this.rebuild();
     } catch (error) { this.error.set(String(error)); }
     finally { this.loading.set(false); }
+  }
+  /** Opening the wizard reads the current identity without applying changes to the draft. */
+  private seedFromSheet() {
+    const sheet = this.sheet();
+    if (sheet.classes !== undefined) {
+      const saved = [...this.state.classes];
+      this.state.classes = sheet.classes.filter(row => !row.custom && row.classKey).map(row => {
+        const position = saved.findIndex(selection => selection.classKey === row.classKey);
+        const previous = position >= 0 ? saved.splice(position, 1)[0] : undefined;
+        const record = this.records.get(row.classKey!);
+        return {
+          ...(previous ?? {
+            selectionId: crypto.randomUUID(),
+            spellList: record && this.spellLists.includes(record.name) ? record.name : '',
+            useSpellbook: normalize(record?.name ?? '') === 'wizard',
+          }),
+          classKey: row.classKey!, subclassKey: row.subclassKey, level: row.level,
+        };
+      });
+    }
+    this.state.speciesKey = sheet.species?.contentReference?.key;
+    this.state.backgroundKey = sheet.background?.contentReference?.key;
+    this.state.customBackgroundName = sheet.background && !this.state.backgroundKey ? sheet.background.name : undefined;
   }
   label(key: string) {
     const record = this.records.get(key);
@@ -129,6 +157,17 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
   }
   get spellListChoices(): SelectOption[] { return [{ value: '', label: 'Do not prefill a class spell list' }, ...this.spellLists.map(name => ({ value: name, label: name }))]; }
   get speciesChoices(): SelectOption[] { return [{ value: '', label: 'Do not prefill a species' }, ...this.species.map(record => ({ value: record.key, label: this.label(record.key) }))]; }
+  get backgroundChoices(): SelectOption[] {
+    return [{ value: '', label: 'No background' }, { value: 'CUSTOM', label: 'Custom background' }, ...[...this.records.values()]
+      .filter(record => record.kind === 'background' && (record.key === this.state.backgroundKey || this.sourceBooks.allows(record.publication)))
+      .sort((a, b) => a.name.localeCompare(b.name)).map(record => ({ value: record.key, label: this.label(record.key) }))];
+  }
+  get backgroundChoice() { return this.state.backgroundKey ?? (this.state.customBackgroundName !== undefined ? 'CUSTOM' : ''); }
+  selectBackground(key: string) {
+    this.state.backgroundKey = key && key !== 'CUSTOM' ? key : undefined;
+    this.state.customBackgroundName = key === 'CUSTOM' ? '' : undefined;
+    this.rebuild();
+  }
   isTaken(key: string, selection: WizardClass) { return this.state.classes.some(other => other !== selection && other.classKey === key); }
   addClass() { this.state.classes.push({ selectionId: crypto.randomUUID(), classKey: '', level: 1 }); this.rebuild(); }
   removeClass(position: number) { this.state.classes.splice(position, 1); this.rebuild(); }

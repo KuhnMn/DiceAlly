@@ -839,11 +839,14 @@ export interface Note {
 export type ConditionName = string;
 
 export interface ExportedCharacter {
+  classes?: CharacterClassEntry[];
   background?: Background;
   creatorWizard?: {
     revisionId: string;
     classes: { selectionId: string; classKey: string; subclassKey?: string; level: number; spellList?: string; useSpellbook?: boolean }[];
     speciesKey?: string;
+    backgroundKey?: string;
+    customBackgroundName?: string;
     answers: Record<string, string[]>;
     options: Record<string, boolean>;
     baseline: { path: string[]; fingerprint: string; editFingerprint?: string; scope: string; label: string }[];
@@ -867,4 +870,13 @@ export interface Background {
   source?: string;
   contentReference?: ContentReference;
   entity?: { entries?: Entry[]; [key: string]: unknown };
+}
+
+export interface CharacterClassEntry {
+  name: string;
+  subclass?: string;
+  level: number;
+  custom?: boolean;
+  classKey?: string;
+  subclassKey?: string;
 }

@@ -1,3 +1,5 @@
+import { EditorCombatIndex } from './editor-combat-index';
+import { CatalogMembershipIndex, catalogEntryKeys } from './catalog-membership-index';
 import { rankSearchResults } from '../search-ranking';
 import { EditorEntryRowComponent } from './editor-entry-row.component';
 import { CatalogResultRowComponent } from './catalog-result-row.component';
@@ -6,7 +8,7 @@ import { EditorListHeaderComponent } from './editor-list-header.component';
 import { DescriptionDialogComponent } from './description-dialog.component';
 import { CombatBookmarkComponent } from './combat-bookmark.component';
 import { UiIconComponent } from '../ui-icon.component';
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, effect, inject, input, output, untracked } from '@angular/core';
+import { ChangeDetectorRef, Component, DoCheck, OnDestroy, OnInit, effect, inject, input, output, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ExportedCharacter, Monster } from '../models/character.model';
@@ -23,12 +25,16 @@ import { newEditorId } from './editor-identity';
 import { createMonsterEntry, setMonsterMaxHp } from './monster-selection';
 
 @Component({
+  providers: [EditorCombatIndex],
   selector: 'app-editor-monsters',
   imports: [EditorEntryRowComponent, CatalogResultRowComponent, ListControlsComponent, EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, RemoveEntryDialogComponent, EntryAnnotationsComponent, MonsterStatBlockComponent, SourceBookFilterComponent],
   templateUrl: './monsters-editor.component.html', styleUrl: './editor.css',
 })
-export class MonstersEditorComponent implements OnInit, OnDestroy {
+export class MonstersEditorComponent implements OnInit, OnDestroy, DoCheck {
+  private readonly combatIndex = inject(EditorCombatIndex);
   readonly sheet = input.required<ExportedCharacter>();
+  private readonly membership = new CatalogMembershipIndex<Monster>();
+  ngDoCheck() { this.combatIndex.clear(); this.membership.clear(); }
   readonly edited = output<void>();
   readonly catalog = new EditorCatalog(new IndexedDbContentCache());
   readonly books = inject(SourceBookFilterService);
@@ -56,7 +62,7 @@ export class MonstersEditorComponent implements OnInit, OnDestroy {
   get filteredMonsters() { return rankSearchResults(this.monsters.filter(monster => (monster.name ?? '').toLowerCase().includes(this.listSearch.trim().toLowerCase())), this.listSearch, monster => monster.name ?? ''); }
   ngOnInit() { void this.refreshContent(); }
   ngOnDestroy() { this.catalog.dispose(); }
-  change() { this.view.markForCheck(); this.edited.emit(); }
+  change() { this.combatIndex.clear(); this.view.markForCheck(); this.edited.emit(); }
   toggle(monster: Monster) { this.expanded.has(monster) ? this.expanded.delete(monster) : this.expanded.add(monster); }
   openCatalog() { this.catalogAdded = 0; this.catalogOpen = true; }
   private query(): CatalogQuery {
@@ -67,8 +73,8 @@ export class MonstersEditorComponent implements OnInit, OnDestroy {
   searchChanged() { this.catalog.scheduleSearch(() => this.query()); }
   nextPage(direction: number) { void this.catalog.nextPage(direction, this.query()); }
   hasExisting(record: ContentRecord) {
-    return this.monsters.some(monster => monster.contentReference?.key === record.key
-      || (!monster.contentReference && monster.name === record.name && monster.source === record.publication));
+    return this.membership.has(this.monsters, catalogEntryKeys, JSON.stringify(['key', record.key]))
+      || this.membership.has(this.monsters, catalogEntryKeys, JSON.stringify(['name', record.name, record.publication]));
   }
   preview(record: ContentRecord): Monster {
     let monster = this.previews.get(record);

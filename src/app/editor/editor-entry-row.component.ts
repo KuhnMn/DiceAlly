@@ -1,4 +1,5 @@
-import { Component, input, output } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
+import { EditorCombatIndex } from './editor-combat-index';
 import { UiIconComponent } from '../ui-icon.component';
 import { ExportedCharacter } from '../models/character.model';
 import { CombatResource, combatLinksForResource } from './combat-actions';
@@ -48,7 +49,11 @@ export class EditorEntryRowComponent {
   readonly usesCount = input(0);
   readonly sheet = input<ExportedCharacter>();
   readonly resource = input<CombatResource>();
-  combatCount() { const sheet = this.sheet(), resource = this.resource(); return sheet && resource ? combatLinksForResource(sheet, resource).length : 0; }
+  private readonly combatIndex = inject(EditorCombatIndex, { optional: true });
+  combatCount() {
+    const sheet = this.sheet(), resource = this.resource();
+    return sheet && resource ? this.combatIndex ? this.combatIndex.count(sheet, resource) : combatLinksForResource(sheet, resource).length : 0;
+  }
   readonly showRemove = input(true);
   readonly removalDisabled = input(false);
   readonly removalTitle = input('');
