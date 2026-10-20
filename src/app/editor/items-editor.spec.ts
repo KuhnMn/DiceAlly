@@ -39,8 +39,13 @@ describe('Items creator', () => {
     const catalogFixture = TestBed.createComponent(ItemCatalogComponent);
     catalogFixture.componentRef.setInput('sheet', sheet); await catalogFixture.whenStable();
     const catalog = catalogFixture.componentInstance;
+    catalog.itemTypes = [{ key: 'gear-type', kind: 'itemType', name: 'Adventuring Gear', publication: 'TEST',
+      file: 'test.json', data: { abbreviation: 'G', source: 'TEST' }, links: [] }];
+    catalog.customType = 'gear-type'; catalog.customValue = 250;
     catalog.customName = 'Travel Supplies'; catalog.customDescription = 'A useful kit.\n\nIncludes rope.'; catalog.addCustom();
     const item = sheet.inventory![0];
+    expect(item.entity).toMatchObject({ itemType: 'Adventuring Gear', item: { type: 'G|TEST', value: 250 } });
+    expect(catalog.customType).toBe(''); expect(catalog.customValue).toBeNull();
     expect(editor.description(item)).toBe('A useful kit.\n\nIncludes rope.');
     expect(item.entity!.item.entries).toEqual([{ text: 'A useful kit.' }, { text: 'Includes rope.' }]);
     editor.setDescription(item, 'Updated description');
@@ -66,6 +71,24 @@ describe('Items creator', () => {
     expect(editor.pendingRemoval).toBe(item);
     expect(sheet.inventory).toHaveLength(1);
     editor.confirmRemoval(); expect(sheet.inventory).toHaveLength(0);
+  });
+  it('rejects invalid custom values and types, and preserves zero or unspecified values', async () => {
+    const fixture = TestBed.createComponent(ItemCatalogComponent);
+    const sheet = emptyBasicCharacter();
+    fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
+    const catalog = fixture.componentInstance;
+    catalog.customName = 'Keepsake';
+    for (const value of [-1, 1.5, NaN, Infinity]) {
+      catalog.customValue = value; catalog.addCustom();
+      expect(sheet.inventory ?? []).toHaveLength(0);
+    }
+    catalog.customValue = 0; catalog.customType = 'missing'; catalog.addCustom();
+    expect(sheet.inventory ?? []).toHaveLength(0);
+    catalog.customType = ''; catalog.addCustom();
+    expect(sheet.inventory![0].entity!.item.value).toBe(0);
+    catalog.customName = 'Unknown value'; catalog.addCustom();
+    expect(sheet.inventory![1].entity!.item.value).toBeUndefined();
+    expect(sheet.inventory![1].entity!.itemType).toBeUndefined();
   });
   it('uses the shared filtered catalog in the viewer without offering annotation configuration', async () => {
     const sheet = emptyBasicCharacter();

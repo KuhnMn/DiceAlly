@@ -36,6 +36,12 @@ export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
   search = '';
   customName = '';
   customDescription = '';
+  customValue: number | null = null;
+  customType = '';
+  itemTypes: ContentRecord[] = [];
+  get customValueValid() {
+    return this.customValue == null || (Number.isSafeInteger(this.customValue) && this.customValue >= 0);
+  }
   stackable = false;
   quantity = 1;
   error = '';
@@ -56,7 +62,16 @@ export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
     const selection = this.books.selected();
     return { kinds: ['item'], search: this.search, includes: record => this.books.allows(record.publication, selection) };
   }
-  refreshContent() { return this.catalog.refresh('Import game data to browse items. You can still add a custom item.', () => this.query()); }
+  refreshContent() {
+    this.itemTypes = []; this.customType = '';
+    return this.catalog.refresh('Import game data to browse items. You can still add a custom item.', () => this.query(),
+      async (revision, isCurrent) => {
+        const types = await this.cache.category(revision.id, 'itemType', 0);
+        if (!isCurrent()) return;
+        this.itemTypes = types.sort((a, b) => a.name.localeCompare(b.name) || a.publication.localeCompare(b.publication));
+        this.view.markForCheck();
+      });
+  }
   searchChanged() { this.catalog.scheduleSearch(() => this.query()); }
   nextPage(direction: number) { void this.catalog.nextPage(direction, this.query()); }
   hasExisting(record: ContentRecord) {
@@ -85,10 +100,17 @@ export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
     finally { this.adding = false; this.view.markForCheck(); }
   }
   addCustom() {
-    const name = this.customName.trim(); if (!name || this.adding) return;
+    const name = this.customName.trim(); if (!name || this.adding || !this.customValueValid) return;
+    const type = this.itemTypes.find(type => type.key === this.customType);
+    if (this.customType && !type) return;
     const item: InventoryItem = { editorId: newEditorId(), name, source: 'Custom', isDummy: true, uses: [], notes: [] };
     setCustomItemDescription(item, this.customDescription);
+    if (this.customValue != null) item.entity!.item.value = this.customValue;
+    if (type) {
+      item.entity!.itemType = type.name;
+      item.entity!.item.type = `${String(type.data['abbreviation'] ?? type.name)}|${type.publication}`;
+    }
     this.append(this.sheet(), item);
-    this.customName = ''; this.customDescription = '';
+    this.customName = ''; this.customDescription = ''; this.customValue = null; this.customType = '';
   }
 }
