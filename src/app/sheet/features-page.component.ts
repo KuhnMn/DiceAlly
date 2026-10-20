@@ -184,14 +184,14 @@ import { CharacterStore } from '../stores/character.store';
       </app-list-controls>
       <ng-template #featureTags let-feature>
         @if (helpers.featureTypeLabel(feature) === 'CLASS_FEATURE') {
-          <span class="text-xs text-on-surface-variant px-2 py-0.5">Level {{ helpers.featureLevel(feature) }}</span>
+          <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded">Level {{ helpers.featureLevel(feature) }}</span>
         }
         @if (helpers.featureTypeLabel(feature) === 'FEAT' && feature.featEntity?.category) {
-          <span class="text-xs text-on-surface-variant px-2 py-0.5" title="Feat category">{{ categoryLabel(feature.featEntity.category) }}</span>
+          <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded" title="Feat category">{{ categoryLabel(feature.featEntity.category) }}</span>
         }
         @if (helpers.featureTypeLabel(feature) === 'OPTIONAL_FEATURE') {
           @for (type of feature.optionalFeatureEntity?.featureType ?? []; track $index) {
-            <span class="text-xs text-on-surface-variant px-2 py-0.5" title="Optional feature type">{{ categoryLabel(type) }}</span>
+            <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded" title="Optional feature type">{{ categoryLabel(type) }}</span>
           }
         }
       </ng-template>
