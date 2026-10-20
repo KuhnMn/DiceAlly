@@ -2,9 +2,10 @@
       <app-source-book-filter />
     <details class="rounded-lg bg-surface-container-high px-3 py-2 mb-3"><summary class="cursor-pointer text-sm font-semibold text-primary py-1">Add Custom Item</summary><div class="mt-2 space-y-2"><label class="block"><span class="field-label">Name</span><input class="editor-input" name="custom-item-name" [(ngModel)]="customName" /></label><label class="block"><span class="field-label">Description (Optional)</span><textarea class="editor-input" rows="3" name="custom-item-description" [(ngModel)]="customDescription" placeholder="Describe this item…"></textarea></label><div class="grid gap-2 sm:grid-cols-2">
       <label class="block"><span class="field-label">Value (CP, per item, optional)</span><input type="number" min="0" step="1" class="editor-input" name="custom-item-value" [(ngModel)]="customValue" /></label>
-      <label class="block"><span class="field-label">Item type (optional)</span><select class="editor-input" name="custom-item-type" [(ngModel)]="customType"><option value="">Unspecified</option>@for (type of itemTypes; track type.key) { <option [value]="type.key">{{ type.name }} ({{ type.publication }})</option> }</select></label>
+      <label class="block"><span class="field-label">Item type (optional)</span><select class="editor-input" name="custom-item-type" [(ngModel)]="customType"><option value="">Unspecified</option>@for (type of filteredItemTypes; track type.key) { <option [value]="type.key">{{ type.name }} ({{ type.publication }})</option> }</select></label>
     </div>
     @if (!customValueValid) { <p role="alert" class="text-sm text-error">Enter a whole number of copper pieces, zero or greater.</p> }
+    @if (itemTypes.length && !filteredItemTypes.length) { <p class="text-xs text-on-surface-variant">No item types match the selected sources.</p> }
     @if (!itemTypes.length && !catalog.loading()) { <p class="text-xs text-on-surface-variant">Import an item library to choose from its item types.</p> }
     <button type="button" class="action-button" [disabled]="!customName.trim() || !customValueValid || adding" (click)="addCustom()">Add</button></div></details>
     <div class="mb-2 flex flex-wrap items-center justify-between gap-2">

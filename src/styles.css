@@ -1117,3 +1117,27 @@ html:has(.app-container.sheet-layout) { scrollbar-gutter: stable; }
 .spell-preparation-view[data-spell-view="KNOWN"] {
   --spell-view-accent: var(--md-extended-color-custom-color2-color);
 }
+
+/* Reserve space for the expand arrow; compress metadata before the entry name. */
+.sheet-entry-heading {
+  display: flex;
+  flex: 1 1 0%;
+  min-width: 0;
+  align-items: center;
+  gap: .5rem;
+  overflow: hidden;
+}
+.sheet-entry-heading-tags {
+  display: flex;
+  flex: 0 100 auto;
+  min-width: 0;
+  align-items: center;
+  gap: .5rem;
+  overflow: hidden;
+}
+.sheet-entry-heading-tags > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

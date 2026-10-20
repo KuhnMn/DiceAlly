@@ -39,6 +39,7 @@ export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
   customValue: number | null = null;
   customType = '';
   itemTypes: ContentRecord[] = [];
+  get filteredItemTypes() { return this.itemTypes.filter(type => this.books.allows(type.publication)); }
   get customValueValid() {
     return this.customValue == null || (Number.isSafeInteger(this.customValue) && this.customValue >= 0);
   }
@@ -52,6 +53,7 @@ export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
     let initial = true;
     effect(() => {
       this.books.selected();
+      if (this.customType && !this.filteredItemTypes.some(type => type.key === this.customType)) this.customType = '';
       if (initial) { initial = false; return; }
       untracked(() => this.searchChanged());
     });
@@ -101,7 +103,7 @@ export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
   }
   addCustom() {
     const name = this.customName.trim(); if (!name || this.adding || !this.customValueValid) return;
-    const type = this.itemTypes.find(type => type.key === this.customType);
+    const type = this.filteredItemTypes.find(type => type.key === this.customType);
     if (this.customType && !type) return;
     const item: InventoryItem = { editorId: newEditorId(), name, source: 'Custom', isDummy: true, uses: [], notes: [] };
     setCustomItemDescription(item, this.customDescription);

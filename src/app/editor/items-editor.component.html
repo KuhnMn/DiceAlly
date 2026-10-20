@@ -27,6 +27,19 @@
             </div>
             @if (item.isDummy) { <label class="block"><span class="field-label">Description</span><textarea class="editor-input" rows="3" [name]="'item-description-' + i" [ngModel]="description(item)" (ngModelChange)="setDescription(item, $event)" placeholder="Describe this item…"></textarea></label> }
 
+            @if (item.isDummy) {
+              <div class="grid gap-2 sm:grid-cols-2">
+                <label class="block"><span class="field-label">Value (CP, per item, optional)</span><input class="editor-input" type="number" min="0" step="1" [name]="'item-value-' + i" [ngModel]="item.entity?.item?.value ?? null" (ngModelChange)="setValue(item, $event)" [attr.aria-invalid]="invalidValues.has(item)" /></label>
+                <label class="block"><span class="field-label">Item type (optional)</span><select class="editor-input" [name]="'item-type-' + i" [ngModel]="item.entity?.item?.type ?? ''" (ngModelChange)="setType(item, $event)">
+                  <option value="">Unspecified</option>
+                  @if (item.entity?.item?.type && !hasType(item)) { <option [value]="item.entity!.item.type">{{ item.entity?.itemType || item.entity!.item.type }} (saved type)</option> }
+                  @for (type of filteredItemTypes; track type.key) { <option [value]="typeValue(type)">{{ type.name }} ({{ type.publication }})</option> }
+                </select></label>
+              </div>
+              @if (invalidValues.has(item)) { <p role="alert" class="text-sm text-error">Enter a whole number of copper pieces, zero or greater. The previous value is kept until corrected.</p> }
+              @if (itemTypes.length && !filteredItemTypes.length) { <p class="text-xs text-on-surface-variant">No item types match the selected sources.</p> }
+              @if (typesMessage) { <p class="text-xs text-on-surface-variant">{{ typesMessage }}</p> }
+            }
             <app-entry-annotations-editor [entry]="item" (edited)="change()">
               <app-combat-bookmark annotation-combat [sheet]="sheet()" [resource]="item" type="ITEM" (edited)="change()" />
               <ng-container annotation-description>@if (entries(item).length) { <app-description-dialog annotation-description [dense]="true" [title]="item.name" [label]="item.isDummy ? 'Description Preview' : 'Description'"><div class="p-2"><app-entry-renderer [entries]="entries(item)" /></div></app-description-dialog> }</ng-container>

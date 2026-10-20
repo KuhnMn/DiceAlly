@@ -81,9 +81,9 @@ import { CharacterStore } from '../stores/character.store';
             type="button"
             class="w-full text-left hover:bg-surface-container-low transition-colors rounded py-0.5"
             (click)="toggleExpanded('species')" aria-haspopup="dialog">
-            <div class="flex flex-wrap items-center justify-between gap-2 w-full">
-              <h3 class="text-lg font-bold text-rose sm:text-2xl"> {{ species()?.name ?? 'Unknown' }}</h3>
-              <span class="text-xl text-rose font-bold"><app-ui-icon name="chevron" /></span>
+            <div class="flex min-w-0 items-center justify-between gap-2 w-full">
+              <h3 class="min-w-0 truncate text-lg font-bold text-rose sm:text-2xl" [title]="species()?.name ?? 'Unknown'"> {{ species()?.name ?? 'Unknown' }}</h3>
+              <span class="shrink-0 text-xl text-rose font-bold"><app-ui-icon name="chevron" /></span>
             </div>
           </button>
 
@@ -183,16 +183,15 @@ import { CharacterStore } from '../stores/character.store';
           [selectedLevels]="featureLevels()" (selectedLevelsChange)="featureLevels.set($event)" />
       </app-list-controls>
       <ng-template #featureTags let-feature>
-        <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded">{{ helpers.featureTypeLabel(feature).replaceAll('_', ' ') | titlecase }}</span>
         @if (helpers.featureTypeLabel(feature) === 'CLASS_FEATURE') {
-          <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">Level {{ helpers.featureLevel(feature) }}</span>
+          <span class="text-xs text-on-surface-variant px-2 py-0.5">Level {{ helpers.featureLevel(feature) }}</span>
         }
         @if (helpers.featureTypeLabel(feature) === 'FEAT' && feature.featEntity?.category) {
-          <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded" title="Feat category">{{ categoryLabel(feature.featEntity.category) }}</span>
+          <span class="text-xs text-on-surface-variant px-2 py-0.5" title="Feat category">{{ categoryLabel(feature.featEntity.category) }}</span>
         }
         @if (helpers.featureTypeLabel(feature) === 'OPTIONAL_FEATURE') {
           @for (type of feature.optionalFeatureEntity?.featureType ?? []; track $index) {
-            <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded" title="Optional feature type">{{ categoryLabel(type) }}</span>
+            <span class="text-xs text-on-surface-variant px-2 py-0.5" title="Optional feature type">{{ categoryLabel(type) }}</span>
           }
         }
       </ng-template>
@@ -214,12 +213,14 @@ import { CharacterStore } from '../stores/character.store';
                   (click)="toggleExpanded(featureAnchorId(feature) ?? 'feature')" aria-haspopup="dialog"
                   [attr.aria-expanded]="isExpanded(featureAnchorId(feature) ?? 'feature')"
                 >
-                  <div class="flex flex-wrap items-center justify-between gap-2 w-full">
-                    <div class="flex flex-wrap items-center gap-2">
-                      <h3 class="text-base sm:text-xl font-bold text-blue">{{ feature.name }}</h3>
+                  <div class="flex min-w-0 items-center justify-between gap-2 w-full">
+                    <div class="sheet-entry-heading">
+                      <h3 class="min-w-0 truncate text-base sm:text-xl font-bold text-blue" [title]="feature.name">{{ feature.name }}</h3>
+                      <span class="sheet-entry-heading-tags">
                       <ng-container [ngTemplateOutlet]="featureTags" [ngTemplateOutletContext]="{ $implicit: feature }" />
+                      </span>
                     </div>
-                    <span class="text-xl text-blue font-bold"><app-ui-icon name="chevron" /></span>
+                    <span class="shrink-0 text-xl text-blue font-bold"><app-ui-icon name="chevron" /></span>
                   </div>
                 </button>
 

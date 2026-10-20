@@ -11,6 +11,7 @@ import { ItemCatalogComponent } from './item-catalog.component';
 import { EquipmentPageComponent } from '../sheet/equipment-page.component';
 import { CharacterStore } from '../stores/character.store';
 import { By } from '@angular/platform-browser';
+import { SourceBookFilterService } from './source-book-filter.service';
 
 const revision: ImportRevision = { id: 'items-test', namespace: 'development-local', source: DEFAULT_CONTENT_SOURCE,
   sourceIdentity: sourceIdentity(DEFAULT_CONTENT_SOURCE), commit: 'a'.repeat(40), adapterVersion: ADAPTER_VERSION,
@@ -20,7 +21,44 @@ const record: ContentRecord = { key: 'item-test', kind: 'item', name: 'Magic Swo
   links: [{ role: 'item-property', target: 'property-test' }] };
 
 describe('Items creator', () => {
-  beforeEach(() => TestBed.configureTestingModule({ providers: [provideRouter([])] }));
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    TestBed.inject(SourceBookFilterService).setSelection([]);
+  });
+  it('filters type choices by source, clears excluded draft choices, and preserves saved types', async () => {
+    const books = TestBed.inject(SourceBookFilterService);
+    books.setSelection([]);
+    const sheet = emptyBasicCharacter();
+    const catalogFixture = TestBed.createComponent(ItemCatalogComponent);
+    const editorFixture = TestBed.createComponent(ItemsEditorComponent);
+    catalogFixture.componentRef.setInput('sheet', sheet);
+    editorFixture.componentRef.setInput('sheet', sheet);
+    await catalogFixture.whenStable(); await editorFixture.whenStable();
+    const catalog = catalogFixture.componentInstance, editor = editorFixture.componentInstance;
+    const types: ContentRecord[] = ['PHB', 'XPHB'].map(publication => ({
+      key: publication, kind: 'itemType', name: 'Gear', publication, file: 'test.json',
+      data: { abbreviation: 'G' }, links: [],
+    }));
+    catalog.itemTypes = types; editor.itemTypes = types;
+    catalog.customName = 'Kit'; catalog.customType = 'PHB'; catalog.addCustom();
+    const item = sheet.inventory![0];
+    editor.change();
+    catalog.customType = 'PHB';
+    books.setSelection(['XPHB']);
+    await catalogFixture.whenStable();
+    expect(catalog.filteredItemTypes.map(type => type.publication)).toEqual(['XPHB']);
+    expect(editor.filteredItemTypes.map(type => type.publication)).toEqual(['XPHB']);
+    expect(catalog.customType).toBe('');
+    expect(item.entity!.item.type).toBe('G|PHB');
+    expect(editor.hasType(item)).toBe(false);
+    editor.setType(item, 'G|XPHB');
+    expect(item.entity!.item.type).toBe('G|XPHB');
+    editor.setType(item, 'G|PHB');
+    expect(item.entity!.item.type).toBe('G|XPHB');
+    books.setSelection([]);
+    expect(editor.filteredItemTypes).toHaveLength(2);
+    expect(catalog.filteredItemTypes).toHaveLength(2);
+  });
   it('embeds resolved properties in viewer format without retaining mutable catalog objects', async () => {
     const property: ContentRecord = { key: 'property-test', kind: 'itemProperty', name: 'Special', publication: 'TEST', file: 'test.json',
       data: { entries: ['First paragraph', 'Second paragraph'] }, links: [] };
@@ -46,6 +84,25 @@ describe('Items creator', () => {
     const item = sheet.inventory![0];
     expect(item.entity).toMatchObject({ itemType: 'Adventuring Gear', item: { type: 'G|TEST', value: 250 } });
     expect(catalog.customType).toBe(''); expect(catalog.customValue).toBeNull();
+    editor.itemTypes = catalog.itemTypes;
+    editor.expanded.add(item); editor.change(); await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('input[type="number"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('select')).not.toBeNull();
+    editor.setValue(item, -1);
+    expect(item.entity!.item.value).toBe(250);
+    expect(editor.invalidValues.has(item)).toBe(true);
+    editor.setValue(item, 0);
+    expect(item.entity!.item.value).toBe(0);
+    expect(editor.invalidValues.has(item)).toBe(false);
+    editor.setValue(item, null);
+    expect(item.entity!.item.value).toBeUndefined();
+    editor.setValue(item, 500);
+    editor.setType(item, '');
+    expect(item.entity!.itemType).toBeUndefined();
+    editor.setType(item, 'G|TEST');
+    expect(item.entity).toMatchObject({ itemType: 'Adventuring Gear', item: { type: 'G|TEST', value: 500 } });
+    editor.itemTypes = []; editor.change(); await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('select').textContent).toContain('Adventuring Gear (saved type)');
     expect(editor.description(item)).toBe('A useful kit.\n\nIncludes rope.');
     expect(item.entity!.item.entries).toEqual([{ text: 'A useful kit.' }, { text: 'Includes rope.' }]);
     editor.setDescription(item, 'Updated description');

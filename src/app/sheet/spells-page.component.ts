@@ -259,8 +259,8 @@ type SpellLevelFilter = 'ALL' | number;
                     } @else {
                     <h3>
                       <button type="button" (click)="toggleExpanded(spellExpansionId(spell))" aria-haspopup="dialog" [attr.aria-expanded]="isExpanded(spellExpansionId(spell))" class="flex min-h-8 w-full items-center justify-between gap-2 rounded text-left text-base font-bold text-purple sm:gap-3 sm:text-xl focus-visible:outline-2 focus-visible:outline-primary">
-                        <span class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1"><span class="min-w-0 break-words [overflow-wrap:anywhere]">{{ spell.name }}</span>
-                        @if (spell.entity?.level !== undefined) { <span class="shrink-0 whitespace-nowrap rounded bg-purple-container px-2 py-0.5 text-xs font-normal text-on-purple-container">{{ helpers.spellLevelLabel(spell) }}</span> }
+                        <span class="sheet-entry-heading"><span class="min-w-0 truncate" [title]="spell.name">{{ spell.name }}</span>
+                        @if (spell.entity?.level !== undefined) { <span class="sheet-entry-heading-tags"><span class="rounded bg-purple-container px-2 py-0.5 text-xs font-normal text-on-purple-container" [title]="helpers.spellLevelLabel(spell)">{{ helpers.spellLevelLabel(spell) }}</span></span> }
                         </span><app-ui-icon class="shrink-0" name="chevron" />
                       </button>
                     </h3>

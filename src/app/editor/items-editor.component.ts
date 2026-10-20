@@ -4,7 +4,7 @@ import { EditorEntryRowComponent } from './editor-entry-row.component';
 import { ListControlsComponent } from '../list-controls.component';
 import { DescriptionDialogComponent } from './description-dialog.component';
 import { CombatBookmarkComponent } from './combat-bookmark.component';
-import { ChangeDetectorRef, Component, DoCheck, inject, input, output } from '@angular/core';
+import { ChangeDetectorRef, Component, DoCheck, OnInit, OnDestroy, inject, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ExportedCharacter, InventoryItem, Entry } from '../models/character.model';
 import { EntryAnnotationsComponent } from './entry-annotations.component';
@@ -13,6 +13,10 @@ import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { ItemCatalogComponent } from './item-catalog.component';
 import { setCustomItemDescription } from './item-selection';
+import { IndexedDbContentCache } from '../content/content-cache';
+import { activeContentRevision } from './active-content-revision';
+import { ContentRecord } from '../content/content.model';
+import { SourceBookFilterService } from './source-book-filter.service';
 
 @Component({
   providers: [EditorCombatIndex],
@@ -20,7 +24,46 @@ import { setCustomItemDescription } from './item-selection';
   imports: [EditorEntryRowComponent, ListControlsComponent, DescriptionDialogComponent, CombatBookmarkComponent, FormsModule, EntryAnnotationsComponent, RemoveEntryDialogComponent, EntryRendererComponent, UiIconComponent, ItemCatalogComponent],
   templateUrl: './items-editor.component.html', styleUrl: './editor.css',
 })
-export class ItemsEditorComponent implements DoCheck {
+export class ItemsEditorComponent implements DoCheck, OnInit, OnDestroy {
+  itemTypes: ContentRecord[] = [];
+  readonly books = inject(SourceBookFilterService);
+  get filteredItemTypes() { return this.itemTypes.filter(type => this.books.allows(type.publication)); }
+  typesMessage = '';
+  readonly invalidValues = new Set<InventoryItem>();
+  private disposed = false;
+  async ngOnInit() {
+    try {
+      const cache = new IndexedDbContentCache();
+      const revision = await activeContentRevision(cache);
+      const types = revision ? await cache.category(revision.id, 'itemType', 0) : [];
+      if (this.disposed) return;
+      this.itemTypes = types.sort((a, b) => a.name.localeCompare(b.name) || a.publication.localeCompare(b.publication));
+      if (!types.length) this.typesMessage = 'Import an item library to choose from its item types.';
+    } catch { if (!this.disposed) this.typesMessage = 'Item types could not be loaded. Existing types are preserved.'; }
+    if (!this.disposed) this.view.markForCheck();
+  }
+  ngOnDestroy() { this.disposed = true; }
+  typeValue(type: ContentRecord) { return `${String(type.data['abbreviation'] ?? type.name)}|${type.publication}`; }
+  hasType(item: InventoryItem) { return this.filteredItemTypes.some(type => this.typeValue(type) === item.entity?.item.type); }
+  setType(item: InventoryItem, value: string) {
+    const type = this.filteredItemTypes.find(type => this.typeValue(type) === value);
+    if (!item.isDummy || (value && !type)) return;
+    item.entity ??= { item: { name: item.name, source: item.source || 'Custom' } };
+    if (type) { item.entity.item.type = this.typeValue(type); item.entity.itemType = type.name; }
+    else { delete item.entity.item.type; delete item.entity.itemType; }
+    this.change();
+  }
+  setValue(item: InventoryItem, value: number | null) {
+    if (!item.isDummy) return;
+    if (value != null && (!Number.isSafeInteger(value) || value < 0)) {
+      this.invalidValues.add(item); return;
+    }
+    this.invalidValues.delete(item);
+    item.entity ??= { item: { name: item.name, source: item.source || 'Custom' } };
+    if (value == null) delete item.entity.item.value;
+    else item.entity.item.value = value;
+    this.change();
+  }
   ngDoCheck() { this.combatIndex.clear(); }
   private readonly combatIndex = inject(EditorCombatIndex);
   readonly sheet = input.required<ExportedCharacter>();
