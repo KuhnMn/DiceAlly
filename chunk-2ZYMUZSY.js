@@ -1,0 +1,1 @@
+import{a,b}from"./chunk-CILVDQ5Y.js";import"./chunk-XKCSZHI2.js";import"./chunk-C32EGYHK.js";import"./chunk-P32TX67U.js";import"./chunk-LSIHGRHO.js";export{b as fillInstalledReferenceDescriptions,a as prepareCharacterReferenceDescriptions};
