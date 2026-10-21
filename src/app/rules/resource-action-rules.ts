@@ -1,3 +1,4 @@
+import { castingMetadata } from '../content/class-adapter';
 import { JsonObject, object, string } from '../content/content.model';
 import { ContentRulesIndex } from './feature-rules';
 import { ResourcePool } from './level-rules';
@@ -64,8 +65,9 @@ export function deriveResourcesAndActions(input: {
       const grant = spell.grants[0]; const owner = grant ? index.records.get(grant.ownerKey) : undefined;
       source = old ? structuredClone(old) : { id: spell.castingSourceId,label: owner?.name ?? spell.snapshot.name,
         ability: grant?.ability,useSpellbook: false,manual: false,customization: {},
-        preparation: owner?.data['preparedSpells'] !== undefined ? 'prepared' : Array.isArray(owner?.data['spellsKnownProgression']) ? 'known' : undefined,
-        ritualCasting: owner?.data['ritualCasting'] === true };
+        preparation: castingMetadata(owner).preparedSpells !== undefined ? 'prepared' : Array.isArray(castingMetadata(owner).spellsKnownProgression) ? 'known' : undefined,
+        // Ritual capability is explicit casting-source state, not an upstream content field.
+        ritualCasting: false };
       if (!old?.manual) source.ability = grant?.ability ?? old?.ability;
       sources.push(source);
     }

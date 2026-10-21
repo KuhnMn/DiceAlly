@@ -1,0 +1,323 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "rewards.json",
+	"version": "1.4.0",
+	"type": "object",
+	"$defs": {
+		"rewardData": {
+			"type": "object",
+			"properties": {
+				"name": {
+					"type": "string"
+				},
+				"source": {
+					"$ref": "util.json#/$defs/source"
+				},
+				"otherSources": {
+					"$ref": "util.json#/$defs/otherSources"
+				},
+				"referenceSources": {
+					"$ref": "util.json#/$defs/referenceSources"
+				},
+				"page": {
+					"$ref": "util.json#/$defs/page"
+				},
+				"legacy": {
+					"$ref": "util.json#/$defs/legacy"
+				},
+				"reprintedAs": {
+					"$ref": "util.json#/$defs/reprintedAs"
+				},
+				"type": {
+					"type": "string",
+					"examples": [
+						"Blessing",
+						"Boon",
+						"Charm",
+						"Curse",
+						"Draconic Gift",
+						"Inhabitation",
+						"Fragment of Suffering",
+						"Other",
+						"Piety Trait"
+					]
+				},
+				"abilityEntry": {
+					"$ref": "entry.json"
+				},
+				"rarity": {
+					"$ref": "util.json#/$defs/rarity"
+				},
+				"additionalSpells": {
+					"$ref": "util-additionalspells.json#/$defs/additionalSpellsArray"
+				},
+				"entries": {
+					"type": "array",
+					"uniqueItems": true,
+					"items": {
+						"$ref": "entry.json"
+					}
+				},
+				"seeAlsoFacility": {
+					"type": "array",
+					"items": {
+						"type": "string",
+						"description": "UIDs of \"facility\"s to be linked in a \"See Also\" footnote.\n\nEx.: \"arcane study|xdmg\".",
+						"markdownDescription": "UIDs of &quot;facility&quot;s to be linked in a &quot;See Also&quot; footnote.\n\nEx.: &quot;arcane study|xdmg&quot;."
+					},
+					"minItems": 1,
+					"uniqueItems": true
+				},
+				"hasFluff": {
+					"type": "boolean"
+				},
+				"hasFluffImages": {
+					"type": "boolean"
+				},
+				"foundrySystem": {
+					"$ref": "util-foundry.json#/$defs/foundrySystemObject"
+				},
+				"foundryActivities": {
+					"$ref": "util-foundry.json#/$defs/foundryActivitiesArray"
+				},
+				"foundryFlags": {
+					"$ref": "util-foundry.json#/$defs/foundryFlagsObject"
+				},
+				"foundryEffects": {
+					"$ref": "util-foundry.json#/$defs/foundryEffectsArray"
+				},
+				"foundryImg": {
+					"$ref": "util-foundry.json#/$defs/foundryImg"
+				},
+				"foundryAdvice": {
+					"$ref": "entry.json"
+				},
+				"_foundryMerge": {
+					"$ref": "util-foundry.json#/$defs/foundryMergeObject"
+				}
+			},
+			"additionalProperties": false
+		},
+		"reward": {
+			"anyOf": [
+				{
+					"type": "object",
+					"properties": {
+						"name": {
+							"type": "string"
+						},
+						"source": {
+							"$ref": "util.json#/$defs/source"
+						},
+						"otherSources": {
+							"$ref": "util.json#/$defs/otherSources"
+						},
+						"referenceSources": {
+							"$ref": "util.json#/$defs/referenceSources"
+						},
+						"page": {
+							"$ref": "util.json#/$defs/page"
+						},
+						"legacy": {
+							"$ref": "util.json#/$defs/legacy"
+						},
+						"reprintedAs": {
+							"$ref": "util.json#/$defs/reprintedAs"
+						},
+						"type": {
+							"type": "string",
+							"examples": [
+								"Blessing",
+								"Boon",
+								"Charm",
+								"Curse",
+								"Draconic Gift",
+								"Inhabitation",
+								"Fragment of Suffering",
+								"Other",
+								"Piety Trait"
+							]
+						},
+						"abilityEntry": {
+							"$ref": "entry.json"
+						},
+						"rarity": {
+							"$ref": "util.json#/$defs/rarity"
+						},
+						"additionalSpells": {
+							"$ref": "util-additionalspells.json#/$defs/additionalSpellsArray"
+						},
+						"entries": {
+							"type": "array",
+							"uniqueItems": true,
+							"items": {
+								"$ref": "entry.json"
+							}
+						},
+						"seeAlsoFacility": {
+							"type": "array",
+							"items": {
+								"type": "string",
+								"description": "UIDs of \"facility\"s to be linked in a \"See Also\" footnote.\n\nEx.: \"arcane study|xdmg\".",
+								"markdownDescription": "UIDs of &quot;facility&quot;s to be linked in a &quot;See Also&quot; footnote.\n\nEx.: &quot;arcane study|xdmg&quot;."
+							},
+							"minItems": 1,
+							"uniqueItems": true
+						},
+						"hasFluff": {
+							"type": "boolean"
+						},
+						"hasFluffImages": {
+							"type": "boolean"
+						},
+						"foundrySystem": {
+							"$ref": "util-foundry.json#/$defs/foundrySystemObject"
+						},
+						"foundryActivities": {
+							"$ref": "util-foundry.json#/$defs/foundryActivitiesArray"
+						},
+						"foundryFlags": {
+							"$ref": "util-foundry.json#/$defs/foundryFlagsObject"
+						},
+						"foundryEffects": {
+							"$ref": "util-foundry.json#/$defs/foundryEffectsArray"
+						},
+						"foundryImg": {
+							"$ref": "util-foundry.json#/$defs/foundryImg"
+						},
+						"foundryAdvice": {
+							"$ref": "entry.json"
+						},
+						"_foundryMerge": {
+							"$ref": "util-foundry.json#/$defs/foundryMergeObject"
+						}
+					},
+					"additionalProperties": false,
+					"required": [
+						"name",
+						"source",
+						"type",
+						"entries"
+					]
+				},
+				{
+					"type": "object",
+					"properties": {
+						"name": {
+							"type": "string"
+						},
+						"source": {
+							"$ref": "util.json#/$defs/source"
+						},
+						"otherSources": {
+							"$ref": "util.json#/$defs/otherSources"
+						},
+						"referenceSources": {
+							"$ref": "util.json#/$defs/referenceSources"
+						},
+						"page": {
+							"$ref": "util.json#/$defs/page"
+						},
+						"legacy": {
+							"$ref": "util.json#/$defs/legacy"
+						},
+						"reprintedAs": {
+							"$ref": "util.json#/$defs/reprintedAs"
+						},
+						"type": {
+							"type": "string",
+							"examples": [
+								"Blessing",
+								"Boon",
+								"Charm",
+								"Curse",
+								"Draconic Gift",
+								"Inhabitation",
+								"Fragment of Suffering",
+								"Other",
+								"Piety Trait"
+							]
+						},
+						"abilityEntry": {
+							"$ref": "entry.json"
+						},
+						"rarity": {
+							"$ref": "util.json#/$defs/rarity"
+						},
+						"additionalSpells": {
+							"$ref": "util-additionalspells.json#/$defs/additionalSpellsArray"
+						},
+						"entries": {
+							"type": "array",
+							"uniqueItems": true,
+							"items": {
+								"$ref": "entry.json"
+							}
+						},
+						"seeAlsoFacility": {
+							"type": "array",
+							"items": {
+								"type": "string",
+								"description": "UIDs of \"facility\"s to be linked in a \"See Also\" footnote.\n\nEx.: \"arcane study|xdmg\".",
+								"markdownDescription": "UIDs of &quot;facility&quot;s to be linked in a &quot;See Also&quot; footnote.\n\nEx.: &quot;arcane study|xdmg&quot;."
+							},
+							"minItems": 1,
+							"uniqueItems": true
+						},
+						"hasFluff": {
+							"type": "boolean"
+						},
+						"hasFluffImages": {
+							"type": "boolean"
+						},
+						"foundrySystem": {
+							"$ref": "util-foundry.json#/$defs/foundrySystemObject"
+						},
+						"foundryActivities": {
+							"$ref": "util-foundry.json#/$defs/foundryActivitiesArray"
+						},
+						"foundryFlags": {
+							"$ref": "util-foundry.json#/$defs/foundryFlagsObject"
+						},
+						"foundryEffects": {
+							"$ref": "util-foundry.json#/$defs/foundryEffectsArray"
+						},
+						"foundryImg": {
+							"$ref": "util-foundry.json#/$defs/foundryImg"
+						},
+						"foundryAdvice": {
+							"$ref": "entry.json"
+						},
+						"_foundryMerge": {
+							"$ref": "util-foundry.json#/$defs/foundryMergeObject"
+						},
+						"_copy": {
+							"$ref": "util-copy.json#/$defs/copyBlock_copy_generic"
+						}
+					},
+					"additionalProperties": false,
+					"required": [
+						"_copy"
+					]
+				}
+			]
+		}
+	},
+	"properties": {
+		"_meta": {
+			"$ref": "util.json#/$defs/metaBlock"
+		},
+		"reward": {
+			"type": "array",
+			"minItems": 1,
+			"uniqueItems": true,
+			"items": {
+				"$ref": "#/$defs/reward"
+			}
+		}
+	},
+	"required": [
+		"reward"
+	],
+	"additionalProperties": false
+}

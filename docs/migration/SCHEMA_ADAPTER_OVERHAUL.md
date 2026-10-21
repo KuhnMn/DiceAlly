@@ -1,6 +1,10 @@
 # Schema-driven importer and adapter overhaul
 
-Status: planning only. No runtime changes have been made or schema compatibility claimed.
+Status: the migration of existing consumers is complete through the final cleanup and priority reference/template fixes (adapter 21). Pinned source validation, expanded import coverage, canonical mechanical/selection fields, and shared proficiency/entry/spell-reference consumers are implemented. All ten import-only reference categories, including statuses, now have typed stored definitions after copy resolution. Reusable item entries are imported and expanded; generated references prefer the requested rules edition, and standard species references prefer their playable form over the exact base definition. Unused metadata and materialization inputs intentionally remain source-shaped; unsupported automation and new UI remain out of scope. See [implementation coverage and verification](SCHEMA_CONTENT_COVERAGE.md) for exact fields, compatibility boundaries and limitations.
+
+The user confirmed manual browser acceptance on 2026-10-21 for import, basic character creation, sample correctness across content types, export/import, offline saving, sync and performance. The agreed migration scope is accepted; see [manual acceptance results](SCHEMA_CONTENT_COVERAGE.md#manual-browser-acceptance-2026-10-21), including the reported site-wide storage measurement.
+
+For the information now available and possible future sheet uses, see [Information gained and sheet opportunities](SCHEMA_INFORMATION_AND_SHEET_USES.md).
 
 ## Objective
 
@@ -29,7 +33,7 @@ These decisions were confirmed by the user after the initial plan:
 | Variant rules | `variantrules.json` and the existing generated-file route | `variantrule` |
 | Vehicles | `vehicles.json` | `vehicle` |
 
-Apply the corresponding brew contracts when these categories occur in homebrew files. Audit supporting categories such as `vehicleUpgrade` for required dependencies. Other categories sharing these files, such as `status`, remain explicitly reported exclusions unless required as dependencies; importing one category does not silently expand scope to every root property.
+Apply the corresponding brew contracts when these categories occur in homebrew files. Audit supporting categories such as `vehicleUpgrade` for required dependencies. Statuses were additionally authorized and imported in adapter 21. Other categories sharing these files remain explicitly reported exclusions unless required as dependencies; importing one category does not silently expand scope to every root property.
 
 ## Findings from the local repositories
 
@@ -202,3 +206,8 @@ Remove unused generic helpers, unsafe casts on imported content, duplicated shap
 - Completion means all imported-content consumers are covered, not just `content-adapter.ts`. New schema versions require an explicit compatibility audit and generated-artifact update.
 
 The first implementation deliverable should be the schema/consumer coverage matrix, reproducible schema snapshot, and validator generation spike. That establishes the contract before changing saved data or deleting compatibility code.
+
+
+## Ability-score automation scope
+
+Imported species ability adjustments remain part of the canonical species definition and the self-contained character snapshot. A pure allocation helper may be maintained and tested, but live character calculations must not invoke it yet. Manually entered ability scores drive HP, prerequisites, derived statistics, and sheet projection. Existing `applySpeciesAbilities` flags and saved derived ability scores do not enable automation or override manual scores. Enabling this behavior requires a future explicit implementation decision.

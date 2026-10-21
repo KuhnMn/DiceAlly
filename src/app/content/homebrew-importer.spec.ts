@@ -3,10 +3,15 @@ import { IndexedDbContentCache } from './content-cache';
 import { mapContent } from './content-adapter';
 import { ADAPTER_VERSION, DEFAULT_CONTENT_SOURCE, ImportRevision, sourceIdentity } from './content.model';
 import { importHomebrew } from './homebrew-importer';
-import { readHomebrewFile } from './homebrew-package';
+import { readHomebrewFile as parseHomebrewFile } from './homebrew-package';
 import { finalizeContentImport } from './content-finalizer';
-import { spellClassMemberships } from './spell-membership';
+import { spellDefinition, spellRecordClasses } from './spell-adapter';
 import { importContent } from './content-importer';
+import { coreDocumentFixture, homebrewDocumentFixture } from './content-fixtures.testing';
+import { CONTENT_SCHEMA_ID } from './generated/schema-version';
+import { validateHomebrewDocument } from './content-schema';
+
+const readHomebrewFile = (value: Record<string, unknown>, name: string) => parseHomebrewFile(homebrewDocumentFixture(value), name);
 
 async function fixture() {
   const cache = new IndexedDbContentCache();
@@ -14,6 +19,7 @@ async function fixture() {
   const base: ImportRevision = {
     id: crypto.randomUUID(), namespace: 'homebrew-tests', source, sourceIdentity: sourceIdentity(source),
     commit: 'a'.repeat(40), adapterVersion: ADAPTER_VERSION, createdAt: new Date().toISOString(),
+    schemaSnapshot: CONTENT_SCHEMA_ID,
     status: 'staging', files: ['core.json'], diagnostics: [],
     metrics: { bytes: 0, records: 0, mappedBytes: 0, elapsedMs: 0 },
   };
@@ -28,13 +34,85 @@ async function fixture() {
 
 function document(name = 'Homebrew Spell') {
   return {
-    _meta: { sources: [{ json: 'BREW', full: 'A Selected Book' }] },
-    spell: [{ name, source: 'BREW', level: 0, classes: { fromClassList: [{ name: 'Wizard', source: 'PHB' }] } }],
-    race: [{ name: 'Homebrew Species', source: 'BREW', speed: 25, entries: ['A trait'] }],
+    _meta: { sources: [{ json: 'TESTBREW', full: 'A Selected Book' }] },
+    spell: [{ name, source: 'TESTBREW', level: 0, classes: { fromClassList: [{ name: 'Wizard', source: 'PHB' }] } }],
+    race: [{ name: 'Homebrew Species', source: 'TESTBREW', speed: 25, entries: ['A trait'] }],
   };
 }
 
 describe('Explicit single-file homebrew imports', () => {
+  beforeAll(async () => validateHomebrewDocument(homebrewDocumentFixture({}), 'fixture.json'), 30000);
+  it('stores and expands reusable item entries through import, cache reopen and replay', async () => {
+    const f = await fixture();
+    const file = await readHomebrewFile({
+      itemEntry: [{ name: 'Ring Text', source: 'TESTBREW', entriesTemplate: ['Resistance to {{item.resist}}.'] }],
+      item: [{ name: 'Brew Ring', source: 'TESTBREW', rarity: 'unknown', resist: ['fire'], entries: ['{#itemEntry Ring Text|TESTBREW}'] }],
+    }, 'templates.json');
+    const revision = await importHomebrew(f.cache, { ...f, file, bytes: 1 });
+    const items = await new IndexedDbContentCache().category(revision.id, 'item');
+    expect(items.find(item => item.name === 'Brew Ring')?.data['entries']).toEqual(['Resistance to fire.']);
+    expect(await f.cache.category(revision.id, 'itemEntry')).toHaveLength(1);
+    const other = await readHomebrewFile({ feat: [{ name: 'Extra', source: 'TESTBREW', entries: [] }] }, 'other.json');
+    const replay = await importHomebrew(f.cache, { ...f, base: revision, file: other, bytes: 1 });
+    const ring = (await f.cache.category(replay.id, 'item')).find(item => item.name === 'Brew Ring')!;
+    expect(ring.data['entries']).toEqual(['Resistance to fire.']);
+    expect(ring.links.filter(link => link.role === 'item-entry')).toHaveLength(1);
+  });
+  it('keeps the active library when an item template cannot be resolved', async () => {
+    const f = await fixture();
+    const file = await readHomebrewFile({ item: [{ name: 'Broken Ring', source: 'TESTBREW', rarity: 'unknown', entries: ['{#itemEntry Missing|TESTBREW}'] }] }, 'broken.json');
+    await expect(importHomebrew(f.cache, { ...f, file, bytes: 1 })).rejects.toThrow('Content validation failed');
+    expect((await f.cache.active(f.namespace, f.source))!.id).toBe(f.base.id);
+  });
+  it('requires a core reimport before appending to an old adapter or schema snapshot', async () => {
+    const f = await fixture();
+    const file = await readHomebrewFile(document(), 'selected.json');
+    for (const base of [{ ...f.base, adapterVersion: ADAPTER_VERSION - 1 }, { ...f.base, schemaSnapshot: 'old' }]) {
+      await expect(importHomebrew(f.cache, { ...f, base, file, bytes: 1 })).rejects.toThrow('Reimport the content library');
+    }
+    expect((await f.cache.active(f.namespace, f.source))!.id).toBe(f.base.id);
+  });
+  it('rejects appending homebrew to a different branch of the installed library', async () => {
+    const f = await fixture();
+    const file = await readHomebrewFile(document(), 'selected.json');
+    const source = { ...f.source, branch: 'other-branch' };
+    await expect(importHomebrew(f.cache, { ...f, source, file, bytes: 1 })).rejects.toThrow('different content library');
+    expect((await f.cache.active(f.namespace, f.source))!.id).toBe(f.base.id);
+    expect(await f.cache.active(f.namespace, source)).toBeUndefined();
+  });
+  it('validates retained homebrew documents again when replaying persisted files', async () => {
+    const f = await fixture();
+    const file = await readHomebrewFile(document(), 'selected.json');
+    file.document['spell'] = 'corrupted after loading';
+    await expect(importHomebrew(f.cache, { ...f, file, bytes: 1 })).rejects.toThrow('Content validation failed');
+    expect((await f.cache.active(f.namespace, f.source))!.id).toBe(f.base.id);
+    expect((await f.cache.revisions(f.namespace)).some(entry => entry.revision.status === 'staging')).toBe(false);
+  });
+  it('stores the additional homebrew categories and resolves copied reference definitions', async () => {
+    const f = await fixture();
+    const definitions: Record<string, unknown> = {};
+    for (const [kind, path] of [['condition', 'conditionsdiseases.json'], ['status', 'conditionsdiseases.json'], ['variantrule', 'variantrules.json'], ['action', 'actions.json'], ['facility', 'bastions.json'],
+      ['disease', 'conditionsdiseases.json'], ['object', 'objects.json'], ['sense', 'senses.json'],
+      ['skill', 'skills.json'], ['vehicle', 'vehicles.json']]) {
+      const entries = coreDocumentFixture(path)[kind] as Record<string, unknown>[];
+      definitions[kind] = entries.map(entry => ({ ...entry, source: 'TESTBREW' }));
+    }
+    (definitions['skill'] as Record<string, unknown>[]).push({ name: 'Copied Skill', source: 'TESTBREW',
+      _copy: { name: 'skills.json', source: 'TESTBREW' } });
+    const file = await readHomebrewFile(definitions, 'references.json');
+    const result = await importHomebrew(f.cache, { ...f, file, bytes: 100 });
+    for (const kind of Object.keys(definitions)) {
+      const rows = await f.cache.category(result.id, kind);
+      expect(rows.length).toBeGreaterThan(0);
+      expect(rows.every(row => row.file.startsWith('homebrew/') && row.publication === 'TESTBREW')).toBe(true);
+      expect(rows.every(row => row.referenceDefinition?.kind === kind && row.referenceDefinition.version === 1)).toBe(true);
+      const reopened = await new IndexedDbContentCache().category(result.id, kind);
+      expect(reopened).toEqual(rows);
+    }
+    const copied = (await f.cache.category(result.id, 'skill')).find(row => row.name === 'Copied Skill')!;
+    expect(copied.referenceDefinition).toMatchObject({ kind: 'skill', ability: 'wis' });
+    expect(copied.data['_copy']).toBeUndefined();
+  });
   it('removes one homebrew file atomically while retaining core and other selected files', async () => {
     const f = await fixture();
     const first = await readHomebrewFile(document('First Spell'), 'first.json');
@@ -54,19 +132,19 @@ describe('Explicit single-file homebrew imports', () => {
   it('keeps homebrew dependency warnings nonfatal when core recipes generate magic weapons on reimport', async () => {
     const f = await fixture();
     const file = await readHomebrewFile({ baseitem: [
-      { name: 'Homebrew Gun', source: 'BREW', weapon: true, dmgType: 'P', property: ['GC:VSS-F|ValdaGunslinger'] },
-      { name: 'Incomplete Gun', source: 'BREW', weapon: true },
+      { name: 'Homebrew Gun', source: 'TESTBREW', weapon: true, dmgType: 'P', property: ['GC:VSS-F|ValdaGunslinger'] },
+      { name: 'Incomplete Gun', source: 'TESTBREW', weapon: true },
     ] }, 'weapons.json');
     const updated = await importContent(f.cache, {
       namespace: f.namespace, source: f.source, homebrewFiles: [file],
     }, async url => {
-      let value: unknown = { feat: [] };
+      const path = url.split('/data/')[1];
+      let value: unknown = path ? coreDocumentFixture(path) : {};
       if (url.startsWith('https://api.github.com/')) value = { sha: 'c'.repeat(40) };
       else if (url.endsWith('/index.json')) value = { CORE: 'core.json' };
-      else if (url.endsWith('/spells/sources.json')) value = {};
-      else if (url.endsWith('/items-base.json')) value = { baseitem: [{ name: 'Core Sword', source: 'PHB', weapon: true, dmgType: 'S' }] };
-      else if (url.endsWith('/magicvariants.json')) value = { magicvariant: [{ name: 'Vicious Weapon', source: 'DMG', requires: [{ weapon: true }],
-        inherits: { source: 'DMG', namePrefix: 'Vicious ', entries: ['Deals {=dmgType} damage.'] } }] };
+      else if (url.endsWith('/items-base.json')) value = coreDocumentFixture('items-base.json', { baseitem: [{ name: 'Core Sword', source: 'PHB', weapon: true, dmgType: 'S' }] });
+      else if (url.endsWith('/magicvariants.json')) value = { magicvariant: [{ name: 'Vicious Weapon', requires: [{ weapon: true }],
+        inherits: { source: 'DMG', rarity: 'rare', namePrefix: 'Vicious ', entries: ['Deals {=dmgType} damage.'] } }] };
       return { value, bytes: 1 };
     });
     expect(updated.status).toBe('ready');
@@ -85,35 +163,35 @@ describe('Explicit single-file homebrew imports', () => {
     const updated = await importContent(f.cache, {
       namespace: f.namespace, source: f.source, homebrewFiles: brew.homebrewFiles,
     }, async url => {
-      let value: unknown = { feat: [] };
+      const path = url.split('/data/')[1];
+      let value: unknown = path ? coreDocumentFixture(path) : {};
       if (url.startsWith('https://api.github.com/')) value = { sha: 'b'.repeat(40) };
       else if (url.endsWith('/index.json')) value = { CORE: 'core.json' };
-      else if (url.endsWith('/spells/sources.json')) value = {};
-      else if (url.endsWith('/spells/core.json')) value = { spell: [{ name: 'Updated Core Spell', source: 'PHB', level: 1 }] };
+      else if (url.endsWith('/spells/core.json')) value = coreDocumentFixture('spells/core.json', { spell: [{ name: 'Updated Core Spell', source: 'PHB', level: 1 }] });
       return { value, bytes: 1 };
     });
     expect(updated.commit).toBe('b'.repeat(40));
     expect(updated.homebrewFiles).toHaveLength(1);
     expect((await f.cache.category(updated.id, 'spell')).map(record => record.name).sort()).toEqual(['Homebrew Spell', 'Updated Core Spell']);
-    expect((await f.cache.category(updated.id, 'species'))[0].name).toBe('Homebrew Species');
+    expect((await f.cache.category(updated.id, 'species')).some(record => record.name === 'Homebrew Species')).toBe(true);
   });
   it('merges compatible supplemental duplicates and retains conflicting definitions as labeled alternatives', async () => {
     const f = await fixture();
     const file = await readHomebrewFile({ spell: [
-      { name: 'Arc Blade', source: 'BREW', level: 0, miscTags: ['AAD', 'SCL'], classes: { fromClassList: [{ name: 'Wizard', source: 'PHB' }] } },
-      { name: 'Arc Blade', source: 'BREW', level: 0, miscTags: ['SCL'] },
+      { name: 'Arc Blade', source: 'TESTBREW', level: 0, miscTags: ['AAD', 'SCL'], classes: { fromClassList: [{ name: 'Wizard', source: 'PHB' }] } },
+      { name: 'Arc Blade', source: 'TESTBREW', level: 0, miscTags: ['SCL'] },
     ] }, 'duplicates.json');
     const result = await importHomebrew(f.cache, { ...f, file, bytes: 10 });
     const records = await f.cache.category(result.id, 'spell');
     expect(records.filter(record => record.name === 'Arc Blade')).toHaveLength(1);
     expect(records.find(record => record.name === 'Arc Blade')!.data['miscTags']).toEqual(['AAD', 'SCL']);
     const conflicting = await readHomebrewFile({ spell: [
-      { name: 'Arc Blade', source: 'BREW', level: 0 }, { name: 'Arc Blade', source: 'BREW', level: 1 },
+      { name: 'Arc Blade', source: 'TESTBREW', level: 0 }, { name: 'Arc Blade', source: 'TESTBREW', level: 1 },
     ] }, 'duplicates.json');
     const changed = await importHomebrew(f.cache, { ...f, base: result, file: conflicting, bytes: 10 });
-    const alternatives = (await f.cache.category(changed.id, 'spell')).filter(record => record.publication === 'BREW');
+    const alternatives = (await f.cache.category(changed.id, 'spell')).filter(record => record.publication === 'TESTBREW');
     expect(alternatives.map(record => record.name)).toEqual(['Arc Blade (Alternative 1)', 'Arc Blade (Alternative 2)']);
-    expect(alternatives.map(record => record.data['level'])).toEqual([0, 1]);
+    expect(alternatives.map(record => spellDefinition(record).level)).toEqual([0, 1]);
     expect(changed.diagnostics.some(issue => issue.message.includes('Conflicting duplicate'))).toBe(true);
   });
   it('adds inline spell classes and materialized species while retaining core records and stable source identity', async () => {
@@ -122,9 +200,9 @@ describe('Explicit single-file homebrew imports', () => {
     const result = await importHomebrew(f.cache, { ...f, file, bytes: 100 });
     expect(result.sourceIdentity).toBe(f.base.sourceIdentity); expect(result.commit).toBe(f.base.commit);
     expect((await f.cache.category(result.id, 'species')).map(record => record.name).sort()).toEqual(['Core Human', 'Homebrew Species']);
-    const spell = (await f.cache.category(result.id, 'spell')).find(record => record.publication === 'BREW')!;
-    expect(spellClassMemberships(spell.data['classes']).map(entry => entry.name)).toEqual(['Wizard']);
-    expect(result.homebrewFiles![0].sources).toEqual(['BREW']);
+    const spell = (await f.cache.category(result.id, 'spell')).find(record => record.publication === 'TESTBREW')!;
+    expect(spellRecordClasses(spell).map(entry => entry.name)).toEqual(['Wizard']);
+    expect(result.homebrewFiles![0].sources).toEqual(['TESTBREW']);
     expect((await f.cache.active(f.namespace, f.source))!.id).toBe(result.id);
   });
 
@@ -134,7 +212,7 @@ describe('Explicit single-file homebrew imports', () => {
     const other = await importHomebrew(f.cache, { ...f, base: first,
       file: await readHomebrewFile({ feat: [{ name: 'Other Feat', source: 'OTHER' }] }, 'other.json'), bytes: 50 });
     const updated = await importHomebrew(f.cache, { ...f, base: other,
-      file: await readHomebrewFile({ spell: [{ name: 'Replacement', source: 'BREW', level: 1 }] }, 'selected.json'), bytes: 30 });
+      file: await readHomebrewFile({ spell: [{ name: 'Replacement', source: 'TESTBREW', level: 1 }] }, 'selected.json'), bytes: 30 });
     expect(updated.homebrewFiles).toHaveLength(2);
     expect((await f.cache.category(updated.id, 'spell')).map(record => record.name).sort()).toEqual(['Core Spell', 'Replacement']);
     expect((await f.cache.category(updated.id, 'species')).map(record => record.name)).toEqual(['Core Human']);
@@ -144,9 +222,9 @@ describe('Explicit single-file homebrew imports', () => {
   it('reports missing external dependencies without fetching them or hiding available spells', async () => {
     const f = await fixture();
     const file = await readHomebrewFile({
-      _meta: { sources: [{ json: 'BREW' }], dependencies: { class: ['OTHER'] } },
-      subclass: [{ name: 'External Subclass', source: 'BREW', className: 'Missing Class', classSource: 'OTHER' }],
-      spell: [{ name: 'Available Spell', source: 'BREW', level: 1 }],
+      _meta: { sources: [{ json: 'TESTBREW' }], dependencies: { class: ['OTHER'] } },
+      subclass: [{ name: 'External Subclass', source: 'TESTBREW', className: 'Missing Class', classSource: 'OTHER' }],
+      spell: [{ name: 'Available Spell', source: 'TESTBREW', level: 1 }],
     }, 'dependent.json');
     const result = await importHomebrew(f.cache, { ...f, file, bytes: 10 });
     expect(result.diagnostics.some(issue => issue.severity === 'warning' && issue.message.includes('parent-class'))).toBe(true);
@@ -155,8 +233,7 @@ describe('Explicit single-file homebrew imports', () => {
 
   it('preserves the active library on malformed data, collisions and cancellation', async () => {
     const f = await fixture();
-    const invalid = await readHomebrewFile({ spell: 'invalid' }, 'invalid.json');
-    await expect(importHomebrew(f.cache, { ...f, file: invalid, bytes: 1 })).rejects.toThrow('must be an array');
+    await expect(readHomebrewFile({ spell: 'invalid' }, 'invalid.json')).rejects.toThrow('must be array');
     const collision = await readHomebrewFile({ spell: [{ name: 'Core Spell', source: 'PHB', level: 1 }] }, 'collision.json');
     await expect(importHomebrew(f.cache, { ...f, file: collision, bytes: 1 })).rejects.toThrow('duplicate content identity');
     const controller = new AbortController();
@@ -165,4 +242,18 @@ describe('Explicit single-file homebrew imports', () => {
     expect((await f.cache.active(f.namespace, f.source))!.id).toBe(f.base.id);
     expect((await f.cache.revisions(f.namespace)).filter(entry => entry.revision.status === 'staging')).toHaveLength(0);
   });
+  it('retains different ordered progressions as alternatives instead of merging their value sets', async () => {
+    const f = await fixture();
+    const first = [1, ...Array(19).fill(2)]; const second = [...Array(19).fill(2), 1];
+    const file = await readHomebrewFile({ class: [
+      { name: 'Ordered Class', source: 'TESTBREW', spellsKnownProgression: first },
+      { name: 'Ordered Class', source: 'TESTBREW', spellsKnownProgression: second },
+    ] }, 'ordered.json');
+    const revision = await importHomebrew(f.cache, { ...f, file, bytes: 1 });
+    const classes = await f.cache.category(revision.id, 'class');
+    expect(classes).toHaveLength(2);
+    expect(classes.map(record => record.classDefinition?.casting.spellsKnownProgression)).toEqual([first, second]);
+    expect(classes.every(record => record.homebrewVariant !== undefined)).toBe(true);
+  });
+
 });

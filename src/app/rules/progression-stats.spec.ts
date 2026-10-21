@@ -37,7 +37,7 @@ describe('Optional progression and prerequisites', () => {
     const higher = deriveOptionalSlots([{ ...f.selections[0],level: 5 }],f.index);
     expect(higher.slots[0].id).toBe(slots.slots[0].id); expect(higher.slots[0].count).toBe(3);
     const parent = structuredClone(f.records.find(r => r.kind === 'class')!);
-    parent.data['optionalfeatureProgression'] = [{ name: 'Options',featureType: ['TEST'],progression: [0,1,2,2,3] }];
+    parent.data['optionalfeatureProgression'] = [{ name: 'Options',featureType: ['TEST'],progression: [0,1,2,2,3,...Array(15).fill(3)] }];
     const records = new Map(f.index.records); records.set(parent.key,parent);
     expect(deriveOptionalSlots(f.selections,{ ...f.index,records }).slots[0].count).toBe(2);
   });

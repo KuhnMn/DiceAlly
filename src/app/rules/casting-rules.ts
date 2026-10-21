@@ -1,4 +1,4 @@
-import { object } from '../content/content.model';
+import { spellDefinition } from '../content/spell-adapter';
 import { CharacterDocument, validateCharacterDocument } from './character-document';
 import { applySessionAction } from './session-rules';
 export type SpellCast = { spellId: string; mode: 'slot'; poolId: string }
@@ -11,7 +11,8 @@ export function castDocumentSpell(document: CharacterDocument,action: SpellCast)
   if (!next.derived) throw new Error('Apply supported character rules before casting.');
   const spell = next.instances.spells.find(s => s.id === action.spellId);
   if (!spell) throw new Error('Unknown selected spell instance.');
-  const level = spell.snapshot.data['level'];
+  const definition = spellDefinition(spell.snapshot);
+  const level = definition.level;
   if (typeof level !== 'number' || !Number.isSafeInteger(level) || level < 0 || level > 9) throw new Error('Missing or invalid spell level.');
   const source = next.instances.sources.find(s => s.id === spell.castingSourceId)!;
   const regular = spell.list === 'prepared' || (spell.list === 'known' && source.preparation === 'known');
@@ -34,7 +35,7 @@ export function castDocumentSpell(document: CharacterDocument,action: SpellCast)
     if (action.grantId && !grants.length) throw new Error('Unknown spell grant.');
     const explicit = grants.some(g => g.usage['frequency'] === (action.mode === 'at-will' ? 'will' : 'ritual'));
     if (action.mode === 'at-will' && !explicit) throw new Error('No eligible at-will grant.');
-    if (action.mode === 'ritual' && !explicit && !(source.ritualCasting === true && regular && object(spell.snapshot.data['meta'])?.['ritual'] === true)) throw new Error('No eligible ritual capability/grant.');
+    if (action.mode === 'ritual' && !explicit && !(source.ritualCasting === true && regular && definition.meta?.ritual === true)) throw new Error('No eligible ritual capability/grant.');
   } else throw new Error('Unsupported spell-casting mode.');
   return { document: validateCharacterDocument(next),spellId: spell.id,sourceId: source.id,castLevel,mode: action.mode };
 }

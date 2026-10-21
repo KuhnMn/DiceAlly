@@ -1,3 +1,4 @@
+import { itemTypeUid } from '../content/item.model';
 import { EditorCombatIndex } from './editor-combat-index';
 import { rankSearchResults } from '../search-ranking';
 import { EditorEntryRowComponent } from './editor-entry-row.component';
@@ -43,7 +44,7 @@ export class ItemsEditorComponent implements DoCheck, OnInit, OnDestroy {
     if (!this.disposed) this.view.markForCheck();
   }
   ngOnDestroy() { this.disposed = true; }
-  typeValue(type: ContentRecord) { return `${String(type.data['abbreviation'] ?? type.name)}|${type.publication}`; }
+  typeValue(type: ContentRecord) { return itemTypeUid(type); }
   hasType(item: InventoryItem) { return this.filteredItemTypes.some(type => this.typeValue(type) === item.entity?.item.type); }
   setType(item: InventoryItem, value: string) {
     const type = this.filteredItemTypes.find(type => this.typeValue(type) === value);

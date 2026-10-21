@@ -5,7 +5,7 @@ describe('Innate resource definitions', () => {
   it('resolves symbolic ability uses without changing spell or pool identity', () => {
     const records = mapContent({ feat: [{ name: 'Gift', source: 'TEST',
       additionalSpells: [{ innate: { '9': { daily: { int: ['A'] } } } }] }],
-      spell: [{ name: 'A', source: 'PHB' }] }, 'test.json').records;
+      spell: [{ name: 'A', source: 'PHB', level: 0 }] }, 'test.json').records;
     const index = { sourceIdentity: 'source', revisionId: 'revision', records: new Map(records.map(r => [r.key, r])) };
     const preview = deriveSpellGrants([{ selectionId: 'selection', ownerKey: records.find(r => r.kind === 'feat')!.key, level: 9 }], index);
     expect(preview.diagnostics).toEqual([]);
@@ -23,7 +23,7 @@ describe('Innate resource definitions', () => {
   });
   it('shares a daily list pool and separates each-spell pools without touching usage', () => {
     const records = mapContent({ feat: [{ name: 'Gift',source: 'TEST',additionalSpells: [{ ability: 'wis',innate: { '1': { daily: { '2': ['A','B'],'1e': ['A','B'] } } } }] }],
-      spell: [{ name: 'A',source: 'PHB' },{ name: 'B',source: 'PHB' }] },'test.json').records;
+      spell: [{ name: 'A',source: 'PHB', level: 0 },{ name: 'B',source: 'PHB', level: 0 }] },'test.json').records;
     const index = { sourceIdentity: 'source',revisionId: 'revision',records: new Map(records.map(r => [r.key,r])) };
     const spells = deriveSpellGrants([{ selectionId: 'selection',ownerKey: records.find(r => r.kind === 'feat')!.key,level: 1 }],index).instances;
     const result = deriveResourcesAndActions({ pools: [],spells,manualPools: [],previousSources: [],manualSources: [],overrides: { pools: [],sources: [] },
@@ -35,7 +35,7 @@ describe('Innate resource definitions', () => {
   });
   it('binds resource-cost spells explicitly to a shared named pool and rejects missing/duplicate bindings', () => {
     const records = mapContent({ feat: [{ name: 'Gift',source: 'TEST',additionalSpells: [{ resourceName: 'Ki',innate: { '1': { resource: { '2': ['A'],'3': ['B'] } } } }] }],
-      spell: [{ name: 'A',source: 'PHB' },{ name: 'B',source: 'PHB' }] },'test.json').records;
+      spell: [{ name: 'A',source: 'PHB', level: 0 },{ name: 'B',source: 'PHB', level: 0 }] },'test.json').records;
     const index = { sourceIdentity: 'source',revisionId: 'revision',records: new Map(records.map(r => [r.key,r])) };
     const spells = deriveSpellGrants([{ selectionId: 'selection',ownerKey: records.find(r => r.kind === 'feat')!.key,level: 3 }],index).instances;
     const input = { pools: [],spells,manualPools: [{ id: 'ki',kind: 'feature-uses' as const,total: 5,regain: 'SHORT_REST' as const,origins: [],manual: true }],

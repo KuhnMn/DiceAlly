@@ -1,0 +1,405 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ally-species.json",
+  "type": "object",
+  "required": [
+    "version",
+    "movement",
+    "abilities",
+    "defenses",
+    "senses",
+    "sizes",
+    "creatureTypes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "movement": {
+      "$ref": "#/$defs/movement"
+    },
+    "abilities": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/abilityOption"
+      }
+    },
+    "defenses": {
+      "type": "object",
+      "required": [
+        "resist",
+        "immune",
+        "vulnerable",
+        "conditionImmune"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "resist": {
+          "$ref": "#/$defs/traits"
+        },
+        "immune": {
+          "$ref": "#/$defs/traits"
+        },
+        "vulnerable": {
+          "$ref": "#/$defs/traits"
+        },
+        "conditionImmune": {
+          "$ref": "#/$defs/traits"
+        }
+      }
+    },
+    "senses": {
+      "type": "object",
+      "propertyNames": {
+        "enum": [
+          "darkvision",
+          "blindsight",
+          "tremorsense",
+          "truesight"
+        ]
+      },
+      "additionalProperties": {
+        "type": "integer"
+      }
+    },
+    "sizes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "creatureTypes": {
+      "$ref": "#/$defs/traits"
+    }
+  },
+  "$defs": {
+    "modes": {
+      "enum": [
+        "walk",
+        "fly",
+        "swim",
+        "climb",
+        "burrow"
+      ]
+    },
+    "abilities": {
+      "enum": [
+        "str",
+        "dex",
+        "con",
+        "int",
+        "wis",
+        "cha"
+      ]
+    },
+    "abilityList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/abilities"
+      },
+      "uniqueItems": true,
+      "minItems": 1
+    },
+    "rate": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "fixed"
+            },
+            "feet": {
+              "type": "integer"
+            },
+            "condition": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "feet"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "walk-reference"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "movement": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "unspecified"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "variable"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "modes",
+            "alternatives",
+            "hover",
+            "hidden"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "defined"
+            },
+            "modes": {
+              "type": "object",
+              "propertyNames": {
+                "$ref": "#/$defs/modes"
+              },
+              "additionalProperties": {
+                "$ref": "#/$defs/rate"
+              }
+            },
+            "alternatives": {
+              "type": "object",
+              "propertyNames": {
+                "$ref": "#/$defs/modes"
+              },
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/rate"
+                }
+              }
+            },
+            "choice": {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/modes"
+                  },
+                  "uniqueItems": true,
+                  "minItems": 1
+                },
+                "feet": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "from",
+                "feet"
+              ],
+              "additionalProperties": false
+            },
+            "hover": {
+              "type": "boolean"
+            },
+            "hidden": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/modes"
+              },
+              "uniqueItems": true
+            },
+            "alternativeExtensions": {
+              "type": "object"
+            }
+          }
+        }
+      ]
+    },
+    "abilityOption": {
+      "type": "object",
+      "required": [
+        "fixed",
+        "hidden",
+        "maximum"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "fixed": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/abilities"
+          },
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "hidden": {
+          "type": "boolean"
+        },
+        "maximum": {
+          "type": "integer"
+        },
+        "choice": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "uniform"
+                },
+                "from": {
+                  "$ref": "#/$defs/abilityList"
+                },
+                "count": {
+                  "type": "integer"
+                },
+                "amount": {
+                  "type": "integer"
+                },
+                "entry": true
+              },
+              "required": [
+                "kind",
+                "from",
+                "count",
+                "amount"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "weighted"
+                },
+                "from": {
+                  "$ref": "#/$defs/abilityList"
+                },
+                "weights": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  },
+                  "minItems": 1
+                },
+                "entry": true,
+                "extensions": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "kind",
+                "from",
+                "weights"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "unavailable"
+                },
+                "source": true,
+                "reason": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "source",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      }
+    },
+    "traits": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/trait"
+      }
+    },
+    "trait": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "fixed"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "choice"
+            },
+            "options": {
+              "$ref": "#/$defs/traits"
+            },
+            "count": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "kind",
+            "options",
+            "count"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "unavailable"
+            },
+            "source": true,
+            "reason": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "source",
+            "reason"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

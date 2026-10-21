@@ -1,4 +1,19 @@
+import { canonicalContentSnapshot } from '../content/content-snapshot';
+import { canonicalSpellRecord } from '../content/spell-adapter';
+import { canonicalCharacterOption, isCharacterOptionKind } from '../content/character-option-adapter';
+import { canonicalClassRecord, isClassKind } from '../content/class-adapter';
 import { CharacterDocument, canonicalDocument, validateCharacterDocument } from '../rules/character-document';
+import { canonicalSpeciesRecord } from '../content/species-adapter';
+
+/** Snapshot migration is independent of draft class completeness and never consults the library. */
+function migrateStoredDocument(value: CharacterDocument): CharacterDocument {
+  const document = JSON.parse(canonicalDocument(value)) as CharacterDocument;
+  document.snapshots = document.snapshots.map(canonicalContentSnapshot);
+  document.instances.features = document.instances.features.map(instance => ({ ...instance, snapshot: isClassKind(instance.snapshot.kind) ? canonicalClassRecord(instance.snapshot) : isCharacterOptionKind(instance.snapshot.kind) ? canonicalCharacterOption(instance.snapshot) : instance.snapshot }));
+  document.instances.spells = document.instances.spells.map(instance => ({ ...instance, snapshot: canonicalSpellRecord(instance.snapshot) }));
+  if (document.instances.species) document.instances.species.snapshot = canonicalSpeciesRecord(document.instances.species.snapshot, 'legacy');
+  return document;
+}
 
 export interface LocalCharacterEntry {
   id: string;
@@ -26,14 +41,22 @@ export class LocalCharacterRepository {
     const db = await this.db();
     return new Promise((resolve, reject) => {
       const request = db.transaction('characters').objectStore('characters').getAll();
-      request.onsuccess = () => resolve(request.result.sort((a: LocalCharacterEntry, b: LocalCharacterEntry) => b.updatedAt.localeCompare(a.updatedAt)));
+      request.onsuccess = () => {
+        try {
+          const entries = (request.result as LocalCharacterEntry[]).map(entry => ({ ...entry,
+            document: migrateStoredDocument(entry.document),
+            ...(entry.draft ? { draft: migrateStoredDocument(entry.draft) } : {}),
+          }));
+          resolve(entries.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+        } catch (error) { reject(error); }
+      };
       request.onerror = () => reject(request.error);
     });
   }
 
   async save(document: CharacterDocument, expectedVersion: number, draft = false): Promise<number> {
     // Drafts may have incomplete class selections, but must remain portable and bounded.
-    const copy = draft ? JSON.parse(canonicalDocument(document)) as CharacterDocument : validateCharacterDocument(document);
+    const copy = draft ? migrateStoredDocument(document) : validateCharacterDocument(document);
     const db = await this.db();
     return new Promise((resolve, reject) => {
       const tx = db.transaction('characters', 'readwrite');

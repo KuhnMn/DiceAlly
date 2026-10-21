@@ -1,3 +1,4 @@
+import { higherLevelEntries } from '../entries/entry-compatibility';
 import { compareSearchMatches } from '../search-ranking';
 import { SpellViewSwitcherComponent } from '../spell-view-switcher.component';
 import { SpellSchoolFilterComponent } from '../spell-school-filter.component';
@@ -320,9 +321,7 @@ type SpellLevelFilter = 'ALL' | number;
                           <div class="mt-3 border-t border-outline-variant pt-3">
                             <div class="text-sm font-semibold text-on-surface">At Higher Levels</div>
                             @for (higher of spell.entity?.entriesHigherLevel ?? []; track $index) {
-                              @if (higher.entries?.length) {
-                                <app-entry-renderer [entries]="higher.entries ?? []"></app-entry-renderer>
-                              }
+                              <app-entry-renderer [entries]="higherLevelEntries(higher)"></app-entry-renderer>
                             }
                           </div>
                         }
@@ -360,6 +359,9 @@ type SpellLevelFilter = 'ALL' | number;
   `,
 })
 export class SpellsPageComponent {
+  readonly higherLevelEntries = higherLevelEntries;
+
+
   characterData = input.required<ExportedCharacter | null>();
   private store = inject(CharacterStore);
   private readonly dialogs = inject(AppDialogService);

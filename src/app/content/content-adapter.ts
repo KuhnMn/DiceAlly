@@ -1,18 +1,25 @@
 import { ContentLink, ContentRecord, entityKey, ImportDiagnostic, JsonObject, normalize, object, string } from './content.model';
 import { applyCopyModifiers } from './copy-modifiers';
 import { resolveCopyVariables } from './copy-variables';
+import { classDefinition, isClassKind } from './class-adapter';
+export { featureReference } from './class-reference';
+import { SOURCE_KINDS } from './generated/schema-registry';
 
-export const CONTENT_KINDS = [
-  'class', 'subclass', 'classFeature', 'subclassFeature', 'spell', 'feat', 'optionalfeature',
-  'race', 'subrace', 'background', 'baseitem', 'item', 'itemGroup', 'magicvariant', 'itemType', 'itemProperty',
-  'itemMastery', 'monster', 'monsterTemplate', 'condition', 'variantrule', 'table',
-] as const;
+export const CONTENT_KINDS = SOURCE_KINDS;
 
 export function mapContent(value: unknown, file: string): { records: ContentRecord[]; diagnostics: ImportDiagnostic[] } {
   const root = object(value);
   if (!root) throw new Error(`${file}: expected a JSON object.`);
   const records: ContentRecord[] = [];
   const diagnostics: ImportDiagnostic[] = [];
+  for (const [kind, values] of Object.entries(root)) {
+    if (!kind.startsWith('_') && kind !== '$schema' && Array.isArray(values)
+        && !CONTENT_KINDS.includes(kind as typeof CONTENT_KINDS[number]) && values.length) {
+      diagnostics.push({ severity: 'warning', code: 'unsupported-category', phase: 'map', file,
+        path: `/${kind.replaceAll('~', '~0').replaceAll('/', '~1')}`,
+        message: `Content category ${kind} is valid but outside the supported import scope (${values.length} records excluded).` });
+    }
+  }
   for (const kind of CONTENT_KINDS) {
     if (root[kind] === undefined) continue;
     if (!Array.isArray(root[kind])) throw new Error(`${file}: ${kind} must be an array.`);
@@ -37,33 +44,15 @@ export function mapContent(value: unknown, file: string): { records: ContentReco
   return { records, diagnostics };
 }
 
-export function featureReference(value: unknown, kind: 'classFeature' | 'subclassFeature', _parent: JsonObject): ContentLink {
-  const token = typeof value === 'string' ? value : string(object(value)?.[kind]);
-  const p = token.split('|');
-  const subclass = kind === 'subclassFeature';
-  const level = Number(p[subclass ? 5 : 3]);
-  if (!token || p.length < (subclass ? 6 : 4) || !Number.isInteger(level) || level < 0) {
-    throw new Error(`Invalid ${kind} reference: ${token}`);
-  }
-  const data: JsonObject = {
-    name: p[0], className: p[1], classSource: p[2] || 'PHB',
-    source: p[subclass ? 6 : 4] || (subclass ? p[4] : p[2]) || 'PHB', level,
-  };
-  if (subclass) { data['subclassShortName'] = p[3]; data['subclassSource'] = p[4] || 'PHB'; }
-  return { role: kind, target: entityKey(kind, data) };
-}
 
 export function directLinks(record: ContentRecord): ContentLink[] {
   const data = record.data;
-  const links: ContentLink[] = [...record.links];
-  const field = record.kind === 'class' ? 'classFeatures' : record.kind === 'subclass' ? 'subclassFeatures' : undefined;
-  if (field && Array.isArray(data[field])) {
-    for (const reference of data[field]) {
-      links.push(featureReference(reference, field === 'classFeatures' ? 'classFeature' : 'subclassFeature', data));
-    }
-  }
-  if (['subclass', 'classFeature', 'subclassFeature'].includes(record.kind)) {
-    links.push({ role: 'parent-class', target: entityKey('class', { name: data['className'], source: data['classSource'] }) });
+  // Path-bearing links are computed again against the current index.
+  const links: ContentLink[] = record.links.filter(link => link.path === undefined);
+  if (isClassKind(record.kind)) {
+    const definition = classDefinition(record);
+    for (const reference of definition.features) links.push({ role: record.kind === 'class' ? 'classFeature' : 'subclassFeature', target: reference.key });
+    if (definition.parent) links.push({ role: 'parent-class', target: definition.parent.key });
   }
   if (record.kind === 'subrace') {
     links.push({ role: 'parent-species', target: entityKey('race', { name: data['raceName'], source: data['raceSource'] }) });
@@ -95,7 +84,7 @@ export function inheritCopy(base: JsonObject, child: JsonObject, templates: Json
     if (!Object.hasOwn(child, field) && !preserve?.['*'] && !preserve?.[field]) delete result[field];
   }
   for (const [field, value] of Object.entries(child)) if (value === null) delete result[field];
-  const mods: JsonObject = structuredClone(object(copy?.['_mod'] ?? copy?.['mod']) ?? {});
+  const mods: JsonObject = structuredClone(object(copy?.['_mod']) ?? {});
   const references = copy?.['_templates'];
   if (references !== undefined && !Array.isArray(references)) throw new Error('Copy templates must be an array.');
   for (const reference of (references as unknown[] | undefined) ?? []) {

@@ -1,9 +1,12 @@
 import { ContentCache } from './content-cache';
 import { mapContent } from './content-adapter';
 import { ADAPTER_VERSION, ContentSource, HomebrewFile, ImportDiagnostic, ImportProgress, ImportRevision, object, sourceIdentity, validateSource } from './content.model';
-import { discoverFiles, FetchContent, fetchContent, rawUrl, resolveCommit } from './github-source';
+import { FetchContent, fetchContent, rawUrl, resolveCommit } from './github-source';
+import { discoverFiles } from './content-discovery';
 import { finalizeContentImport } from './content-finalizer';
 import { stageHomebrewFiles } from './homebrew-package';
+import { validateCoreDocument } from './content-schema';
+import { CONTENT_SCHEMA_ID } from './generated/schema-version';
 export { ContentImportError } from './content-finalizer';
 
 export interface ImportOptions {
@@ -30,6 +33,7 @@ export async function importContent(cache: ContentCache, options: ImportOptions,
   const revision: ImportRevision = {
     id: crypto.randomUUID(), namespace: options.namespace, source, sourceIdentity: sourceIdentity(source), commit,
     adapterVersion: ADAPTER_VERSION, createdAt: new Date().toISOString(), status: 'staging',
+    schemaSnapshot: CONTENT_SCHEMA_ID,
     files: discovery.files, diagnostics, metrics: { bytes: 0, records: 0, elapsedMs: 0, mappedBytes: 0 },
   };
   await cache.stage(revision);
@@ -41,6 +45,7 @@ export async function importContent(cache: ContentCache, options: ImportOptions,
       report('download', index, discovery.files.length, file);
       const result = await fetcher(rawUrl(source, commit, file), signal);
       bytes += result.bytes;
+      await validateCoreDocument(result.value, file);
       if (file === 'spells/sources.json') { overlay = result.value; continue; }
       const mapped = mapContent(result.value, file);
       diagnostics.push(...mapped.diagnostics);
@@ -59,6 +64,9 @@ export async function importContent(cache: ContentCache, options: ImportOptions,
       }
       count += mapped.records.length;
     }
+    revision.metrics.records = count;
+    if (!object(overlay)) throw new Error('Invalid spells/sources.json overlay.');
+    await stageHomebrewFiles(cache, revision, options.homebrewFiles ?? [], signal);
     let needsTemplates = false;
     await cache.visit(revision.id, async record => {
       if (object(record.data['_copy'])?.['_templates'] !== undefined) needsTemplates = true;
@@ -68,6 +76,7 @@ export async function importContent(cache: ContentCache, options: ImportOptions,
       report('download', discovery.files.length, discovery.files.length + 1, file);
       const result = await fetcher(rawUrl(source, commit, file), signal);
       bytes += result.bytes;
+      await validateCoreDocument(result.value, file);
       const mapped = mapContent(result.value, file);
       diagnostics.push(...mapped.diagnostics);
       const seen = new Set<string>();
@@ -79,12 +88,9 @@ export async function importContent(cache: ContentCache, options: ImportOptions,
       const templates = mapped.records.filter(record => record.kind === 'monsterTemplate');
       if (!templates.length) throw new Error('bestiary/template.json has no monster templates.');
       await cache.put(revision.id, templates);
-      count += templates.length;
+      revision.metrics.records += templates.length;
       revision.files.push(file);
     }
-    revision.metrics.records = count;
-    if (!object(overlay)) throw new Error('Invalid spells/sources.json overlay.');
-    await stageHomebrewFiles(cache, revision, options.homebrewFiles ?? [], signal);
     return await finalizeContentImport(cache, revision, {
       signal, progress: options.progress, overlay, bytes, started,
     });

@@ -1,7 +1,11 @@
+import { additionalSpells, SPELL_GRANT_LISTS } from '../content/additional-spells';
+import { spellDefinition, spellRecordClasses } from '../content/spell-adapter';
+import { characterOption, characterOptionSourceData } from '../content/character-option-adapter';
+import { castingMetadata, classDefinition } from '../content/class-adapter';
 import { updateSpeciesChoiceNotes } from './species-choice-notes';
 import { capitalizeFirst } from '../text';
 import { wizardEditorId } from './editor-identity';
-import { ContentRecord, ImportRevision, entityKey, normalize, object, string } from '../content/content.model';
+import { ContentRecord, ImportRevision, normalize, object } from '../content/content.model';
 import { ExportedCharacter, FeatureSource, SpellEntryFull } from '../models/character.model';
 import { ContentRulesIndex, deriveClassFeatures } from '../rules/feature-rules';
 import { deriveLevelRules } from '../rules/level-rules';
@@ -9,8 +13,9 @@ import { deriveProficiencyGrants } from '../rules/proficiency-rules';
 import { deriveOptionalSlots } from '../rules/optional-progression';
 import { deriveSpellGrants, SpellGrantOwner } from '../rules/spell-rules';
 import { deriveSpecies } from '../rules/species-rules';
+import { speciesDefinition } from '../content/species-adapter';
 import { DEFENSE_ABILITIES } from './basic-info';
-import { spellClasses, spellSnapshot } from './spell-selection';
+import { spellSnapshot } from './spell-selection';
 import { PrefillValue, WizardState, mergeWizardPrefill } from './wizard-prefill';
 import { averageClassHp, contentReference, sourceAbilityFlags, speciesSnapshot, spellUseTrackers } from './editor-content-helpers';
 import { isCompleteSelection } from '../rules/spell-choice';
@@ -24,23 +29,16 @@ export const WIZARD_SECTIONS = [
 ];
 /** Metadata such as a casting ability alone does not grant spells. */
 function hasAdditionalSpells(record: ContentRecord): boolean {
-  const blocks = record.data['additionalSpells'];
-  return Array.isArray(blocks) && blocks.some(block => {
-    const data = object(block);
-    return ['known', 'prepared', 'innate', 'expanded'].some(key => {
-      const grants = object(data?.[key]);
-      return grants != null && Object.keys(grants).length > 0;
-    });
-  });
+  return additionalSpells(record)?.some(block => SPELL_GRANT_LISTS.some(key => block[key] !== undefined)) ?? false;
 }
 
 /** An explicit casting ability also declares a source, even without a spell list. */
 function declaresSpellcasting(record: ContentRecord): boolean {
-  return !!string(record.data['spellcastingAbility']).trim() || hasAdditionalSpells(record);
+  return !!castingMetadata(record).ability || hasAdditionalSpells(record);
 }
 
 export function matchesSubclass(record: ContentRecord, classKey: string) {
-  return record.kind === 'subclass' && entityKey('class', { name: record.data['className'], source: record.data['classSource'] }) === classKey;
+  return record.kind === 'subclass' && classDefinition(record).parent?.key === classKey;
 }
 
 /**
@@ -78,29 +76,27 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     // A class, subclass, feature or species can independently define additionalSpells.
     // Register its ability/block choices now; resolve actual spell choices in pass 3.
     if (!hasAdditionalSpells(record)) return;
-    const blocks = record.data['additionalSpells'];
+    const blocks = additionalSpells(record)!;
     const blockId = `blocks:${selectionId}:${record.key}`;
     let selectedBlocks: number[] | undefined;
-    if (Array.isArray(blocks) && blocks.length > 1) {
+    if (blocks.length > 1) {
       choices.push({ ownerKey: record.key, id: blockId, label: `${record.name}: spell options`, count: 1,
-        candidates: blocks.map((block, position) => ({ value: String(position), label: string(object(block)?.['name'], `Option ${position + 1}`) })) });
+        candidates: blocks.map((block, position) => ({ value: String(position), label: block.name ?? `Option ${position + 1}` })) });
       selectedBlocks = (state.answers[blockId] ?? []).map(Number);
     }
     const abilityId = `ability:${selectionId}:${record.key}`;
-    const abilityOptions = Array.isArray(blocks) ? blocks.flatMap(block => {
-      const choose = object(object(block)?.['ability'])?.['choose']; return Array.isArray(choose) ? choose : [];
-    }).filter((ability): ability is string => typeof ability === 'string') : [];
+    const abilityOptions = blocks.flatMap(block => typeof block.ability === 'object' ? block.ability.choose : []);
     if (abilityOptions.length) choices.push({ ownerKey: record.key, id: abilityId, label: `${record.name}: casting ability`, count: 1,
       candidates: [...new Set(abilityOptions)].map(value => ({ value, label: DEFENSE_ABILITIES.find(ability => ability.key.startsWith(value))?.label ?? value })) });
     const owner: SpellGrantOwner = { selectionId, ownerKey: record.key, level, maxSpellLevel,
-      ability: (state.answers[abilityId]?.[0] ?? string(record.data['spellcastingAbility'], fallback)) || undefined,
+      ability: (state.answers[abilityId]?.[0] ?? (castingMetadata(record).ability ?? fallback)) || undefined,
       ...(selectedBlocks ? { blocks: selectedBlocks } : {}) };
     owners.push({ owner, label: record.name, source: castingSource });
     const sourceValue = values.find(entry => entry.path[0] === 'sources' && (entry.value as FeatureSource).name === castingSource)?.value as FeatureSource | undefined;
     if (sourceValue) {
       sourceValue.isSpellcastingSource = true;
-      const selected = selectedBlocks ?? (Array.isArray(blocks) ? blocks.map((_, position) => position) : []);
-      const castingAbilities = new Set([owner.ability, ...selected.map(position => string(object((blocks as unknown[])[position])?.['ability']))]);
+      const selected = selectedBlocks ?? blocks.map((_, position) => position);
+      const castingAbilities = new Set([owner.ability, ...selected.map(position => typeof blocks[position]?.ability === 'string' ? blocks[position].ability : undefined)]);
       for (const ability of DEFENSE_ABILITIES) if (castingAbilities.has(ability.key.slice(0, 3))) {
         Object.assign(sourceValue, { [`uses${ability.label}`]: true });
       }
@@ -114,8 +110,8 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     const parent = records.get(selection.classKey); if (!parent) continue;
     const subclass = selection.subclassKey ? records.get(selection.subclassKey) : undefined;
     const classInput = features.classInputs.find(entry => entry.selectionId === selection.selectionId); if (!classInput) continue;
-    const castingRecord = parent.data['casterProgression'] || parent.data['spellcastingAbility'] ? parent : subclass ?? parent;
-    const castingAbility = string(castingRecord.data['spellcastingAbility']);
+    const castingRecord = castingMetadata(parent).progression || castingMetadata(parent).ability ? parent : subclass ?? parent;
+    const castingAbility = castingMetadata(castingRecord).ability ?? '';
     const parentId = wizardEditorId('source', revision.sourceIdentity, selection.selectionId, parent.key);
     const parentName = source(parentId, `${parent.name} (${parent.publication})`, {
       isGeneralFeatureSource: true, isSpellcastingSource: (castingRecord === parent && classInput.caster !== 'none') || declaresSpellcasting(parent),
@@ -141,8 +137,8 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     }
     if (selection.spellList && classInput.caster !== 'none') for (const record of records.values()) {
       if (record.kind !== 'spell' || (sourceBooks.length && !sourceBooks.includes(record.publication))
-        || Number(record.data['level']) > maxSpellLevel) continue;
-      if (spellClasses(record.data).some(entry => normalize(entry.name) === normalize(selection.spellList!))) addSpell(record, castingSource);
+        || spellDefinition(record).level > maxSpellLevel) continue;
+      if (spellRecordClasses(record).some(entry => normalize(entry.name) === normalize(selection.spellList!))) addSpell(record, castingSource);
     }
   }
   if (!errors.length) {
@@ -158,7 +154,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
       else {
         const origin = state.classes.find(selection => pool.origins.includes(selection.selectionId))!;
         const parent = records.get(origin.classKey)!;
-        const owner = parent.data['casterProgression'] || !origin.subclassKey ? parent : records.get(origin.subclassKey)!;
+        const owner = castingMetadata(parent).progression || !origin.subclassKey ? parent : records.get(origin.subclassKey)!;
         const name = pool.regain === 'LONG_REST' && sharedSource ? sharedSource : sourceNames.get(`${origin.selectionId}:${owner.key}`)!;
         put('spells', `${name}: level ${pool.rank} slots`, ['slots', name, String(pool.rank)], { level: pool.rank, total: pool.total, used: 0, regainCondition: pool.regain, userAdded: false });
       }
@@ -174,14 +170,14 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     }));
     const selection = state.classes.find(entry => entry.selectionId === grant.selectionId)!;
     addOwner(grant.selectionId, record, selection.level, sourceName,
-      string(records.get(selection.classKey)?.data['spellcastingAbility']), spellLevels.get(grant.selectionId) ?? 0);
+      castingMetadata(records.get(selection.classKey)).ability ?? '', spellLevels.get(grant.selectionId) ?? 0);
   }
   const optional = deriveOptionalSlots(state.classes, index, state.answers);
   warnings.push(...optional.diagnostics);
   for (const slot of optional.slots) {
     const owner = records.get(slot.ownerKey)!;
     const candidates = [...records.values()].filter(record => record.kind === 'optionalfeature'
-      && Array.isArray(record.data['featureType']) && record.data['featureType'].some(type => slot.featureTypes.includes(String(type)))
+      && characterOption(record).featureTypes.some(type => slot.featureTypes.includes(type))
       && (!sourceBooks.length || sourceBooks.includes(record.publication)));
     choices.push({ id: slot.id, label: `${owner.name}: optional features`, count: slot.count,
       candidates: candidates.map(record => ({ value: record.key, label: `${record.name} (${record.publication})` })) });
@@ -200,15 +196,16 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     if (!record || record.kind !== 'species') errors.push('The selected species is missing from this import.');
     else {
       const species = deriveSpecies({ id: 'wizard-species', key: record.key }, index, [], undefined, state.answers);
-      choices.push(...species.choices.map(choice => ({ ownerKey: record.key, id: choice.id, label: `${record.name}: resistance`,
+      choices.push(...species.choices.map(choice => ({ ownerKey: record.key, id: choice.id, label: `${record.name}: ${choice.label}`,
         count: choice.count, searchable: false,
         candidates: choice.candidates.map(value => ({ value, label: capitalizeFirst(value) })) })));
       warnings.push(...species.diagnostics);
+      warnings.push(...species.warnings);
       put('species', `${record.name} species`, ['species'], { editorId: wizardEditorId('species', revision.sourceIdentity, record.key), name: record.name, source: record.publication,
         userAdded: false, contentReference: reference(record), entity: speciesSnapshot(record), notes: [], uses: [] });
       for (const contribution of species.generated) {
         const value = object(contribution.value);
-        if (contribution.field === 'speed') put('species', `${value!['mode']} speed`, ['character', 'speeds', String(value!['mode'])], value!['number']);
+        if (contribution.field === 'speed' && !value!['condition']) put('species', `${value!['mode']} speed`, ['character', 'speeds', String(value!['mode'])], value!['number']);
         if (contribution.field === 'sense') put('species', `${value!['sense']} sense`, ['character', 'senses', capitalizeFirst(String(value!['sense']))], value!['range']);
         if (contribution.field === 'resist' && typeof contribution.value === 'string') put('species', `${contribution.value} resistance`, ['resistances', capitalizeFirst(contribution.value)], capitalizeFirst(contribution.value));
       }
@@ -218,7 +215,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
           isGeneralFeatureSource: false, isSpellcastingSource: true, ...sourceAbilityFlags(record) }, 'species');
         addOwner('wizard-species', record, state.classes.reduce((sum, entry) => sum + entry.level, 0), name, '', 9);
       }
-      if (record.data['ability']) warnings.push('Species ability-score options remain editable on Ability Scores; this prefill preserves your current scores.');
+      if (speciesDefinition(record).abilities.length) warnings.push('Species ability-score options remain editable on Ability Scores; this prefill preserves your current scores.');
     }
   }
   // 3. Rule handlers expose candidates and validate answers before producing sheet entries.
@@ -274,7 +271,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
   const background = backgroundKey ? records.get(backgroundKey) : undefined;
   if (backgroundKey && background?.kind !== 'background') errors.push('The selected background is missing from this import.');
   const nextBackground = background?.kind === 'background'
-    ? { name: background.name, source: background.publication, entity: structuredClone(background.data), contentReference: reference(background) }
+    ? { name: background.name, source: background.publication, entity: characterOptionSourceData(background), contentReference: reference(background) }
     : state.customBackgroundName?.trim() ? { name: state.customBackgroundName.trim() } : undefined;
   if (JSON.stringify(sheet.background) !== JSON.stringify(nextBackground)) proposal.changes.push({ path: ['background'], label: 'Background', action: nextBackground ? sheet.background ? 'Update' : 'Fill' : 'Remove' });
   if (nextBackground) proposal.sheet.background = nextBackground; else delete proposal.sheet.background;

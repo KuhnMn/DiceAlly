@@ -1,4 +1,5 @@
-import { string } from '../content/content.model';
+import { hasAdditionalSpellPayload } from '../content/additional-spells';
+import { castingMetadata } from '../content/class-adapter';
 import { ContentClassSelection, ContentRulesIndex, deriveClassFeatures, FeatureInstance } from './feature-rules';
 import { deriveLevelRules, LevelInputs, PlayState, ResourcePool } from './level-rules';
 import { deriveSpellGrants, SpellGrantOwner, SpellInstance } from './spell-rules';
@@ -40,10 +41,10 @@ export function previewClassRules(input: ClassRulesInput, index: ContentRulesInd
   const spellOwners = new Map<string,SpellGrantOwner>();
   const addSpellOwner = (selection: ContentClassSelection, key: string) => {
     const record = index.records.get(key);
-    if (!record || record.data['additionalSpells'] == null) return;
+    if (!record || !hasAdditionalSpellPayload(record)) return;
     const identity = spellOwnerIdentity(selection.selectionId,key);
-    const parentAbility = string(index.records.get(selection.classKey)?.data['spellcastingAbility']);
-    const ability = string(record.data['spellcastingAbility'],parentAbility) || undefined;
+    const parentAbility = castingMetadata(index.records.get(selection.classKey)).ability;
+    const ability = (castingMetadata(record).ability ?? parentAbility) || undefined;
     spellOwners.set(identity,{ selectionId: selection.selectionId,ownerKey: key,level: selection.level,ability,...input.ownerOptions?.[identity] });
   };
   const addFeatureSpellOwners = (instances: FeatureInstance[]) => {

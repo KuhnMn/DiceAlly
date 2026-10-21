@@ -19,6 +19,7 @@ import { SourceBookFilterService } from './source-book-filter.service';
 import { contentReference, speciesSnapshot } from './editor-content-helpers';
 import { RemoveEntryDialogComponent } from './remove-entry-dialog.component';
 import { CatalogQuery, EditorCatalog } from './editor-catalog';
+import { speciesMovementText } from '../content/species-compatibility';
 
 @Component({
   selector: 'app-editor-species',
@@ -54,6 +55,8 @@ export class SpeciesEditorComponent implements OnDestroy {
     });
   }
   get selected() { return this.sheet().species; }
+  readonly movementText = speciesMovementText;
+  entries(record: ContentRecord) { return speciesSnapshot(record).entries ?? []; }
   change() { this.view.markForCheck(); this.edited.emit(); }
   async openCatalog() { this.catalogOpen = true; if (!this.revision()) await this.refreshContent(); }
   ngOnDestroy() { this.catalog.dispose(); }

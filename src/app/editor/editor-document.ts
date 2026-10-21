@@ -1,7 +1,11 @@
+import { projectSpellData } from '../content/spell-adapter';
+import { characterOptionSourceData } from '../content/character-option-adapter';
+import { projectClassFeatureData } from '../content/class-adapter';
 import { ContentRecord, ImportRevision } from '../content/content.model';
 import { CharacterDocument } from '../rules/character-document';
 import { ContentRulesIndex } from '../rules/feature-rules';
-import { ExportedCharacter, FeatureEntity, FeatEntity, OptionalFeatureEntity, SpellEntity, SpeciesEntity, Speeds } from '../models/character.model';
+import { ExportedCharacter, FeatureEntity, FeatEntity, OptionalFeatureEntity, SpellEntity, Speeds } from '../models/character.model';
+import { projectSpeciesEntity } from '../content/species-compatibility';
 
 export function bindingFor(revision: ImportRevision): CharacterDocument['contentBindings'][number] {
   return { sourceIdentity: revision.sourceIdentity, revisionId: revision.id, commit: revision.commit,
@@ -34,7 +38,7 @@ export function snapshotIndex(document: CharacterDocument): ContentRulesIndex {
 export function projectSheet(document: CharacterDocument): ExportedCharacter {
   const sheet = structuredClone(document.presentation['sheet'] ?? {}) as ExportedCharacter;
   const names = { str: 'strength', dex: 'dexterity', con: 'constitution', int: 'intelligence', wis: 'wisdom', cha: 'charisma' } as const;
-  const abilities = document.derived?.effectiveAbilities ?? document.creation.abilities;
+  const abilities = document.creation.abilities;
   const stats = document.derived?.stats;
   const rank = (kind: string, target: string) => Math.max(0, ...(stats?.contributions ?? []).filter(p => p.kind === kind && p.target === target).map(p => p.rank));
   sheet.character = { ...sheet.character, characterUuid: document.id, name: document.identity.name,
@@ -60,13 +64,13 @@ export function projectSheet(document: CharacterDocument): ExportedCharacter {
   };
   sheet.features = document.instances.features.map(f => ({ name: f.snapshot.name, source: f.snapshot.publication,
     userAdded: f.manual, featureSourceName: 'Features',
-    ...(f.snapshot.kind === 'feat' ? { featEntity: f.snapshot.data as unknown as FeatEntity } : f.snapshot.kind === 'optionalfeature'
-      ? { optionalFeatureEntity: f.snapshot.data as unknown as OptionalFeatureEntity } : { featureEntity: f.snapshot.data as unknown as FeatureEntity }),
+    ...(f.snapshot.kind === 'feat' ? { featEntity: characterOptionSourceData(f.snapshot) as unknown as FeatEntity } : f.snapshot.kind === 'optionalfeature'
+      ? { optionalFeatureEntity: characterOptionSourceData(f.snapshot) as unknown as OptionalFeatureEntity } : { featureEntity: projectClassFeatureData(f.snapshot) as unknown as FeatureEntity }),
     notes: [{ tag: f.id, notes: document.session.annotations[f.id] ?? [] }] }));
   sheet.features.push(...structuredClone(document.compatibility['legacyFeatures'] ?? []) as NonNullable<ExportedCharacter['features']>);
   sheet.spells = document.instances.spells.map(s => ({ name: s.snapshot.name, source: s.snapshot.publication,
     userAdded: s.manual, castingSourceName: document.instances.sources.find(source => source.id === s.castingSourceId)?.label,
-    listType: s.list === 'known' && document.instances.sources.find(source => source.id === s.castingSourceId)?.useSpellbook ? 'SPELLBOOK' : s.list.toUpperCase(), entity: s.snapshot.data as unknown as SpellEntity,
+    listType: s.list === 'known' && document.instances.sources.find(source => source.id === s.castingSourceId)?.useSpellbook ? 'SPELLBOOK' : s.list.toUpperCase(), entity: projectSpellData(s.snapshot) as unknown as SpellEntity,
     notes: [{ tag: s.id, notes: document.session.annotations[s.id] ?? [] }] }));
   for (const spell of sheet.spells) {
     const instance = document.instances.spells.find(s => s.id === spell.notes?.[0]?.tag)!;
@@ -75,17 +79,17 @@ export function projectSheet(document: CharacterDocument): ExportedCharacter {
   }
   sheet.spells.push(...structuredClone(document.compatibility['legacySpells'] ?? []) as NonNullable<ExportedCharacter['spells']>);
   if (document.instances.species) {
-    const data = structuredClone(document.instances.species.snapshot.data);
-    if (data['speed']) data['speed'] = Object.fromEntries(Object.entries(data['speed'] as Record<string, { number: number }>).map(([mode, value]) => [mode, value.number]));
+    const record = document.instances.species.snapshot;
+    const same = sheet.species?.name === record.name && sheet.species?.source === record.publication;
     sheet.species = { name: document.instances.species.snapshot.name,
-      source: document.instances.species.snapshot.publication, entity: data as unknown as SpeciesEntity };
+      ...(same ? sheet.species : {}), source: record.publication, entity: projectSpeciesEntity(record) };
   }
   const speeds: Speeds = { ...sheet.character.speeds };
   const senses: Record<string, unknown> = { ...sheet.character.senses };
   const resistances = [...sheet.character.resistances ?? []];
   for (const contribution of document.derived?.speciesContributions ?? []) {
     const value = contribution.value as Record<string, unknown>;
-    if (contribution.field === 'speed') speeds[String(value['mode'])] = Number(value['number']);
+    if (contribution.field === 'speed' && !value['condition']) speeds[String(value['mode'])] = Number(value['number']);
     if (contribution.field === 'sense') senses[String(value['sense'])] = Number(value['range']);
     if (contribution.field === 'resist') resistances.push(typeof contribution.value === 'string' ? contribution.value : String(value['type'] ?? ''));
   }

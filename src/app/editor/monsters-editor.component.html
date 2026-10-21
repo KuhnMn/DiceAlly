@@ -46,7 +46,7 @@
     @if (catalog.loading()) { <p role="status" class="text-xs text-on-surface-variant">Searching…</p> }
     <div class="overflow-hidden rounded-lg bg-surface-container">@for (record of catalog.results(); track record.key) {
       <app-catalog-result-row [name]="record.name" [alreadyAdded]="hasExisting(record)" [disabled]="catalog.loading()" (addRequested)="add(record)">
-        <ng-container catalog-metadata><span class="shrink-0 rounded bg-secondary-container px-1 text-on-secondary-container">HP {{ $any(record.data['hp'])?.average ?? 'Special' }}</span><span class="min-w-0 truncate rounded bg-surface-container-highest px-1 text-on-surface" [title]="record.publication">{{ record.publication }}</span></ng-container>
+        <ng-container catalog-metadata><span class="shrink-0 rounded bg-secondary-container px-1 text-on-secondary-container">HP {{ catalogHp(record) }}</span><span class="min-w-0 truncate rounded bg-surface-container-highest px-1 text-on-surface" [title]="record.publication">{{ record.publication }}</span></ng-container>
         <app-description-dialog catalog-description class="shrink-0 self-stretch" [title]="record.name" label="Stat Block" [compact]="true"><div class="p-2"><app-monster-stat-block [value]="preview(record)" [compact]="true" /></div></app-description-dialog>
       </app-catalog-result-row>
     }</div>

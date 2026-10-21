@@ -69,7 +69,7 @@ describe('Shared creator Source Books filter', () => {
       createdAt: new Date().toISOString(), files: [], diagnostics: [], metrics: { bytes: 0, records: 6, elapsedMs: 0, mappedBytes: 0 } };
     const records = mapContent({
       feat: ['PHB', 'XPHB'].map(source => ({ name: 'Alert', source, entries: ['Description'] })),
-      spell: ['PHB', 'XPHB'].map(source => ({ name: 'Shield', source, level: 1, classes: { class: [{ name: 'Wizard', source }] } })),
+      spell: ['PHB', 'XPHB'].map(source => ({ name: 'Shield', source, level: 1, classes: { fromClassList: [{ name: 'Wizard', source }] } })),
       item: ['PHB', 'XPHB'].map(source => ({ name: 'Tools', source, type: 'AT' })),
     }, 'source-books.json').records;
     const cache = new IndexedDbContentCache();

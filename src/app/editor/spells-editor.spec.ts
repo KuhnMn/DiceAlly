@@ -23,7 +23,7 @@ async function catalog() {
     createdAt: new Date().toISOString(), files: [], diagnostics: [], metrics: { bytes: 0, records: 44, elapsedMs: 0, mappedBytes: 0 } };
   const records = mapContent({ spell: [
     ...Array.from({ length: 40 }, (_, i) => ({ name: `Wizard ${String(i).padStart(2, '0')}`, source: 'TEST', level: i % 4, school: 'V', entries: ['Spell description'],
-      classes: i % 2 ? { classVariant: [{ name: 'Wizard', source: 'TEST' }] } : { class: [{ name: 'Wizard', source: 'TEST' }] } })),
+      classes: i % 2 ? { fromClassListVariant: [{ name: 'Wizard', source: 'TEST' }] } : { fromClassList: [{ name: 'Wizard', source: 'TEST' }] } })),
     { name: 'High spell', source: 'TEST', level: 4, school: 'V', classes: { fromClassList: [{ name: 'Wizard', source: 'TEST' }] } },
     { name: 'Bard only', source: 'TEST', level: 1, school: 'E', classes: { fromClassList: [{ name: 'Bard', source: 'TEST' }] } },
     { name: 'Wizard 00', source: 'OTHER', level: 0, school: 'V', classes: [{ name: 'Wizard', source: 'OTHER' }] },
@@ -141,11 +141,11 @@ describe('Spell creator and playing sheet', () => {
   it('combines multiple classes and non-contiguous levels for browsing and bulk addition', async () => {
     const data = await catalog();
     const records = mapContent({ spell: [
-      { name: 'Multi Cantrip', source: 'TEST', level: 0, classes: { fromClassList: [{ name: 'Wizard' }] } },
-      { name: 'Multi Artificer', source: 'TEST', level: 1, classes: { fromClassList: [{ name: 'Artificer' }] } },
-      { name: 'Multi Shared', source: 'TEST', level: 9, classes: { fromClassList: [{ name: 'Wizard' }, { name: 'Artificer' }] } },
-      { name: 'Multi Wrong Level', source: 'TEST', level: 2, classes: { fromClassList: [{ name: 'Wizard' }] } },
-      { name: 'Multi Wrong Class', source: 'TEST', level: 1, classes: { fromClassList: [{ name: 'Bard' }] } },
+      { name: 'Multi Cantrip', source: 'TEST', level: 0, classes: { fromClassList: [{ name: 'Wizard', source: 'TEST' }] } },
+      { name: 'Multi Artificer', source: 'TEST', level: 1, classes: { fromClassList: [{ name: 'Artificer', source: 'TEST' }] } },
+      { name: 'Multi Shared', source: 'TEST', level: 9, classes: { fromClassList: [{ name: 'Wizard', source: 'TEST' }, { name: 'Artificer', source: 'TEST' }] } },
+      { name: 'Multi Wrong Level', source: 'TEST', level: 2, classes: { fromClassList: [{ name: 'Wizard', source: 'TEST' }] } },
+      { name: 'Multi Wrong Class', source: 'TEST', level: 1, classes: { fromClassList: [{ name: 'Bard', source: 'TEST' }] } },
     ] }, 'multiselect.json').records;
     await data.cache.put(data.revision.id, records);
     const fixture = TestBed.createComponent(SpellsEditorComponent);

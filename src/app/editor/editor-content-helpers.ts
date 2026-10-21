@@ -1,8 +1,10 @@
-import { ContentRecord, ImportRevision, object, string } from '../content/content.model';
+import { castingMetadata, classDefinition, isClassKind } from '../content/class-adapter';
+import { ContentRecord, ImportRevision } from '../content/content.model';
 import { FeatureSource, SpeciesEntity, SpellEntryFull } from '../models/character.model';
 import { SpellGrant } from '../rules/spell-rules';
 import { resolveSpellUsageCount } from '../rules/spell-usage';
 import { DEFENSE_ABILITIES } from './basic-info';
+import { projectSpeciesEntity } from '../content/species-compatibility';
 
 /** Exact provenance travels with snapshots so saved characters can work without the library. */
 export function contentReference(record: ContentRecord, revision: ImportRevision) {
@@ -16,25 +18,18 @@ export function contentReference(record: ContentRecord, revision: ImportRevision
 
 /** Convert upstream movement objects to the numeric fields understood by the live viewer. */
 export function speciesSnapshot(record: ContentRecord): SpeciesEntity {
-  const snapshot = structuredClone(record.data);
-  const speed = object(snapshot['speed']);
-  if (speed) {
-    snapshot['speed'] = Object.fromEntries(
-      Object.entries(speed).map(([mode, value]) => [mode, object(value)?.['number'] ?? value]),
-    );
-  }
-  return snapshot as unknown as SpeciesEntity;
+  return projectSpeciesEntity(record);
 }
 
 /** A casting source stores ability flags because that is the Android export format. */
 export function sourceAbilityFlags(record: ContentRecord, fallback = ''): Partial<FeatureSource> {
-  const castingAbility = string(record.data['spellcastingAbility'], fallback);
-  const primaryAbilities = JSON.stringify(record.data['primaryAbility'] ?? '').toLowerCase();
+  const castingAbility = castingMetadata(record).ability ?? fallback;
+  const primaryAbilities = isClassKind(record.kind) ? classDefinition(record).primaryAbilities.flat() : [];
   return Object.fromEntries(DEFENSE_ABILITIES.map(ability => {
     const abbreviation = ability.key.slice(0, 3);
     return [`uses${ability.label}`, castingAbility
       ? castingAbility === abbreviation
-      : primaryAbilities.includes(abbreviation)];
+      : primaryAbilities.some(ability => ability === abbreviation)];
   }));
 }
 

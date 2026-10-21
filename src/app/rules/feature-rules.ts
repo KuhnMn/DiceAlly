@@ -1,5 +1,6 @@
-import { featureReference } from '../content/content-adapter';
-import { ContentRecord, entityKey, JsonObject, normalize, object, string } from '../content/content.model';
+import { canonicalClassRecord, classDefinition } from '../content/class-adapter';
+import { ContentRecord, JsonObject, normalize } from '../content/content.model';
+import { ClassCasting } from '../content/class.model';
 import { CasterProgression, ClassLevelInput } from './level-rules';
 
 export interface ContentRulesIndex {
@@ -37,7 +38,7 @@ export interface FeaturePreview {
   removed: FeatureInstance[];
   diagnostics: { selectionId?: string; message: string }[];
 }
-const CASTERS: Record<string, CasterProgression> = { full: 'full', '1/2': 'half', '1/3': 'third', artificer: 'artificer', pact: 'pact' };
+const CASTERS: Record<NonNullable<ClassCasting['progression']>, CasterProgression> = { full: 'full', '1/2': 'half', '1/3': 'third', artificer: 'artificer', pact: 'pact' };
 /** Pure selection preview. No source/edition guessing and no automatic content revision updates. */
 export function deriveClassFeatures(selections: ContentClassSelection[], index: ContentRulesIndex,
   previous: FeatureInstance[] = [], suppressedGrantIds: readonly string[] = []): FeaturePreview {
@@ -56,56 +57,57 @@ export function deriveClassFeatures(selections: ContentClassSelection[], index: 
     if (!Number.isInteger(selection.level) || selection.level < 1 || selection.level > 20) {
       report(selection.selectionId, 'Invalid class level.'); continue;
     }
-    const parent = index.records.get(selection.classKey);
-    if (!parent || parent.kind !== 'class') { report(selection.selectionId, 'Selected class is missing or has the wrong kind.'); continue; }
-    const subclass = selection.subclassKey ? index.records.get(selection.subclassKey) : undefined;
-    if (selection.subclassKey && (!subclass || subclass.kind !== 'subclass'
-      || entityKey('class', { name: subclass.data['className'], source: subclass.data['classSource'] }) !== parent.key)) {
-      report(selection.selectionId, 'Selected subclass is missing or belongs to a different class/publication.'); continue;
-    }
-    const die = object(parent.data['hd']);
-    if (!die || die['number'] !== 1 || ![4,6,8,10,12].includes(Number(die['faces']))) {
-      report(selection.selectionId, 'Class hit-die definition requires a supported handler.'); continue;
-    }
-    const classCaster = parent.data['casterProgression']; const subclassCaster = subclass?.data['casterProgression'];
-    // A subclass can supply casting to a noncaster; do not double-count a casting class.
-    if (classCaster && subclassCaster && classCaster !== subclassCaster) {
-      report(selection.selectionId, 'Conflicting class/subclass casting progressions require a handler.'); continue;
-    }
-    const casterToken = subclassCaster || classCaster;
-    const caster = !casterToken ? 'none' : CASTERS[string(casterToken)];
-    if (!caster) { report(selection.selectionId, 'Unsupported casting progression.'); continue; }
-    classInputs.push({ selectionId: selection.selectionId, level: selection.level, hitDie: Number(die['faces']) as ClassLevelInput['hitDie'], caster });
-    for (const owner of [parent, ...(subclass ? [subclass] : [])]) {
-      const role = owner.kind === 'class' ? 'classFeature' : 'subclassFeature';
-      const raw = owner.data[owner.kind === 'class' ? 'classFeatures' : 'subclassFeatures'] ?? [];
-      if (!Array.isArray(raw)) { report(selection.selectionId, 'Feature list must be an array.'); continue; }
-      for (const reference of raw) {
-        let key: string;
-        try { key = featureReference(reference, role, owner.data).target; }
-        catch (error) { report(selection.selectionId, String(error)); continue; }
-        const record = index.records.get(key);
-        if (!record || record.kind !== role) { report(selection.selectionId, `Missing qualified feature: ${key}`); continue; }
-        if (entityKey('class', { name: record.data['className'], source: record.data['classSource'] }) !== parent.key) {
-          report(selection.selectionId, `Feature belongs to a different class: ${key}`); continue;
-        }
-        if (role === 'subclassFeature' && (normalize(string(record.data['subclassShortName'])) !== normalize(string(owner.data['shortName'], owner.name))
-          || normalize(string(record.data['subclassSource'])) !== normalize(owner.publication))) {
-          report(selection.selectionId, `Feature belongs to a different subclass: ${key}`); continue;
-        }
-        const level = record.data['level'];
-        if (typeof level !== 'number' || !Number.isInteger(level) || level < 0 || level > 20) {
-          report(selection.selectionId, `Invalid feature level: ${key}`); continue;
-        }
-        if (level > selection.level) continue;
-        const grant: FeatureGrant = { id: JSON.stringify(['feature-grant', index.sourceIdentity, selection.selectionId, owner.key, role, key]),
-          selectionId: selection.selectionId, ownerKey: owner.key, role };
-        if (suppressed.has(grant.id)) continue;
-        const entry = wanted.get(key) ?? { record, grants: [] };
-        if (!entry.grants.some(g => g.id === grant.id)) entry.grants.push(grant);
-        wanted.set(key, entry);
+    try {
+      const parent = index.records.get(selection.classKey);
+      if (!parent || parent.kind !== 'class') { report(selection.selectionId, 'Selected class is missing or has the wrong kind.'); continue; }
+      const subclass = selection.subclassKey ? index.records.get(selection.subclassKey) : undefined;
+      if (selection.subclassKey && (!subclass || subclass.kind !== 'subclass'
+        || classDefinition(subclass).parent?.key !== parent.key)) {
+        report(selection.selectionId, 'Selected subclass is missing or belongs to a different class/publication.'); continue;
       }
-    }
+      const parentDefinition = classDefinition(parent);
+      const die = parentDefinition.hitDice;
+      if (!die || die.number !== 1 || ![4,6,8,10,12].includes(die.faces)) {
+        report(selection.selectionId, 'Class hit-die definition requires a supported handler.'); continue;
+      }
+      const classCaster = parentDefinition.casting.progression; const subclassCaster = subclass ? classDefinition(subclass).casting.progression : undefined;
+      // A subclass can supply casting to a noncaster; do not double-count a casting class.
+      if (classCaster && subclassCaster && classCaster !== subclassCaster) {
+        report(selection.selectionId, 'Conflicting class/subclass casting progressions require a handler.'); continue;
+      }
+      const casterToken = subclassCaster || classCaster;
+      const caster = !casterToken ? 'none' : CASTERS[casterToken];
+      if (!caster) { report(selection.selectionId, 'Unsupported casting progression.'); continue; }
+      classInputs.push({ selectionId: selection.selectionId, level: selection.level, hitDie: die.faces as ClassLevelInput['hitDie'], caster });
+      for (const owner of [parent, ...(subclass ? [subclass] : [])]) {
+        const role = owner.kind === 'class' ? 'classFeature' : 'subclassFeature';
+        const ownerDefinition = classDefinition(owner);
+        for (const reference of ownerDefinition.features) {
+          const key = reference.key;
+          const record = index.records.get(key);
+          if (!record || record.kind !== role) { report(selection.selectionId, `Missing qualified feature: ${key}`); continue; }
+          const definition = classDefinition(record);
+          if (definition.parent?.key !== parent.key) {
+            report(selection.selectionId, `Feature belongs to a different class: ${key}`); continue;
+          }
+          if (role === 'subclassFeature' && (normalize(definition.subclass!.shortName) !== normalize(ownerDefinition.shortName!)
+            || normalize(definition.subclass!.source) !== normalize(owner.publication))) {
+            report(selection.selectionId, `Feature belongs to a different subclass: ${key}`); continue;
+          }
+          const level = definition.level;
+          if (typeof level !== 'number' || !Number.isInteger(level) || level < 0 || level > 20) {
+            report(selection.selectionId, `Invalid feature level: ${key}`); continue;
+          }
+          if (level > selection.level) continue;
+          const grant: FeatureGrant = { id: JSON.stringify(['feature-grant', index.sourceIdentity, selection.selectionId, owner.key, role, key]),
+            selectionId: selection.selectionId, ownerKey: owner.key, role };
+          if (suppressed.has(grant.id)) continue;
+          const entry = wanted.get(key) ?? { record, grants: [] };
+          if (!entry.grants.some(g => g.id === grant.id)) entry.grants.push(grant);
+          wanted.set(key, entry);
+        }
+      }
+    } catch (error) { report(selection.selectionId, String(error)); }
   }
   const instances = structuredClone(previous.filter(instance => instance.manual || instance.sourceIdentity !== index.sourceIdentity).map(instance => ({ ...instance,
     grants: instance.sourceIdentity === index.sourceIdentity ? [] : instance.grants })));
@@ -119,7 +121,7 @@ export function deriveClassFeatures(selections: ContentClassSelection[], index: 
     }
     const instance: FeatureInstance = existing ? { ...structuredClone(existing), grants: structuredClone(grants) }
       : { id: JSON.stringify(['feature-instance', index.sourceIdentity, key]), sourceIdentity: index.sourceIdentity,
-        revisionId: index.revisionId, contentKey: key, manual: false, grants: structuredClone(grants), snapshot: structuredClone(record), customization: {} };
+        revisionId: index.revisionId, contentKey: key, manual: false, grants: structuredClone(grants), snapshot: canonicalClassRecord(record), customization: {} };
     const position = instances.findIndex(p => p.id === instance.id);
     if (position >= 0 && (instances[position].contentKey !== instance.contentKey || instances[position].sourceIdentity !== instance.sourceIdentity)) {
       diagnostics.push({ message: `Feature instance ID collision: ${instance.id}` }); continue;

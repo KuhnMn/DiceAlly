@@ -1,3 +1,11 @@
+import { canonicalItemRecord } from '../content/item-adapter';
+import { canonicalMonsterRecord } from '../content/monster-adapter';
+import { canonicalContentSnapshot } from '../content/content-snapshot';
+import { canonicalDocument } from './canonical-document';
+export { canonicalDocument } from './canonical-document';
+import { canonicalSpellRecord } from '../content/spell-adapter';
+import { canonicalCharacterOption, isCharacterOptionKind } from '../content/character-option-adapter';
+import { canonicalClassRecord, isClassKind } from '../content/class-adapter';
 import { ContentRecord, JsonObject, object } from '../content/content.model';
 import { CharacterRulesInput } from './character-preview';
 import { CastingSource, CharacterAction, PoolDefinition, ResourceOverrides, ResourceBinding, SpellResourceCost } from './resource-action-rules';
@@ -10,6 +18,7 @@ import { deriveStats } from './derived-stats';
 import { SKILL_ABILITIES } from './derived-stats';
 import { Ability } from './derived-stats';
 import { AbilityContribution } from './ability-rules';
+import { canonicalSpeciesRecord } from '../content/species-adapter';
 
 export interface CharacterDocument {
   // Inputs, generated instances and play state are separate so recalculation cannot erase user edits.
@@ -37,35 +46,22 @@ export interface CharacterDocument {
   compatibility: JsonObject;
   extensions: JsonObject;
 }
-/** Reject nonportable values/bounded-size violations before traversing an imported document. */
-export function canonicalDocument(value: unknown): string {
-  let nodes = 0;
-  const walk = (entry: unknown,depth: number): unknown => {
-    if (++nodes > 250000 || depth > 64) throw new Error('Character document exceeds structural limits.');
-    if (entry === null || typeof entry === 'string' || typeof entry === 'boolean') return entry;
-    if (typeof entry === 'number') { if (!Number.isFinite(entry)) throw new Error('Nonfinite document number.'); return entry; }
-    if (Array.isArray(entry)) return entry.map(v => { if (v === undefined) throw new Error('Undefined array value.'); return walk(v,depth+1); });
-    if (typeof entry === 'object' && entry && (Object.getPrototypeOf(entry) === Object.prototype || Object.getPrototypeOf(entry) === null)) {
-      return Object.fromEntries(Object.keys(entry).sort().filter(key => (entry as JsonObject)[key] !== undefined).map(key => [key,walk((entry as JsonObject)[key],depth+1)]));
-    }
-    throw new Error('Character document must contain portable JSON values.');
-  };
-  const json = JSON.stringify(walk(value,0));
-  if (new TextEncoder().encode(json).byteLength > 10*1024*1024) throw new Error('Character document exceeds 10 MiB.');
-  return json;
-}
 const requireObject = (value: unknown,label: string): JsonObject => { const data = object(value); if (!data) throw new Error(`Invalid ${label}.`); return data; };
 const requireArray = (value: unknown,label: string): unknown[] => { if (!Array.isArray(value)) throw new Error(`Invalid ${label}.`); return value; };
 /** Runtime validation for the current native document; legacy Android shapes use a separate adapter. */
 export function validateCharacterDocument(value: unknown): CharacterDocument {
-  canonicalDocument(value);
-  const root = requireObject(value,'character document');
+  const root = requireObject(JSON.parse(canonicalDocument(value)),'character document');
   if (root['format'] !== 'ally-character' || root['schemaVersion'] !== 1) throw new Error('Unsupported native character format/schema version.');
   if (root['rulesVersion'] !== 'android-v1' || !['android-v1','web-viewer-v1'].includes(String(root['restPolicy']))) throw new Error('Unsupported character rules/rest policy.');
   if (typeof root['id'] !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(root['id'])) throw new Error('Character ID must be a UUID.');
   const identity = requireObject(root['identity'],'identity');
   if (typeof identity['name'] !== 'string' || typeof identity['description'] !== 'string') throw new Error('Invalid identity text.');
   const creation = requireObject(root['creation'],'creation');
+  if (creation['speciesAnswers'] !== undefined) {
+    for (const answer of Object.values(requireObject(creation['speciesAnswers'],'species answers'))) {
+      if (requireArray(answer,'species answer').some(value => typeof value !== 'string')) throw new Error('Invalid species answer.');
+    }
+  }
   if (creation['resourceBindings'] !== undefined) for (const raw of requireArray(creation['resourceBindings'],'resource bindings')) {
     const binding = requireObject(raw,'resource binding');
     if (['sourceId','resourceName','poolId'].some(field => typeof binding[field] !== 'string' || !binding[field])) throw new Error('Invalid resource binding.');
@@ -162,6 +158,13 @@ export function validateCharacterDocument(value: unknown): CharacterDocument {
       const snapshot = requireObject(instance['snapshot'],'snapshot');
       if (snapshot['key'] !== instance['contentKey'] || typeof snapshot['kind'] !== 'string') throw new Error('Invalid selected snapshot identity.');
       requireObject(snapshot['data'],'snapshot data');
+      if (isSpecies && snapshot['kind'] !== 'species') throw new Error('Invalid species snapshot kind.');
+      if (snapshot['kind'] === 'species') instance['snapshot'] = canonicalSpeciesRecord(snapshot as unknown as ContentRecord, 'legacy');
+      else if (isClassKind(String(snapshot['kind']))) instance['snapshot'] = canonicalClassRecord(snapshot as unknown as ContentRecord);
+      else if (isCharacterOptionKind(String(snapshot['kind']))) instance['snapshot'] = canonicalCharacterOption(snapshot as unknown as ContentRecord);
+      else if (snapshot['kind'] === 'spell') instance['snapshot'] = canonicalSpellRecord(snapshot as unknown as ContentRecord);
+      else if (snapshot['kind'] === 'item') instance['snapshot'] = canonicalItemRecord(snapshot as unknown as ContentRecord);
+      else if (snapshot['kind'] === 'monster') instance['snapshot'] = canonicalMonsterRecord(snapshot as unknown as ContentRecord);
       const binding = bindings.find(b => object(b)?.['sourceIdentity'] === instance['sourceIdentity']);
       if (!binding || object(binding)?.['revisionId'] !== instance['revisionId']) throw new Error('Snapshot lacks its exact content binding.');
     }
@@ -189,6 +192,10 @@ export function validateCharacterDocument(value: unknown): CharacterDocument {
   const dependencies = requireArray(root['snapshots'],'dependency snapshots');
   if (dependencies.length > 1000) throw new Error('Too many dependency snapshots.');
   for (const raw of dependencies) { const record = requireObject(raw,'dependency snapshot'); if (typeof record['key'] !== 'string' || !record['key'] || typeof record['kind'] !== 'string') throw new Error('Invalid dependency identity.'); requireObject(record['data'],'dependency data'); }
+  root['snapshots'] = dependencies.map(raw => {
+    const record = raw as ContentRecord;
+    return canonicalContentSnapshot(record);
+  });
   if (root['derived'] !== null) {
     const derived = requireObject(root['derived'],'derived state');
     if (!Number.isSafeInteger(derived['maxHp']) || Number(derived['maxHp']) < 0) throw new Error('Invalid derived maximum HP.');

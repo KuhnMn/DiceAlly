@@ -1,6 +1,8 @@
 import { ContentCache } from './content-cache';
 import { ContentLink, ContentRecord, entityKey, ImportDiagnostic, JsonObject, normalize, object, string } from './content.model';
 import { arithmetic } from './copy-variables';
+import { canonicalSpeciesRecord } from './species-adapter';
+import { resolveItemEntries } from './item-entry-resolver';
 
 const MATERIALIZER_VERSION = 1;
 export const MAX_GENERATED_VARIANTS = 50_000;
@@ -38,7 +40,7 @@ export function normalizeSpecies(data: JsonObject): JsonObject {
   return result;
 }
 
-export function mergeSubrace(base: JsonObject, child: JsonObject): JsonObject {
+export function mergeSubraceDefinitions(base: JsonObject, child: JsonObject): JsonObject {
   const result = { ...structuredClone(base), ...structuredClone(child) };
   const label = string(child['name'], 'Variant');
   result['name'] = label ? `${label} ${string(base['name'])}` : string(base['name']);
@@ -76,7 +78,12 @@ export function mergeSubrace(base: JsonObject, child: JsonObject): JsonObject {
   }
   // Explicit removals must survive fallback/merge handling above.
   for (const [field, value] of Object.entries(child)) if (value === null) delete result[field];
-  return normalizeSpecies(result);
+  return result;
+}
+
+/** Legacy parity tools compare the historical adapter's normalized representation. */
+export function mergeSubrace(base: JsonObject, child: JsonObject): JsonObject {
+  return normalizeSpecies(mergeSubraceDefinitions(base, child));
 }
 
 function matchesValue(candidate: unknown, requirement: unknown, every: boolean): boolean {
@@ -211,20 +218,20 @@ export async function materializeContent(cache: ContentCache, revisionId: string
   await cache.visit(revisionId, async record => {
     signal?.throwIfAborted();
     if (record.kind === 'baseitem') bases.push(record);
-    if (['itemType', 'itemProperty', 'itemMastery'].includes(record.kind)) metadata.set(record.key, record);
+    if (['itemType', 'itemProperty', 'itemMastery', 'itemEntry'].includes(record.kind)) metadata.set(record.key, record);
   });
   await cache.visit(revisionId, async record => {
     signal?.throwIfAborted();
     if (!shouldProcess(record)) return;
     try {
-      if (record.kind === 'race') await add(derived(record, 'species', JSON.stringify(['species', record.key]), normalizeSpecies(record.data),
-        'species', [{ role: 'species-definition', target: record.key }]));
+      if (record.kind === 'race') await add(canonicalSpeciesRecord(derived(record, 'species', JSON.stringify(['species', record.key]), record.data,
+        'species', [{ role: 'species-definition', target: record.key }])));
       if (record.kind === 'subrace') {
         const key = entityKey('race', { name: record.data['raceName'], source: record.data['raceSource'] });
         const parent = await cache.get(revisionId, key);
         if (!parent) throw new Error(`Subrace parent not found: ${key}`);
-        await add(derived(record, 'species', JSON.stringify(['species', record.key]), mergeSubrace(parent.data, record.data),
-          'subrace', [{ role: 'parent-species', target: key }, { role: 'subrace-definition', target: record.key }]));
+        await add(canonicalSpeciesRecord(derived(record, 'species', JSON.stringify(['species', record.key]), mergeSubraceDefinitions(parent.data, record.data),
+          'subrace', [{ role: 'parent-species', target: key }, { role: 'subrace-definition', target: record.key }])));
       }
       if (record.kind === 'baseitem' || record.kind === 'itemGroup') {
         const key = record.kind === 'baseitem' ? entityKey('item', record.data) : JSON.stringify(['item-group', record.key]);
@@ -309,6 +316,9 @@ export async function materializeContent(cache: ContentCache, revisionId: string
       const masteries = resolve('mastery', 'itemMastery', 'XPHB');
       if (data['range'] === undefined && string(data['type']).split('|')[0] === 'M') data['range'] = '5';
       const links = [...record.links];
+      const resolvedEntries = resolveItemEntries(data, metadata);
+      data['entries'] = resolvedEntries.entries;
+      for (const link of resolvedEntries.links) if (!links.some(existing => existing.role === link.role && existing.target === link.target)) links.push(link);
       if (base && !links.some(link => link.role === 'base-item' && link.target === base.key)) links.push({ role: 'base-item', target: base.key });
       if (type) links.push({ role: 'item-type', target: type.key });
       links.push(...properties.map(p => ({ role: 'item-property', target: p.key })), ...masteries.map(p => ({ role: 'item-mastery', target: p.key })));

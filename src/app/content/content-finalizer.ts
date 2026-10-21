@@ -1,9 +1,15 @@
+import { canonicalReferenceRecord, isReferenceKind, referenceSourceData } from './reference-record-adapter';
+import { canonicalMonsterRecord, monsterSourceData } from './monster-adapter';
+import { canonicalItemRecord, itemSourceData } from './item-adapter';
+import { canonicalCharacterOption, characterOptionSourceData, isCharacterOptionKind } from './character-option-adapter';
 import { ContentCache } from './content-cache';
 import { inheritCopy } from './content-adapter';
 import { ContentRecord, entityKey, ImportDiagnostic, ImportProgress, ImportRevision, object } from './content.model';
 import { materializeContent } from './content-materializer';
 import { buildReferenceIndex, linkContent } from './content-linker';
-import { mergeSpellMemberships } from './spell-membership';
+import { canonicalSpellRecord, spellSourceData } from './spell-adapter';
+import { canonicalClassRecord, classSourceData, isClassKind } from './class-adapter';
+import { assertSpeciesDefinition } from './species-adapter';
 
 export class ContentImportError extends Error {
   constructor(message: string, readonly diagnostics: ImportDiagnostic[], readonly revision?: ImportRevision) { super(message); }
@@ -51,7 +57,12 @@ export async function finalizeContentImport(cache: ContentCache, revision: Impor
       if (!template) throw new Error(`Copy template not found: ${templateKey}`);
       templates.push((await resolve(template, new Set(ancestors))).data);
     }
-    const updated = { ...record, data: inheritCopy(inherited.data, record.data, templates, record.kind) };
+    const updated = { ...record, data: inheritCopy(isClassKind(inherited.kind) && inherited.classDefinition ? classSourceData(inherited)
+      : isCharacterOptionKind(inherited.kind) && inherited.characterOption ? characterOptionSourceData(inherited)
+      : inherited.kind === 'spell' && inherited.spellDefinition ? spellSourceData(inherited)
+      : inherited.kind === 'item' && inherited.itemDefinition ? itemSourceData(inherited)
+      : inherited.kind === 'monster' && inherited.monsterDefinition ? monsterSourceData(inherited)
+      : isReferenceKind(inherited.kind) ? referenceSourceData(inherited) : inherited.data, record.data, templates, record.kind) };
     await cache.put(revision.id, [updated]);
     return updated;
   };
@@ -67,6 +78,13 @@ export async function finalizeContentImport(cache: ContentCache, revision: Impor
   const materialized = await materializeContent(cache, revision.id, diagnostics, signal,
     (completed, added, file) => options.progress?.({ phase: 'materialize', completed, total: 0, file, bytes, records: revision.metrics.records + added }), shouldProcess);
   revision.metrics.records += materialized.added;
+  // Application definitions are built after copies/materialization and before reference linking.
+  await cache.visit(revision.id, async record => {
+    signal?.throwIfAborted();
+    if (!isClassKind(record.kind) && !isCharacterOptionKind(record.kind) && record.kind !== 'item' && record.kind !== 'monster' && !isReferenceKind(record.kind)) return;
+    try { await cache.put(revision.id, [isReferenceKind(record.kind) ? await canonicalReferenceRecord(record) : isClassKind(record.kind) ? canonicalClassRecord(record) : record.kind === 'item' ? canonicalItemRecord(record) : record.kind === 'monster' ? canonicalMonsterRecord(record) : canonicalCharacterOption(record)]); }
+    catch (error) { diagnostics.push({ severity: 'error', file: record.file, record: record.key, message: String(error) }); }
+  });
   report('link');
   const referenceIndex = await buildReferenceIndex(cache, revision.id, signal);
   await cache.visit(revision.id, async record => {
@@ -87,8 +105,8 @@ export async function finalizeContentImport(cache: ContentCache, revision: Impor
     if (record.kind === 'spell') {
       const publication = object(sources[record.publication]);
       const memberships = object(publication?.[record.name]);
-      if (memberships || record.data['classes']) await cache.put(revision.id, [{ ...record,
-        data: { ...record.data, classes: mergeSpellMemberships(record.data['classes'], memberships) } }]);
+      try { await cache.put(revision.id, [canonicalSpellRecord(record, memberships)]); }
+      catch (error) { diagnostics.push({ severity: 'error', file: record.file, record: record.key, message: String(error) }); }
     }
     if (++linked % 128 === 0) report('link', linked, revision.metrics.records * 3, record.file);
   });
@@ -103,6 +121,10 @@ export async function finalizeContentImport(cache: ContentCache, revision: Impor
   let count = 0;
   await cache.visit(revision.id, async record => {
     signal?.throwIfAborted();
+    if (record.kind === 'species') {
+      try { assertSpeciesDefinition(record.species); }
+      catch (error) { diagnostics.push({ severity: 'error', file: record.file, record: record.key, message: String(error) }); }
+    }
     count++;
     mappedBytes += new TextEncoder().encode(JSON.stringify(record)).byteLength;
   });

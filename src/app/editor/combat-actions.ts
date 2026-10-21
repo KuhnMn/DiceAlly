@@ -1,4 +1,4 @@
-import { CombatAction, Entry, ExportedCharacter, FeatureEntryFull, InventoryItem, Monster, Species, SpellEntryFull } from '../models/character.model';
+import { CombatAction, ExportedCharacter, FeatureEntryFull, InventoryItem, Monster, Species, SpellEntryFull } from '../models/character.model';
 import { CharacterHelpersService } from '../sheet/character-helpers.service';
 import { featureSourceStats } from './feature-source-stats';
 import { newEditorId } from './editor-identity';
@@ -30,7 +30,7 @@ export function resourceEntries(resource: CombatResource): unknown {
 export function monsterCombatOptions(monster: Monster) {
   return [
     ...(monster.entity?.action ?? []).map(action => ({ ...action, type: 'ACTION' })),
-    ...((monster.entity as unknown as { bonus?: { name?: string; entries?: Entry[] }[] })?.bonus ?? []).map(action => ({ ...action, type: 'BONUS' })),
+    ...(monster.entity?.bonus ?? []).map(action => ({ ...action, type: 'BONUS' })),
     ...(monster.entity?.reaction ?? []).map(action => ({ ...action, type: 'REACTION' })),
     ...(monster.entity?.trait ?? []).map(action => ({ ...action, type: 'OTHER' })),
   ];

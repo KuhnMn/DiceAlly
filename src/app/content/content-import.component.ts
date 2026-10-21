@@ -7,6 +7,7 @@ import { ContentRecord, DEFAULT_CONTENT_SOURCE, ImportDiagnostic, ImportProgress
 import { ContentImportRequest } from './content-import-request';
 import { resolveCommit } from './github-source';
 import { ItemView, resolveItemView } from './item-resolver';
+import { requiresContentReimport } from './content-compatibility';
 
 @Component({
   selector: 'app-content-import', imports: [UiIconComponent, FormsModule, RouterLink],
@@ -50,6 +51,10 @@ export class ContentImportComponent implements OnInit, OnDestroy {
         if (removed) this.message.set(`Removed ${removed} interrupted import(s). Installed content retained.`);
       } catch (error) { this.message.set(String(error)); }
       this.revision.set(await this.cache.active(this.namespace, this.source));
+      const revision = this.revision();
+      if (revision && requiresContentReimport(revision)) {
+        this.message.set('Reimport required: the installed library uses an older adapter or schema snapshot. Saved characters remain available.');
+      }
       await this.refreshStorage();
     } catch (error) { this.message.set(String(error)); }
     finally { this.busy.set(false); }
@@ -64,6 +69,10 @@ export class ContentImportComponent implements OnInit, OnDestroy {
       await this.cache.saveSource(this.namespace, source);
       const installed = await this.cache.active(this.namespace, source);
       this.revision.set(installed);
+      if (installed && requiresContentReimport(installed)) {
+        this.updateMessage.set('Reimport required: the installed library uses an older adapter or schema snapshot.');
+        return;
+      }
       const head = await resolveCommit(source);
       this.updateMessage.set(installed?.commit === head ? 'Installed content is current.' : `Revision ${head.slice(0, 12)} is available. Import when ready.`);
     } catch (error) { this.updateMessage.set(String(error)); }

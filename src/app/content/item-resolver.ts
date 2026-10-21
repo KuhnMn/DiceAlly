@@ -1,3 +1,5 @@
+import { ItemDefinition } from './item.model';
+import { itemDefinition, itemSourceData } from './item-adapter';
 import { ContentCache } from './content-cache';
 import { ContentRecord, JsonObject } from './content.model';
 
@@ -8,8 +10,8 @@ export interface ItemView {
   itemType: string | null;
   properties: { key: string; name: string; entry: unknown; entries: unknown[] }[];
   masteries: { key: string; name: string; entry: unknown; entries: unknown[] }[];
-  page: unknown;
-  ac: unknown;
+  page: ItemDefinition['page'] | null;
+  ac: number | null;
 }
 export async function resolveItemView(cache: Pick<ContentCache, 'get'>, revisionId: string, record: ContentRecord): Promise<ItemView> {
   if (record.kind !== 'item') throw new Error('Only playable items have an item view.');
@@ -24,7 +26,8 @@ export async function resolveItemView(cache: Pick<ContentCache, 'get'>, revision
     const values = Array.isArray(definition.data['entries']) ? definition.data['entries'] : [];
     return { key: definition.key, name: definition.name, entry: values[0] ?? null, entries: values };
   });
-  return { item: record.data, baseItem: base?.data, itemType: type?.name ?? null,
+  const definition = itemDefinition(record);
+  return { item: itemSourceData(record), baseItem: base?.data, itemType: type?.name ?? null,
     properties: entries('item-property'), masteries: entries('item-mastery'),
-    page: record.data['page'] ?? base?.data['page'] ?? null, ac: record.data['ac'] ?? base?.data['ac'] ?? null };
+    page: definition.page ?? (base ? itemDefinition(base).page : undefined) ?? null, ac: definition.ac ?? (base ? itemDefinition(base).ac : undefined) ?? null };
 }

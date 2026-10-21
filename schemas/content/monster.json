@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ally.local/content/monster.json",
+  "type": "object",
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "size": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/size"
+    },
+    "type": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/type"
+    },
+    "alignment": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/alignment"
+    },
+    "ac": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/ac"
+    },
+    "hp": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/hp"
+    },
+    "speed": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/speed"
+    },
+    "initiative": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/initiative"
+    },
+    "str": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/str"
+    },
+    "dex": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/dex"
+    },
+    "con": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/con"
+    },
+    "int": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/int"
+    },
+    "wis": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/wis"
+    },
+    "cha": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/cha"
+    },
+    "senses": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/senses"
+    },
+    "passive": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/passive"
+    },
+    "languages": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/languages"
+    },
+    "cr": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/cr"
+    },
+    "vulnerable": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/vulnerable"
+    },
+    "resist": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/resist"
+    },
+    "immune": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/immune"
+    },
+    "conditionImmune": {
+      "$ref": "https://ally.local/5etools/brew/bestiary/bestiary.json#/$defs/creatureData/properties/conditionImmune"
+    }
+  },
+  "required": [
+    "version"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ally.local/content/character-option.json",
+  "type": "object",
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "kind": {
+      "enum": [
+        "feat",
+        "optionalfeature",
+        "background"
+      ]
+    },
+    "prerequisites": {
+      "anyOf": [
+        {
+          "type": "array",
+          "maxItems": 0
+        },
+        {
+          "$ref": "https://ally.local/5etools/brew/util.json#/$defs/prerequisite"
+        }
+      ]
+    },
+    "category": {
+      "$ref": "https://ally.local/5etools/brew/util.json#/$defs/dataFeatCategory"
+    },
+    "featureTypes": {
+      "type": "array",
+      "items": {
+        "$ref": "https://ally.local/5etools/brew/util.json#/$defs/dataOptionalfeatureType"
+      },
+      "uniqueItems": true
+    },
+    "proficiencies": {
+      "type": "object",
+      "properties": {
+        "skills": {
+          "$ref": "https://ally.local/5etools/brew/util.json#/$defs/skillProficiencies"
+        },
+        "languages": {
+          "$ref": "https://ally.local/5etools/brew/util.json#/$defs/languageProficiencies"
+        },
+        "tools": {
+          "$ref": "https://ally.local/5etools/brew/util.json#/$defs/toolProficiencies"
+        },
+        "armor": {
+          "$ref": "https://ally.local/5etools/brew/util.json#/$defs/armorProficiencies"
+        },
+        "weapons": {
+          "$ref": "https://ally.local/5etools/brew/util.json#/$defs/weaponProficiencies"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "version",
+    "kind",
+    "prerequisites",
+    "featureTypes",
+    "proficiencies"
+  ],
+  "additionalProperties": false
+}

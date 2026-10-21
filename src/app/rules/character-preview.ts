@@ -1,3 +1,4 @@
+import { hasAdditionalSpellPayload } from '../content/additional-spells';
 import { ContentRulesIndex, FeatureInstance } from './feature-rules';
 import { previewClassRules, spellOwnerIdentity } from './class-preview';
 import { deriveStats, ProficiencyContribution } from './derived-stats';
@@ -7,7 +8,7 @@ import { ProficiencyCatalogs } from './proficiency-rules';
 import { applySessionAction, HealthPlayState } from './session-rules';
 import { deriveSpecies, SpeciesContribution, SpeciesInstance } from './species-rules';
 import { SpellInstance } from './spell-rules';
-import { deriveSpeciesAbilities, SpeciesAbilityChoice } from './ability-rules';
+import { manualAbilityScores, SpeciesAbilityChoice } from './ability-rules';
 
 type ClassOptions = Parameters<typeof previewClassRules>[0];
 type StatsOptions = Parameters<typeof deriveStats>[0];
@@ -22,21 +23,23 @@ export interface CharacterRulesInput {
   proficiencyAnswers?: Readonly<Record<string,readonly string[]>>;
   proficiencyCatalogs?: ProficiencyCatalogs;
   species?: { id: string; key: string };
+  /** Reserved compatibility fields; species ability automation is inactive. */
   applySpeciesAbilities?: boolean;
   speciesAbilityChoice?: SpeciesAbilityChoice;
+  speciesAnswers?: Record<string, string[]>;
   manualSpeciesContributions: SpeciesContribution[];
   previous: { features: FeatureInstance[]; spells: SpellInstance[]; pools: ResourcePool[]; species?: SpeciesInstance };
 }
 /** Pure orchestration boundary; persistence/schema validation and explicit acceptance are separate. */
 export function previewCharacterRules(input: CharacterRulesInput,index: ContentRulesIndex) {
-  // Resolve species and effective abilities first; Constitution affects HP and all scores affect stats.
-  const species = deriveSpecies(input.species,index,input.manualSpeciesContributions,input.previous.species);
-  const abilities = deriveSpeciesAbilities(input.abilities,index,input.species,input.applySpeciesAbilities === true,input.speciesAbilityChoice);
+  // Imported ability bonuses remain metadata; manual scores drive all calculations.
+  const species = deriveSpecies(input.species,index,input.manualSpeciesContributions,input.previous.species,input.speciesAnswers);
+  const abilities = manualAbilityScores(input.abilities);
   const proficiencies = input.applyProficiencies === false
     ? { canAccept: true,diagnostics: [] as string[],choices: [],packages: [],manual: structuredClone(input.manualProficiencies),generated: [] as ProficiencyContribution[],contributions: structuredClone(input.manualProficiencies) }
     : deriveProficiencyGrants(input.classes.selections,index,input.proficiencyAnswers,input.species?.key,input.manualProficiencies,input.proficiencyCatalogs);
   const totalLevel = input.classes.selections.reduce((sum,s) => sum+s.level,0);
-  const speciesSpellOwners = species.canAccept && input.species && species.instance?.snapshot.data['additionalSpells'] != null ? [{
+  const speciesSpellOwners = species.canAccept && input.species && species.instance && hasAdditionalSpellPayload(species.instance.snapshot) ? [{
     selectionId: input.species.id,ownerKey: input.species.key,level: totalLevel,
     ...input.classes.ownerOptions?.[spellOwnerIdentity(input.species.id,input.species.key)],
   }] : [];
@@ -55,7 +58,7 @@ export function previewCharacterRules(input: CharacterRulesInput,index: ContentR
         { type: 'death-saves',...input.session.deathSaves });
     } catch(error) { diagnostics.push(String(error)); }
   }
-  const hasCompleteProposal = diagnostics.length === 0 && !!stats;
+  const hasCompleteProposal = diagnostics.length === 0 && species.canAccept && !!stats;
   const adjustments = classes.levels?.adjustments ?? [];
   // A valid proposal may still need the user's decision about HP or usage above reduced totals.
   const proposed = hasCompleteProposal ? {

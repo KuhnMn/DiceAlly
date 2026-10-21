@@ -1,3 +1,6 @@
+import { contentEntries } from '../content/content-entries';
+import { higherLevelEntries } from '../entries/entry-compatibility';
+import { spellDefinition, spellRecordClasses } from '../content/spell-adapter';
 import { EditorCombatIndex } from './editor-combat-index';
 import { compareSearchMatches } from '../search-ranking';
 import { EditorEntryRowComponent } from './editor-entry-row.component';
@@ -23,7 +26,7 @@ import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { CharacterHelpersService } from '../sheet/character-helpers.service';
 import { FeatureSourcePickerComponent } from './feature-source-picker.component';
 import { EntryAnnotationsComponent } from './entry-annotations.component';
-import { SpellCastingTime, matchesCastingTime, spellListLabel, copySpellToList, SpellCatalogFilter, SpellList, matchesSpell, spellClasses, spellIdentity, spellSnapshot } from './spell-selection';
+import { SpellCastingTime, matchesCastingTime, spellListLabel, copySpellToList, SpellCatalogFilter, SpellList, matchesSpell, spellIdentity, spellSnapshot } from './spell-selection';
 import { SourceBookFilterService } from './source-book-filter.service';
 import { SourceBookFilterComponent } from './source-book-filter.component';
 import { CatalogDialogComponent } from './catalog-dialog.component';
@@ -39,6 +42,9 @@ import { contentReference } from './editor-content-helpers';
   styleUrl: './editor.css',
 })
 export class SpellsEditorComponent implements OnInit, OnDestroy, DoCheck {
+  readonly catalogEntries = contentEntries;
+  readonly higherLevelEntries = higherLevelEntries;
+  readonly definition = spellDefinition;
   private readonly combatIndex = inject(EditorCombatIndex);
   readonly sheet = input.required<ExportedCharacter>();
   setConcentrationReminder(enabled: boolean) {
@@ -276,9 +282,9 @@ export class SpellsEditorComponent implements OnInit, OnDestroy, DoCheck {
         // Collect filter options without retaining the entire spell catalog.
         await this.cache.searchCategory(revision.id, ['spell'], '', 0, 0, record => {
           if (!this.sourceBooks.allows(record.publication, books)) return false;
-          spellClasses(record.data).filter(entry => this.sourceBooks.allows(entry.source ?? record.publication, books)).forEach(entry => classes.add(entry.name));
-          if (typeof record.data['level'] === 'number') levels.add(record.data['level']);
-          SPELL_SCHOOLS.filter(school => matchesSpellSchool(record.data['school'], [school.value])).forEach(school => schools.add(school.value));
+          spellRecordClasses(record).filter(entry => this.sourceBooks.allows(entry.source ?? record.publication, books)).forEach(entry => classes.add(entry.name));
+          if (record.kind === 'spell') levels.add(spellDefinition(record).level);
+          SPELL_SCHOOLS.filter(school => matchesSpellSchool(spellDefinition(record).school, [school.value])).forEach(school => schools.add(school.value));
           return false;
         });
         if (isCurrent()) {
@@ -299,7 +305,7 @@ export class SpellsEditorComponent implements OnInit, OnDestroy, DoCheck {
     const filter = structuredClone(this.filter);
     return {
       kinds: ['spell'],
-      order: (a, b) => Number(a.data['level'] ?? 0) - Number(b.data['level'] ?? 0),
+      order: (a, b) => spellDefinition(a).level - spellDefinition(b).level,
       search: filter.search,
       includes: record => this.sourceBooks.allows(record.publication, books) && matchesSpell(record, filter),
     };

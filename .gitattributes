@@ -1,0 +1,5 @@
+# Schema hashes and reviewed generated artifacts must survive Windows/Linux checkouts.
+/schemas/5etools/**/*.json text eol=lf
+/schemas/5etools/manifest.json text eol=lf
+/schemas/content/*.json text eol=lf
+/src/app/content/generated/** text eol=lf

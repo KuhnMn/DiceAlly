@@ -1,3 +1,4 @@
+import { spellRecordClasses } from '../content/spell-adapter';
 import { rankSearchResults } from '../search-ranking';
 import { UiIconComponent } from '../ui-icon.component';
 import { InfoButtonComponent } from '../info-button.component';
@@ -15,7 +16,6 @@ import { SourceBookFilterComponent } from './source-book-filter.component';
 import { SourceBookFilterService } from './source-book-filter.service';
 import { WizardClass, WizardState } from './wizard-prefill';
 import { WIZARD_SECTIONS, WizardChoice, matchesSubclass, previewClassWizard } from './class-wizard-preview';
-import { spellClasses } from './spell-selection';
 import { validateBasicInfo } from './basic-info';
 import { SearchableSelectComponent, SelectOption } from './searchable-select.component';
 import { activeContentRevision } from './active-content-revision';
@@ -146,7 +146,7 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
       .sort((a, b) => this.label(a.key).localeCompare(this.label(b.key)));
   }
   get spellLists() { return [...new Set([...this.records.values()].filter(record => record.kind === 'spell' && this.sourceBooks.allows(record.publication))
-    .flatMap(record => spellClasses(record.data).filter(entry => this.sourceBooks.allows(entry.source ?? record.publication)).map(entry => entry.name)))].sort(); }
+    .flatMap(record => spellRecordClasses(record).filter(entry => this.sourceBooks.allows(entry.source ?? record.publication)).map(entry => entry.name)))].sort(); }
   classChoices(selection: WizardClass): SelectOption[] {
     return [{ value: '', label: 'Select a class' }, ...this.classOptions(selection).map(record => ({
       value: record.key, label: this.label(record.key), disabled: this.isTaken(record.key, selection),

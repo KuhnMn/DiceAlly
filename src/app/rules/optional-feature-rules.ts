@@ -1,4 +1,4 @@
-import { string } from '../content/content.model';
+import { canonicalCharacterOption, characterOption } from '../content/character-option-adapter';
 import { ContentRulesIndex, FeatureInstance } from './feature-rules';
 import { checkPrerequisites, PrerequisiteContext } from './prerequisites';
 export interface OptionalFeatureSlot {
@@ -31,12 +31,13 @@ export function deriveOptionalFeatures(slots: OptionalFeatureSlot[], index: Cont
     for (const key of slot.selectedKeys) {
       const record = index.records.get(key);
       if (!record || record.kind !== 'optionalfeature') { diagnostics.push(`Missing optional feature: ${key}`); continue; }
-      const types = record.data['featureType'];
-      if (!Array.isArray(types) || !types.some(t => slot.featureTypes.includes(string(t)))) {
+      let definition: ReturnType<typeof characterOption>;
+      try { definition = characterOption(record); } catch (error) { diagnostics.push(String(error)); continue; }
+      if (!definition.featureTypes.some(type => slot.featureTypes.includes(type))) {
         diagnostics.push(`Optional feature has the wrong type: ${key}`); continue;
       }
-      const prerequisite = record.data['prerequisite'];
-      if (prerequisite !== undefined && (!Array.isArray(prerequisite) || prerequisite.length > 0)) {
+      const prerequisite = definition.prerequisites;
+      if (prerequisite.length) {
         if (!context) { diagnostics.push(`Prerequisite context required for ${key}`); continue; }
         const result = checkPrerequisites(prerequisite,context);
         if (!result.satisfied) { diagnostics.push(...result.diagnostics.map(d => `${key}: ${d}`)); continue; }
@@ -52,7 +53,7 @@ export function deriveOptionalFeatures(slots: OptionalFeatureSlot[], index: Cont
       let instance = instances.find(p => p.sourceIdentity === index.sourceIdentity && p.contentKey === key);
       if (!instance) {
         instance = existing ? { ...structuredClone(existing),grants: [] } : { id: JSON.stringify(['optional-instance',index.sourceIdentity,key]),
-          sourceIdentity: index.sourceIdentity,revisionId: index.revisionId,contentKey: key,manual: false,grants: [],snapshot: structuredClone(record),customization: {} };
+          sourceIdentity: index.sourceIdentity,revisionId: index.revisionId,contentKey: key,manual: false,grants: [],snapshot: canonicalCharacterOption(record),customization: {} };
         instances.push(instance);
       }
       if (!instance.grants.some(g => g.id === grant.id)) instance.grants.push(grant);

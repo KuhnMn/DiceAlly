@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { ref, set, get } from 'firebase/database';
+import { ref, set, get, serverTimestamp } from 'firebase/database';
 
 // Run only against the emulator; no credentials and no production database access.
 const environment = await initializeTestEnvironment({
@@ -8,6 +8,7 @@ const environment = await initializeTestEnvironment({
   database: { host: '127.0.0.1', port: 9000, rules: readFileSync('firebase/database.rules.json', 'utf8') },
 });
 try {
+  await environment.clearDatabase();
   await environment.withSecurityRulesDisabled(async context => {
     await set(ref(context.database(), 'members'), { alice: true, bob: true });
   });
@@ -54,6 +55,22 @@ try {
   await assertFails(set(ref(bob, sharePath), null));
   await assertFails(set(ref(alice, sharePath), shared)); // frozen snapshot
   await assertSucceeds(set(ref(alice, sharePath), null));
+  const serverTimedPath = `characterShares/${'b'.repeat(24)}`;
+  // This is the old client payload with a clock just one minute ahead: creation must be denied.
+  await assertFails(set(ref(alice, serverTimedPath), { ...shared, createdAt: Date.now() + 60000 }));
+  await assertFails(set(ref(alice, serverTimedPath), { ...shared, createdAt: serverTimestamp(), expiresAt: Date.now() + 86460000 }));
+  // The client can be ahead or behind Firebase; only the server supplies this timestamp.
+  const serverTimedShare = { ownerUid: 'alice', characterId: 'hero', createdAt: serverTimestamp(), character: record };
+  await assertSucceeds(set(ref(alice, serverTimedPath), serverTimedShare));
+  const serverTimed = (await assertSucceeds(get(ref(bob, serverTimedPath)))).val();
+  if (typeof serverTimed.createdAt !== 'number') throw new Error('Share creation did not resolve its server timestamp.');
+  await assertFails(set(ref(alice, serverTimedPath), serverTimedShare));
+  await assertFails(set(ref(bob, serverTimedPath), null));
+  await environment.withSecurityRulesDisabled(async context => {
+    await set(ref(context.database(), serverTimedPath), { ...serverTimed, createdAt: Date.now() - 86400001 });
+  });
+  await assertFails(get(ref(bob, serverTimedPath)));
+  await assertSucceeds(set(ref(alice, serverTimedPath), null));
   await assertFails(get(ref(bob, sharePath)));
   await environment.withSecurityRulesDisabled(async context => {
     await set(ref(context.database(), sharePath), { ...shared, expiresAt: Date.now() - 1000 });

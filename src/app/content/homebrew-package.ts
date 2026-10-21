@@ -1,6 +1,7 @@
 import { ContentCache } from './content-cache';
 import { mapContent } from './content-adapter';
 import { ContentRecord, HomebrewFile, ImportRevision, JsonObject, object, string } from './content.model';
+import { validateHomebrewDocument } from './content-schema';
 
 export const MAX_HOMEBREW_BYTES = 32 * 1024 * 1024;
 
@@ -15,6 +16,7 @@ export async function readHomebrewFile(value: unknown, name: string, url?: strin
   if (!document) throw new Error('Homebrew JSON must contain an object.');
   const serialized = JSON.stringify(document);
   if (new TextEncoder().encode(serialized).byteLength > MAX_HOMEBREW_BYTES) throw new Error('Homebrew files must be 32 MB or smaller.');
+  await validateHomebrewDocument(document, name);
   const definitions = object(document['_meta'])?.['sources'];
   if (definitions !== undefined && !Array.isArray(definitions)) throw new Error('_meta.sources must be an array.');
   const sources = (definitions as unknown[] | undefined ?? []).map(source => string(object(source)?.['json']));
@@ -27,17 +29,17 @@ export async function readHomebrewFile(value: unknown, name: string, url?: strin
 }
 
 /** Collections sometimes repeat an entity with supplementary metadata. Never guess between conflicting rules. */
-function mergeCompatibleDefinitions(first: unknown, second: unknown, path = 'definition'): unknown {
+function mergeCompatibleDefinitions(first: unknown, second: unknown, path = 'definition', field?: string): unknown {
   if (first === undefined) return structuredClone(second);
   if (second === undefined || JSON.stringify(first) === JSON.stringify(second)) return structuredClone(first);
-  if (Array.isArray(first) && Array.isArray(second)) {
+  if (field === 'miscTags' && Array.isArray(first) && Array.isArray(second)) {
     const contained = (small: unknown[], large: unknown[]) => small.every(value => large.some(other => JSON.stringify(other) === JSON.stringify(value)));
     if (contained(first, second)) return structuredClone(second);
     if (contained(second, first)) return structuredClone(first);
   }
   const left = object(first); const right = object(second);
   if (left && right) return Object.fromEntries([...new Set([...Object.keys(left), ...Object.keys(right)])]
-    .map(key => [key, mergeCompatibleDefinitions(left[key], right[key], `${path}.${key}`)]));
+    .map(key => [key, mergeCompatibleDefinitions(left[key], right[key], `${path}.${key}`, key)]));
   throw new Error(`Conflicting duplicate homebrew values at ${path}.`);
 }
 
@@ -47,6 +49,7 @@ export async function stageHomebrewFiles(cache: ContentCache, revision: ImportRe
   for (const file of files) {
     signal?.throwIfAborted();
     const path = `homebrew/${file.id}.json`;
+    await validateHomebrewDocument(file.document, file.name);
     const mapped = mapContent(file.document, path);
     if (!mapped.records.length) throw new Error(`${file.name}: no supported content found.`);
     revision.diagnostics.push(...mapped.diagnostics);

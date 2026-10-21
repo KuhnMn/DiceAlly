@@ -1,3 +1,6 @@
+import { monsterSourceData } from '../content/monster-adapter';
+import { itemSourceData } from '../content/item-adapter';
+import { spellSourceData } from '../content/spell-adapter';
 import { ContentRecord } from '../content/content.model';
 import { CharacterDocument, canonicalDocument, validateCharacterDocument } from './character-document';
 import { previewCharacterRules } from './character-preview';
@@ -182,8 +185,10 @@ export function previewContentUpdate(document: CharacterDocument,index: ContentR
     }
     if (!old) continue;
     if (old.kind !== next.kind) { diagnostics.push(`Content kind changed incompatibly: ${key}`); continue; }
-    const fields = [...new Set([...Object.keys(old.data),...Object.keys(next.data)])]
-      .filter(field => canonicalDocument(old.data[field] ?? null) !== canonicalDocument(next.data[field] ?? null));
+    const oldData = old.kind === 'spell' ? spellSourceData(old) : old.kind === 'item' ? itemSourceData(old) : old.kind === 'monster' ? monsterSourceData(old) : old.data;
+    const nextData = next.kind === 'spell' ? spellSourceData(next) : next.kind === 'item' ? itemSourceData(next) : next.kind === 'monster' ? monsterSourceData(next) : next.data;
+    const fields = [...new Set([...Object.keys(oldData),...Object.keys(nextData)])]
+      .filter(field => canonicalDocument(oldData[field] ?? null) !== canonicalDocument(nextData[field] ?? null));
     if (canonicalDocument(old.links) !== canonicalDocument(next.links)) fields.push('$links');
     if (old.name !== next.name) fields.push('$name');
     if (fields.length) changes.push({ key,kind: 'changed',fields });

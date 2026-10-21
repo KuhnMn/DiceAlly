@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ally.local/content/item.json",
+  "type": "object",
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "page": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/page"
+    },
+    "type": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/type"
+    },
+    "typeAlt": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/typeAlt"
+    },
+    "rarity": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/rarity"
+    },
+    "reqAttune": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "weight": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/weight"
+    },
+    "value": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/value"
+    },
+    "dmg1": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/dmg1"
+    },
+    "dmg2": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/dmg2"
+    },
+    "dmgType": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/dmgType"
+    },
+    "weaponCategory": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/weaponCategory"
+    },
+    "range": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/range"
+    },
+    "bonusWeapon": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/bonusWeapon"
+    },
+    "bonusAc": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/bonusAc"
+    },
+    "ac": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/ac"
+    },
+    "bonusWeaponAttack": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/bonusWeaponAttack"
+    },
+    "bonusSavingThrow": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/bonusSavingThrow"
+    },
+    "bonusSpellAttack": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/bonusSpellAttack"
+    },
+    "bonusSpellSaveDc": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/bonusSpellSaveDc"
+    },
+    "bonusSpellDamage": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/bonusSpellDamage"
+    },
+    "bonusWeaponDamage": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/bonusWeaponDamage"
+    },
+    "scfType": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/scfType"
+    },
+    "weapon": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/weapon"
+    },
+    "armor": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/armor"
+    },
+    "sword": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/sword"
+    },
+    "axe": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/axe"
+    },
+    "spear": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/spear"
+    },
+    "crossbow": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/crossbow"
+    },
+    "bow": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/bow"
+    },
+    "polearm": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/polearm"
+    },
+    "arrow": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/arrow"
+    },
+    "firearm": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/firearm"
+    },
+    "bolt": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/bolt"
+    },
+    "bulletFirearm": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/bulletFirearm"
+    },
+    "mace": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/mace"
+    },
+    "needleBlowgun": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/needleBlowgun"
+    },
+    "club": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/club"
+    },
+    "bulletSling": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/bulletSling"
+    },
+    "hammer": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/hammer"
+    },
+    "net": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/net"
+    },
+    "cellEnergy": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/cellEnergy"
+    },
+    "lance": {
+      "$ref": "https://ally.local/5etools/brew/items-base.json#/$defs/baseitemData/properties/lance"
+    },
+    "dexterityMax": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/dexterityMax"
+    },
+    "strength": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/strength"
+    },
+    "stealth": {
+      "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/stealth"
+    },
+    "property": {
+      "anyOf": [
+        {
+          "type": "array",
+          "maxItems": 0
+        },
+        {
+          "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/property"
+        }
+      ]
+    },
+    "mastery": {
+      "anyOf": [
+        {
+          "type": "array",
+          "maxItems": 0
+        },
+        {
+          "$ref": "https://ally.local/5etools/brew/items.json#/$defs/itemData/properties/mastery"
+        }
+      ]
+    }
+  },
+  "required": [
+    "version"
+  ],
+  "additionalProperties": false
+}

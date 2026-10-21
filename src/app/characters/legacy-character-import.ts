@@ -1,3 +1,5 @@
+import { itemTypeCode } from '../content/item.model';
+import { classDefinition, isClassKind } from '../content/class-adapter';
 import { IndexedDbContentCache } from '../content/content-cache';
 import { ContentRecord, ImportRevision, entityKey, normalize, string } from '../content/content.model';
 import { activeContentRevision } from '../editor/active-content-revision';
@@ -30,10 +32,18 @@ const TOOL_TYPES = new Set(['T', 'AT', 'GS', 'INS']);
 /** Match every available qualifier, never a numeric installation ID or a different publication. */
 function findRecord(records: readonly ContentRecord[], kinds: string[], data: Record<string, unknown>): ContentRecord | undefined {
   for (const kind of kinds) {
-    const candidates = records.filter(record => record.kind === kind && normalize(record.name) === normalize(string(data['name']))
-      && (!data['source'] || normalize(record.publication) === normalize(string(data['source'])))
-      && ['className', 'classSource', 'subclassShortName', 'subclassSource', 'level'].every(field => data[field] == null
-        || normalize(String(record.data[field] ?? '')) === normalize(String(data[field]))));
+    const candidates = records.filter(record => {
+      if (record.kind !== kind || normalize(record.name) !== normalize(string(data['name']))
+        || (data['source'] && normalize(record.publication) !== normalize(string(data['source'])))) return false;
+      const definition = isClassKind(record.kind) ? classDefinition(record) : undefined;
+      const qualifiers: Record<string, unknown> = definition ? {
+        className: definition.parent?.name, classSource: definition.parent?.source,
+        subclassShortName: definition.subclass?.shortName, subclassSource: definition.subclass?.source,
+        level: definition.level,
+      } : record.data;
+      return ['className', 'classSource', 'subclassShortName', 'subclassSource', 'level'].every(field => data[field] == null
+        || normalize(String(qualifiers[field] ?? '')) === normalize(String(data[field])));
+    });
     if (candidates.length) return candidates.length === 1 ? candidates[0] : undefined;
   }
   return undefined;
@@ -85,7 +95,7 @@ function mapProficiencies(sheet: ExportedCharacter, records: readonly ContentRec
   const tool = (label: string) => {
     const qualified = /^(.*?)\s+\(([^()]+)\)$/.exec(label.trim());
     const record = findRecord(records, ['item', 'baseitem'], { name: qualified?.[1] ?? label.trim(), source: qualified?.[2] });
-    return record && TOOL_TYPES.has(string(record.data['type']).split('|')[0]) ? record : undefined;
+    return record && TOOL_TYPES.has(itemTypeCode(record)) ? record : undefined;
   };
   const toolValue = (record: ContentRecord) => ({ contentKey: record.key, sourceIdentity: revision!.sourceIdentity,
     revisionId: revision!.id, snapshot: structuredClone(record) });
@@ -161,7 +171,7 @@ function initializeWizard(sheet: ExportedCharacter, records: readonly ContentRec
   const sources = sheet.character!.featureSources ?? [];
   const parentSource = sources.find(source => source.name === `${parent.name} (${parent.publication})`);
   const subclasses = records.filter(record => record.kind === 'subclass'
-    && entityKey('class', { name: record.data['className'], source: record.data['classSource'] }) === parent.key
+    && classDefinition(record).parent?.key === parent.key
     && sources.some(source => source.name === `${record.name} (${record.publication})`));
   const subclass = subclasses.length === 1 ? subclasses[0] : undefined;
   const selectionId = wizardEditorId('imported-class', sheet.character!.characterUuid ?? '', parent.key);

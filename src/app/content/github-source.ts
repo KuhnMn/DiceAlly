@@ -1,4 +1,4 @@
-import { ContentSource, JsonObject, object, string, validateSource } from './content.model';
+import { ContentSource, object, string, validateSource } from './content.model';
 
 export type FetchContent = (url: string, signal?: AbortSignal) => Promise<{ value: unknown; bytes: number }>;
 export const fetchContent: FetchContent = async (url, signal) => {
@@ -21,28 +21,4 @@ export function rawUrl(source: ContentSource, commit: string, file: string): str
     throw new Error(`Invalid content path: ${file}`);
   }
   return `https://raw.githubusercontent.com/${encodeURIComponent(source.owner)}/${encodeURIComponent(source.repository)}/${commit}/${[...source.directory.split('/'), ...file.split('/')].map(encodeURIComponent).join('/')}`;
-}
-export const ROOT_FILES = [
-  'feats.json', 'conditionsdiseases.json', 'items-base.json', 'optionalfeatures.json',
-  'races.json', 'backgrounds.json', 'variantrules.json', 'tables.json', 'items.json', 'magicvariants.json',
-  'generated/gendata-variantrules.json', 'generated/gendata-tables.json', 'spells/sources.json',
-];
-export async function discoverFiles(source: ContentSource, commit: string, fetcher = fetchContent, signal?: AbortSignal): Promise<{ files: string[]; bytes: number }> {
-  const files = new Set(ROOT_FILES);
-  let bytes = 0;
-  // Keep discovery bounded; each category index is tiny and does not require the Git trees API.
-  for (const category of ['class', 'spells', 'bestiary']) {
-    const result = await fetcher(rawUrl(source, commit, `${category}/index.json`), signal);
-    bytes += result.bytes;
-    const index: JsonObject | undefined = object(result.value);
-    if (!index || !Object.keys(index).length) throw new Error(`Missing or invalid ${category}/index.json.`);
-    for (const file of Object.values(index)) {
-      if (typeof file !== 'string' || file.includes('/') || !file.endsWith('.json')) {
-        throw new Error(`Invalid file in ${category}/index.json.`);
-      }
-      rawUrl(source, commit, `${category}/${file}`);
-      files.add(`${category}/${file}`);
-    }
-  }
-  return { files: [...files], bytes };
 }

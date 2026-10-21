@@ -81,6 +81,14 @@ listed; reading requires an exact code and an approved account. Only the creator
 a code. Snapshots cannot be overwritten. Private character paths remain inaccessible to others.
 This replaces the temporary Worker sharing client and its public bearer-token configuration.
 
+Creation uses Firebase's server timestamp, and database rules enforce expiry 24 hours after
+that timestamp. The sender's or recipient's device clock does not determine validity. Earlier
+codes containing `expiresAt` remain readable until the earlier of that expiry and 24 hours
+after creation. Publish the current `firebase/database.rules.json` together with the updated
+client: older rules require a client-supplied expiry and will reject the new creation payload.
+HTTP 401/403 during creation means Firebase denied the write; verify approval and the deployed
+rules. Other HTTP failures are reported with their status instead of being labeled permission errors.
+
 Expiry denies access but does not physically remove the snapshot: automatic server cleanup
 is not available in this client-only implementation. Operators should remove expired entries
 under `characterShares` periodically to reclaim storage. The emulator tests cover approval,

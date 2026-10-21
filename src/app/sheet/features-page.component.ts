@@ -14,8 +14,9 @@ import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { FeatureUsesComponent } from './feature-uses.component';
 import { FeatureNotesComponent } from './feature-notes.component';
 import { CharacterHelpersService } from './character-helpers.service';
-import { ExportedCharacter, FeatureEntryFull, FeatureNotes, Speeds } from '../models/character.model';
+import { ExportedCharacter, FeatureEntryFull, FeatureNotes } from '../models/character.model';
 import { CharacterStore } from '../stores/character.store';
+import { speciesMovementText, speciesTraitText } from '../content/species-compatibility';
 
 @Component({
   selector: 'app-features-page',
@@ -95,13 +96,13 @@ import { CharacterStore } from '../stores/character.store';
                 @if (species()?.entity?.size?.length) {
                   <div>Size: {{ species()?.entity?.size?.join(', ') }}</div>
                 }
-                @if (species()?.entity?.speed) {
-                  <div>Speed: {{ formatSpeeds(species()?.entity?.speed ?? null) }}</div>
+                @if (species()?.entity?.speed || species()?.entity?.definition) {
+                  <div>Speed: {{ speciesMovement() }}</div>
                 }
                 @if (species()?.entity?.darkvision) {
                   <div>Darkvision: {{ species()?.entity?.darkvision }} ft.</div>
                 }
-                @if (species()?.entity?.creatureTypes?.length) {
+                @if (speciesCreatureTypes()) {
                   <div>Creature Type: {{ speciesCreatureTypes() }}</div>
                 }
               </div>
@@ -122,7 +123,7 @@ import { CharacterStore } from '../stores/character.store';
           <app-sheet-detail-dialog [title]="species()?.name ?? 'Species'" (closed)="toggleExpanded('species')">
             <div appHorizontalRow role="region" aria-label="Species details" tabindex="0" class="flex flex-nowrap items-center gap-4 overflow-x-auto overscroll-x-contain py-1 text-sm [&>*]:shrink-0 [&>*]:whitespace-nowrap">
               <span>Size: {{ species()?.entity?.size?.join(', ') || '—' }}</span>
-              <span>Speed: {{ formatSpeeds(species()?.entity?.speed ?? null) }}</span>
+              <span>Speed: {{ speciesMovement() }}</span>
               @if (species()?.entity?.darkvision) { <span>Darkvision: {{ species()?.entity?.darkvision }} ft.</span> }
               <span>{{ speciesCreatureTypes() }}</span>
               <span>{{ species()?.source }}</span>
@@ -321,8 +322,11 @@ export class FeaturesPageComponent {
 
 
   species = computed(() => this.characterData()?.species ?? null);
+  readonly speciesMovement = computed(() => speciesMovementText(this.species()?.entity));
   readonly pickerSources = computed(() => this.characterData()?.character?.featureSources?.filter(source => source.isGeneralFeatureSource) ?? []);
   speciesCreatureTypes = computed(() => {
+    const definition = this.species()?.entity?.definition;
+    if (definition) return speciesTraitText(definition.creatureTypes);
     return this.species()?.entity?.creatureTypes?.map(t => `${t.charAt(0).toUpperCase()}${t.slice(1).toLowerCase()}`).join(', ') ?? '';
   });
 
@@ -447,20 +451,7 @@ export class FeaturesPageComponent {
     feature.notes = event;
   }
 
-  formatSpeeds(speeds: Speeds | null): string {
-    if (!speeds) return '—';
-    const orderedKeys: Array<keyof Speeds> = ['walk', 'climb', 'swim', 'fly', 'burrow'];
-    const parts = orderedKeys
-      .map((key) => {
-        const value = speeds[key];
-        if (typeof value !== 'number') return null;
-        const keyText = String(key);
-        const label = keyText === 'walk' ? 'Walk' : keyText.charAt(0).toUpperCase() + keyText.slice(1);
-        return `${label} ${value}`;
-      })
-      .filter((part): part is string => Boolean(part));
-    return parts.length ? parts.join(', ') : '—';
-  }
+
 
   featureAnchorId(feature: { name?: string; source?: string; editorId?: string }): string | null {
     if (!feature?.name) return null;

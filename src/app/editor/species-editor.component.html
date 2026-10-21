@@ -9,7 +9,7 @@
       <span entry-metadata class="min-w-0 truncate rounded bg-surface-container-highest px-1 text-on-surface" [title]="species.source">{{ species.source }}</span>
       @if (expanded) {
         <div class="space-y-3">
-
+          <p class="text-sm">Movement: {{ movementText(species.entity) }}</p>
 
           <app-entry-annotations-editor [entry]="species" (edited)="change()">
               <app-combat-bookmark annotation-combat [sheet]="sheet()" [resource]="species" type="SPECIES" (edited)="change()" />
@@ -31,7 +31,7 @@
       <div class="overflow-hidden rounded-lg bg-surface-container">@for (record of results(); track record.key) {
         <app-catalog-result-row [name]="record.name" [selection]="true" [selected]="isSelected(record)" [disabled]="loading()" (addRequested)="select(record)">
           <span catalog-metadata class="min-w-0 truncate rounded bg-surface-container-highest px-1" [title]="record.publication">{{ record.publication }}</span>
-          <app-description-dialog catalog-description class="shrink-0 self-stretch" [title]="record.name" label="Species Abilities" [compact]="true"><div class="p-2"><app-entry-renderer [entries]="$any(record.data['entries'] ?? [])" /></div></app-description-dialog>
+          <app-description-dialog catalog-description class="shrink-0 self-stretch" [title]="record.name" label="Species Abilities" [compact]="true"><div class="p-2"><app-entry-renderer [entries]="entries(record)" /></div></app-description-dialog>
         </app-catalog-result-row>
       }</div>
       @if (revision()) { <div class="flex flex-wrap justify-between items-center gap-2 mt-3 text-xs"><span>{{ total() }} matches</span><div class="flex gap-2"><button type="button" class="secondary-button compact-button" [disabled]="loading() || offset === 0" (click)="nextPage(-1)">Previous</button><button type="button" class="secondary-button compact-button" [disabled]="loading() || offset + pageSize >= total()" (click)="nextPage(1)">Next</button></div></div> }

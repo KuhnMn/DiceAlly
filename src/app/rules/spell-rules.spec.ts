@@ -14,7 +14,7 @@ describe('Spell grant previews', () => {
     expect(result.expanded).toHaveLength(1); expect(result.instances[0].grants[0].ability).toBe('int');
   });
   it('requires explicit choices and validates count, candidates and uniqueness', () => {
-    const f = fixture([{ known: { '1': [{ choose: { from: ['Light','Shield|TEST'] },count: 1 }] } }]);
+    const f = fixture([{ known: { '1': [{ choose: { from: ['Light','Shield|TEST'],count: 1 } }] } }]);
     const unanswered = deriveSpellGrants([f.owner],f.index); expect(unanswered.canAccept).toBe(false);
     const choice = unanswered.choices[0];
     const selected = deriveSpellGrants([f.owner],f.index,[],{ [choice.id]: [choice.candidates[0]] });
@@ -78,4 +78,29 @@ describe('Spell grant previews', () => {
     expect(pending.canAccept).toBe(false); expect(choice.candidates).toHaveLength(1);
     expect(deriveSpellGrants([choose.owner],choose.index,[],{ [choice.id]: choice.candidates }).canAccept).toBe(true);
   });
+  it('keeps exact grant IDs, recharge usage and prior state through schema traversal', () => {
+    const f = fixture([{ resourceName: 'Focus', innate: { '1': {
+      _: ['Light'], will: ['Light'], ritual: ['Light'], daily: { '2e': ['Light'] },
+      rest: { int: ['Light'] }, resource: { '1': ['Light'] },
+    } } }]);
+    const first = deriveSpellGrants([f.owner], f.index);
+    expect(first.canAccept).toBe(true);
+    const sourceId = JSON.stringify(['casting-source', 'source', 'selection', f.owner.ownerKey, 0]);
+    const paths = ['_', 'will', 'ritual', 'daily.2e', 'rest.int', 'resource.1'];
+    expect(first.instances.map(instance => instance.grants[0].id)).toEqual(paths.map(path =>
+      JSON.stringify(['spell-grant', sourceId, 'innate', `additionalSpells[0].innate.1.${path}[0]`, first.instances[0].contentKey])));
+    expect(first.instances[3].grants[0].usage).toEqual({ frequency: 'daily', count: '2e', resourceName: 'Focus' });
+    first.instances.forEach((instance, position) => {
+      instance.id = `saved-${position}`; instance.customization = { notes: ['Keep'], used: position };
+    });
+    expect(deriveSpellGrants([f.owner], f.index, first.instances).instances).toEqual(first.instances);
+    for (const limited of [{ '1': ['Light'] }, {}]) {
+      const unsupported = fixture([{ innate: { '1': { limited } } }]);
+      const blocked = deriveSpellGrants([unsupported.owner], unsupported.index, first.instances);
+      expect(blocked.canAccept).toBe(false);
+      expect(blocked.diagnostics.some(issue => issue.includes('Unsupported spell grant structure'))).toBe(true);
+      expect(blocked.instances).toEqual(first.instances);
+    }
+  });
+
 });

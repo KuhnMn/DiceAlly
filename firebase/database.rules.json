@@ -4,9 +4,9 @@
     ".write": false,
     "characterShares": {
       "$code": {
-        ".read": "auth != null && root.child('members').child(auth.uid).val() === true && data.exists() && data.child('expiresAt').val() > now",
+        ".read": "auth != null && root.child('members').child(auth.uid).val() === true && data.exists() && data.child('createdAt').isNumber() && data.child('createdAt').val() + 86400000 > now && (!data.child('expiresAt').exists() || data.child('expiresAt').val() > now)",
         ".write": "auth != null && root.child('members').child(auth.uid).val() === true && ((!data.exists() && newData.child('ownerUid').val() === auth.uid && $code.matches(/^[a-f0-9]{24}$/)) || (data.child('ownerUid').val() === auth.uid && !newData.exists()))",
-        ".validate": "newData.hasChildren(['ownerUid', 'characterId', 'createdAt', 'expiresAt', 'character'])",
+        ".validate": "newData.hasChildren(['ownerUid', 'characterId', 'createdAt', 'character'])",
         "ownerUid": { ".validate": "newData.isString() && newData.val() === auth.uid" },
         "characterId": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200" },
         "createdAt": { ".validate": "newData.isNumber() && newData.val() <= now && newData.val() >= now - 300000" },

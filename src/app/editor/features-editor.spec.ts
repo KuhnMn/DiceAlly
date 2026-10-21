@@ -1,3 +1,4 @@
+import { canonicalClassRecord, isClassKind } from '../content/class-adapter';
 import 'fake-indexeddb/auto';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -37,7 +38,7 @@ async function catalog() {
     subclassFeature: [{ name: 'Improved Training', source: 'PHB', className: 'Fighter', classSource: 'PHB', subclassShortName: 'Champion', subclassSource: 'PHB', level: 3, entries: ['Subclass text'] }],
     feat: Array.from({ length: 45 }, (_, i) => ({ name: `Feat ${String(i).padStart(2, '0')}`, source: 'TEST', entries: ['Feat text'] })),
     optionalfeature: [{ name: 'Style', source: 'TEST', featureType: ['FS'], entries: ['Style text'] }],
-  }, 'synthetic.json').records;
+  }, 'synthetic.json').records.map(record => isClassKind(record.kind) ? canonicalClassRecord(record) : record);
   const cache = new IndexedDbContentCache(); await cache.stage(revision); await cache.put(revision.id, records); await cache.activate(revision);
   await cache.saveSource('development-local', source);
   return { cache, revision, records };

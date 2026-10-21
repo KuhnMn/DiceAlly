@@ -28,7 +28,12 @@ export class CharacterSharingService {
     if (this.account.user()?.uid !== user.uid || !this.account.accessible()) throw new Error('Account changed. Try again.');
     const url = `${this.config.databaseURL.replace(/\/$/, '')}/characterShares/${code}.json?auth=${encodeURIComponent(token)}${options ? '&print=silent' : ''}`;
     const response = await fetch(url, { ...options, cache: 'no-store', signal: AbortSignal.timeout(30_000) });
-    if (!response.ok) throw new Error(options ? 'Could not create or revoke the share code. Publish the latest database rules and try again.' : 'This share code is invalid, expired, revoked, or unavailable to your account.');
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) throw new Error(options
+        ? `Firebase denied the share-code request (HTTP ${response.status}). Check account approval and publish the latest database rules.`
+        : 'This share code is invalid, expired, revoked, or unavailable to your account.');
+      throw new Error(`Share-code request failed (HTTP ${response.status}). Try again when the service is available.`);
+    }
     if (this.account.user()?.uid !== user.uid || !this.account.accessible()) throw new Error('Account changed. Try again.');
     return response;
   }
@@ -37,9 +42,9 @@ export class CharacterSharingService {
     if (!ownerUid || !this.account.accessible()) throw new Error('An approved account is required.');
     const character = await encodeCloudCharacter({ id: sheet.character!.characterUuid!, sheet, version: 0, updatedAt: new Date().toISOString() }, 1);
     const code = Array.from(crypto.getRandomValues(new Uint8Array(12)), byte => byte.toString(16).padStart(2, '0')).join('');
-    const createdAt = Date.now();
+    if (this.account.user()?.uid !== ownerUid || !this.account.accessible()) throw new Error('Account changed. Try again.');
     await this.request(code, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ownerUid,
-      characterId: sheet.character!.characterUuid, createdAt, expiresAt: createdAt + 24 * 60 * 60 * 1000, character }) });
+      characterId: sheet.character!.characterUuid, createdAt: { '.sv': 'timestamp' }, character }) });
     return code.match(/.{6}/g)!.join('-').toUpperCase();
   }
   async redeem(input: string): Promise<ExportedCharacter> {
@@ -47,7 +52,10 @@ export class CharacterSharingService {
     const code = parseShareCode(input);
     if (!code) throw new Error('Enter the complete share code (four groups of six characters).');
     const shared = await (await this.request(code)).json();
-    if (!shared || typeof shared.characterId !== 'string' || typeof shared.expiresAt !== 'number' || shared.expiresAt <= Date.now()) throw new Error('This share code has expired or is unavailable.');
+    // Expiry is enforced by the database's clock, not the recipient's device clock.
+    // Legacy snapshots retain expiresAt; new snapshots expire 24 hours after server-created createdAt.
+    if (!shared || typeof shared.characterId !== 'string' || !Number.isFinite(shared.createdAt)
+      || (shared.expiresAt !== undefined && !Number.isFinite(shared.expiresAt))) throw new Error('This share code is unavailable or malformed.');
     const record = await decodeCloudCharacter(shared.characterId, shared.character);
     if (this.account.user()?.uid !== recipientUid || !this.account.accessible()) throw new Error('Account changed. Try importing again.');
     return independentCharacter(record.sheet);

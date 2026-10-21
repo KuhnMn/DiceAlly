@@ -1,3 +1,4 @@
+import type { SourceEntry } from '../content/content-entries';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -22,6 +23,11 @@ import {
   TableRow,
 } from '../models/character.model';
 
+type SourceEntryOf<K extends string> = Extract<SourceEntry, { type: K }>;
+// Android permits optional fields absent from a source branch (e.g. itemSpell.entries).
+type RenderEntry<K extends string, Legacy> = Legacy
+  | (SourceEntryOf<K> & Partial<Omit<Legacy, keyof SourceEntryOf<K>>>);
+
 interface StyledTextSegment {
   text: string;
   type: 'normal' | 'tag' | 'bonus' | 'link';
@@ -43,7 +49,7 @@ type StyleType = 'TAG' | 'BONUS' | 'LINK' | 'BOLD';
       </div>
     }
 
-    @if (entry()) {
+    @if (entry() !== null) {
       @switch (detectType(entry()!)) {
         @case ('list') {
           <ul class="space-y-1 mt-2 mb-2 list-none pl-0">
@@ -199,60 +205,60 @@ export class EntryRendererComponent {
     return this.detectType(entry) === 'string' ? (entry as StringEntry) : null;
   }
 
-  asListEntry(entry: Entry): ListEntry | null {
-    return this.detectType(entry) === 'list' ? (entry as ListEntry) : null;
+  asListEntry(entry: Entry): RenderEntry<'list', ListEntry> | null {
+    return this.detectType(entry) === 'list' ? (entry as RenderEntry<'list', ListEntry>) : null;
   }
 
-  asTableEntry(entry: Entry): TableEntry | null {
-    return this.detectType(entry) === 'table' ? (entry as TableEntry) : null;
+  asTableEntry(entry: Entry): RenderEntry<'table', TableEntry> | null {
+    return this.detectType(entry) === 'table' ? (entry as RenderEntry<'table', TableEntry>) : null;
   }
 
-  asEntriesEntry(entry: Entry): EntriesEntry | null {
-    return this.detectType(entry) === 'entries' ? (entry as EntriesEntry) : null;
+  asEntriesEntry(entry: Entry): RenderEntry<'entries', EntriesEntry> | null {
+    return this.detectType(entry) === 'entries' ? (entry as RenderEntry<'entries', EntriesEntry>) : null;
   }
 
-  asListItemEntry(entry: Entry): ListItemEntry | null {
-    return this.detectType(entry) === 'item' ? (entry as ListItemEntry) : null;
+  asListItemEntry(entry: Entry): RenderEntry<'item', ListItemEntry> | null {
+    return this.detectType(entry) === 'item' ? (entry as RenderEntry<'item', ListItemEntry>) : null;
   }
 
-  asListItemSpellEntry(entry: Entry): ListItemSpellEntry | null {
-    return this.detectType(entry) === 'itemSpell' ? (entry as ListItemSpellEntry) : null;
+  asListItemSpellEntry(entry: Entry): RenderEntry<'itemSpell', ListItemSpellEntry> | null {
+    return this.detectType(entry) === 'itemSpell' ? (entry as RenderEntry<'itemSpell', ListItemSpellEntry>) : null;
   }
 
-  asInsetEntry(entry: Entry): InsetEntry | null {
-    return this.detectType(entry) === 'inset' ? (entry as InsetEntry) : null;
+  asInsetEntry(entry: Entry): RenderEntry<'inset', InsetEntry> | null {
+    return this.detectType(entry) === 'inset' ? (entry as RenderEntry<'inset', InsetEntry>) : null;
   }
 
-  asAbilityDcEntry(entry: Entry): AbilityDCEntry | null {
-    return this.detectType(entry) === 'abilityDC' ? (entry as AbilityDCEntry) : null;
+  asAbilityDcEntry(entry: Entry): RenderEntry<'abilityDC', AbilityDCEntry> | null {
+    return this.detectType(entry) === 'abilityDC' ? (entry as RenderEntry<'abilityDC', AbilityDCEntry>) : null;
   }
 
-  asAbilityAttackModEntry(entry: Entry): AbilityAttackModEntry | null {
-    return this.detectType(entry) === 'abilityAttackMod' ? (entry as AbilityAttackModEntry) : null;
+  asAbilityAttackModEntry(entry: Entry): RenderEntry<'abilityAttackMod', AbilityAttackModEntry> | null {
+    return this.detectType(entry) === 'abilityAttackMod' ? (entry as RenderEntry<'abilityAttackMod', AbilityAttackModEntry>) : null;
   }
 
-  asOptionsEntry(entry: Entry): OptionsEntry | null {
-    return this.detectType(entry) === 'options' ? (entry as OptionsEntry) : null;
+  asOptionsEntry(entry: Entry): RenderEntry<'options', OptionsEntry> | null {
+    return this.detectType(entry) === 'options' ? (entry as RenderEntry<'options', OptionsEntry>) : null;
   }
 
-  asSectionEntry(entry: Entry): SectionEntry | null {
-    return this.detectType(entry) === 'section' ? (entry as SectionEntry) : null;
+  asSectionEntry(entry: Entry): RenderEntry<'section', SectionEntry> | null {
+    return this.detectType(entry) === 'section' ? (entry as RenderEntry<'section', SectionEntry>) : null;
   }
 
-  asRefSubclassEntry(entry: Entry): RefSubclassEntry | null {
-    return this.detectType(entry) === 'refSubclassFeature' ? (entry as RefSubclassEntry) : null;
+  asRefSubclassEntry(entry: Entry): RenderEntry<'refSubclassFeature', RefSubclassEntry> | null {
+    return this.detectType(entry) === 'refSubclassFeature' ? (entry as RenderEntry<'refSubclassFeature', RefSubclassEntry>) : null;
   }
 
-  asRefClassEntry(entry: Entry): RefClassEntry | null {
-    return this.detectType(entry) === 'refClassFeature' ? (entry as RefClassEntry) : null;
+  asRefClassEntry(entry: Entry): RenderEntry<'refClassFeature', RefClassEntry> | null {
+    return this.detectType(entry) === 'refClassFeature' ? (entry as RenderEntry<'refClassFeature', RefClassEntry>) : null;
   }
 
-  asRefFeatEntry(entry: Entry): RefFeatEntry | null {
-    return this.detectType(entry) === 'refFeat' ? (entry as RefFeatEntry) : null;
+  asRefFeatEntry(entry: Entry): RenderEntry<'refFeat', RefFeatEntry> | null {
+    return this.detectType(entry) === 'refFeat' ? (entry as RenderEntry<'refFeat', RefFeatEntry>) : null;
   }
 
-  asRefOptionalEntry(entry: Entry): RefOptionalEntry | null {
-    return this.detectType(entry) === 'refOptionalfeature' ? (entry as RefOptionalEntry) : null;
+  asRefOptionalEntry(entry: Entry): RenderEntry<'refOptionalfeature', RefOptionalEntry> | null {
+    return this.detectType(entry) === 'refOptionalfeature' ? (entry as RenderEntry<'refOptionalfeature', RefOptionalEntry>) : null;
   }
 
   normalizeTableRow(row: TableRow): Entry[] {

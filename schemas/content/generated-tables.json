@@ -1,0 +1,602 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ally-generated-tables.json",
+  "description": "Local generated-file contract: the two root arrays reuse the exact upstream table branches and additionally permit generated reprint/parent metadata. Audited against 5etools-src commit 90d343cde64cf8dce1083ea0525a6b0b9e545f2e. The producer emits explicit false SRD/basic-rules flags, optional ordinal identifiers, and path/section metadata on nested tables; these differences are declared here rather than weakening the upstream contract.",
+  "type": "object",
+  "properties": {
+    "table": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/table"
+      }
+    },
+    "tableGroup": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/table"
+      }
+    }
+  },
+  "required": [
+    "table",
+    "tableGroup"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "table": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/name"
+            },
+            "source": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/source"
+            },
+            "page": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/page"
+            },
+            "data": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/data"
+            },
+            "type": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/type"
+            },
+            "legacy": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/legacy"
+            },
+            "otherSources": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/otherSources"
+            },
+            "referenceSources": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/referenceSources"
+            },
+            "chapter": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "ordinal": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "$ref": "tables.json#/$defs/tableData/properties/chapter/properties/ordinal/properties/type"
+                    },
+                    "identifier": {
+                      "$ref": "tables.json#/$defs/tableData/properties/chapter/properties/ordinal/properties/identifier"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                "index": {
+                  "type": "integer"
+                }
+              },
+              "additionalProperties": false
+            },
+            "srd": {
+              "anyOf": [
+                {
+                  "$ref": "util.json#/$defs/srd"
+                },
+                {
+                  "const": false
+                }
+              ]
+            },
+            "srd52": {
+              "anyOf": [
+                {
+                  "$ref": "util.json#/$defs/srd"
+                },
+                {
+                  "const": false
+                }
+              ]
+            },
+            "basicRules": {
+              "type": "boolean"
+            },
+            "basicRules2024": {
+              "type": "boolean"
+            },
+            "caption": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/caption"
+            },
+            "isStriped": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/isStriped"
+            },
+            "isNameGenerator": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/isNameGenerator"
+            },
+            "style": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/style"
+            },
+            "colLabels": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/colLabels"
+            },
+            "colLabelRows": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/colLabelRows"
+            },
+            "colStyles": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/colStyles"
+            },
+            "rowLabels": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/rowLabels"
+            },
+            "rowStyles": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/rowStyles"
+            },
+            "rows": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/rows"
+            },
+            "footnotes": {
+              "$ref": "tables.json#/$defs/table/anyOf/0/properties/footnotes"
+            },
+            "reprintedAs": {
+              "$ref": "util.json#/$defs/reprintedAs"
+            },
+            "parentEntity": {
+              "type": "object",
+              "properties": {
+                "prop": {
+                  "type": "string"
+                },
+                "uid": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "prop",
+                "uid"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "name",
+            "source",
+            "rows"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/name"
+            },
+            "source": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/source"
+            },
+            "page": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/page"
+            },
+            "data": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/data"
+            },
+            "type": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/type"
+            },
+            "legacy": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/legacy"
+            },
+            "otherSources": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/otherSources"
+            },
+            "referenceSources": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/referenceSources"
+            },
+            "chapter": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "ordinal": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "$ref": "tables.json#/$defs/tableData/properties/chapter/properties/ordinal/properties/type"
+                    },
+                    "identifier": {
+                      "$ref": "tables.json#/$defs/tableData/properties/chapter/properties/ordinal/properties/identifier"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                "index": {
+                  "type": "integer"
+                }
+              },
+              "additionalProperties": false
+            },
+            "srd": {
+              "anyOf": [
+                {
+                  "$ref": "util.json#/$defs/srd"
+                },
+                {
+                  "const": false
+                }
+              ]
+            },
+            "srd52": {
+              "anyOf": [
+                {
+                  "$ref": "util.json#/$defs/srd"
+                },
+                {
+                  "const": false
+                }
+              ]
+            },
+            "basicRules": {
+              "type": "boolean"
+            },
+            "basicRules2024": {
+              "type": "boolean"
+            },
+            "caption": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/caption"
+            },
+            "isStriped": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/isStriped"
+            },
+            "isNameGenerator": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/isNameGenerator"
+            },
+            "style": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/style"
+            },
+            "colLabels": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/colLabels"
+            },
+            "colLabelRows": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/colLabelRows"
+            },
+            "colStyles": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/colStyles"
+            },
+            "rowLabels": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/rowLabels"
+            },
+            "rowStyles": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/rowStyles"
+            },
+            "rows": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/rows"
+            },
+            "footnotes": {
+              "$ref": "tables.json#/$defs/table/anyOf/1/properties/footnotes"
+            },
+            "tables": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/nestedTable"
+              }
+            },
+            "reprintedAs": {
+              "$ref": "util.json#/$defs/reprintedAs"
+            },
+            "parentEntity": {
+              "type": "object",
+              "properties": {
+                "prop": {
+                  "type": "string"
+                },
+                "uid": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "prop",
+                "uid"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "name",
+            "source",
+            "tables"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/name"
+            },
+            "source": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/source"
+            },
+            "page": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/page"
+            },
+            "data": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/data"
+            },
+            "type": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/type"
+            },
+            "legacy": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/legacy"
+            },
+            "otherSources": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/otherSources"
+            },
+            "referenceSources": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/referenceSources"
+            },
+            "chapter": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "ordinal": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "$ref": "tables.json#/$defs/tableData/properties/chapter/properties/ordinal/properties/type"
+                    },
+                    "identifier": {
+                      "$ref": "tables.json#/$defs/tableData/properties/chapter/properties/ordinal/properties/identifier"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                "index": {
+                  "type": "integer"
+                }
+              },
+              "additionalProperties": false
+            },
+            "srd": {
+              "anyOf": [
+                {
+                  "$ref": "util.json#/$defs/srd"
+                },
+                {
+                  "const": false
+                }
+              ]
+            },
+            "srd52": {
+              "anyOf": [
+                {
+                  "$ref": "util.json#/$defs/srd"
+                },
+                {
+                  "const": false
+                }
+              ]
+            },
+            "basicRules": {
+              "type": "boolean"
+            },
+            "basicRules2024": {
+              "type": "boolean"
+            },
+            "caption": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/caption"
+            },
+            "isStriped": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/isStriped"
+            },
+            "isNameGenerator": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/isNameGenerator"
+            },
+            "style": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/style"
+            },
+            "colLabels": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/colLabels"
+            },
+            "colLabelRows": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/colLabelRows"
+            },
+            "colStyles": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/colStyles"
+            },
+            "rowLabels": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/rowLabels"
+            },
+            "rowStyles": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/rowStyles"
+            },
+            "rows": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/rows"
+            },
+            "footnotes": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/footnotes"
+            },
+            "_copy": {
+              "$ref": "tables.json#/$defs/table/anyOf/2/properties/_copy"
+            },
+            "reprintedAs": {
+              "$ref": "util.json#/$defs/reprintedAs"
+            },
+            "parentEntity": {
+              "type": "object",
+              "properties": {
+                "prop": {
+                  "type": "string"
+                },
+                "uid": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "prop",
+                "uid"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "_copy"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "nestedTable": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "tables.json#/$defs/tableData/properties/name"
+        },
+        "source": {
+          "$ref": "tables.json#/$defs/tableData/properties/source"
+        },
+        "page": {
+          "$ref": "tables.json#/$defs/tableData/properties/page"
+        },
+        "data": {
+          "$ref": "tables.json#/$defs/tableData/properties/data"
+        },
+        "type": {
+          "$ref": "tables.json#/$defs/tableData/properties/type"
+        },
+        "legacy": {
+          "$ref": "tables.json#/$defs/tableData/properties/legacy"
+        },
+        "otherSources": {
+          "$ref": "tables.json#/$defs/tableData/properties/otherSources"
+        },
+        "referenceSources": {
+          "$ref": "tables.json#/$defs/tableData/properties/referenceSources"
+        },
+        "chapter": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "ordinal": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "$ref": "tables.json#/$defs/tableData/properties/chapter/properties/ordinal/properties/type"
+                },
+                "identifier": {
+                  "$ref": "tables.json#/$defs/tableData/properties/chapter/properties/ordinal/properties/identifier"
+                }
+              },
+              "required": [
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            "index": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        "srd": {
+          "anyOf": [
+            {
+              "$ref": "util.json#/$defs/srd"
+            },
+            {
+              "const": false
+            }
+          ]
+        },
+        "srd52": {
+          "anyOf": [
+            {
+              "$ref": "util.json#/$defs/srd"
+            },
+            {
+              "const": false
+            }
+          ]
+        },
+        "basicRules": {
+          "type": "boolean"
+        },
+        "basicRules2024": {
+          "type": "boolean"
+        },
+        "caption": {
+          "$ref": "tables.json#/$defs/tableData/properties/caption"
+        },
+        "isStriped": {
+          "$ref": "tables.json#/$defs/tableData/properties/isStriped"
+        },
+        "isNameGenerator": {
+          "$ref": "tables.json#/$defs/tableData/properties/isNameGenerator"
+        },
+        "style": {
+          "$ref": "tables.json#/$defs/tableData/properties/style"
+        },
+        "colLabels": {
+          "$ref": "tables.json#/$defs/tableData/properties/colLabels"
+        },
+        "colLabelRows": {
+          "$ref": "tables.json#/$defs/tableData/properties/colLabelRows"
+        },
+        "colStyles": {
+          "$ref": "tables.json#/$defs/tableData/properties/colStyles"
+        },
+        "rowLabels": {
+          "$ref": "tables.json#/$defs/tableData/properties/rowLabels"
+        },
+        "rowStyles": {
+          "$ref": "tables.json#/$defs/tableData/properties/rowStyles"
+        },
+        "rows": {
+          "$ref": "tables.json#/$defs/tableData/properties/rows"
+        },
+        "footnotes": {
+          "$ref": "tables.json#/$defs/tableData/properties/footnotes"
+        },
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "page": {
+                "$ref": "util.json#/$defs/page"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "section": {
+          "type": "string"
+        },
+        "sectionIndex": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "rows"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

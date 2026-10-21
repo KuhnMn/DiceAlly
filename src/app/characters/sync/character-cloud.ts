@@ -1,7 +1,8 @@
 import type { CharacterRecord } from '../character-repository';
 import type { ExportedCharacter } from '../../models/character.model';
-import { canonicalDocument } from '../../rules/character-document';
+import { canonicalDocument } from '../../rules/canonical-document';
 import { portableCharacter } from '../portable-character';
+import { validateSpeciesEntity } from '../../content/species-compatibility';
 
 export interface CloudCharacterMeta {
   revision: number;
@@ -56,6 +57,7 @@ export async function decodeCloudCharacter(id: string, value: CloudCharacter): P
   if (typeof value.body !== 'string' || await characterHash(value.body, meta.deleted) !== meta.hash) throw new Error('Cloud character integrity check failed.');
   const sheet = JSON.parse(value.body) as ExportedCharacter;
   canonicalDocument(sheet);
+  validateSpeciesEntity(sheet.species?.entity);
   if (sheet.character?.characterUuid !== id) throw new Error('Cloud character identity does not match its record.');
   assertExternalIllustrations(sheet);
   return { id, sheet, version: 0, updatedAt: meta.updatedAt, deletedAt: meta.deleted ? meta.updatedAt : undefined,

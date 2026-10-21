@@ -1,0 +1,261 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ally.local/content/class.json",
+  "type": "object",
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "kind": {
+      "enum": [
+        "class",
+        "subclass",
+        "classFeature",
+        "subclassFeature"
+      ]
+    },
+    "parent": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "key",
+        "name",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "shortName": {
+      "type": "string"
+    },
+    "subclass": {
+      "type": "object",
+      "properties": {
+        "shortName": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "shortName",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "level": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "hitDice": {
+      "$ref": "https://ally.local/5etools/brew/class/class.json#/$defs/classData/properties/hd"
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "uid": {
+            "type": "string"
+          },
+          "gainSubclassFeature": {
+            "type": "boolean"
+          },
+          "gainSubclassFeatureHasContent": {
+            "type": "boolean"
+          },
+          "tableDisplayName": {
+            "type": "string"
+          },
+          "extensions": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "key",
+          "uid"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "casting": {
+      "type": "object",
+      "properties": {
+        "progression": {
+          "$ref": "https://ally.local/5etools/brew/class/class.json#/$defs/casterProgression"
+        },
+        "ability": {
+          "$ref": "https://ally.local/5etools/brew/class/class.json#/$defs/spellcastingAbility"
+        },
+        "cantripProgression": {
+          "$ref": "https://ally.local/5etools/brew/class/class.json#/$defs/cantripProgression"
+        },
+        "preparedSpells": {
+          "$ref": "https://ally.local/5etools/brew/class/class.json#/$defs/preparedSpells"
+        },
+        "preparedSpellsProgression": {
+          "$ref": "https://ally.local/5etools/brew/class/class.json#/$defs/preparedSpellsProgression"
+        },
+        "preparedSpellsChange": {
+          "$ref": "https://ally.local/5etools/brew/class/class.json#/$defs/preparedSpellsChange"
+        },
+        "spellsKnownProgression": {
+          "$ref": "https://ally.local/5etools/brew/class/class.json#/$defs/spellsKnownProgression"
+        },
+        "spellsKnownProgressionFixed": {
+          "$ref": "https://ally.local/5etools/brew/class/class.json#/$defs/spellsKnownProgressionFixed"
+        },
+        "spellsKnownProgressionFixedAllowLowerLevel": {
+          "$ref": "https://ally.local/5etools/brew/class/class.json#/$defs/spellsKnownProgressionFixedAllowLowerLevel"
+        },
+        "spellsKnownProgressionFixedByLevel": {
+          "$ref": "https://ally.local/5etools/brew/class/class.json#/$defs/spellsKnownProgressionFixedByLevel"
+        }
+      },
+      "additionalProperties": false
+    },
+    "savingThrows": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "str",
+          "dex",
+          "con",
+          "int",
+          "wis",
+          "cha"
+        ]
+      }
+    },
+    "primaryAbilities": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "enum": [
+            "str",
+            "dex",
+            "con",
+            "int",
+            "wis",
+            "cha"
+          ]
+        }
+      }
+    },
+    "proficiencies": {
+      "type": "object",
+      "properties": {
+        "starting": {
+          "$ref": "https://ally.local/5etools/brew/class/class.json#/$defs/proficiencies"
+        },
+        "multiclass": {
+          "$ref": "https://ally.local/5etools/brew/class/class.json#/$defs/proficiencies"
+        }
+      },
+      "additionalProperties": false
+    },
+    "optionalFeatures": {
+      "anyOf": [
+        {
+          "type": "array",
+          "maxItems": 0
+        },
+        {
+          "$ref": "https://ally.local/5etools/brew/class/class.json#/$defs/classData/properties/optionalfeatureProgression"
+        }
+      ]
+    }
+  },
+  "required": [
+    "version",
+    "kind",
+    "features",
+    "casting",
+    "savingThrows",
+    "primaryAbilities",
+    "proficiencies",
+    "optionalFeatures"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "subclass",
+              "classFeature",
+              "subclassFeature"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "parent"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "subclass"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "shortName"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "classFeature",
+              "subclassFeature"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "level"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "subclassFeature"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "subclass"
+        ]
+      }
+    }
+  ]
+}

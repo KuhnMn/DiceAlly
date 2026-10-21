@@ -1,3 +1,5 @@
+import { contentEntries } from '../content/content-entries';
+import { characterOptionSourceData } from '../content/character-option-adapter';
 import { ChangeDetectorRef, Component, OnDestroy, effect, inject, input, output, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -43,7 +45,7 @@ import { characterDescription } from '../character-description';
           @for (record of catalog.results(); track record.key) {
             <app-catalog-result-row [name]="record.name" [selection]="true" [selected]="sheet().background?.contentReference?.key === record.key && sheet().background?.contentReference?.revisionId === catalog.revision()?.id" [disabled]="catalog.loading()" (addRequested)="select(record)">
               <span catalog-metadata class="min-w-0 truncate rounded bg-surface-container-highest px-1">{{ record.publication }}</span>
-              <app-description-dialog catalog-description class="shrink-0 self-stretch" [title]="record.name" [compact]="true"><app-entry-renderer [entries]="$any(record.data['entries'] ?? [])" /></app-description-dialog>
+              <app-description-dialog catalog-description class="shrink-0 self-stretch" [title]="record.name" [compact]="true"><app-entry-renderer [entries]="catalogEntries(record)" /></app-description-dialog>
             </app-catalog-result-row>
           } @empty { @if (!catalog.loading()) { <p class="p-2 text-sm text-on-surface-variant">No backgrounds match. You can always enter a custom name instead.</p> } }
         </div>
@@ -53,6 +55,7 @@ import { characterDescription } from '../character-description';
   `,
 })
 export class BackgroundEditorComponent implements OnDestroy {
+  readonly catalogEntries = contentEntries;
   readonly sheet = input.required<ExportedCharacter>();
   readonly edited = output<void>();
   readonly catalog = new EditorCatalog(new IndexedDbContentCache());
@@ -82,7 +85,7 @@ export class BackgroundEditorComponent implements OnDestroy {
   }
   select(record: ContentRecord) {
     const revision = this.catalog.revision(); if (!revision || record.kind !== 'background') return;
-    this.sheet().background = { name: record.name, source: record.publication, contentReference: contentReference(record, revision), entity: structuredClone(record.data) };
+    this.sheet().background = { name: record.name, source: record.publication, contentReference: contentReference(record, revision), entity: characterOptionSourceData(record) };
     this.catalogOpen = false; this.view.markForCheck(); this.edited.emit();
   }
   ngOnDestroy() { this.catalog.dispose(); }

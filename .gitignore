@@ -4,6 +4,7 @@
 /dist
 /tmp
 /out-tsc
+/src/app/content/generated/*-validators.mjs
 /bazel-out
 
 # Node

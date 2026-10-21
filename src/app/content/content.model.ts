@@ -8,7 +8,7 @@ export interface ContentSource {
 export const DEFAULT_CONTENT_SOURCE: ContentSource = {
   owner: '5etools-mirror-3', repository: '5etools-src', branch: 'main', directory: 'data',
 };
-export const ADAPTER_VERSION = 8;
+export const ADAPTER_VERSION = 21;
 export interface ContentLink {
   role: string;
   target: string;
@@ -25,6 +25,13 @@ export interface ContentRecord {
   publication: string;
   file: string;
   data: JsonObject;
+  species?: import('./species.model').SpeciesDefinition;
+  classDefinition?: import('./class.model').ClassDefinition;
+  characterOption?: import('./character-option.model').CharacterOptionDefinition;
+  spellDefinition?: import('./spell.model').SpellDefinition;
+  itemDefinition?: import('./item.model').ItemDefinition;
+  monsterDefinition?: import('./monster.model').MonsterDefinition;
+  referenceDefinition?: import('./reference-content.model').ReferenceDefinition;
   links: ContentLink[];
   derivation?: { operation: 'species' | 'subrace' | 'base-item' | 'item-group' | 'magicvariant'; inputs: ContentLink[]; version: number };
   /** Conflicting definitions inside one homebrew file remain separately selectable. */
@@ -32,6 +39,11 @@ export interface ContentRecord {
 }
 export interface ImportDiagnostic {
   severity: 'error' | 'warning';
+  code?: 'schema-invalid' | 'unsupported-category';
+  phase?: 'validate' | 'map';
+  /** JSON Pointer into the source document, distinct from a record's identity. */
+  path?: string;
+  schemaPath?: string;
   file: string;
   record?: string;
   message: string;
@@ -51,6 +63,8 @@ export interface ImportRevision {
   sourceIdentity: string;
   commit: string;
   adapterVersion: number;
+  /** Exact reviewed schema dependency graph used for source validation. */
+  schemaSnapshot?: string;
   createdAt: string;
   status: 'staging' | 'ready';
   files: string[];

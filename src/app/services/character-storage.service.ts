@@ -3,6 +3,7 @@ import { signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ExportedCharacter } from '../models/character.model';
 import { portableCharacter } from '../characters/portable-character';
+import { validateSpeciesEntity } from '../content/species-compatibility';
 
 export interface SavedCharacterMetadata {
   characterId: string;
@@ -111,7 +112,9 @@ export class CharacterStorageService {
         return null;
       }
 
-      return JSON.parse(data) as ExportedCharacter;
+      const sheet = JSON.parse(data) as ExportedCharacter;
+      validateSpeciesEntity(sheet.species?.entity);
+      return sheet;
     } catch (error) {
       console.error(`Failed to load character ${characterId}:`, error);
       return null;

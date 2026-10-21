@@ -1,5 +1,5 @@
 import { ExportedCharacter, AbilityScores } from '../models/character.model';
-import { canonicalDocument } from '../rules/character-document';
+import { canonicalDocument } from '../rules/canonical-document';
 
 export const DEFENSE_ABILITIES: { key: keyof AbilityScores; label: string }[] = [
   { key: 'strength', label: 'Strength' }, { key: 'dexterity', label: 'Dexterity' },

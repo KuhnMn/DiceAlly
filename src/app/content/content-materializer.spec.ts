@@ -20,6 +20,20 @@ class MemoryCache implements ContentCache {
 }
 
 describe('Secondary content mappings', () => {
+  it('expands templates after the variant receives its item-specific resistance', async () => {
+    const cache = new MemoryCache(); const diagnostics: ImportDiagnostic[] = [];
+    await cache.put('r', [
+      record('baseitem', { name: 'Armor', source: 'PHB', armor: true }),
+      record('itemEntry', { name: 'Armor of Resistance', source: 'DMG', entriesTemplate: ['Resistance to {{item.resist}}.'] }),
+      record('magicvariant', { name: 'Fire Armor', source: 'DMG', requires: [{ armor: true }],
+        inherits: { source: 'DMG', namePrefix: 'Fire ', resist: ['fire'], entries: ['{#itemEntry Armor of Resistance}'] } }),
+    ]);
+    await materializeContent(cache, 'r', diagnostics);
+    expect(diagnostics).toEqual([]);
+    const item = [...cache.rows.values()].find(record => record.derivation?.operation === 'magicvariant')!;
+    expect(item.data['entries']).toEqual(['Resistance to fire.']);
+    expect(item.links.some(link => link.role === 'item-entry')).toBe(true);
+  });
   it('deduplicates identical inherited language options as an intentional mapping policy', () => {
     const merged = mergeSubrace({ name: 'People', source: 'TEST', entries: [], languageProficiencies: [{ common: true }] },
       { name: 'Variant', source: 'TEST', languageProficiencies: [{ common: true }] });
@@ -83,7 +97,7 @@ describe('Secondary content mappings', () => {
     await cache.put('r', [
       record('race', { name: 'People', source: 'TEST', speed: 30 }),
       record('subrace', { name: 'Sky', source: 'OTHER', raceName: 'People', raceSource: 'TEST' }),
-      record('baseitem', { name: 'Sword', source: 'TEST', type: 'M|TEST', property: [{ uid: 'F|TEST' }], mastery: ['Cleave|TEST'], weight: 3, weapon: true }),
+      record('baseitem', { name: 'Sword', source: 'TEST', type: 'M|TEST', property: [{ uid: 'F|TEST', note: 'Synthetic property note' }], mastery: ['Cleave|TEST'], weight: 3, weapon: true }),
       record('itemType', { name: 'Melee', abbreviation: 'M', source: 'TEST' }),
       record('itemProperty', { name: 'Finesse', abbreviation: 'F', source: 'TEST', entries: ['property'] }),
       record('itemProperty', { name: 'Other Finesse', abbreviation: 'F', source: 'OTHER', entries: ['other'] }),

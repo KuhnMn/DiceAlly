@@ -5,6 +5,7 @@ import { fetchContent } from './github-source';
 import { importHomebrew } from './homebrew-importer';
 import { MAX_HOMEBREW_BYTES, readHomebrewFile } from './homebrew-package';
 import { ImportProgress } from './content.model';
+import { ContentSchemaError } from './content-schema';
 
 let controller: AbortController | undefined;
 addEventListener('message', async ({ data }: MessageEvent<ContentImportRequest>) => {
@@ -49,6 +50,6 @@ addEventListener('message', async ({ data }: MessageEvent<ContentImportRequest>)
     postMessage({ type: 'complete', revision });
   } catch (error) {
     postMessage({ type: 'error', message: controller.signal.aborted ? 'Import cancelled. Previous content retained.' : String(error),
-      diagnostics: error instanceof ContentImportError ? error.diagnostics : [] });
+      diagnostics: error instanceof ContentImportError || error instanceof ContentSchemaError ? error.diagnostics : [] });
   } finally { controller = undefined; }
 });

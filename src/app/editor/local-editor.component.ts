@@ -21,7 +21,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ExportedCharacter } from '../models/character.model';
 import { CharacterHelpersService } from '../sheet/character-helpers.service';
-import { canonicalDocument } from '../rules/character-document';
+import { canonicalDocument } from '../rules/canonical-document';
 import { CharacterRecord } from '../characters/character-repository';
 import { CharacterLibraryService } from '../characters/character-library.service';
 import { DEFENSE_ABILITIES, emptyBasicCharacter, validateBasicInfo } from './basic-info';

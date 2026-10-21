@@ -11,7 +11,7 @@ import { AppDialogService } from '../services/app-dialog.service';
 import { Component, computed, input, signal, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ExportedCharacter, Entry, InventoryItem, FeatureNotes } from '../models/character.model';
+import { ExportedCharacter, Entry, InventoryItem, ItemEntity, FeatureNotes } from '../models/character.model';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { FeatureUsesComponent } from './feature-uses.component';
 import { FeatureNotesComponent } from './feature-notes.component';
@@ -85,7 +85,7 @@ export class EquipmentPageComponent {
   readonly searchQuery = signal('');
   readonly inventoryFilter = signal<'all' | 'equipped' | 'attuned'>('all');
   readonly inventoryFilters = [{ value: 'all', label: 'All' }, { value: 'equipped', label: 'Equipped' }, { value: 'attuned', label: 'Attuned' }] as const;
-  readonly bonusFields = [{ key: 'bonusWeapon', label: 'Weapon' }, { key: 'bonusWeaponAttack', label: 'Weapon attack' }, { key: 'bonusWeaponDamage', label: 'Weapon damage' }, { key: 'bonusSavingThrow', label: 'Saving throws' }, { key: 'bonusSpellAttack', label: 'Spell attack' }, { key: 'bonusSpellSaveDc', label: 'Spell save DC' }, { key: 'bonusSpellDamage', label: 'Spell damage' }, { key: 'bonusAc', label: 'AC' }];
+  readonly bonusFields = [{ key: 'bonusWeapon', label: 'Weapon' }, { key: 'bonusWeaponAttack', label: 'Weapon attack' }, { key: 'bonusWeaponDamage', label: 'Weapon damage' }, { key: 'bonusSavingThrow', label: 'Saving throws' }, { key: 'bonusSpellAttack', label: 'Spell attack' }, { key: 'bonusSpellSaveDc', label: 'Spell save DC' }, { key: 'bonusSpellDamage', label: 'Spell damage' }, { key: 'bonusAc', label: 'AC' }] as const;
   private readonly inventoryRevision = signal(0);
   readonly visibleInventory = computed(() => {
     this.inventoryRevision();
@@ -196,20 +196,20 @@ export class EquipmentPageComponent {
     return this.expandedItems().has(id);
   }
 
-  requiresAttunement(item: any): boolean {
+  requiresAttunement(item: InventoryItem): boolean {
     const reqAttune = item.entity?.item?.['reqAttune'];
     return !!reqAttune && reqAttune !== 'false';
   }
 
-  getItemProp(item: any, prop: string): any {
+  getItemProp<K extends keyof ItemEntity>(item: InventoryItem, prop: K): ItemEntity[K] | null {
     if (!item.entity?.item) return null;
     return item.entity.item[prop];
   }
 
   hasItemStatistics(item: InventoryItem): boolean {
-    return ['dmg1', 'range', 'scfType'].some(prop => !!this.getItemProp(item, prop))
+    return (['dmg1', 'range', 'scfType'] as const).some(prop => !!this.getItemProp(item, prop))
       || !!(this.getItemProp(item, 'ac') ?? item.entity?.ac)
-      || ['weight', 'value'].some(prop => this.getItemProp(item, prop) != null);
+      || (['weight', 'value'] as const).some(prop => this.getItemProp(item, prop) != null);
   }
 
   formatGold(copperValue: any): string {
@@ -226,7 +226,7 @@ export class EquipmentPageComponent {
     return `${value} cp`;
   }
 
-  getItemEntries(item: any): Entry[] {
+  getItemEntries(item: InventoryItem): Entry[] {
     const entries = item.entity?.item?.['entries'];
     if (Array.isArray(entries)) {
       return entries as Entry[];
@@ -248,7 +248,7 @@ export class EquipmentPageComponent {
 
 
 
-  getItemTypeTags(item: any): string[] {
+  getItemTypeTags(item: InventoryItem): string[] {
     const tags: string[] = [];
     const entity = item.entity?.item;
     if (!entity) return tags;
@@ -287,7 +287,7 @@ export class EquipmentPageComponent {
     return tags;
   }
 
-  hasAnyBonus(item: any): boolean {
+  hasAnyBonus(item: InventoryItem): boolean {
     const entity = item.entity?.item;
     if (!entity) return false;
     

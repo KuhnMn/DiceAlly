@@ -1,5 +1,6 @@
-import { ContentRecord, normalize, object, string } from '../content/content.model';
-import { spellClassMemberships } from '../content/spell-membership';
+import type { SpellDefinition } from '../content/spell.model';
+import { ContentRecord, normalize } from '../content/content.model';
+import { spellDefinition } from '../content/spell-adapter';
 /** AND between clauses, OR between semicolon values. Only audited upstream fields are supported. */
 export function filterSpells(query: unknown, records: ReadonlyMap<string, ContentRecord>): ContentRecord[] {
   if (typeof query !== 'string' || query.length > 4096) throw new Error('Invalid spell filter expression.');
@@ -13,19 +14,23 @@ export function filterSpells(query: unknown, records: ReadonlyMap<string, Conten
     if (!['level','class','school','source','spell attack','components & miscellaneous'].includes(field)) throw new Error(`Unsupported spell filter field: ${field}`);
     if (field === 'level' && values.some(v => !/^[0-9]$/.test(v))) throw new Error('Invalid spell filter level.');
     if (field === 'components & miscellaneous' && values.some(v => v !== 'ritual')) throw new Error('Unsupported miscellaneous spell filter.');
-    return (record: ContentRecord): boolean => {
+    return (record: ContentRecord, definition: SpellDefinition): boolean => {
       switch (field) {
-        case 'level': return typeof record.data['level'] === 'number' && values.includes(String(record.data['level']));
-        case 'school': return values.includes(normalize(string(record.data['school'])));
+        case 'level': return values.includes(String(definition.level));
+        case 'school': return values.includes(normalize(definition.school ?? ''));
         case 'source': return values.includes(normalize(record.publication));
-        case 'components & miscellaneous': return object(record.data['meta'])?.['ritual'] === true;
-        case 'spell attack': return Array.isArray(record.data['spellAttack']) && record.data['spellAttack'].some(v => values.includes(normalize(string(v))));
+        case 'components & miscellaneous': return definition.meta?.ritual === true;
+        case 'spell attack': return definition.spellAttack?.some(attack => values.includes(normalize(attack))) === true;
         case 'class': {
-          return spellClassMemberships(record.data['classes']).some(entry => values.includes(normalize(entry.name)));
+          return [...definition.memberships.fromClassList, ...definition.memberships.fromClassListVariant].some(entry => values.includes(normalize(entry.name)));
         }
         default: return false;
       }
     };
   });
-  return [...records.values()].filter(record => record.kind === 'spell' && tests.every(test => test(record))).sort((a,b) => a.key.localeCompare(b.key));
+  return [...records.values()].filter(record => {
+    if (record.kind !== 'spell') return false;
+    const definition = spellDefinition(record);
+    return tests.every(test => test(record, definition));
+  }).sort((a,b) => a.key.localeCompare(b.key));
 }

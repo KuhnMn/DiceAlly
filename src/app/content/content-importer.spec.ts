@@ -1,9 +1,13 @@
+import { readHomebrewFile } from './homebrew-package';
 import { ContentCache } from './content-cache';
 import { featureReference, mapContent } from './content-adapter';
 import { importContent } from './content-importer';
 import { ContentRecord, DEFAULT_CONTENT_SOURCE, entityKey, ImportRevision } from './content.model';
-import { discoverFiles, FetchContent, ROOT_FILES } from './github-source';
-import { spellClassMemberships } from './spell-membership';
+import { FetchContent } from './github-source';
+import { discoverFiles, ROOT_FILES } from './content-discovery';
+import { spellRecordClasses } from './spell-adapter';
+import { coreDocumentFixture, homebrewDocumentFixture } from './content-fixtures.testing';
+import { validateCoreDocument, validateHomebrewDocument } from './content-schema';
 
 class MemoryCache implements ContentCache {
   revisions = new Map<string, Map<string, ContentRecord>>();
@@ -21,13 +25,53 @@ function fixture(overrides: Record<string, unknown> = {}, urls: string[] = []): 
     signal?.throwIfAborted(); urls.push(url);
     if (url.startsWith('https://api.github.com/')) return { value: { sha: commit }, bytes: 10 };
     const file = url.split(`/${commit}/data/`)[1];
-    const value = overrides[file] ?? (file.endsWith('/index.json') ? { TEST: `${file.split('/')[0]}-test.json` } :
-      file === 'class/class-test.json' ? { class: [{ name: 'Mage', source: 'TEST', classFeatures: ['Ability|Mage|TEST|1'] }], classFeature: [{ name: 'Ability', source: 'TEST', className: 'Mage', classSource: 'TEST', level: 1, entries: [] }] } :
-      file === 'spells/sources.json' ? {} : { feat: [{ name: file, source: 'TEST', entries: [] }] });
+    const value = file.endsWith('/index.json')
+      ? overrides[file] ?? { TEST: `${file.split('/')[0]}-test.json` }
+      : coreDocumentFixture(file, overrides[file] as Record<string, unknown> | undefined);
     return { value, bytes: JSON.stringify(value).length };
   };
 }
 describe('Content importer', () => {
+  beforeAll(async () => {
+    await validateCoreDocument(coreDocumentFixture('feats.json'), 'feats.json');
+    await validateHomebrewDocument(homebrewDocumentFixture({}), 'fixture.json');
+  }, 30000);
+  it('persists the agreed reference categories and reports excluded roots', async () => {
+    const cache = new MemoryCache();
+    const revision = await importContent(cache, { namespace: 'reference-content', source: DEFAULT_CONTENT_SOURCE }, fixture());
+    for (const [kind, file, name] of [
+      ['condition', 'conditionsdiseases.json', 'conditionsdiseases.json'],
+      ['status', 'conditionsdiseases.json', 'Fixture Status'],
+      ['variantrule', 'variantrules.json', 'variantrules.json'],
+      ['action', 'actions.json', 'actions.json'], ['facility', 'bastions.json', 'bastions.json'],
+      ['disease', 'conditionsdiseases.json', 'Fixture Disease'], ['object', 'objects.json', 'objects.json'],
+      ['sense', 'senses.json', 'senses.json'], ['skill', 'skills.json', 'skills.json'],
+      ['vehicle', 'vehicles.json', 'vehicles.json'],
+    ]) {
+      const record = await cache.get(revision.id, entityKey(kind, { name, source: 'TEST' }));
+      expect(record?.kind).toBe(kind);
+      expect(record?.file).toBe(file);
+      expect(record?.referenceDefinition).toMatchObject({ kind, version: 1, name });
+      expect(record?.data).toEqual({});
+    }
+    expect(revision.schemaSnapshot).toMatch(/^[a-f0-9]{64}$/);
+    expect(revision.diagnostics.some(issue => issue.code === 'unsupported-category' && issue.path === '/vehicleUpgrade')).toBe(true);
+  });
+  it('rejects malformed later files before storing their records and retains the active revision', async () => {
+    const cache = new MemoryCache();
+    try {
+      await importContent(cache, { namespace: 'invalid-action', source: DEFAULT_CONTENT_SOURCE }, fixture({
+        'actions.json': { action: [{ name: 'Broken', source: 'TEST', page: '1', entries: [] }] },
+      }));
+      throw new Error('Expected schema validation to fail.');
+    } catch (error) {
+      expect(error).toHaveProperty('diagnostics', expect.arrayContaining([
+        expect.objectContaining({ code: 'schema-invalid', file: 'actions.json', path: '/action/0/page', phase: 'validate' }),
+      ]));
+    }
+    expect(cache.active).toBe('old-revision');
+    expect(cache.revisions.size).toBe(0);
+  });
   it('downloads backgrounds from the original source and retains entries and structured proficiency choices', async () => {
     const cache = new MemoryCache(), urls: string[] = [];
     const revision = await importContent(cache, { namespace: 'backgrounds', source: DEFAULT_CONTENT_SOURCE }, fixture({
@@ -36,27 +80,24 @@ describe('Content importer', () => {
     const background = await cache.get(revision.id, entityKey('background', { name: 'Sage', source: 'TEST' }));
     expect(urls.some(url => url.endsWith('/data/backgrounds.json'))).toBe(true);
     expect(background!.data['entries']).toEqual(['A background.']);
-    expect(background!.data['skillProficiencies']).toEqual([{ arcana: true, choose: { from: ['history', 'religion'], count: 1 } }]);
+    expect(background!.characterOption?.proficiencies.skills).toEqual([{ arcana: true, choose: { from: ['history', 'religion'], count: 1 } }]);
   });
-  it('merges sources.json class lists with inline memberships, scoped to source book and spell name', async () => {
+  it('reads sources.json class lists scoped to source book and spell name', async () => {
     const cache = new MemoryCache();
     const revision = await importContent(cache, { namespace: 'one', source: DEFAULT_CONTENT_SOURCE }, fixture({
       'spells/spells-test.json': { spell: [
         { name: 'Shield', source: 'TEST', level: 1 },
         { name: 'Shield', source: 'OTHER', level: 1 },
-        { name: 'Minor Lifesteal', source: 'ValdaSpire24', level: 0, classes: {
-          fromClassList: [{ name: 'Wizard', source: 'XPHB' }, { name: 'Witch', source: 'ValdaWitch' }],
-        } },
+        { name: 'Minor Lifesteal', source: 'ValdaSpire24', level: 0 },
       ] },
       'spells/sources.json': {
-        _meta: {},
-        TEST: { Shield: { class: [{ name: 'Wizard', source: 'XPHB' }], classVariant: [{ name: 'Sorcerer', source: 'XPHB' }] } },
+        TEST: { Shield: { class: [{ name: 'Wizard', source: 'XPHB' }], classVariant: [{ name: 'Sorcerer', source: 'XPHB', definedInSource: 'TCE' }] } },
         OTHER: { Shield: { class: [{ name: 'Bard', source: 'XPHB' }] } },
-        ValdaSpire24: { 'Minor Lifesteal': { class: [{ name: 'Wizard', source: 'XPHB' }, { name: 'Necromancer', source: 'ValdaNecromancer' }] } },
+        ValdaSpire24: { 'Minor Lifesteal': { class: [{ name: 'Wizard', source: 'XPHB' }, { name: 'Witch', source: 'ValdaWitch' }, { name: 'Necromancer', source: 'ValdaNecromancer' }] } },
       },
     }));
-    const membership = async (name: string, source: string) => spellClassMemberships(
-      (await cache.get(revision.id, entityKey('spell', { name, source })))!.data['classes']);
+    const membership = async (name: string, source: string) => spellRecordClasses(
+      (await cache.get(revision.id, entityKey('spell', { name, source })))!);
     expect((await membership('Shield', 'TEST')).map(entry => entry.name)).toEqual(['Wizard', 'Sorcerer']);
     expect((await membership('Shield', 'OTHER')).map(entry => entry.name)).toEqual(['Bard']);
     expect((await membership('Minor Lifesteal', 'ValdaSpire24')).map(entry => entry.name).sort()).toEqual(['Necromancer', 'Witch', 'Wizard']);
@@ -147,9 +188,9 @@ describe('Content importer', () => {
       ] },
     }, urls));
     const monster = await cache.get(revision.id, entityKey('monster', { name: 'Variant', source: 'TEST' }));
-    expect(monster?.data['size']).toEqual(['S']);
-    expect(monster?.data['speed']).toEqual({ walk: 40 });
-    expect(monster?.data['senses']).toEqual(['darkvision 120 ft.']);
+    expect(monster?.monsterDefinition?.size).toEqual(['S']);
+    expect(monster?.monsterDefinition?.speed).toEqual({ walk: 40 });
+    expect(monster?.monsterDefinition?.senses).toEqual(['darkvision 120 ft.']);
     expect(monster?.data['trait']).toEqual([{ name: 'Synthetic', entries: ['The variant has DC 12.'] }]);
     expect(urls).toContain(`https://raw.githubusercontent.com/5etools-mirror-3/5etools-src/${commit}/data/bestiary/template.json`);
     expect(cache.active).toBe(revision.id);
@@ -172,4 +213,20 @@ describe('Content importer', () => {
     expect(cache.active).toBe('old-revision');
     expect(cache.revisions.size).toBe(0);
   });
+  it('discovers core templates required only by retained homebrew during a full reimport', async () => {
+    const cache = new MemoryCache(); const urls: string[] = [];
+    const file = await readHomebrewFile(homebrewDocumentFixture({ monster: [{
+      name: 'Brew Variant', source: 'TESTBREW',
+      _copy: { name: 'Base', source: 'TEST', _templates: [{ name: 'Large', source: 'TEST' }] },
+    }] }), 'retained.json');
+    const revision = await importContent(cache, { namespace: 'retained-template', source: DEFAULT_CONTENT_SOURCE, homebrewFiles: [file] }, fixture({
+      'bestiary/bestiary-test.json': { monster: [{ name: 'Base', source: 'TEST', size: ['M'], type: 'humanoid' }] },
+      'bestiary/template.json': { monsterTemplate: [{ name: 'Large', source: 'TEST', apply: { _root: { size: ['L'] } } }] },
+    }, urls));
+    expect(urls.some(url => url.endsWith('bestiary/template.json'))).toBe(true);
+    const copy = await cache.get(revision.id, entityKey('monster', { name: 'Brew Variant', source: 'TESTBREW' }));
+    expect(copy?.monsterDefinition?.size).toEqual(['L']);
+    expect(revision.files).toContain('bestiary/template.json');
+  });
+
 });

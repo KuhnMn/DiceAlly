@@ -2,9 +2,9 @@ import { mapContent } from '../content/content-adapter';
 import { filterSpells } from './spell-filters';
 describe('Audited spell filters', () => {
   const records = mapContent({ spell: [
-    { name: 'A',source: 'TEST',level: 1,school: 'A',meta: { ritual: true },classes: { fromClassList: [{ name: 'Wizard' }] } },
-    { name: 'B',source: 'TEST',level: 0,school: 'V',spellAttack: ['R'],classes: { fromClassListVariant: [{ name: 'Bard' }] } },
-    { name: 'C',source: 'OTHER',level: 1,school: 'N',classes: { fromClassList: [{ name: 'Cleric' }] } },
+    { name: 'A',source: 'TEST',level: 1,school: 'A',meta: { ritual: true },classes: { fromClassList: [{ name: 'Wizard', source: 'TEST' }] } },
+    { name: 'B',source: 'TEST',level: 0,school: 'V',spellAttack: ['R'],classes: { fromClassListVariant: [{ name: 'Bard', source: 'TEST' }] } },
+    { name: 'C',source: 'OTHER',level: 1,school: 'N',classes: { fromClassList: [{ name: 'Cleric', source: 'TEST' }] } },
   ] },'synthetic.json').records;
   const index = new Map(records.map(r => [r.key,r]));
   it('combines clauses with AND and values with OR, ignoring case', () => {

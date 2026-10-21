@@ -1,3 +1,4 @@
+import { monsterDefinition } from '../content/monster-adapter';
 import { EditorCombatIndex } from './editor-combat-index';
 import { CatalogMembershipIndex, catalogEntryKeys } from './catalog-membership-index';
 import { rankSearchResults } from '../search-ranking';
@@ -31,6 +32,10 @@ import { createMonsterEntry, setMonsterMaxHp } from './monster-selection';
   templateUrl: './monsters-editor.component.html', styleUrl: './editor.css',
 })
 export class MonstersEditorComponent implements OnInit, OnDestroy, DoCheck {
+  catalogHp(record: ContentRecord): number | string {
+    const hp = monsterDefinition(record).hp;
+    return hp && 'average' in hp ? hp.average : 'Special';
+  }
   private readonly combatIndex = inject(EditorCombatIndex);
   readonly sheet = input.required<ExportedCharacter>();
   private readonly membership = new CatalogMembershipIndex<Monster>();

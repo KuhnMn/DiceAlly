@@ -39,15 +39,16 @@ describe('Whole-character rule previews', () => {
     expect(lower.proposed?.session.currentHp).toBe(20); expect(lower.proposed?.session.resources[slot.id].used).toBe(4);
     expect(lower.adjustments.some(a => a.kind === 'hp-above-maximum')).toBe(true);
   });
-  it('applies effective Constitution to HP without accumulating species bonuses on repeats or replacements', () => {
+  it('keeps manual scores authoritative even when a saved species automation flag is enabled', () => {
     const f = fixture(); f.index.records.get('sky')!.data['ability'] = [{ con: 2 }];
     const first = previewCharacterRules({ ...f.input,applySpeciesAbilities: true },f.index);
-    expect(first.proposed?.maxHp).toBe(23); expect(first.proposed?.effectiveAbilities.con).toBe(16); expect(f.input.abilities.con).toBe(14);
+    expect(first.proposed?.maxHp).toBe(20); expect(first.proposed?.effectiveAbilities.con).toBe(14);
+    expect(first.proposed?.abilityContributions).toEqual([]); expect(f.input.abilities.con).toBe(14);
     const repeated = previewCharacterRules({ ...f.input,applySpeciesAbilities: true,previous: { features: first.proposed!.features,spells: first.proposed!.spells,pools: first.proposed!.pools,species: first.proposed!.species } },f.index);
-    expect(repeated.proposed?.maxHp).toBe(23);
+    expect(repeated.proposed?.maxHp).toBe(20);
     const sea = structuredClone(f.index.records.get('sky')!); sea.key = 'sea'; sea.name = 'Sea'; sea.data['ability'] = [{ wis: 2 }]; f.index.records.set('sea',sea);
     const changed = previewCharacterRules({ ...f.input,applySpeciesAbilities: true,species: { id: 'species',key: 'sea' } },f.index);
-    expect(changed.proposed?.maxHp).toBe(20); expect(changed.proposed?.effectiveAbilities.con).toBe(14); expect(changed.proposed?.effectiveAbilities.wis).toBe(12);
+    expect(changed.proposed?.maxHp).toBe(20); expect(changed.proposed?.effectiveAbilities.con).toBe(14); expect(changed.proposed?.effectiveAbilities.wis).toBe(10);
   });
   it('supports explicitly disabled proficiency automation while retaining manual expertise', () => {
     const f = fixture(); f.index.records.get('sky')!.data['languageProficiencies'] = [{ anyStandard: 1 }];
@@ -56,7 +57,7 @@ describe('Whole-character rule previews', () => {
     expect(manual.canAccept).toBe(true); expect(manual.proposed?.proficiencies).toEqual(f.input.manualProficiencies);
     expect(manual.proposed?.stats.skills.arcana).toBe(7);
   });
-  it('uses effective ability scores for optional prerequisites and ignores conflicting supplemental scores', () => {
+  it('uses manual ability scores for prerequisites regardless of imported bonuses or supplemental scores', () => {
     const f = fixture();
     const owner = f.index.records.get(f.input.classes.selections[0].classKey)!;
     owner.data['optionalfeatureProgression'] = [{ name: 'Options',featureType: ['TEST'],progression: { '1': 1 } }];
@@ -69,9 +70,12 @@ describe('Whole-character rule previews', () => {
     expect(previewCharacterRules(f.input,f.index).proposed).toBeUndefined();
     f.index.records.get('sky')!.data['ability'] = [{ str: 2 }];
     const enabled = previewCharacterRules({ ...f.input,applySpeciesAbilities: true },f.index);
-    expect(enabled.canAccept).toBe(true); expect(enabled.proposed?.effectiveAbilities.str).toBe(12);
+    expect(enabled.canAccept).toBe(false); expect(enabled.proposed).toBeUndefined();
     expect(f.input.abilities.str).toBe(10);
     expect(previewCharacterRules({ ...f.input,applySpeciesAbilities: false },f.index).proposed).toBeUndefined();
+    f.input.abilities.str = 12;
+    const manual = previewCharacterRules(f.input,f.index);
+    expect(manual.canAccept).toBe(true); expect(manual.proposed?.effectiveAbilities.str).toBe(12);
   });
   it('blocks the whole proposal until a proficiency package is selected and regenerates on switching', () => {
     const f = fixture(); f.index.records.get('sky')!.data['languageProficiencies'] = [{ common: true },{ elvish: true }];

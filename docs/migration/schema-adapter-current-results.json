@@ -1,0 +1,336 @@
+{
+  "status": "passed",
+  "mode": "current",
+  "applicationCommit": "a242e4183e7d3c80b2d3bcd6a74181222165e99b",
+  "contentCommit": "90d343cde64cf8dce1083ea0525a6b0b9e545f2e",
+  "adapterVersion": 21,
+  "schemaSnapshot": "1b9d484ec2ccf94652eb0277578aa269d31c1b440e4ef9a089fef9037db2b26f",
+  "referenceDefinitionCounts": {
+    "condition": 30,
+    "disease": 29,
+    "status": 5,
+    "variantrule": 245,
+    "action": 48,
+    "facility": 70,
+    "object": 37,
+    "sense": 8,
+    "skill": 36,
+    "vehicle": 39
+  },
+  "files": 165,
+  "metrics": {
+    "bytes": 25176499,
+    "records": 22112,
+    "elapsedMs": 6717,
+    "mappedBytes": 53019789
+  },
+  "counts": {
+    "action": 48,
+    "background": 175,
+    "baseitem": 230,
+    "class": 30,
+    "classFeature": 677,
+    "condition": 30,
+    "disease": 29,
+    "facility": 70,
+    "feat": 305,
+    "item": 9119,
+    "itemEntry": 13,
+    "itemGroup": 119,
+    "itemMastery": 8,
+    "itemProperty": 27,
+    "itemType": 67,
+    "magicvariant": 230,
+    "monster": 4574,
+    "monsterTemplate": 66,
+    "object": 37,
+    "optionalfeature": 221,
+    "race": 160,
+    "sense": 8,
+    "skill": 36,
+    "species": 258,
+    "spell": 969,
+    "status": 5,
+    "subclass": 330,
+    "subclassFeature": 1499,
+    "subrace": 98,
+    "table": 2390,
+    "variantrule": 245,
+    "vehicle": 39
+  },
+  "diagnosticCount": 44,
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "code": "unsupported-category",
+      "phase": "map",
+      "file": "items-base.json",
+      "path": "/itemTypeAdditionalEntries",
+      "message": "Content category itemTypeAdditionalEntries is valid but outside the supported import scope (2 records excluded)."
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-category",
+      "phase": "map",
+      "file": "generated/gendata-tables.json",
+      "path": "/tableGroup",
+      "message": "Content category tableGroup is valid but outside the supported import scope (22 records excluded)."
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-category",
+      "phase": "map",
+      "file": "vehicles.json",
+      "path": "/vehicleUpgrade",
+      "message": "Content category vehicleUpgrade is valid but outside the supported import scope (31 records excluded)."
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-nrh-tlt.json",
+      "message": "No supported content category was found."
+    },
+    {
+      "severity": "warning",
+      "code": "unsupported-category",
+      "phase": "map",
+      "file": "bestiary/template.json",
+      "path": "/legendaryGroupTemplate",
+      "message": "Content category legendaryGroupTemplate is valid but outside the supported import scope (1 records excluded)."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Antimatter Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Antimatter Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Automatic Pistol: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Automatic Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Automatic Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Hooked Shortspear: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Hunting Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Hunting Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Laser Pistol: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Laser Pistol: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Laser Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Laser Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Light Repeating Crossbow: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Revolver: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Revolver: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Semiautomatic Pistol: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Shotgun: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Shotgun: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Antimatter Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Antimatter Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Automatic Pistol: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Automatic Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Automatic Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Hooked Shortspear: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Hunting Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Hunting Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Laser Pistol: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Laser Pistol: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Laser Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Laser Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Light Repeating Crossbow: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Revolver: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Revolver: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Semiautomatic Pistol: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Shotgun: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Shotgun: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "variantrules.json",
+      "record": "[\"variantrule\",\"ocean environs\",\"gos\"]",
+      "message": "missing entry-table at entries[1].entries[2].rows[9][1]: Treasure Hoard: Challenge 0—4|DMG"
+    },
+    {
+      "severity": "warning",
+      "file": "variantrules.json",
+      "record": "[\"variantrule\",\"ocean environs\",\"gos\"]",
+      "message": "missing entry-table at entries[12].entries[1].rows[9][1]: Treasure Hoard: Challenge 5—10|DMG"
+    },
+    {
+      "severity": "warning",
+      "file": "generated/gendata-tables.json",
+      "record": "[\"table\",\"underwater encounters (levels 5—10)\",\"xge\"]",
+      "message": "missing entry-table at rows[7][1]: Treasure Hoard: Challenge 5—10|DMG"
+    }
+  ],
+  "nodeSampledHeapBytes": 327919744
+}

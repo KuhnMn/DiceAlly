@@ -1,3 +1,5 @@
+import { contentEntries } from '../content/content-entries';
+import { itemTypeUid } from '../content/item.model';
 import { CatalogMembershipIndex, catalogEntryKeys } from './catalog-membership-index';
 import { ListControlsComponent } from '../list-controls.component';
 import { CatalogResultRowComponent } from './catalog-result-row.component';
@@ -81,7 +83,7 @@ export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
     return this.membership.has(entries, catalogEntryKeys, JSON.stringify(['key', record.key]))
       || this.membership.has(entries, catalogEntryKeys, JSON.stringify(['name', record.name, record.publication]));
   }
-  catalogEntries(record: ContentRecord): Entry[] { return Array.isArray(record.data['entries']) ? record.data['entries'] as Entry[] : []; }
+  catalogEntries(record: ContentRecord): Entry[] { return contentEntries(record); }
   private append(sheet: ExportedCharacter, item: InventoryItem) {
     item.allowMultiples = this.stackable;
     item.count = this.stackable && Number.isFinite(this.quantity) ? Math.max(0, Math.floor(this.quantity)) : 1;
@@ -110,7 +112,7 @@ export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
     if (this.customValue != null) item.entity!.item.value = this.customValue;
     if (type) {
       item.entity!.itemType = type.name;
-      item.entity!.item.type = `${String(type.data['abbreviation'] ?? type.name)}|${type.publication}`;
+      item.entity!.item.type = itemTypeUid(type);
     }
     this.append(this.sheet(), item);
     this.customName = ''; this.customDescription = ''; this.customValue = null; this.customType = '';

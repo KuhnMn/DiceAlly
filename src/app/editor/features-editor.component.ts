@@ -1,10 +1,12 @@
+import { contentEntries } from '../content/content-entries';
+import { featureRecordMetadata, matchesFeatureRecord, featureRecordCategories, matchesFeatureRecordCategories } from './feature-selection';
 import { EditorCombatIndex } from './editor-combat-index';
 import { CatalogMembershipIndex } from './catalog-membership-index';
 import { compareSearchMatches } from '../search-ranking';
 import { EditorEntryRowComponent } from './editor-entry-row.component';
 import { FeatureFiltersComponent } from '../feature-filters.component';
 import { featureCategories, featureCategoryLabel, matchesFeatureCategories } from './feature-selection';
-import { featureFilterData, featureFilterOptions, featureFilterValues, matchesFeatureFilters } from './feature-selection';
+import { featureFilterData, featureFilterOptions, matchesFeatureFilters } from './feature-selection';
 import { HorizontalRowDirective } from '../sheet/horizontal-row.directive';
 import { CatalogResultRowComponent } from './catalog-result-row.component';
 import { ListControlsComponent } from '../list-controls.component';
@@ -35,6 +37,7 @@ import { FEATURE_TYPES, FeatureType, classFeatureKey, createFeatureEntry, featur
   templateUrl: './features-editor.component.html', styleUrl: './editor.css',
 })
 export class FeaturesEditorComponent implements OnInit, OnDestroy, DoCheck {
+  readonly catalogEntries = contentEntries;
   private readonly combatIndex = inject(EditorCombatIndex);
   readonly sheet = input.required<ExportedCharacter>();
   private readonly membership = new CatalogMembershipIndex<FeatureEntryFull>();
@@ -66,6 +69,7 @@ export class FeaturesEditorComponent implements OnInit, OnDestroy, DoCheck {
   displayedCategories: string[] = [];
   readonly categoryLabel = featureCategoryLabel;
   readonly categories = featureCategories;
+  readonly recordCategories = featureRecordCategories;
   readonly filterData = featureFilterData;
   readonly catalogOptions = signal<{ classes: string[]; levels: number[]; categories: string[] }>({ classes: [], levels: [], categories: [] });
   private displayedCache?: { type: FeatureType; options: ReturnType<typeof featureFilterOptions>; categories: string[] };
@@ -110,9 +114,10 @@ export class FeaturesEditorComponent implements OnInit, OnDestroy, DoCheck {
       .sort((a, b) => compareSearchMatches(a.name, b.name, this.listSearch));
   }
   readonly entries = featureEntries;
-  catalogMetadata(record: ContentRecord) { return featureFilterValues(record.data); }
+  catalogMetadata(record: ContentRecord) { return featureRecordMetadata(record); }
   qualifier(record: ContentRecord): string {
-    return [record.data['className'], record.data['subclassShortName'], record.data['level'] != null ? `Level ${record.data['level']}` : '', record.publication].filter(Boolean).join(' · ');
+    const metadata = featureRecordMetadata(record);
+    return [...metadata.classes, metadata.subclass, ...metadata.levels.map(level => `Level ${level}`), record.publication].filter(Boolean).join(' ? ');
   }
   change() { this.membership.clear(); this.displayedCache = undefined; this.combatIndex.clear(); this.view.markForCheck(); this.edited.emit(); }
   openCatalog() {
@@ -134,10 +139,10 @@ export class FeaturesEditorComponent implements OnInit, OnDestroy, DoCheck {
         await this.cache.searchCategory(revision.id, FEATURE_TYPES.find(type => type.value === kind)!.kinds, '', 0, 0, record => {
           if (!this.sourceBooks.allows(record.publication, books)) return false;
           if (kind === 'CLASS_FEATURE') {
-            const values = featureFilterOptions([record.data]);
+            const values = featureRecordMetadata(record);
             values.classes.forEach(name => classes.add(name)); values.levels.forEach(level => levels.add(level));
           }
-          if (kind !== 'CLASS_FEATURE') featureCategories(record.data, kind).forEach(type => categories.add(type));
+          if (kind !== 'CLASS_FEATURE') featureRecordCategories(record).forEach(type => categories.add(type));
           return false;
         });
         if (isCurrent()) {
@@ -169,9 +174,9 @@ export class FeaturesEditorComponent implements OnInit, OnDestroy, DoCheck {
     const kind = this.selectedType, categories = [...this.catalogCategories];
     return {
       kinds: this.types.find(type => type.value === this.selectedType)!.kinds,
-      order: (a, b) => Math.min(...featureFilterValues(a.data).levels, Infinity) - Math.min(...featureFilterValues(b.data).levels, Infinity),
+      order: (a, b) => Math.min(...featureRecordMetadata(a).levels, Infinity) - Math.min(...featureRecordMetadata(b).levels, Infinity),
       search: this.search,
-      includes: record => this.sourceBooks.allows(record.publication, books) && (kind === 'CLASS_FEATURE' ? matchesFeatureFilters(record.data, classes, levels) : matchesFeatureCategories(record.data, kind, categories)),
+      includes: record => this.sourceBooks.allows(record.publication, books) && (kind === 'CLASS_FEATURE' ? matchesFeatureRecord(record, classes, levels) : matchesFeatureRecordCategories(record, categories)),
     };
   }
   isSelected(record: ContentRecord) {

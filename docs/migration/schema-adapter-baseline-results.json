@@ -1,0 +1,642 @@
+{
+  "status": "passed",
+  "mode": "baseline",
+  "applicationCommit": "a242e4183e7d3c80b2d3bcd6a74181222165e99b",
+  "contentCommit": "90d343cde64cf8dce1083ea0525a6b0b9e545f2e",
+  "adapterVersion": 8,
+  "files": 159,
+  "metrics": {
+    "bytes": 24836024,
+    "records": 21827,
+    "elapsedMs": 1123,
+    "mappedBytes": 48379631
+  },
+  "counts": {
+    "background": 175,
+    "baseitem": 230,
+    "class": 30,
+    "classFeature": 677,
+    "condition": 30,
+    "feat": 305,
+    "item": 9119,
+    "itemGroup": 119,
+    "itemMastery": 8,
+    "itemProperty": 27,
+    "itemType": 67,
+    "magicvariant": 230,
+    "monster": 4574,
+    "monsterTemplate": 66,
+    "optionalfeature": 221,
+    "race": 160,
+    "species": 258,
+    "spell": 969,
+    "subclass": 330,
+    "subclassFeature": 1499,
+    "subrace": 98,
+    "table": 2390,
+    "variantrule": 245
+  },
+  "diagnosticCount": 100,
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-nrh-tlt.json",
+      "message": "No supported content category was found."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Antimatter Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Antimatter Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Automatic Pistol: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Automatic Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Automatic Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Hooked Shortspear: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Hunting Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Hunting Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Laser Pistol: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Laser Pistol: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Laser Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Laser Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Light Repeating Crossbow: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Revolver: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Revolver: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Semiautomatic Pistol: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Shotgun: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"adamantine weapon\",\"xge\"]",
+      "message": "Adamantine Shotgun: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Antimatter Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Antimatter Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Automatic Pistol: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Automatic Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Automatic Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Hooked Shortspear: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Hunting Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Hunting Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Laser Pistol: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Laser Pistol: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Laser Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Laser Rifle: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Light Repeating Crossbow: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Revolver: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Revolver: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Semiautomatic Pistol: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Shotgun: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"silvered weapon\",\"phb\"]",
+      "message": "Silvered Shotgun: value is unknown because the base definition has no numeric value; expression retained."
+    },
+    {
+      "severity": "warning",
+      "file": "variantrules.json",
+      "record": "[\"variantrule\",\"ocean environs\",\"gos\"]",
+      "message": "missing entry-table at entries[1].entries[2].rows[9][1]: Treasure Hoard: Challenge 0—4|DMG"
+    },
+    {
+      "severity": "warning",
+      "file": "variantrules.json",
+      "record": "[\"variantrule\",\"ocean environs\",\"gos\"]",
+      "message": "missing entry-table at entries[12].entries[1].rows[9][1]: Treasure Hoard: Challenge 5—10|DMG"
+    },
+    {
+      "severity": "warning",
+      "file": "items.json",
+      "record": "[\"item\",\"crusader's shortsword\",\"cos\"]",
+      "message": "ambiguous entry-item at entries[0]: +1 shortsword"
+    },
+    {
+      "severity": "warning",
+      "file": "items.json",
+      "record": "[\"item\",\"dowsing dagger\",\"xmts\"]",
+      "message": "ambiguous entry-item at entries[0]: +1 dagger"
+    },
+    {
+      "severity": "warning",
+      "file": "items.json",
+      "record": "[\"item\",\"figurine of wondrous power, ivory goats\",\"xdmg\"]",
+      "message": "ambiguous entry-item at entries[3].entries[1].items[0].entries[0]: +1 Lance|XDMG"
+    },
+    {
+      "severity": "warning",
+      "file": "items.json",
+      "record": "[\"item\",\"figurine of wondrous power, ivory goats\",\"xdmg\"]",
+      "message": "ambiguous entry-item at entries[3].entries[1].items[0].entries[0]: +2 Longsword|XDMG"
+    },
+    {
+      "severity": "warning",
+      "file": "items.json",
+      "record": "[\"item\",\"pirate's cutlass\",\"xmts\"]",
+      "message": "ambiguous entry-item at entries[0]: +1 shortsword"
+    },
+    {
+      "severity": "warning",
+      "file": "items.json",
+      "record": "[\"item\",\"platinum scarf\",\"ftd\"]",
+      "message": "ambiguous entry-item at entries[3].entries[0]: +1 shield"
+    },
+    {
+      "severity": "warning",
+      "file": "items.json",
+      "record": "[\"item\",\"prying blade\",\"xmts\"]",
+      "message": "ambiguous entry-item at entries[0]: +1 shortsword"
+    },
+    {
+      "severity": "warning",
+      "file": "items.json",
+      "record": "[\"item\",\"ruidium shield\",\"crcotn\"]",
+      "message": "ambiguous entry-item at entries[4].entries[0]: +2 shield"
+    },
+    {
+      "severity": "warning",
+      "file": "items.json",
+      "record": "[\"item\",\"winter's dark bite\",\"hftt\"]",
+      "message": "ambiguous entry-item at entries[1]: +1 greatsword"
+    },
+    {
+      "severity": "warning",
+      "file": "items.json",
+      "record": "[\"item\",\"winter's dark bite\",\"hftt\"]",
+      "message": "ambiguous entry-item at entries[1]: +3 greatsword"
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"+1 shield (*)\",\"dmg\"]",
+      "message": "ambiguous entry-item at entries[0]: +1 shield"
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"+2 shield (*)\",\"dmg\"]",
+      "message": "ambiguous entry-item at entries[0]: +2 shield"
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"+3 shield (*)\",\"dmg\"]",
+      "message": "ambiguous entry-item at entries[0]: +3 shield"
+    },
+    {
+      "severity": "warning",
+      "file": "magicvariants.json",
+      "record": "[\"magicvariant\",\"arrow of slaying (*)\",\"dmg\"]",
+      "message": "ambiguous entry-item at entries[0]: arrow of slaying"
+    },
+    {
+      "severity": "warning",
+      "file": "spells/spells-phb.json",
+      "record": "[\"spell\",\"reincarnate\",\"phb\"]",
+      "message": "ambiguous entry-race at entries[2].rows[0][1]: Dragonborn"
+    },
+    {
+      "severity": "warning",
+      "file": "spells/spells-phb.json",
+      "record": "[\"spell\",\"reincarnate\",\"phb\"]",
+      "message": "ambiguous entry-race at entries[2].rows[8][1]: Half-elf"
+    },
+    {
+      "severity": "warning",
+      "file": "spells/spells-phb.json",
+      "record": "[\"spell\",\"reincarnate\",\"phb\"]",
+      "message": "ambiguous entry-race at entries[2].rows[9][1]: Half-orc"
+    },
+    {
+      "severity": "warning",
+      "file": "spells/spells-phb.json",
+      "record": "[\"spell\",\"reincarnate\",\"phb\"]",
+      "message": "ambiguous entry-race at entries[2].rows[12][1]: Human"
+    },
+    {
+      "severity": "warning",
+      "file": "spells/spells-phb.json",
+      "record": "[\"spell\",\"reincarnate\",\"phb\"]",
+      "message": "ambiguous entry-race at entries[2].rows[13][1]: Tiefling"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-bmt.json",
+      "record": "[\"monster\",\"boss augustus\",\"bmt\"]",
+      "message": "ambiguous entry-item at trait[1].entries[0]: +2 Longsword"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-cos.json",
+      "record": "[\"monster\",\"vladimir horngaard\",\"cos\"]",
+      "message": "ambiguous entry-item at trait[2].entries[0]: +2 greatsword"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-hotdq.json",
+      "record": "[\"monster\",\"talis the white\",\"hotdq\"]",
+      "message": "ambiguous entry-item at trait[0].entries[0]: +1 scale mail"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-imr.json",
+      "record": "[\"monster\",\"sir ursas\",\"imr\"]",
+      "message": "ambiguous entry-item at trait[0].entries[0]: plate armor of fire resistance"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-imr.json",
+      "record": "[\"monster\",\"thessalar\",\"imr\"]",
+      "message": "ambiguous entry-item at trait[0].entries[0]: +1 dagger"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-llk.json",
+      "record": "[\"monster\",\"garret levistusson\",\"llk\"]",
+      "message": "ambiguous entry-item at trait[0].entries[0]: Gambler's Blade longsword|LLK"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mabjov.json",
+      "record": "[\"monster\",\"flimp shagglecran\",\"mabjov\"]",
+      "message": "ambiguous entry-item at trait[2].entries[0]: +2 plate armor"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mabjov.json",
+      "record": "[\"monster\",\"flimp shagglecran\",\"mabjov\"]",
+      "message": "ambiguous entry-item at trait[2].entries[0]: +2 warhammer"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mabjov.json",
+      "record": "[\"monster\",\"kagain\",\"mabjov\"]",
+      "message": "ambiguous entry-item at trait[0].entries[0]: +3 greataxe"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mabjov.json",
+      "record": "[\"monster\",\"nauk\",\"mabjov\"]",
+      "message": "ambiguous entry-item at trait[2].entries[0]: adamantine plate armor"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mabjov.json",
+      "record": "[\"monster\",\"nauk\",\"mabjov\"]",
+      "message": "ambiguous entry-item at trait[2].entries[0]: +1 maul"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mabjov.json",
+      "record": "[\"monster\",\"nauk\",\"mabjov\"]",
+      "message": "ambiguous entry-item at trait[2].entries[0]: +1 heavy crossbow"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mabjov.json",
+      "record": "[\"monster\",\"vellin farstride\",\"mabjov\"]",
+      "message": "ambiguous entry-item at trait[4].entries[0]: +1 shortsword"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mabjov.json",
+      "record": "[\"monster\",\"vellin farstride\",\"mabjov\"]",
+      "message": "ambiguous entry-item at trait[4].entries[0]: +1 shield"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mabjov.json",
+      "record": "[\"monster\",\"viconia devir\",\"mabjov\"]",
+      "message": "ambiguous entry-item at trait[2].entries[0]: +3 mace"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mcv2dc.json",
+      "record": "[\"monster\",\"verminaard\",\"mcv2dc\"]",
+      "message": "ambiguous entry-item at trait[2].entries[0]: +2 plate armor"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mm.json",
+      "record": "[\"monster\",\"drow\",\"mm\"]",
+      "message": "ambiguous entry-item at variant[0].entries[0].entries[1]: +1 chain shirt"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mm.json",
+      "record": "[\"monster\",\"drow\",\"mm\"]",
+      "message": "ambiguous entry-item at variant[0].entries[0].entries[1]: +1 shortsword"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mm.json",
+      "record": "[\"monster\",\"drow elite warrior\",\"mm\"]",
+      "message": "ambiguous entry-item at variant[0].entries[0].entries[1]: +2 Studded Leather Armor||+2 studded leather"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mm.json",
+      "record": "[\"monster\",\"drow elite warrior\",\"mm\"]",
+      "message": "ambiguous entry-item at variant[0].entries[0].entries[1]: +2 shortsword"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mm.json",
+      "record": "[\"monster\",\"drow priestess of lolth\",\"mm\"]",
+      "message": "ambiguous entry-item at variant[0].entries[0].entries[1]: +3 scale mail"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mm.json",
+      "record": "[\"monster\",\"warhorse\",\"mm\"]",
+      "message": "ambiguous entry-item at variant[0].entries[1].rows[0][1]: Leather barding|phb|Leather"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mm.json",
+      "record": "[\"monster\",\"warhorse\",\"mm\"]",
+      "message": "ambiguous entry-item at variant[0].entries[1].rows[1][1]: Studded leather barding|phb|Studded leather"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mm.json",
+      "record": "[\"monster\",\"warhorse\",\"mm\"]",
+      "message": "ambiguous entry-item at variant[0].entries[1].rows[2][1]: Ring mail barding|phb|Ring mail"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mm.json",
+      "record": "[\"monster\",\"warhorse\",\"mm\"]",
+      "message": "ambiguous entry-item at variant[0].entries[1].rows[3][1]: Scale mail barding|phb|Scale mail"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mm.json",
+      "record": "[\"monster\",\"warhorse\",\"mm\"]",
+      "message": "ambiguous entry-item at variant[0].entries[1].rows[4][1]: Chain mail barding|phb|Chain mail"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mm.json",
+      "record": "[\"monster\",\"warhorse\",\"mm\"]",
+      "message": "ambiguous entry-item at variant[0].entries[1].rows[5][1]: Splint barding|phb|Splint"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-mm.json",
+      "record": "[\"monster\",\"warhorse\",\"mm\"]",
+      "message": "ambiguous entry-item at variant[0].entries[1].rows[6][1]: Plate barding|phb|Plate"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-toa.json",
+      "record": "[\"monster\",\"dragonbait\",\"toa\"]",
+      "message": "ambiguous entry-item at trait[1].entries[0]: holy avenger longsword"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-toa.json",
+      "record": "[\"monster\",\"ras nsi\",\"toa\"]",
+      "message": "ambiguous entry-item at trait[0].entries[0]: flame tongue longsword"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-vd.json",
+      "record": "[\"monster\",\"vecna the archlich\",\"vd\"]",
+      "message": "ambiguous entry-item at trait[1].entries[0]: +2 dagger"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-veor.json",
+      "record": "[\"monster\",\"vecna the archlich\",\"veor\"]",
+      "message": "ambiguous entry-item at trait[1].entries[0]: +2 Dagger"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-wbtw.json",
+      "record": "[\"monster\",\"elkhorn\",\"wbtw\"]",
+      "message": "ambiguous entry-item at trait[0].entries[0]: +1 longsword"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-wbtw.json",
+      "record": "[\"monster\",\"mercion\",\"wbtw\"]",
+      "message": "ambiguous entry-item at trait[0].entries[0]: +1 quarterstaff"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-wbtw.json",
+      "record": "[\"monster\",\"molliver\",\"wbtw\"]",
+      "message": "ambiguous entry-item at trait[1].entries[0]: +1 leather armor"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-wbtw.json",
+      "record": "[\"monster\",\"warduke\",\"wbtw\"]",
+      "message": "ambiguous entry-item at trait[0].entries[0]: flame tongue longsword"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-wdh.json",
+      "record": "[\"monster\",\"durnan\",\"wdh\"]",
+      "message": "ambiguous entry-item at trait[0].entries[0]: Greatsword of Sharpness||sword of sharpness (greatsword)"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-wdh.json",
+      "record": "[\"monster\",\"jarlaxle baenre\",\"wdh\"]",
+      "message": "ambiguous entry-item at trait[0].entries[0]: +3 leather armor"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-wdh.json",
+      "record": "[\"monster\",\"jarlaxle baenre\",\"wdh\"]",
+      "message": "ambiguous entry-item at trait[0].entries[0]: +3 rapier"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-wdh.json",
+      "record": "[\"monster\",\"laeral silverhand\",\"wdh\"]",
+      "message": "ambiguous entry-item at trait[0].entries[0]: flame tongue longsword"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-wdh.json",
+      "record": "[\"monster\",\"mirt\",\"wdh\"]",
+      "message": "ambiguous entry-item at trait[0].entries[0]: +1 longsword"
+    },
+    {
+      "severity": "warning",
+      "file": "bestiary/bestiary-wdh.json",
+      "record": "[\"monster\",\"mirt\",\"wdh\"]",
+      "message": "ambiguous entry-item at trait[0].entries[0]: +1 dagger"
+    }
+  ],
+  "nodeSampledHeapBytes": 223069088
+}

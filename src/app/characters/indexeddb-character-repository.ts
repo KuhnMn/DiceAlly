@@ -1,7 +1,8 @@
 import type { CharacterRecord, CharacterRepository } from './character-repository';
 import { ExportedCharacter } from '../models/character.model';
-import { canonicalDocument } from '../rules/character-document';
+import { canonicalDocument } from '../rules/canonical-document';
 import { portableCharacter } from './portable-character';
+import { validateSpeciesEntity } from '../content/species-compatibility';
 
 /** Uses the existing creator database, so previously saved creator characters need no conversion. */
 export class IndexedDbCharacterRepository implements CharacterRepository {
@@ -30,8 +31,13 @@ export class IndexedDbCharacterRepository implements CharacterRepository {
     const db = await this.db();
     return new Promise((resolve, reject) => {
       const request = db.transaction('characters').objectStore('characters').getAll();
-      request.onsuccess = () => resolve((request.result as CharacterRecord[])
-        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+      request.onsuccess = () => {
+        try {
+          const records = request.result as CharacterRecord[];
+          records.forEach(record => validateSpeciesEntity(record.sheet.species?.entity));
+          resolve(records.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+        } catch (error) { reject(error); }
+      };
       request.onerror = () => reject(request.error);
     });
   }
@@ -41,7 +47,10 @@ export class IndexedDbCharacterRepository implements CharacterRepository {
     const db = await this.db();
     return new Promise((resolve, reject) => {
       const request = db.transaction('characters').objectStore('characters').get(id);
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () => {
+        try { validateSpeciesEntity((request.result as CharacterRecord | undefined)?.sheet.species?.entity); resolve(request.result); }
+        catch (error) { reject(error); }
+      };
       request.onerror = () => reject(request.error);
     });
   }

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ally.local/content/spell.json",
+  "type": "object",
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "level": {
+      "$ref": "https://ally.local/5etools/brew/spells/spells.json#/$defs/spellData/properties/level"
+    },
+    "school": {
+      "$ref": "https://ally.local/5etools/brew/spells/spells.json#/$defs/spellData/properties/school"
+    },
+    "time": {
+      "$ref": "https://ally.local/5etools/brew/spells/spells.json#/$defs/spellData/properties/time"
+    },
+    "range": {
+      "$ref": "https://ally.local/5etools/brew/spells/spells.json#/$defs/spellData/properties/range"
+    },
+    "components": {
+      "$ref": "https://ally.local/5etools/brew/spells/spells.json#/$defs/spellData/properties/components"
+    },
+    "duration": {
+      "$ref": "https://ally.local/5etools/brew/spells/spells.json#/$defs/spellData/properties/duration"
+    },
+    "meta": {
+      "$ref": "https://ally.local/5etools/brew/spells/spells.json#/$defs/spellData/properties/meta"
+    },
+    "spellAttack": {
+      "$ref": "https://ally.local/5etools/brew/spells/spells.json#/$defs/spellData/properties/spellAttack"
+    },
+    "memberships": {
+      "type": "object",
+      "properties": {
+        "fromClassList": {
+          "type": "array",
+          "items": {
+            "$ref": "https://ally.local/5etools/brew/spells/spells.json#/$defs/class"
+          }
+        },
+        "fromClassListVariant": {
+          "type": "array",
+          "items": {
+            "$ref": "https://ally.local/5etools/brew/spells/spells.json#/$defs/class"
+          }
+        },
+        "fromSubclass": {
+          "$ref": "https://ally.local/5etools/brew/spells/spells.json#/$defs/spellData/properties/classes/properties/fromSubclass"
+        }
+      },
+      "required": [
+        "fromClassList",
+        "fromClassListVariant"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "version",
+    "level",
+    "memberships"
+  ],
+  "additionalProperties": false
+}

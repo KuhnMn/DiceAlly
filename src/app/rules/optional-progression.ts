@@ -1,4 +1,5 @@
-import { entityKey, object, string } from '../content/content.model';
+import { classDefinition } from '../content/class-adapter';
+import { object } from '../content/content.model';
 import { ContentClassSelection, ContentRulesIndex } from './feature-rules';
 import { OptionalFeatureSlot } from './optional-feature-rules';
 /** Counts are cumulative totals, not increments at each level. */
@@ -13,38 +14,39 @@ export function deriveOptionalSlots(selections: ContentClassSelection[],index: C
       diagnostics.push('Invalid progression class selection.'); continue;
     }
     ids.add(selection.selectionId); classes.add(selection.classKey);
-    const parent = index.records.get(selection.classKey); const sub = selection.subclassKey ? index.records.get(selection.subclassKey) : undefined;
-    if (!parent || parent.kind !== 'class' || (selection.subclassKey && (!sub || sub.kind !== 'subclass'
-      || entityKey('class',{ name: sub.data['className'],source: sub.data['classSource'] }) !== parent.key))) {
-      diagnostics.push('Invalid progression class/subclass ancestry.'); continue;
-    }
-    for (const owner of [parent,...(sub ? [sub] : [])]) {
-      const progression = owner.data['optionalfeatureProgression']; if (progression === undefined) continue;
-      if (!Array.isArray(progression)) { diagnostics.push('Optional progression must be an array.'); continue; }
-      progression.forEach((raw,position) => {
-        const entry = object(raw); const types = entry?.['featureType']; const values = entry?.['progression'];
-        const name = string(entry?.['name']); const id = JSON.stringify(['optional-slot',index.sourceIdentity,selection.selectionId,owner.key,position,name]);
-        if (!entry || Object.keys(entry).some(k => !['name','featureType','progression'].includes(k)) || !Array.isArray(types) || !types.length || types.some(t => typeof t !== 'string' || !t)) {
-          diagnostics.push(`Optional progression handler required for ${id}`); return;
-        }
-        let count: unknown;
-        if (Array.isArray(values)) {
-          if (values.some(v => !Number.isInteger(v) || Number(v) < 0) || values.length < selection.level) { diagnostics.push(`Invalid progression table: ${id}`); return; }
-          count = values[selection.level - 1];
-        } else {
-          const table = object(values);
-          if (!table || Object.entries(table).some(([level,n]) => !/^\d+$/.test(level) || Number(level) < 1 || Number(level) > 20 || !Number.isInteger(n) || Number(n) < 0)) {
-            diagnostics.push(`Unsupported progression table: ${id}`); return;
+    try {
+      const parent = index.records.get(selection.classKey); const sub = selection.subclassKey ? index.records.get(selection.subclassKey) : undefined;
+      if (!parent || parent.kind !== 'class' || (selection.subclassKey && (!sub || sub.kind !== 'subclass'
+        || classDefinition(sub).parent?.key !== parent.key))) {
+        diagnostics.push('Invalid progression class/subclass ancestry.'); continue;
+      }
+      for (const owner of [parent,...(sub ? [sub] : [])]) {
+        const progression = classDefinition(owner).optionalFeatures;
+        progression.forEach((raw,position) => {
+          const entry = raw; const types = entry.featureType; const values = entry.progression;
+          const name = entry.name; const id = JSON.stringify(['optional-slot',index.sourceIdentity,selection.selectionId,owner.key,position,name]);
+          if (Object.keys(entry).some(k => !['name','featureType','progression'].includes(k)) || !types.length) {
+            diagnostics.push(`Optional progression handler required for ${id}`); return;
           }
-          const eligible = Object.keys(table).map(Number).filter(level => level <= selection.level).sort((a,b) => b-a);
-          count = eligible.length ? table[String(eligible[0])] : 0;
-        }
-        if (typeof count !== 'number' || count > 100) { diagnostics.push(`Invalid optional count: ${id}`); return; }
-        if (count === 0) return;
-        slots.push({ id,selectionId: selection.selectionId,ownerKey: owner.key,count,featureTypes: [...types] as string[],
-          selectedKeys: Object.hasOwn(answers,id) ? [...answers[id]] : [] });
-      });
-    }
+          let count: unknown;
+          if (Array.isArray(values)) {
+            if (values.some(v => !Number.isInteger(v) || Number(v) < 0) || values.length < selection.level) { diagnostics.push(`Invalid progression table: ${id}`); return; }
+            count = values[selection.level - 1];
+          } else {
+            const table = object(values);
+            if (!table || Object.entries(table).some(([level,n]) => !/^\d+$/.test(level) || Number(level) < 1 || Number(level) > 20 || !Number.isInteger(n) || Number(n) < 0)) {
+              diagnostics.push(`Unsupported progression table: ${id}`); return;
+            }
+            const eligible = Object.keys(table).map(Number).filter(level => level <= selection.level).sort((a,b) => b-a);
+            count = eligible.length ? table[String(eligible[0])] : 0;
+          }
+          if (typeof count !== 'number' || count > 100) { diagnostics.push(`Invalid optional count: ${id}`); return; }
+          if (count === 0) return;
+          slots.push({ id,selectionId: selection.selectionId,ownerKey: owner.key,count,featureTypes: [...types] as string[],
+            selectedKeys: Object.hasOwn(answers,id) ? [...answers[id]] : [] });
+        });
+      }
+    } catch (error) { diagnostics.push(String(error)); }
   }
   return { canAccept: diagnostics.length === 0,slots,diagnostics };
 }

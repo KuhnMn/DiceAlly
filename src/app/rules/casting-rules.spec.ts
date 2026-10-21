@@ -3,7 +3,7 @@ import { CharacterDocument } from './character-document';
 import { acceptDocumentPreview, previewDocument } from './document-operations';
 import { castDocumentSpell } from './casting-rules';
 function fixture() {
-  const records = mapContent({ class: [{ name: 'Mage',source: 'TEST',hd: { number: 1,faces: 6 },casterProgression: 'full',spellcastingAbility: 'int',ritualCasting: true,
+  const records = mapContent({ class: [{ name: 'Mage',source: 'TEST',hd: { number: 1,faces: 6 },casterProgression: 'full',spellcastingAbility: 'int',
     additionalSpells: [{ ability: 'int',prepared: { '1': ['Ward','Spark','Ritual'] } }] }],
     spell: [{ name: 'Ward',source: 'PHB',level: 1 },{ name: 'Spark',source: 'PHB',level: 0 },{ name: 'Ritual',source: 'PHB',level: 1,meta: { ritual: true } }] },'test.json').records;
   const index = { sourceIdentity: 'source',revisionId: 'revision',records: new Map(records.map(r => [r.key,r])) };
@@ -33,6 +33,10 @@ describe('Explicit spell casting', () => {
     const f = fixture(); const cantrip = f.document.instances.spells.find(s => s.snapshot.name === 'Spark')!;
     expect(castDocumentSpell(f.document,{ spellId: cantrip.id,mode: 'cantrip' }).document.session).toEqual(f.document.session);
     const ritual = f.document.instances.spells.find(s => s.snapshot.name === 'Ritual')!;
+    expect(f.document.instances.sources[0].ritualCasting).toBe(false);
+    f.document.instances.sources[0].ritualCasting = true;
+    const refreshed = acceptDocumentPreview(f.document, previewDocument(f.document, f.index));
+    expect(refreshed.instances.sources[0].ritualCasting).toBe(true);
     expect(castDocumentSpell(f.document,{ spellId: ritual.id,mode: 'ritual' }).document.session).toEqual(f.document.session);
     f.document.instances.sources[0].ritualCasting = false; f.document.instances.sources[0].label = 'Ritual expert';
     expect(() => castDocumentSpell(f.document,{ spellId: ritual.id,mode: 'ritual' })).toThrow('ritual');
@@ -44,7 +48,7 @@ describe('Explicit spell casting', () => {
     expect(() => castDocumentSpell(f.document,{ spellId: spell.id,mode: 'slot',poolId: pool.id })).toThrow('configured');
     f.document.instances.sources[0].preparation = 'known';
     expect(castDocumentSpell(f.document,{ spellId: spell.id,mode: 'slot',poolId: pool.id }).castLevel).toBe(1);
-    spell.snapshot.data['level'] = 2; expect(() => castDocumentSpell(f.document,{ spellId: spell.id,mode: 'slot',poolId: pool.id })).toThrow('at or above');
-    spell.snapshot.data['level'] = 0; expect(() => castDocumentSpell(f.document,{ spellId: spell.id,mode: 'slot',poolId: pool.id })).toThrow('Cantrips');
+    spell.snapshot.spellDefinition!.level = 2; expect(() => castDocumentSpell(f.document,{ spellId: spell.id,mode: 'slot',poolId: pool.id })).toThrow('at or above');
+    spell.snapshot.spellDefinition!.level = 0; expect(() => castDocumentSpell(f.document,{ spellId: spell.id,mode: 'slot',poolId: pool.id })).toThrow('Cantrips');
   });
 });

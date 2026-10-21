@@ -1,4 +1,7 @@
+import type { SourceEntry } from '../content/content-entries';
+
 export type Entry =
+  | SourceEntry
   | StringEntry
   | ListEntry
   | TableEntry
@@ -331,7 +334,7 @@ export interface SpellEntity {
   components: SpellComponents;
   duration: SpellDuration[];
   entries: Entry[];
-  entriesHigherLevel?: EntriesHigherLevel[] | null;
+  entriesHigherLevel?: (Entry | EntriesHigherLevel)[] | null;
   meta?: SpellMeta | null;
   damageInflict?: string[] | null;
   spellAttack?: string[] | null;
@@ -385,6 +388,8 @@ export interface OptionalFeatureEntity {
 }
 
 export interface SpeciesEntity {
+  /** Self-contained mechanics; numeric legacy fields remain a compatibility projection. */
+  definition?: import('../content/species.model').SpeciesDefinition;
   id?: number;
   name: string;
   source: string;

@@ -1,3 +1,5 @@
+import { characterOption, characterOptionSourceData, isCharacterOptionKind } from '../content/character-option-adapter';
+import { classDefinition, isClassKind, projectClassFeatureData } from '../content/class-adapter';
 import { newEditorId } from './editor-identity';
 import { ContentRecord, ImportRevision, JsonObject, entityKey } from '../content/content.model';
 import { Entry, FeatEntity, FeatureEntity, FeatureEntryFull, OptionalFeatureEntity } from '../models/character.model';
@@ -99,9 +101,45 @@ export function createFeatureEntry(
     uses: [],
     contentReference: contentReference(record, revision),
   };
-  const snapshot = structuredClone(record.data);
+  const snapshot = isClassKind(record.kind) ? projectClassFeatureData(record) : characterOptionSourceData(record);
   if (type === 'FEAT') feature.featEntity = snapshot as unknown as FeatEntity;
   else if (type === 'OPTIONAL_FEATURE') feature.optionalFeatureEntity = snapshot as unknown as OptionalFeatureEntity;
   else feature.featureEntity = snapshot as unknown as FeatureEntity;
   return feature;
+}
+
+/** Catalog metadata comes from canonical contracts; portable sheet metadata keeps its existing format. */
+export function featureRecordMetadata(record: ContentRecord): { classes: string[]; levels: number[]; subclass?: string } {
+  if (isCharacterOptionKind(record.kind)) {
+    const classes = new Set<string>(); const levels = new Set<number>();
+    for (const prerequisite of characterOption(record).prerequisites) {
+      const level = prerequisite.level;
+      if (typeof level === 'number' && level > 0) levels.add(level);
+      else if (level && typeof level === 'object') {
+        if (level.level > 0) levels.add(level.level);
+        if (level.class?.name) classes.add(level.class.name);
+      }
+    }
+    return { classes: [...classes], levels: [...levels] };
+  }
+  if (!isClassKind(record.kind)) return { classes: [], levels: [] };
+  const definition = classDefinition(record);
+  return { classes: definition.parent ? [definition.parent.name] : [],
+    levels: definition.level !== undefined && definition.level > 0 ? [definition.level] : [],
+    subclass: definition.subclass?.shortName };
+}
+export function matchesFeatureRecord(record: ContentRecord, classes: readonly string[], levels: readonly number[]): boolean {
+  const values = featureRecordMetadata(record);
+  return (!classes.length || values.classes.some(name => classes.some(selected => selected.toLowerCase() === name.toLowerCase())))
+    && (!levels.length || values.levels.some(level => levels.includes(level)));
+}
+
+export function featureRecordCategories(record: ContentRecord): string[] {
+  if (!isCharacterOptionKind(record.kind)) return ['Other'];
+  const definition = characterOption(record);
+  const categories = record.kind === 'feat' ? (definition.category ? [definition.category] : []) : definition.featureTypes;
+  return categories.length ? [...categories] : ['Other'];
+}
+export function matchesFeatureRecordCategories(record: ContentRecord, selected: readonly string[]): boolean {
+  return !selected.length || featureRecordCategories(record).some(type => selected.includes(type));
 }

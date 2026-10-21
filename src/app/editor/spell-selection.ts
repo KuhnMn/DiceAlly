@@ -1,7 +1,7 @@
+import { spellDefinition, spellRecordClasses, projectSpellData } from '../content/spell-adapter';
 import { ContentRecord } from '../content/content.model';
 import { newEditorId } from './editor-identity';
-import { spellClassMemberships } from '../content/spell-membership';
-import { FeatureSource, SpellEntryFull, SpellClassInfo, SpellEntity, SpellTime } from '../models/character.model';
+import { FeatureSource, SpellEntryFull, SpellEntity, SpellTime } from '../models/character.model';
 
 export type SpellList = 'KNOWN' | 'SPELLBOOK' | 'PREPARED';
 
@@ -52,18 +52,14 @@ export interface SpellCatalogFilter {
   schools?: SpellSchool[];
 }
 
-/** The import uses upstream membership objects; Android exports use a flat class list. */
-export function spellClasses(data: Record<string, unknown>): SpellClassInfo[] {
-  return spellClassMemberships(data['classes']);
-}
-
 export function matchesSpell(record: ContentRecord, filter: SpellCatalogFilter): boolean {
   if (record.kind !== 'spell') return false;
-  const level = record.data['level'];
-  if (typeof level !== 'number' || (filter.levels.length && !filter.levels.includes(level))) return false;
-  if (!matchesSpellSchool(record.data['school'], filter.schools ?? [])) return false;
+  const definition = spellDefinition(record);
+  const level = definition.level;
+  if (filter.levels.length && !filter.levels.includes(level)) return false;
+  if (!matchesSpellSchool(definition.school, filter.schools ?? [])) return false;
   const classes = filter.classes.map(name => name.toLowerCase());
-  if (classes.length && !spellClasses(record.data).some(entry => classes.includes(entry.name.toLowerCase()))) return false;
+  if (classes.length && !spellRecordClasses(record).some(entry => classes.includes(entry.name.toLowerCase()))) return false;
   const text = `${record.name} ${record.publication}`.toLowerCase();
   return filter.search.trim().toLowerCase().split(/\s+/).every(term => text.includes(term));
 }
@@ -89,7 +85,7 @@ export function spellSourceCounts(spells: readonly SpellEntryFull[], sources: re
 }
 
 export function spellSnapshot(record: ContentRecord): SpellEntity {
-  return { ...structuredClone(record.data), classes: spellClasses(record.data) } as unknown as SpellEntity;
+  return projectSpellData(record) as unknown as SpellEntity;
 }
 
 export function preparedVersion(spell: SpellEntryFull, spells: SpellEntryFull[]): SpellEntryFull | undefined {

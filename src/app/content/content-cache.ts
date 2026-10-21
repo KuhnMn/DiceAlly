@@ -1,3 +1,4 @@
+import { itemTypeCode } from './item.model';
 import { compareSearchMatches } from '../search-ranking';
 import { ContentRecord, ContentSource, ImportRevision, sourceIdentity } from './content.model';
 
@@ -150,8 +151,10 @@ export class IndexedDbContentCache implements ContentCache {
           const row = cursor.result;
           if (!row) { next(position + 1); return; }
           const record = row.value as ContentRecord;
-          const text = [record.name, record.publication, record.data['className'], record.data['subclassShortName'],
-            record.data['level'], record.data['featureType']].join(' ').toLowerCase();
+          // Activated library records were validated at import; search reads their explicit index fields.
+          const definition = record.classDefinition;
+          const text = [record.name, record.publication, definition?.parent?.name, definition?.subclass?.shortName,
+            definition?.level, record.characterOption?.featureTypes].join(' ').toLowerCase();
           if (query.split(/\s+/).every(term => text.includes(term)) && (!matches || matches(record))) {
             if ((query || order) && limit > 0) {
               // Keep the best candidates across the entire corpus, not just this cursor page.
@@ -187,7 +190,7 @@ export class IndexedDbContentCache implements ContentCache {
         const row = cursor.result;
         if (!row) return;
         const record = row.value as ContentRecord;
-        if (['T', 'AT', 'GS', 'INS'].includes(String(record.data['type'] ?? '').split('|')[0])) result.push(record);
+        if (['T', 'AT', 'GS', 'INS'].includes(itemTypeCode(record))) result.push(record);
         row.continue();
       };
       tx.oncomplete = () => resolve(result.sort((a, b) => a.name.localeCompare(b.name) || a.publication.localeCompare(b.publication)));

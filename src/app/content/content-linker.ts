@@ -1,13 +1,19 @@
+import { referenceSourceData } from './reference-record-adapter';
+import { contentEntries, visitEntryTree, tablePresentation, TABLE_PRESENTATION_FIELDS } from './content-entries';
+import { attachedSpells, visitAttachedSpells } from './attached-spells';
+import { additionalSpells, SPELL_GRANT_LISTS, visitSpellGrantGroups } from './additional-spells';
 import { ContentCache } from './content-cache';
 import { directLinks, featureReference } from './content-adapter';
-import { ContentLink, ContentRecord, ImportDiagnostic, normalize, object, string } from './content.model';
+import { ContentLink, ContentRecord, ImportDiagnostic, normalize, string } from './content.model';
+import { referenceDefaultSource, referenceEdition, RulesEdition } from './reference-edition';
 
 const TAGS: Record<string, { kind: string; source: string }> = {
   spell: { kind: 'spell', source: 'PHB' }, item: { kind: 'item', source: 'DMG' },
   creature: { kind: 'monster', source: 'MM' }, race: { kind: 'species', source: 'PHB' },
   feat: { kind: 'feat', source: 'PHB' }, optfeature: { kind: 'optionalfeature', source: 'PHB' },
   background: { kind: 'background', source: 'PHB' },
-  condition: { kind: 'condition', source: 'PHB' }, variantrule: { kind: 'variantrule', source: 'DMG' },
+  condition: { kind: 'condition', source: 'PHB' }, status: { kind: 'status', source: 'PHB' },
+  variantrule: { kind: 'variantrule', source: 'DMG' },
   table: { kind: 'table', source: 'DMG' }, class: { kind: 'class', source: 'PHB' },
 };
 function aliasKey(kind: string, name: string, publication: string): string {
@@ -16,9 +22,16 @@ function aliasKey(kind: string, name: string, publication: string): string {
 export class ContentReferenceIndex {
   private readonly keys = new Set<string>();
   private readonly aliases = new Map<string, Set<string>>();
+  private readonly editions = new Map<string, RulesEdition | undefined>();
+  private readonly standardSpecies = new Map<string, Map<string, string>>();
   has(key: string): boolean { return this.keys.has(key); }
   add(record: ContentRecord): void {
+    if (record.referenceDefinition) record = { ...record, data: referenceSourceData(record) };
     this.keys.add(record.key);
+    // A generated item's edition is the base item's edition, not its recipe's publication.
+    const baseSource = string(record.data['baseItem']).split('|')[1];
+    this.editions.set(record.key, baseSource ? referenceEdition(baseSource) ?? referenceEdition('', record.data['edition'])
+      : referenceEdition(record.publication, record.data['edition']));
     this.alias(record.kind, record.name, record.publication, record.key);
     if (record.homebrewVariant) this.alias(record.kind, string(record.data['name']), record.publication, record.key);
     if (record.kind === 'magicvariant') this.alias('item', record.name, record.publication, record.key);
@@ -31,12 +44,30 @@ export class ContentReferenceIndex {
     const candidates = this.aliases.get(alias) ?? new Set<string>();
     candidates.add(key); this.aliases.set(alias, candidates);
   }
-  resolve(kind: string, name: string, publication: string): { target: string; status: ContentLink['status'] } {
+  /** A standard subrace supplies the playable form of its exact base definition. */
+  standardSpeciesAlias(name: string, publication: string, key: string, baseKey: string): void {
+    this.alias('species', name, publication, key);
+    const alias = aliasKey('species', name, publication);
+    const standards = this.standardSpecies.get(alias) ?? new Map<string, string>();
+    standards.set(key, baseKey);
+    this.standardSpecies.set(alias, standards);
+  }
+  resolve(kind: string, name: string, publication: string, contextEdition?: RulesEdition): { target: string; status: ContentLink['status'] } {
     const key = aliasKey(kind, name, publication);
     const candidates = this.aliases.get(key);
     // An explicitly published playable item wins over generated aliases with the same name.
     if (this.keys.has(key)) return { target: key, status: 'resolved' };
     if (candidates?.size === 1) return { target: [...candidates][0], status: 'resolved' };
+    if (kind === 'species' && candidates?.size) {
+      const standards = [...this.standardSpecies.get(key) ?? []].filter(([standard, base]) =>
+        candidates.has(standard) && [...candidates].every(candidate => candidate === standard || candidate === base));
+      if (standards.length === 1) return { target: standards[0][0], status: 'resolved' };
+    }
+    const edition = referenceEdition(publication) ?? contextEdition;
+    if (edition && candidates?.size) {
+      const preferred = [...candidates].filter(candidate => this.editions.get(candidate) === edition);
+      if (preferred.length === 1) return { target: preferred[0], status: 'resolved' };
+    }
     return { target: key, status: candidates?.size ? 'ambiguous' : 'missing' };
   }
 }
@@ -52,7 +83,9 @@ export async function buildReferenceIndex(cache: ContentCache, revision: string,
         const brackets = /^(.*?)(\([^()]*\))$/.exec(parent);
         const name = !label ? parent : brackets
           ? `${brackets[1]}(${brackets[2].slice(1, -1)}; ${label})` : `${parent} (${label})`;
-        index.alias('species', name, record.publication, record.key);
+        const parentKey = record.derivation.inputs.find(link => link.role === 'parent-species')?.target;
+        if (!label && parentKey) index.standardSpeciesAlias(name, record.publication, record.key, JSON.stringify(['species', parentKey]));
+        else index.alias('species', name, record.publication, record.key);
       }
     }
   });
@@ -60,8 +93,12 @@ export async function buildReferenceIndex(cache: ContentCache, revision: string,
 }
 
 export function linkContent(record: ContentRecord, index: ContentReferenceIndex): { links: ContentLink[]; diagnostics: ImportDiagnostic[] } {
+  if (record.referenceDefinition) record = { ...record, data: referenceSourceData(record) };
   const diagnostics: ImportDiagnostic[] = [];
   const links: ContentLink[] = [];
+  const edition = record.derivation?.operation === 'magicvariant'
+    ? referenceEdition(string(record.data['variantSource']))
+    : referenceEdition(record.publication, record.data['edition']);
   const add = (link: ContentLink) => {
     if (!links.some(other => other.role === link.role && other.target === link.target && other.path === link.path)) links.push(link);
   };
@@ -69,7 +106,11 @@ export function linkContent(record: ContentRecord, index: ContentReferenceIndex)
     const parts = (kind === 'spell' ? token.replace(/#[^#]*$/, '') : token).split('|').map(p => p.trim());
     const name = parts[0].replace(/#[^#]*$/, '').trim();
     if (!name) throw new Error(`Invalid ${role} reference at ${path}.`);
-    add({ role, ...index.resolve(kind, name, parts[1] || defaultSource), required, scope, path, reference: token });
+    const publication = parts[1] || referenceDefaultSource(defaultSource, edition);
+    let resolved = index.resolve(kind, name, publication, edition);
+    // Unqualified references retain their old core default as a fallback when no revised target exists.
+    if (!parts[1] && publication !== defaultSource && resolved.status === 'missing') resolved = index.resolve(kind, name, defaultSource);
+    add({ role, ...resolved, required, scope, path, reference: token });
   };
   for (const link of directLinks(record)) {
     const scope = link.scope ?? (['classFeature', 'subclassFeature'].includes(link.role) ? 'catalog'
@@ -82,37 +123,29 @@ export function linkContent(record: ContentRecord, index: ContentReferenceIndex)
     uid('item', value, 'DMG', 'item-group-member', `items[${position}]`, 'catalog', true);
   });
   const deferred = (value: unknown, path: string) => {
-    add({ role: 'spell-selection', target: JSON.stringify(['spell-query', value]), reference: JSON.stringify(value), scope: 'catalog',
-      status: 'deferred', required: false, path });
+    add({
+      role: 'spell-selection', target: JSON.stringify(['spell-query', value]), reference: JSON.stringify(value), scope: 'catalog',
+      status: 'deferred', required: false, path
+    });
   };
-  const grant = (value: unknown, path: string, choice = false): void => {
-    if (typeof value === 'string') { uid('spell', value, 'PHB', choice ? 'spell-choice' : 'spell-grant', path, choice ? 'catalog' : 'rule', true); return; }
-    if (Array.isArray(value)) { value.forEach((v, i) => grant(v, `${path}[${i}]`, choice)); return; }
-    const data = object(value);
-    if (!data) throw new Error(`Invalid spell grant at ${path}.`);
-    if (data['choose'] !== undefined) {
-      const choose = object(data['choose']);
-      if (choose?.['from'] !== undefined) grant(choose['from'], `${path}.choose.from`, true);
-      else deferred(data['choose'], `${path}.choose`);
-      return;
-    }
-    if (data['all'] !== undefined) { deferred(data['all'], `${path}.all`); return; }
-    if (data['spell'] !== undefined) { grant(data['spell'], `${path}.spell`, choice); return; }
-    for (const [key, child] of Object.entries(data)) {
-      // Metadata describes the grant, not another spell reference.
-      if (['ability', 'name', 'resourceName', 'count'].includes(key)) continue;
-      grant(child, `${path}.${key}`, choice);
-    }
-  };
-  const additional = record.data['additionalSpells'];
-  if (additional !== undefined && additional !== null) {
-    if (!Array.isArray(additional)) throw new Error('additionalSpells must be an array.');
-    additional.forEach((value, position) => {
-      const block = object(value);
-      if (!block) throw new Error('Invalid additionalSpells block.');
-      for (const field of ['innate', 'known', 'prepared', 'expanded']) if (block[field] !== undefined) {
+  const additional = additionalSpells(record);
+  if (additional !== undefined) {
+    additional.forEach((block, position) => {
+      for (const field of SPELL_GRANT_LISTS) if (block[field] !== undefined) {
         const start = links.length;
-        grant(block[field], `additionalSpells[${position}].${field}`);
+        for (const [requirement, value] of Object.entries(block[field]!)) {
+          visitSpellGrantGroups(value, `additionalSpells[${position}].${field}.${requirement}`, (entries, path) => {
+            entries.forEach((entry, position) => {
+              const entryPath = `${path}[${position}]`;
+              if (typeof entry === 'string') uid('spell', entry, 'PHB', 'spell-grant', entryPath, 'rule', true);
+              else if ('all' in entry) deferred(entry.all, `${entryPath}.all`);
+              else if (typeof entry.choose === 'string') deferred(entry.choose, `${entryPath}.choose`);
+              else entry.choose.from.forEach((token, position) => {
+                uid('spell', token, 'PHB', 'spell-choice', `${entryPath}.choose.from[${position}]`, 'catalog', true);
+              });
+            });
+          });
+        }
         // Expanded lists make spells available; they do not automatically grant them.
         if (field === 'expanded') for (const link of links.slice(start)) {
           link.scope = 'catalog';
@@ -121,7 +154,8 @@ export function linkContent(record: ContentRecord, index: ContentReferenceIndex)
       }
     });
   }
-  if (Array.isArray(record.data['attachedSpells'])) grant(record.data['attachedSpells'], 'attachedSpells');
+  const attached = attachedSpells(record);
+  if (attached) visitAttachedSpells(attached, (token, path) => uid('spell', token, 'PHB', 'spell-grant', path, 'rule', true));
 
   const reference = (kind: 'classFeature' | 'subclassFeature', value: unknown, path: string) => {
     try {
@@ -131,35 +165,41 @@ export function linkContent(record: ContentRecord, index: ContentReferenceIndex)
       diagnostics.push({ severity: 'warning', file: record.file, record: record.key, message: `${path}: ${String(error)}` });
     }
   };
-  const walk = (value: unknown, path: string): void => {
-    if (typeof value === 'string') {
-      // Match innermost tags too; display labels do not form part of the UID.
-      for (const match of value.matchAll(/\{@([a-zA-Z]+)\s+([^{}]+)\}/g)) {
-        const tag = match[1]; const token = match[2];
-        if (tag === 'classFeature' || tag === 'subclassFeature') reference(tag, token, path);
-        else if (TAGS[tag]) uid(TAGS[tag].kind, token, TAGS[tag].source, `entry-${tag}`, path, 'description', false);
-      }
-      return;
+  const text = (value: string, path: string) => {
+    // Match innermost tags too; display labels do not form part of the UID.
+    for (const match of value.matchAll(/\{@([a-zA-Z]+)\s+([^{}]+)\}/g)) {
+      const tag = match[1]; const token = match[2];
+      if (tag === 'classFeature' || tag === 'subclassFeature') reference(tag, token, path);
+      else if (TAGS[tag]) uid(TAGS[tag].kind, token, TAGS[tag].source, `entry-${tag}`, path, 'description', false);
     }
-    if (Array.isArray(value)) { value.forEach((v, i) => walk(v, `${path}[${i}]`)); return; }
-    const data = object(value);
-    if (!data) return;
-    const type = string(data['type']);
-    if (type === 'refClassFeature') reference('classFeature', data['classFeature'], path);
-    if (type === 'refSubclassFeature') reference('subclassFeature', data['subclassFeature'], path);
-    for (const [typeName, field, kind] of [['refFeat', 'feat', 'feat'], ['refOptionalfeature', 'optionalfeature', 'optionalfeature']] as const) {
-      if (type === typeName && typeof data[field] === 'string') uid(kind, data[field], 'PHB', `entry-${field}`, path, 'description', false);
-    }
-    for (const [field, child] of Object.entries(data)) walk(child, `${path}.${field}`);
   };
-  // Only presentation-bearing trees; scanning classFeatures/grants again would lose their semantics.
-  for (const field of ['entries', 'entriesTemplate', 'action', 'bonus', 'reaction', 'trait', 'legendary', 'mythic', 'variant', 'spellcasting', 'headerEntries', 'footerEntries']) {
-    if (record.data[field] !== undefined) walk(record.data[field], field);
+  const node: Parameters<typeof visitEntryTree>[3] = (entry, path) => {
+    switch (entry.type) {
+      case 'refClassFeature': reference('classFeature', entry.classFeature, path); break;
+      case 'refSubclassFeature': reference('subclassFeature', entry.subclassFeature, path); break;
+      case 'refFeat': if (typeof entry.feat === 'string') uid('feat', entry.feat, 'PHB', 'entry-feat', path, 'description', false); break;
+      case 'refOptionalfeature': if (typeof entry.optionalfeature === 'string') uid('optionalfeature', entry.optionalfeature, 'PHB', 'entry-optionalfeature', path, 'description', false); break;
+    }
+  };
+  // Only presentation-bearing trees; classFeatures/grants have separate semantics.
+  for (const field of ['entries', 'entriesHigherLevel', 'entriesTemplate'] as const) {
+    if (record.data[field] !== undefined) visitEntryTree(contentEntries(record, field), field, text, node);
+  }
+  if (record.kind === 'table') {
+    const table = tablePresentation(record);
+    for (const field of TABLE_PRESENTATION_FIELDS) {
+      if (table[field] !== undefined) visitEntryTree(table[field], field, text, node);
+    }
+  }
+  for (const field of ['action', 'actionEntries', 'bonus', 'reaction', 'trait', 'legendary', 'mythic', 'variant', 'spellcasting', 'headerEntries', 'footerEntries']) {
+    if (record.data[field] !== undefined) visitEntryTree(record.data[field], field, text, node);
   }
   for (const link of links) {
     if (link.status === 'resolved' || link.status === 'deferred') continue;
-    diagnostics.push({ severity: link.required ? 'error' : 'warning', file: record.file, record: record.key,
-      message: `${link.status} ${link.role} at ${link.path ?? 'root'}: ${link.reference ?? link.target}` });
+    diagnostics.push({
+      severity: link.required ? 'error' : 'warning', file: record.file, record: record.key,
+      message: `${link.status} ${link.role} at ${link.path ?? 'root'}: ${link.reference ?? link.target}`
+    });
   }
   return { links, diagnostics };
 }

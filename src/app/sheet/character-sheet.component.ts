@@ -21,7 +21,6 @@ import { CharacterLibraryService } from '../characters/character-library.service
 import { CharacterStore } from '../stores/character.store';
 import { RestService } from '../services/rest.service';
 import { UnsavedChangesGuard } from '../guards/unsaved-changes.guard';
-import { ExportedCharacter } from '../models/character.model';
 import { CharacterInfoPageComponent } from './character-info-page.component';
 import { FeaturesPageComponent } from './features-page.component';
 import { SpellsPageComponent } from './spells-page.component';

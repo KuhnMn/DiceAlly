@@ -10,6 +10,7 @@ import { IndexedDbContentCache } from '../content/content-cache';
 import { ADAPTER_VERSION, ContentRecord, DEFAULT_CONTENT_SOURCE, ImportRevision, sourceIdentity } from '../content/content.model';
 import { SourceBookFilterService } from './source-book-filter.service';
 import { RestService } from '../services/rest.service';
+import { canonicalSpeciesRecord } from '../content/species-adapter';
 
 async function library() {
   const source = { ...DEFAULT_CONTENT_SOURCE, owner: 'species-editor-test' };
@@ -18,7 +19,7 @@ async function library() {
     createdAt: new Date().toISOString(), files: [], diagnostics: [], metrics: { bytes: 0, records: 2, elapsedMs: 0, mappedBytes: 0 } };
   const records: ContentRecord[] = ['Elf', 'Dwarf'].map((name, position) => ({ key: `species-${name}`, kind: 'species', name,
     publication: position ? 'PHB' : 'XPHB', file: 'materialized.json', links: [],
-    data: { name, source: position ? 'PHB' : 'XPHB', speed: { walk: { number: 30 } }, entries: [`${name} ability description`] } }));
+    data: { name, source: position ? 'PHB' : 'XPHB', speed: { walk: { number: 30 } }, entries: [`${name} ability description`] } })).map(record => canonicalSpeciesRecord(record, 'legacy'));
   const cache = new IndexedDbContentCache(); await cache.stage(revision); await cache.put(revision.id, records); await cache.activate(revision);
   await cache.saveSource('development-local', source); return { revision, records };
 }
