@@ -287,6 +287,7 @@ export interface SpellTime {
   number?: number;
   unit?: string;
   condition?: string;
+  note?: string;
 }
 
 export interface SpellRange {
@@ -297,19 +298,25 @@ export interface SpellRange {
 export interface MaterialComponent {
   type?: string;
   text?: string;
+  /** Source and portable snapshot costs are in copper pieces. */
+  cost?: number;
+  consume?: boolean | 'optional';
   [key: string]: unknown;
 }
 
 export interface SpellComponents {
   v?: boolean;
   s?: boolean;
-  m?: MaterialComponent | string | null;
+  m?: MaterialComponent | string | boolean | null;
+  r?: boolean;
 }
 
 export interface SpellDuration {
   type?: string;
-  duration?: { type?: string; amount?: number } | null;
+  duration?: { type?: string; amount?: number; upTo?: boolean } | null;
   concentration?: boolean;
+  ends?: string[];
+  condition?: string;
 }
 
 export interface EntriesHigherLevel {

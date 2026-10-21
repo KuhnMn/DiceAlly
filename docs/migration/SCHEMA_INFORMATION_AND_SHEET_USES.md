@@ -1,6 +1,6 @@
 # Information gained from the schemas and possible sheet uses
 
-Status: adapter 18, reviewed on 2026-10-21. This is an information inventory and a set of future opportunities, not an implementation commitment. It adds no sheet functionality.
+Status: information inventory with implementation updates, reviewed on 2026-10-21. Opportunities below are not implementation commitments; completed improvements are recorded separately in section 9.
 
 The overhaul did not invent new game data. It established what the imported data actually contains, which shapes are valid, and how the app can access that information reliably. Some information was already used by the sheet; other fields were retained but not exposed. The schemas now make those distinctions explicit.
 
@@ -152,3 +152,19 @@ Files visible in the repository or IDE are not automatically imported. In partic
 - The schema graph includes dependencies and integration-specific fields beyond the supported application feature set.
 
 For precise field names and schema branches, use the pinned schemas and [field inventory](content-schema-coverage.json). For what the app actually consumes today, use the [implementation coverage](SCHEMA_CONTENT_COVERAGE.md) and the relevant model/adapter, rather than treating the opportunities above as already implemented.
+
+## 9. Implemented improvements to existing spell details
+
+Spell detail preparation now uses a small, explicit presentation model in [spell-presentation.ts](../../src/app/sheet/spell-presentation.ts). Casting times retain separate `durationText`, `conditionText` and `noteText`; material requirements expose `descriptionText`, `costInCopperPieces` and `consumption`; durations retain `requiresConcentration`, `conditionText` and `endingConditions`. `hasRitualCastingOption` describes the spell, without asserting that a particular character can cast rituals.
+
+The existing detail panel shows component text, casting alternatives and notes, concentration limits, duration conditions, and permanent ending conditions. Material cost/consumption remain available as structured metadata; the panel does not repeat them separately from component text. Ritual information stays in the existing tag. Summaries share the same preparation functions, use readable units and alternative separators, and render tagged component/condition text. Material costs use the schema's copper-piece unit. Missing consumption or cost remains unspecified; prose is not parsed to invent either value. Homebrew ending conditions remain readable text.
+
+Quote entries now render as indented blockquotes with recursive contents and optional author/source attribution, rather than falling back to source JSON. Both string and array author forms are supported, along with the source's optional italic styling flag.
+
+The saved character remains a self-contained snapshot. Its existing spell fields already preserve this information; their TypeScript declarations now explicitly include casting notes, boolean material requirements, material cost/consumption, royalty requirements, duration limits and ending conditions. Prepared display data is computed from the snapshot and is not stored as a second copy. No character format version change or library reimport is required. No material spending, duration countdowns, ritual eligibility or other casting mechanics are automated.
+
+## 10. Refreshing a character's saved reference information
+
+The creator's **Refresh Descriptions** button replaces saved spell, feature/feat/optional-feature, item, monster, species and background definitions using the currently selected active IndexedDB library. This includes descriptions, higher-level spell entries, component metadata, item bonuses and resolved property/mastery descriptions. Exact stored references are preferred; entries without provenance require an exact name, publication and applicable class-feature qualifiers. No edition substitution or network download is performed. Custom, missing and foreign-library entries remain intact and are listed in the result.
+
+The refresh updates the draft; **Save** persists it. Notes, use counters, list membership, quantities, equipment/attunement flags, monster tracking, manual character fields, wizard selections and authored combat entries are preserved. Feature-source settings and class rows contain player configuration rather than library description snapshots and are not regenerated. A failed lookup or invalid definition leaves the draft unchanged; concurrent draft/library changes require retrying. The existing snapshot format is retained.

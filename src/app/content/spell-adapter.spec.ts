@@ -13,6 +13,7 @@ import { LocalCharacterRepository } from '../editor/local-character-repository';
 import { IndexedDbContentCache } from './content-cache';
 import { finalizeContentImport } from './content-finalizer';
 import { encodeCloudCharacter, decodeCloudCharacter } from '../characters/sync/character-cloud';
+import { prepareSpellDetails } from '../sheet/spell-presentation';
 
 function fixture() {
   const records = mapContent({
@@ -35,6 +36,18 @@ function fixture() {
 }
 
 describe('Canonical spell migration', () => {
+  it('prepares details from a detached portable snapshot without a library lookup or extra stored fields', () => {
+    const snapshot = spellSnapshot(canonicalSpellRecord(fixture().spell));
+    const json = JSON.stringify(snapshot);
+    const restored = JSON.parse(json) as typeof snapshot;
+    expect(prepareSpellDetails(restored)).toMatchObject({
+      castingTimes: [{ durationText: '1 action' }, { durationText: '1 minute', conditionText: 'as a ritual' }],
+      components: { material: { descriptionText: 'A gem', costInCopperPieces: 100, consumption: 'optional' }, requiresRoyalty: true },
+      durations: [{ durationText: 'Up to 1 minute', requiresConcentration: true }], hasRitualCastingOption: true,
+    });
+    expect(JSON.stringify(restored)).toBe(json);
+    expect(restored).not.toHaveProperty('details');
+  });
   it('preserves real schema alternatives, removes duplicate fields, and exports conventional spell entities', () => {
     const f = fixture(); const original = structuredClone(f.spell); const canonical = canonicalSpellRecord(f.spell);
     expect(canonical.data['level']).toBeUndefined(); expect(canonical.data['classes']).toBeUndefined();

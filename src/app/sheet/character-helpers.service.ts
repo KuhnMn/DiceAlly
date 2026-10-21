@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { castingTimeText, prepareSpellCastingTimes, prepareSpellComponents, prepareSpellDurations, spellDurationText } from './spell-presentation';
 import {
   Entry,
   FeatureEntryFull,
@@ -151,16 +152,7 @@ export class CharacterHelpersService {
   }
 
   spellTimeLabel(times: SpellTime[]): string {
-    return times
-      .map((time) => {
-        const number = time.number ?? '';
-        // 5etools uses "bonus" as shorthand for the casting-time unit.
-        const unit = time.unit === 'bonus' ? 'bonus action' : time.unit ?? '';
-        const condition = time.condition ? `, ${time.condition}` : '';
-        return `${number} ${unit}${condition}`.trim();
-      })
-      .filter(Boolean)
-      .join(', ');
+    return prepareSpellCastingTimes(times).map(castingTimeText).filter(Boolean).join(' or ');
   }
 
   spellRangeLabel(range: SpellRange | null): string {
@@ -175,38 +167,15 @@ export class CharacterHelpersService {
 
   spellComponentsLabel(components: SpellComponents | null): string {
     if (!components) return '—';
-    const parts: string[] = [];
-    if (components.v) parts.push('V');
-    if (components.s) parts.push('S');
-    if (components.m) {
-      const text = typeof components.m === 'string' ? components.m : components.m.text;
-      parts.push(text ? `M (${text})` : 'M');
-    }
-    return parts.join(', ');
+    return prepareSpellComponents(components).summaryText;
   }
 
   spellDurationLabel(durations: SpellDuration[]): string {
-    return durations
-      .map((duration) => {
-        const base = duration.duration?.type
-          ? `${duration.duration.amount ?? ''} ${duration.duration.type}`.trim()
-          : duration.type ?? '';
-        if (duration.concentration) return `Concentration, ${base}`.trim();
-        return base;
-      })
-      .filter(Boolean)
-      .join(', ');
+    return prepareSpellDurations(durations).map(duration => spellDurationText(duration)).filter(Boolean).join(' or ');
   }
 
   compactSpellDurationLabel(durations: SpellDuration[]): string {
-    return durations.map(duration => {
-      const unit = duration.duration?.type;
-      const amount = duration.duration?.amount;
-      const base = unit
-        ? `${amount ?? ''} ${unit}${amount != null && amount !== 1 && !unit.endsWith('s') ? 's' : ''}`.trim()
-        : duration.type === 'instant' ? 'Instantaneous' : duration.type || 'Special';
-      return base;
-    }).join(', ');
+    return prepareSpellDurations(durations).map(duration => spellDurationText(duration, false)).filter(Boolean).join(' or ');
   }
 
   // Character stat helpers

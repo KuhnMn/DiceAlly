@@ -23,6 +23,6 @@ describe('Spell casting times', () => {
     expect(helpers.spellTimeLabel([
       { number: 1, unit: 'reaction', condition: 'when you are hit' },
       { number: 1, unit: 'action' },
-    ])).toBe('1 reaction, when you are hit, 1 action');
+    ])).toBe('1 reaction, when you are hit or 1 action');
   });
 });

@@ -115,6 +115,21 @@ type StyleType = 'TAG' | 'BONUS' | 'LINK' | 'BOLD';
             }
           </div>
         }
+        @case ('quote') {
+          @if (asQuoteEntry(entry()!); as quote) {
+            <blockquote class="my-3 space-y-2 border-l-2 border-outline-variant pl-4">
+              @if (quote.name) { <div class="font-semibold">{{ quote.name }}</div> }
+              <div [class.italic]="!quote.skipItalics">
+                <app-entry-renderer [entries]="quote.entries" [compact]="compact()" />
+              </div>
+              @if (quote.by || quote.from) {
+                <footer class="text-sm text-on-surface-variant">
+                  <app-entry-renderer [entry]="{text: quoteAttribution(quote)}" [compact]="true" />
+                </footer>
+              }
+            </blockquote>
+          }
+        }
         @case ('inset') {
           <div class="border-l-4 border-outline-variant pl-3 py-1">
             <div class="font-semibold">{{ asInsetEntry(entry()!)?.name }}</div>
@@ -215,6 +230,15 @@ export class EntryRendererComponent {
 
   asEntriesEntry(entry: Entry): RenderEntry<'entries', EntriesEntry> | null {
     return this.detectType(entry) === 'entries' ? (entry as RenderEntry<'entries', EntriesEntry>) : null;
+  }
+
+  asQuoteEntry(entry: Entry): SourceEntryOf<'quote'> | null {
+    return this.detectType(entry) === 'quote' ? entry as SourceEntryOf<'quote'> : null;
+  }
+
+  quoteAttribution(quote: SourceEntryOf<'quote'>): string {
+    const authors = Array.isArray(quote.by) ? quote.by.join(', ') : quote.by ?? '';
+    return `— ${[authors, quote.from].filter(Boolean).join(', ')}`;
   }
 
   asListItemEntry(entry: Entry): RenderEntry<'item', ListItemEntry> | null {

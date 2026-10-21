@@ -32,6 +32,10 @@ import { SpellsEditorComponent } from './spells-editor.component';
 import { SourceBookFilterComponent } from './source-book-filter.component';
 import { ClassWizardComponent } from './class-wizard.component';
 import { SpeciesEditorComponent } from './species-editor.component';
+import { IndexedDbContentCache } from '../content/content-cache';
+import { requiresContentReimport } from '../content/content-compatibility';
+import { activeContentRevision } from './active-content-revision';
+import { refreshCharacterDescriptions } from './refresh-character-content';
 
 @Component({
   selector: 'app-local-editor',
@@ -57,6 +61,8 @@ export class LocalEditorComponent implements OnInit {
   readonly abilities = new AbilityScoresEditorModel(this.formContext, this.helpers);
   readonly proficiencies = new ProficienciesEditorModel(this.formContext, this.helpers);
   readonly busy = signal(false);
+  readonly refreshingDescriptions = signal(false);
+  readonly descriptionRefreshSkipped = signal<{ name: string; reason: string }[]>([]);
   readonly message = signal('');
   readonly error = signal('');
   readonly pages = ['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Species & Features', 'Spells', 'Items', 'Monsters', 'Combat'];
@@ -134,6 +140,33 @@ export class LocalEditorComponent implements OnInit {
     this.page = 0;
     this.basicInfo.resetInputs();
     this.error.set(''); this.message.set('');
+    this.descriptionRefreshSkipped.set([]);
+  }
+
+  async refreshDescriptions() {
+    if (this.busy()) return;
+    this.busy.set(true); this.refreshingDescriptions.set(true);
+    this.error.set(''); this.message.set('Refreshing descriptions from the installed library…');
+    this.descriptionRefreshSkipped.set([]);
+    const draft = this.sheet;
+    try {
+      const before = canonicalDocument(draft);
+      const cache = new IndexedDbContentCache();
+      const revision = await activeContentRevision(cache);
+      if (!revision) throw new Error('Import a content library before refreshing descriptions.');
+      if (requiresContentReimport(revision)) throw new Error('Reimport the content library before refreshing descriptions.');
+      const result = await refreshCharacterDescriptions(draft, cache, revision);
+      if (this.destroyRef.destroyed) return;
+      if ((await activeContentRevision(cache))?.id !== revision.id) throw new Error('The content library changed during refresh. Try again.');
+      if (this.sheet !== draft || canonicalDocument(this.sheet) !== before) throw new Error('The character changed during refresh. Try again.');
+      this.sheet = result.sheet;
+      this.changed();
+      this.descriptionRefreshSkipped.set(result.skipped);
+      this.message.set(`Refreshed ${result.refreshed} entries. ${result.skipped.length} skipped. Review the details and save your character to keep the updates.`);
+    } catch (error) {
+      this.message.set('');
+      this.error.set(error instanceof Error ? error.message : String(error));
+    } finally { this.refreshingDescriptions.set(false); this.busy.set(false); this.view.markForCheck(); }
   }
 
   async save() {
