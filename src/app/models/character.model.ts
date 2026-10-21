@@ -874,6 +874,7 @@ export interface Note {
 export type ConditionName = string;
 
 export interface ExportedCharacter {
+  referenceDescriptions?: import('./character-references').CharacterReferenceDescriptions;
   classes?: CharacterClassEntry[];
   background?: Background;
   creatorWizard?: {

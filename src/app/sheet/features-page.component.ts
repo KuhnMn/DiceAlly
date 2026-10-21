@@ -19,10 +19,12 @@ import { CharacterStore } from '../stores/character.store';
 import { speciesMovementText, speciesSenseRanges, speciesTraitText } from '../content/species-compatibility';
 import { formatSizeNames } from '../size-names';
 import { PrerequisiteDetailsComponent } from './prerequisite-details.component';
+import { RuleReferenceComponent } from './rule-reference.component';
+import { referenceDescription } from '../models/character-references';
 
 @Component({
   selector: 'app-features-page',
-  imports: [PrerequisiteDetailsComponent, FeatureFiltersComponent, ListControlsComponent, SheetListLayoutComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [RuleReferenceComponent, PrerequisiteDetailsComponent, FeatureFiltersComponent, ListControlsComponent, SheetListLayoutComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: feature-flash 1.6s ease-out;
@@ -102,7 +104,7 @@ import { PrerequisiteDetailsComponent } from './prerequisite-details.component';
                   <div>Speed: {{ speciesMovement() }}</div>
                 }
                 @for (sense of speciesSenses(); track sense.sense) {
-                  <div>{{ sense.label }}: {{ sense.rangeFeet }} ft.</div>
+                  <app-rule-reference [reference]="senseDescription(sense.label)">{{ sense.label }}: {{ sense.rangeFeet }} ft.</app-rule-reference>
                 }
                 @if (speciesCreatureTypes()) {
                   <div>Creature Type: {{ speciesCreatureTypes() }}</div>
@@ -129,7 +131,7 @@ import { PrerequisiteDetailsComponent } from './prerequisite-details.component';
             <div appHorizontalRow role="region" aria-label="Species details" tabindex="0" class="flex flex-nowrap items-center gap-4 overflow-x-auto overscroll-x-contain py-1 text-sm [&>*]:shrink-0 [&>*]:whitespace-nowrap">
               <span>Size: {{ speciesSize() || '—' }}</span>
               <span>Speed: {{ speciesMovement() }}</span>
-              @for (sense of speciesSenses(); track sense.sense) { <span>{{ sense.label }}: {{ sense.rangeFeet }} ft.</span> }
+              @for (sense of speciesSenses(); track sense.sense) { <app-rule-reference [reference]="senseDescription(sense.label)">{{ sense.label }}: {{ sense.rangeFeet }} ft.</app-rule-reference> }
               <span>{{ speciesCreatureTypes() }}</span>
             </div>
             <div class="mt-3 pt-3 border-t border-outline-variant">
@@ -324,6 +326,7 @@ export class FeaturesPageComponent {
   readonly speciesMovement = computed(() => speciesMovementText(this.species()?.entity));
   readonly speciesSize = computed(() => formatSizeNames(this.species()?.entity?.size));
   readonly speciesSenses = computed(() => speciesSenseRanges(this.species()?.entity));
+  senseDescription(name: string) { return referenceDescription(this.characterData(), 'senses', name); }
   readonly pickerSources = computed(() => this.characterData()?.character?.featureSources?.filter(source => source.isGeneralFeatureSource) ?? []);
   speciesCreatureTypes = computed(() => {
     const definition = this.species()?.entity?.definition;

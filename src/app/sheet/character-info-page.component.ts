@@ -16,10 +16,12 @@ import { ExportedCharacter, HitDieEntry, ConditionName } from '../models/charact
 import { ConditionsComponent } from './conditions.component';
 import { SheetSpeedControlComponent } from './sheet-speed-control.component';
 import { SheetSpeedDescriptionComponent } from './sheet-speed-description.component';
+import { RuleReferenceComponent } from './rule-reference.component';
+import { CharacterReferenceCategory, referenceDescription } from '../models/character-references';
 
 @Component({
   selector: 'app-character-info-page',
-  imports: [SheetSpeedControlComponent, SheetSpeedDescriptionComponent, BackgroundDetailsComponent, ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
+  imports: [RuleReferenceComponent, SheetSpeedControlComponent, SheetSpeedDescriptionComponent, BackgroundDetailsComponent, ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
   styleUrl: './sheet-stat-tooltip.css',
   styles: [`
     .round-tracker-input::-webkit-outer-spin-button,
@@ -156,7 +158,7 @@ import { SheetSpeedDescriptionComponent } from './sheet-speed-description.compon
                   }
                 }
                   <span class="font-mono font-bold w-8">{{ s.value }}</span>
-                  <span class="flex-1">{{ s.name }}</span>
+                  <app-rule-reference class="flex-1" [reference]="ruleReference('skills', s.name)">{{ s.name }}</app-rule-reference>
                   <span class="text-xs text-on-surface-variant">({{ helpers.getSkillAbility(s.name) }})</span>
                 </li>
               }
@@ -436,6 +438,7 @@ import { SheetSpeedDescriptionComponent } from './sheet-speed-description.compon
             </h3>
             <app-conditions
               [activeConditions]="activeConditions()"
+              [descriptions]="characterData()?.referenceDescriptions?.conditions ?? []"
               (conditionsChanged)="onConditionsChanged($event)"
             />
           </div>
@@ -572,10 +575,10 @@ import { SheetSpeedDescriptionComponent } from './sheet-speed-description.compon
 
               <div>
                 <div class="text-xs text-on-surface-variant uppercase font-semibold mb-1">Senses</div>
-                @if (senseEntries().length > 0) {
+                @if (senseRows().length > 0) {
                   <div class="space-y-1">
-                    @for (sense of senseEntries(); track sense) {
-                      <div>{{ sense }}</div>
+                    @for (sense of senseRows(); track sense.name) {
+                      <div><app-rule-reference [reference]="ruleReference('senses', sense.name)">{{ sense.text }}</app-rule-reference></div>
                     }
                   </div>
                 } @else {
@@ -952,17 +955,19 @@ export class CharacterInfoPageComponent {
 
   speedEntries() { return this.character()?.speeds ?? []; }
 
-  senseEntries(): string[] {
+  ruleReference(category: CharacterReferenceCategory, name: string) { return referenceDescription(this.characterData(), category, name); }
+
+  senseRows(): { name: string; text: string }[] {
     const senses = this.character()?.senses;
     if (!senses || typeof senses !== 'object') return [];
     return Object.entries(senses).map(([key, value]) => {
       if (typeof value === 'number') {
-        return `${key}: ${value} ft.`;
+        return { name: key, text: `${key}: ${value} ft.` };
       }
       if (typeof value === 'string') {
-        return `${key}: ${value}`;
+        return { name: key, text: `${key}: ${value}` };
       }
-      return key;
+      return { name: key, text: key };
     });
   }
 

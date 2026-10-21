@@ -6,6 +6,7 @@ import { CHARACTER_REPOSITORY, CharacterRecord } from './character-repository';
 import { ExportedCharacter } from '../models/character.model';
 import { APP_RUNTIME_CONFIG } from '../app.tokens';
 import { CharacterStorageService, SavedCharacterMetadata, StorageError } from '../services/character-storage.service';
+import { fillInstalledReferenceDescriptions } from '../content/character-reference-descriptions';
 
 export interface CharacterSummary extends SavedCharacterMetadata { version: number; }
 export interface CharacterImportResult { success: boolean; characterId?: string; error?: StorageError; }
@@ -84,10 +85,14 @@ export class CharacterLibraryService implements OnDestroy {
     await this.ready();
     if (typeof indexedDB === 'undefined') return;
     const record = await this.repository.get(id);
-    return !record || record.deletedAt ? undefined : { ...record, sheet: normalizeCharacterEditorIdentity(record.sheet) };
+    if (!record || record.deletedAt) return undefined;
+    const sheet = normalizeCharacterEditorIdentity(record.sheet);
+    await fillInstalledReferenceDescriptions(sheet);
+    return { ...record, sheet };
   }
   async save(sheet: ExportedCharacter, expectedVersion: number): Promise<number> {
     const snapshot = normalizeCharacterEditorIdentity(sheet);
+    await fillInstalledReferenceDescriptions(snapshot);
     await this.ready();
     const version = await this.repository.save(snapshot, expectedVersion);
     this.notify(); return version;

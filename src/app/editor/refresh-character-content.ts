@@ -8,6 +8,7 @@ import { createFeatureEntry } from './feature-selection';
 import { createInventoryEntry } from './item-selection';
 import { createMonsterEntry } from './monster-selection';
 import { spellSnapshot } from './spell-selection';
+import { prepareCharacterReferenceDescriptions } from '../content/character-reference-descriptions';
 
 export interface DescriptionRefreshResult {
   sheet: ExportedCharacter;
@@ -105,6 +106,7 @@ export async function refreshCharacterDescriptions(
     const record = await find(background, ['background']);
     if (record) { background.entity = characterOptionSourceData(record); updated(background, record); }
   }
+  result.refreshed += await prepareCharacterReferenceDescriptions(result.sheet, cache, revision, true);
   // No recalculation: wizard baselines, manual character fields and combat overrides remain untouched.
   // Exercise the same bounded serializer used by the editor before committing the replacement draft.
   canonicalDocument(result.sheet);

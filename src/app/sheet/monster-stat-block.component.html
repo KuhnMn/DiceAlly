@@ -131,7 +131,7 @@
                   <div class="my-3 px-4 py-3 bg-surface border-l-4 border-secondary rounded-md ">
                     <span class="font-bold text-sm text-on-surface mr-2">Senses:</span>
                     @for (sense of monster.entity.senses; track sense) {
-                      <span class="text-sm text-on-surface-variant">{{ sense }}</span>
+                      <app-rule-reference class="text-sm text-on-surface-variant" [reference]="senseDescription(sense)">{{ sense }}</app-rule-reference>
                       @if (!$last) {
                         <span class="text-on-surface-variant">, </span>
                       }

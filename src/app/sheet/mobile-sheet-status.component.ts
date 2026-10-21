@@ -54,7 +54,7 @@ import { DialogScrollLockService } from '../editor/dialog-scroll-lock.service';
         <app-sheet-health-details [characterData]="sheet()" />
         <app-hit-dice-tracker [character]="character" />
         <h3 class="mb-2 text-sm font-semibold">Conditions & Effects ({{ sheet().conditions?.length ?? 0 }})</h3>
-        <app-conditions [activeConditions]="sheet().conditions ?? []" (conditionsChanged)="sheet().conditions = $event" />
+        <app-conditions [activeConditions]="sheet().conditions ?? []" [descriptions]="sheet().referenceDescriptions?.conditions ?? []" (conditionsChanged)="sheet().conditions = $event" />
         </div>
         <div data-health-footer class="flex shrink-0 justify-end border-t border-outline-variant bg-surface px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <button type="button" [disabled]="saving() || !dirty()" (click)="save.emit()" class="min-h-11 rounded-lg bg-primary-container px-4 py-2 text-sm font-semibold text-on-primary-container disabled:opacity-50">{{ saving() ? 'Saving…' : dirty() ? 'Save changes' : 'Saved' }}</button>

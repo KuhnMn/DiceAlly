@@ -3,11 +3,13 @@ import { AdvantageBadgeComponent } from './advantage-badge.component';
 import { Component } from '@angular/core';
 import { CharacterInfoPageComponent } from './character-info-page.component';
 import { UiIconComponent } from '../ui-icon.component';
+import { RuleReferenceComponent } from './rule-reference.component';
+import { SheetSpeedDescriptionComponent } from './sheet-speed-description.component';
 
 /** Mobile composition reuses the full sheet's calculations and editing actions. */
 @Component({
   selector: 'app-mobile-character-info-page',
-  imports: [AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent],
+  imports: [RuleReferenceComponent, SheetSpeedDescriptionComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent],
   template: `
     @if (character(); as c) {
       <div class="space-y-2 rounded-lg border border-outline-variant bg-surface-container-highest p-2.5">
@@ -69,7 +71,7 @@ import { UiIconComponent } from '../ui-icon.component';
                   }
                 }
                   <span class="font-mono font-bold w-8">{{ s.value }}</span>
-                  <span class="flex-1">{{ s.name }}</span>
+                  <app-rule-reference class="flex-1" [reference]="ruleReference('skills', s.name)">{{ s.name }}</app-rule-reference>
                   <span class="text-xs text-on-surface-variant">({{ helpers.getSkillAbility(s.name) }})</span>
                 </li>
               }
@@ -83,39 +85,49 @@ import { UiIconComponent } from '../ui-icon.component';
         <details open class="overflow-hidden rounded-xl border border-outline-variant bg-surface p-3 text-sm" aria-label="General Stats">
           <summary class="flex min-h-11 cursor-pointer items-center gap-2 border-b border-outline-variant pb-2 font-bold"><app-ui-icon name="info" /> General Stats</summary>
           <div class="mt-3 space-y-3">
-            <section aria-label="Senses">
-              <h3 class="mb-2 text-xs font-semibold uppercase text-on-surface-variant">Senses</h3>
-              <div class="flex flex-wrap gap-1">
-                @for (sense of senseEntries(); track sense) {
-                  <p class="max-w-full rounded bg-surface-container px-2 py-1 text-xs [overflow-wrap:anywhere]">{{ sense }}</p>
+            <section aria-label="Speeds">
+              <h3 class="mb-1 text-xs font-semibold uppercase text-on-surface-variant">Speeds</h3>
+              <div class="space-y-1">
+                @for (speed of speedEntries(); track speed.id) {
+                  <app-sheet-speed-description [speed]="speed" [speeds]="speedEntries()" />
                 } @empty {
-                  <p class="text-on-surface-variant">None</p>
+                  <p class="text-on-surface-variant italic">None listed</p>
                 }
               </div>
             </section>
-            @if (resistanceEntries().length) {
-              <section aria-label="Resistances">
-                <h3 class="mb-2 text-xs font-semibold uppercase text-on-surface-variant">Resistances</h3>
-                <div class="flex flex-wrap gap-1">
-                  @for (resistance of resistanceEntries(); track resistance) {
-                    <p class="max-w-full rounded bg-surface-container px-2 py-1 text-xs [overflow-wrap:anywhere]">{{ resistance }}</p>
-                  }
-                </div>
-              </section>
-            }
-            @if (advantageItems().length) {
-              <section aria-label="Advantages and disadvantages">
-                <h3 class="mb-1 text-xs font-semibold uppercase text-on-surface-variant">(Dis)Advantages</h3>
-                <div class="flex flex-wrap gap-x-3 gap-y-1">
-                  @for (advantage of advantageItems(); track advantage.text) {
-                    <p class="inline-flex max-w-full items-center gap-1 text-xs">
-                      <app-advantage-badge style="width: 1.5rem; height: 1.5rem" [disadvantage]="advantage.isDisadvantage" />
-                      <span class="min-w-0 [overflow-wrap:anywhere]">{{ advantage.text }}</span>
-                    </p>
-                  }
-                </div>
-              </section>
-            }
+            <section aria-label="Senses">
+              <h3 class="mb-2 text-xs font-semibold uppercase text-on-surface-variant">Senses</h3>
+              <div class="flex flex-wrap gap-1">
+                @for (sense of senseRows(); track sense.name) {
+                  <p class="max-w-full rounded bg-surface-container px-2 py-1 text-xs [overflow-wrap:anywhere]"><app-rule-reference [reference]="ruleReference('senses', sense.name)">{{ sense.text }}</app-rule-reference></p>
+                } @empty {
+                  <p class="text-on-surface-variant italic">None listed</p>
+                }
+              </div>
+            </section>
+            <section aria-label="Resistances">
+              <h3 class="mb-2 text-xs font-semibold uppercase text-on-surface-variant">Resistances</h3>
+              <div class="flex flex-wrap gap-1">
+                @for (resistance of resistanceEntries(); track resistance) {
+                  <p class="max-w-full rounded bg-surface-container px-2 py-1 text-xs [overflow-wrap:anywhere]">{{ resistance }}</p>
+                } @empty {
+                  <p class="text-on-surface-variant italic">None listed</p>
+                }
+              </div>
+            </section>
+            <section aria-label="Advantages and disadvantages">
+              <h3 class="mb-1 text-xs font-semibold uppercase text-on-surface-variant">(Dis)Advantages</h3>
+              <div class="flex flex-wrap gap-x-3 gap-y-1">
+                @for (advantage of advantageItems(); track advantage.text) {
+                  <p class="inline-flex max-w-full items-center gap-1 text-xs">
+                    <app-advantage-badge style="width: 1.5rem; height: 1.5rem" [disadvantage]="advantage.isDisadvantage" />
+                    <span class="min-w-0 [overflow-wrap:anywhere]">{{ advantage.text }}</span>
+                  </p>
+                } @empty {
+                  <p class="text-on-surface-variant italic">None listed</p>
+                }
+              </div>
+            </section>
           </div>
         </details>
 

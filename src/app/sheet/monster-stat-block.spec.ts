@@ -4,6 +4,20 @@ import { MonsterPresentation } from './monster-presentation';
 import { MonsterEntity } from '../models/character.model';
 
 describe('Shared monster stat block', () => {
+  it('links standard sense help while preserving ranges, qualifiers and custom senses', () => {
+    const fixture = TestBed.createComponent(MonsterStatBlockComponent);
+    const senses = ['darkvision 120 ft. (through magical darkness)', 'Blindsight 10 ft. (blind beyond this radius)', 'Tremorsense 60 ft.', 'Custom Sense 30 ft.'];
+    fixture.componentRef.setInput('value', { name: 'Test monster', hpEnabled: false, entity: { name: 'Test monster', senses } });
+    fixture.componentRef.setInput('senseDescriptions', ['Darkvision', 'Blindsight', 'Tremorsense'].map(name => ({ name, source: 'XPHB', entries: [`${name} reference description`] })));
+    fixture.detectChanges();
+    for (const text of senses) expect(fixture.nativeElement.textContent).toContain(text);
+    expect(fixture.nativeElement.querySelector('button[aria-label="About Custom Sense"]')).toBeNull();
+    expect(fixture.componentInstance.senseDescription('Darkvisionary perception')).toBeUndefined();
+    fixture.nativeElement.querySelector('button[aria-label="About Blindsight"]').click(); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('dialog').textContent).toContain('Blindsight reference description');
+    expect(fixture.componentInstance.value().entity?.senses).toEqual(senses);
+  });
+
   it('renders descriptive AC, named abilities and additional action sections instead of object JSON', async () => {
     TestBed.configureTestingModule({ imports: [MonsterStatBlockComponent] });
     const fixture = TestBed.createComponent(MonsterStatBlockComponent);

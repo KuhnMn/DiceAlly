@@ -65,7 +65,7 @@
                   </div>
                 </details>
               }
-              <app-monster-stat-block [value]="monster" [showSummary]="true" />
+              <app-monster-stat-block [value]="monster" [senseDescriptions]="characterData()?.referenceDescriptions?.senses ?? []" [showSummary]="true" />
             }
             <app-feature-notes [notes]="monster.notes" (notesChanged)="monster.notes = $event" />
           </div>
