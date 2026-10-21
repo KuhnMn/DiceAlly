@@ -20,6 +20,20 @@ class MemoryCache implements ContentCache {
 }
 
 describe('Secondary content mappings', () => {
+  it('preserves relative damage rules for weapons without a single damage type', () => {
+    const base = record('baseitem', { name: 'Hinge Spear', source: 'TEST', weapon: true });
+    const variant = record('magicvariant', { name: 'Vicious Weapon', inherits: { source: 'DMG', namePrefix: 'Vicious ',
+      entries: ['An extra 7 {=dmgType} damage.', '{@note Extra {@damage 2d6} {=dmgType} damage.}', 'Type: {=dmgType}.'] } });
+    const result = generateVariant(base, variant);
+    expect(result.data['entries']).toEqual(["An extra 7 damage of the weapon's normal type.",
+      "{@note Extra {@damage 2d6} damage of the weapon's normal type.}", "Type: the weapon's normal damage type."]);
+    expect(result.data['dmgType']).toBeUndefined();
+    expect(result.data['dmg1']).toBeUndefined();
+    const fixed = generateVariant({ ...base, data: { ...base.data, dmgType: 'P' } }, variant);
+    expect(fixed.data['entries']).toEqual(['An extra 7 piercing damage.', '{@note Extra {@damage 2d6} piercing damage.}', 'Type: piercing.']);
+    expect(() => generateVariant(base, { ...variant, data: { inherits: { source: 'DMG', entries: ['{=missingProperty}'] } } })).toThrow('Unresolved variant entry property: missingProperty');
+    expect(() => generateVariant({ ...base, data: { name: 'Armor', armor: true } }, variant)).toThrow('Unresolved variant entry property: dmgType');
+  });
   it('expands templates after the variant receives its item-specific resistance', async () => {
     const cache = new MemoryCache(); const diagnostics: ImportDiagnostic[] = [];
     await cache.put('r', [

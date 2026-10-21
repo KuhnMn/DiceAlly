@@ -10,6 +10,7 @@ import { importContent } from './content-importer';
 import { coreDocumentFixture, homebrewDocumentFixture } from './content-fixtures.testing';
 import { CONTENT_SCHEMA_ID } from './generated/schema-version';
 import { validateHomebrewDocument } from './content-schema';
+import { createInventoryEntry } from '../editor/item-selection';
 
 const readHomebrewFile = (value: Record<string, unknown>, name: string) => parseHomebrewFile(homebrewDocumentFixture(value), name);
 
@@ -42,6 +43,31 @@ function document(name = 'Homebrew Spell') {
 
 describe('Explicit single-file homebrew imports', () => {
   beforeAll(async () => validateHomebrewDocument(homebrewDocumentFixture({}), 'fixture.json'), 30000);
+  it('keeps switch weapons searchable and freezes their form templates and Vicious variants into snapshots', async () => {
+    const f = await fixture();
+    const forms = ['{@item Pike|XPHB}, {@item Spear|XPHB}', '{@item Battleaxe|XPHB}, {@item Glaive|XPHB}'];
+    const file = await readHomebrewFile({
+      baseitem: ['Hinge Spear', 'Pendulum Axe'].map((name, index) => ({ name, source: 'TESTBREW', weapon: true,
+        type: 'SW', rarity: 'none', property: ['SW'], customProperties: { baseitems: forms[index] } })),
+      itemType: [{ name: 'Switch Weapon', abbreviation: 'SW', source: 'TESTBREW' }],
+      itemProperty: [{ name: 'Switch Weapon', abbreviation: 'SW', source: 'TESTBREW', template: '{@i Forms: ({{item.customProperties.baseitems}})}' }],
+      magicvariant: [{ name: 'Vicious Weapon', requires: [{ weapon: true }], inherits: {
+        source: 'TESTBREW', namePrefix: 'Vicious ', rarity: 'rare', entries: ['Extra 7 {=dmgType} damage.'] } }],
+    }, 'switch-weapons.json');
+    const revision = await importHomebrew(f.cache, { ...f, file, bytes: 1 });
+    expect(revision.diagnostics.some(issue => issue.message.includes('Unresolved variant entry property'))).toBe(false);
+    const reopened = new IndexedDbContentCache();
+    for (const [index, name] of ['Hinge Spear', 'Pendulum Axe'].entries()) {
+      const matches = await reopened.searchCategory(revision.id, ['item'], name);
+      expect(matches.records[0].name).toBe(name);
+      const item = await createInventoryEntry(reopened, matches.records[0], revision);
+      const snapshot = JSON.parse(JSON.stringify(item));
+      expect(snapshot.entity.properties[0].entry.entries).toEqual([`{@i Forms: (${forms[index]})}`]);
+      expect(snapshot.entity.item.dmg1).toBeUndefined();
+      expect(snapshot.entity.item.dmgType).toBeUndefined();
+      expect(matches.records.find(record => record.name === `Vicious ${name}`)?.data['entries']).toEqual(["Extra 7 damage of the weapon's normal type."]);
+    }
+  });
   it('stores and expands reusable item entries through import, cache reopen and replay', async () => {
     const f = await fixture();
     const file = await readHomebrewFile({
@@ -150,12 +176,14 @@ describe('Explicit single-file homebrew imports', () => {
     expect(updated.status).toBe('ready');
     expect(updated.diagnostics.some(issue => issue.severity === 'error')).toBe(false);
     expect(updated.diagnostics.some(issue => issue.message.includes('GC:VSS-F|ValdaGunslinger') && issue.file.startsWith('homebrew/'))).toBe(true);
-    expect(updated.diagnostics.some(issue => issue.message.includes('Incomplete Gun + Vicious Weapon'))).toBe(true);
+    expect(updated.diagnostics.some(issue => issue.message.includes('Unresolved variant entry property: dmgType'))).toBe(false);
     const items = await f.cache.category(updated.id, 'item');
     expect(items.some(item => item.name === 'Vicious Core Sword')).toBe(true);
     expect(items.some(item => item.name === 'Vicious Homebrew Gun' && item.file.startsWith('homebrew/'))).toBe(true);
     expect(items.some(item => item.name === 'Incomplete Gun')).toBe(true);
-    expect(items.some(item => item.name === 'Vicious Incomplete Gun')).toBe(false);
+    const variable = items.find(item => item.name === 'Vicious Incomplete Gun')!;
+    expect(variable.data['entries']).toEqual(["Deals damage of the weapon's normal type."]);
+    expect(variable.itemDefinition?.dmgType).toBeUndefined();
   });
   it('retains explicitly selected files through a core-library reimport', async () => {
     const f = await fixture();

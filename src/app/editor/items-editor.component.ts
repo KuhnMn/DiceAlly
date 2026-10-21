@@ -81,6 +81,11 @@ export class ItemsEditorComponent implements DoCheck, OnInit, OnDestroy {
   toggle(item: InventoryItem) { this.expanded.has(item) ? this.expanded.delete(item) : this.expanded.add(item); }
   openCatalog() { this.catalogOpen = true; }
   entries(item: InventoryItem): Entry[] { return item.entity?.item.entries ?? item.entity?.baseItem?.entries ?? []; }
+  descriptionEntries(item: InventoryItem): Entry[] {
+    const rules = [...item.entity?.properties ?? [], ...item.entity?.masteries ?? []].flatMap(rule =>
+      rule.entry ? [{ type: 'entries' as const, name: rule.name, entries: [rule.entry] }] : []);
+    return [...this.entries(item), ...rules];
+  }
   description(item: InventoryItem): string {
     const entries: unknown[] = this.entries(item);
     return entries.map(entry => typeof entry === 'string' ? entry

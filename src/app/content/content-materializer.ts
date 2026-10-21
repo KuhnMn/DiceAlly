@@ -113,12 +113,15 @@ export function variantMatches(base: JsonObject, variant: JsonObject): boolean {
   return required && (!excludes || !matchesRequirement(base, excludes, false));
 }
 
-function inject(value: unknown, properties: JsonObject): unknown {
-  if (typeof value === 'string') return value.replace(/\{=([^}]+)\}/g, (_, expression: string) => {
+function inject(value: unknown, properties: JsonObject, allowRelativeDamageType: boolean): unknown {
+  if (typeof value === 'string') return value.replace(/\{=([^}]+)\}(\s+damage\b)?/g, (_, expression: string, damageWord?: string) => {
     const [field, format] = expression.split('/');
     const replacement = properties[field];
-    if (replacement === undefined || replacement === null) throw new Error(`Unresolved variant entry property: ${field}`);
-    let text = String(replacement);
+    // Some weapons have several forms and intentionally define no single damage type.
+    // Keep the recipe's relative damage rule in prose without inventing an item statistic.
+    const relativeDamageType = allowRelativeDamageType && field === 'dmgType' && (replacement === undefined || replacement === null);
+    if (!relativeDamageType && (replacement === undefined || replacement === null)) throw new Error(`Unresolved variant entry property: ${field}`);
+    let text = relativeDamageType ? damageWord ? "damage of the weapon's normal type" : "the weapon's normal damage type" : String(replacement);
     for (const modifier of format ?? '') {
       if (modifier === 'l') text = text.toLowerCase();
       else if (modifier === 'u') text = text.toUpperCase();
@@ -130,10 +133,10 @@ function inject(value: unknown, properties: JsonObject): unknown {
         text = String(modifier === 'r' ? Math.round(value) : modifier === 'f' ? Math.floor(value) : Math.ceil(value));
       } else throw new Error(`Unsupported variant entry format: ${modifier}`);
     }
-    return text;
+    return text + (!relativeDamageType ? damageWord ?? '' : '');
   });
-  if (Array.isArray(value)) return value.map(v => inject(v, properties));
-  if (object(value)) return Object.fromEntries(Object.entries(value as JsonObject).map(([k, v]) => [k, inject(v, properties)]));
+  if (Array.isArray(value)) return value.map(v => inject(v, properties, allowRelativeDamageType));
+  if (object(value)) return Object.fromEntries(Object.entries(value as JsonObject).map(([k, v]) => [k, inject(v, properties, allowRelativeDamageType)]));
   return value;
 }
 export function generateVariant(base: ContentRecord, variant: ContentRecord, warn?: (message: string) => void): ContentRecord {
@@ -150,7 +153,8 @@ export function generateVariant(base: ContentRecord, variant: ContentRecord, war
   data['page'] = inherits['page'];
   const damageTypes: Record<string, string> = { A: 'acid', B: 'bludgeoning', C: 'cold', F: 'fire', O: 'force', L: 'lightning', N: 'necrotic', P: 'piercing', I: 'poison', Y: 'psychic', R: 'radiant', S: 'slashing', T: 'thunder' };
   const properties = { ...inherits, baseName: base.name, dmgType: damageTypes[string(base.data['dmgType'])] ?? base.data['dmgType'] };
-  data['entries'] = [...structuredClone(array(base.data['entries'])), ...array(inject(inherits['entries'], properties))];
+  const weapon = base.data['weapon'] === true || typeof base.data['weaponCategory'] === 'string';
+  data['entries'] = [...structuredClone(array(base.data['entries'])), ...array(inject(inherits['entries'], properties, weapon))];
   for (const field of ['vulnerable', 'resist', 'immune']) {
     if (inherits[field] === null) { delete data[field]; continue; }
     const assignedElsewhere = ['vulnerable', 'resist', 'immune'].filter(f => f !== field).flatMap(f => array(inherits[f]));

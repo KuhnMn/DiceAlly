@@ -3,7 +3,7 @@
 This tracks implementation against [the plan](SCHEMA_ADAPTER_OVERHAUL.md).
 The sections below record the migration in successive slices. The source-boundary
 table is the initial inventory; later sections describe completed work. The latest
-slice is adapter 21: typed status import and standard species reference precedence. Unused source payloads
+slice is adapter 22: switch-weapon descriptions and relative variant damage after status import and species reference fixes. Unused source payloads
 and new rule/UI features remain outside the migration.
 
 Manual browser acceptance for the agreed migration scope was confirmed by the user on 2026-10-21; see [the recorded results](#manual-browser-acceptance-2026-10-21).
@@ -485,3 +485,16 @@ The user reported the following checks as working in the browser after the adapt
 The storage figure is the browser's site-wide usage/quota display, not an importer-only IndexedDB measurement, JavaScript bundle size, or memory measurement. Browser/device details and numerical import/startup timings were not recorded.
 
 The agreed migration scope is accepted. The remaining excluded categories (`tableGroup`, `itemTypeAdditionalEntries`, `vehicleUpgrade`, and `legendaryGroupTemplate`) were explicitly accepted as out of scope for now. Unknown item prices are intended data and require no fix. Existing bundle/CSS budget warnings remain documented; this acceptance does not add new sheet functionality or enable automatic species ability-score adjustments.
+
+## Switch-weapon homebrew regression (adapter 22)
+
+Reproduced against the user's pinned [Valda 2024 homebrew collection](https://raw.githubusercontent.com/TheGiddyLimit/homebrew/41876366677b3e615f9ffe37031247ce1960da37/collection/Mage%20Hand%20Press%3B%20Valda%27s%20Spire%20of%20Secrets%20-%202024.json), homebrew commit `41876366677b3e615f9ffe37031247ce1960da37`, together with the pinned core corpus. Switch weapons such as Hinge Spear and Pendulum Axe intentionally omit a single `dmgType` and damage die; their form references live in `customProperties.baseitems`. Both base and playable item records were already imported. Their apparent missing details were caused by ignoring the linked `itemProperty.template` field.
+
+- Missing optional variant damage types now remain relative prose: `damage of the weapon's normal type`. Known damage types still render explicitly, and other unresolved variant properties still fail that generated combination. No damage statistics or form-switching mechanics are inferred.
+- Property templates expand against the specific materialized item using the existing item-template formatter. The reusable metadata remains unchanged. Missing optional display values say `Unspecified`; required itemEntry expansion remains strict.
+- Catalog descriptions and creator descriptions now include linked property details. Inventory snapshots include the resolved template so the equipment viewer, export/import and offline use retain the form references. Hinge Spear displays Pike/Spear; Pendulum Axe displays Battleaxe/Glaive.
+- Previously excluded `itemTypeAdditionalEntries`, including the full supplementary Switch Weapon rules, remain outside this fix's scope.
+
+The pinned-file reproduction retains 22 Vicious variants previously skipped for missing `dmgType`: total records increase from 26,840 to 26,862 and diagnostics decrease from 949 to 927. Other homebrew diagnostics remain visible. Actual Hinge Spear and Pendulum Axe inventory snapshots were checked for resolved form text and absence of invented damage fields. Regression tests cover IndexedDB search/reopen, generated descriptions, snapshot serialization, catalog preview and creator descriptions. The core-only probe remains unchanged at 22,112 records, 44 diagnostics and 53,019,789 serialized bytes.
+
+Application tests, application/worker TypeScript unused-code checks, seven schema tooling tests, generated artifact checks and production build pass. Existing build-budget warnings remain; the initial bundle is still 992.03 kB. Adapter 22 requires a library reimport. Existing saved equipment remains a detached snapshot; newly added copies receive the corrected property descriptions.

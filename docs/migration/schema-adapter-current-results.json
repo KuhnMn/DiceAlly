@@ -1,9 +1,9 @@
 {
   "status": "passed",
   "mode": "current",
-  "applicationCommit": "a242e4183e7d3c80b2d3bcd6a74181222165e99b",
+  "applicationCommit": "2cdc9d3d0fb543475beafa6454ec3a2523d622f5",
   "contentCommit": "90d343cde64cf8dce1083ea0525a6b0b9e545f2e",
-  "adapterVersion": 21,
+  "adapterVersion": 22,
   "schemaSnapshot": "1b9d484ec2ccf94652eb0277578aa269d31c1b440e4ef9a089fef9037db2b26f",
   "referenceDefinitionCounts": {
     "condition": 30,
@@ -21,7 +21,7 @@
   "metrics": {
     "bytes": 25176499,
     "records": 22112,
-    "elapsedMs": 6717,
+    "elapsedMs": 3872,
     "mappedBytes": 53019789
   },
   "counts": {
@@ -332,5 +332,5 @@
       "message": "missing entry-table at rows[7][1]: Treasure Hoard: Challenge 5—10|DMG"
     }
   ],
-  "nodeSampledHeapBytes": 327919744
+  "nodeSampledHeapBytes": 344456264
 }

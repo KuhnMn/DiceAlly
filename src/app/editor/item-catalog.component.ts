@@ -18,6 +18,8 @@ import { SourceBookFilterService } from './source-book-filter.service';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { createInventoryEntry, setCustomItemDescription } from './item-selection';
 import { newEditorId } from './editor-identity';
+import { itemSourceData } from '../content/item-adapter';
+import { itemRuleEntries } from '../content/item-resolver';
 
 /** Shared acquisition dialog for play and creation. Annotation editing belongs only to the creator. */
 @Component({
@@ -41,6 +43,7 @@ export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
   customValue: number | null = null;
   customType = '';
   itemTypes: ContentRecord[] = [];
+  private itemProperties = new Map<string, ContentRecord>();
   get filteredItemTypes() { return this.itemTypes.filter(type => this.books.allows(type.publication)); }
   get customValueValid() {
     return this.customValue == null || (Number.isSafeInteger(this.customValue) && this.customValue >= 0);
@@ -68,11 +71,15 @@ export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
   }
   refreshContent() {
     this.itemTypes = []; this.customType = '';
+    this.itemProperties.clear();
     return this.catalog.refresh('Import game data to browse items. You can still add a custom item.', () => this.query(),
       async (revision, isCurrent) => {
-        const types = await this.cache.category(revision.id, 'itemType', 0);
+        const [types, properties] = await Promise.all([
+          this.cache.category(revision.id, 'itemType', 0), this.cache.category(revision.id, 'itemProperty', 0),
+        ]);
         if (!isCurrent()) return;
         this.itemTypes = types.sort((a, b) => a.name.localeCompare(b.name) || a.publication.localeCompare(b.publication));
+        this.itemProperties = new Map(properties.map(property => [property.key, property]));
         this.view.markForCheck();
       });
   }
@@ -83,7 +90,16 @@ export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
     return this.membership.has(entries, catalogEntryKeys, JSON.stringify(['key', record.key]))
       || this.membership.has(entries, catalogEntryKeys, JSON.stringify(['name', record.name, record.publication]));
   }
-  catalogEntries(record: ContentRecord): Entry[] { return contentEntries(record); }
+  catalogEntries(record: ContentRecord): Entry[] {
+    const item = itemSourceData(record);
+    const properties = record.links.filter(link => link.role === 'item-property').flatMap(link => {
+      const definition = this.itemProperties.get(link.target);
+      if (!definition) return [];
+      const entries = itemRuleEntries(definition, item) as Entry[];
+      return entries.length ? [{ type: 'entries' as const, name: definition.name, entries }] : [];
+    });
+    return [...contentEntries(record), ...properties];
+  }
   private append(sheet: ExportedCharacter, item: InventoryItem) {
     item.allowMultiples = this.stackable;
     item.count = this.stackable && Number.isFinite(this.quantity) ? Math.max(0, Math.floor(this.quantity)) : 1;

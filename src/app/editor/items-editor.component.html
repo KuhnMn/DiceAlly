@@ -42,7 +42,7 @@
             }
             <app-entry-annotations-editor [entry]="item" (edited)="change()">
               <app-combat-bookmark annotation-combat [sheet]="sheet()" [resource]="item" type="ITEM" (edited)="change()" />
-              <ng-container annotation-description>@if (entries(item).length) { <app-description-dialog annotation-description [dense]="true" [title]="item.name" [label]="item.isDummy ? 'Description Preview' : 'Description'"><div class="p-2"><app-entry-renderer [entries]="entries(item)" /></div></app-description-dialog> }</ng-container>
+              <ng-container annotation-description>@if (descriptionEntries(item).length) { <app-description-dialog annotation-description [dense]="true" [title]="item.name" [label]="item.isDummy ? 'Description Preview' : 'Description'"><div class="p-2"><app-entry-renderer [entries]="descriptionEntries(item)" /></div></app-description-dialog> }</ng-container>
             </app-entry-annotations-editor>
           </div>
         }

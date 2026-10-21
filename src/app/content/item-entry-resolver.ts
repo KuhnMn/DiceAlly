@@ -20,7 +20,7 @@ function resistanceText(value: unknown, group = false): string {
   }).join('');
 }
 
-function applyTemplate(text: string, item: JsonObject): string {
+export function applyItemTemplate(text: string, item: JsonObject, missingValue?: string): string {
   return text.replace(/\{\{([^}]+)\}\}/g, (_match, expression: string) => {
     const args = expression.trim().split(/\s+/);
     const path = args.at(-1)!.split('.');
@@ -30,7 +30,10 @@ function applyTemplate(text: string, item: JsonObject): string {
       const data = object(value);
       value = data && Object.hasOwn(data, key) ? data[key] : undefined;
     }
-    if (value === undefined || value === null) throw new Error(`Unresolved item template property: ${expression}`);
+    if (value === undefined || value === null) {
+      if (missingValue !== undefined) return missingValue;
+      throw new Error(`Unresolved item template property: ${expression}`);
+    }
     if (args.length === 2 && args[0] === 'getFullImmRes') return resistanceText(value);
     if (args.length !== 1) throw new Error(`Unsupported item template function: ${expression}`);
     if (typeof value === 'object' && (!Array.isArray(value) || value.some(entry => typeof entry === 'object'))) {
@@ -59,7 +62,7 @@ export function resolveItemEntries(item: JsonObject, templates: ReadonlyMap<stri
     });
     if (typeof value === 'string') {
       if (value.includes('{#itemEntry ')) throw new Error('itemEntry references must occupy an entire entry-array element.');
-      return template ? applyTemplate(value, item) : value;
+      return template ? applyItemTemplate(value, item) : value;
     }
     if (object(value)) return Object.fromEntries(Object.entries(value as JsonObject).map(([key, child]) => [key, walk(child, ancestors, template)]));
     return value;

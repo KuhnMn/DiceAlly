@@ -8396,174 +8396,164 @@
           "field": "source"
         },
         {
-          "line": 140,
+          "line": 143,
           "expression": "variant.data",
           "field": "inherits"
         },
         {
-          "line": 143,
+          "line": 146,
           "expression": "base.data",
           "field": "name"
-        },
-        {
-          "line": 145,
-          "expression": "data",
-          "field": "name"
-        },
-        {
-          "line": 147,
-          "expression": "data",
-          "field": "source"
         },
         {
           "line": 148,
           "expression": "data",
-          "field": "baseItem"
-        },
-        {
-          "line": 149,
-          "expression": "data",
-          "field": "variantSource"
+          "field": "name"
         },
         {
           "line": 150,
           "expression": "data",
+          "field": "source"
+        },
+        {
+          "line": 151,
+          "expression": "data",
+          "field": "baseItem"
+        },
+        {
+          "line": 152,
+          "expression": "data",
+          "field": "variantSource"
+        },
+        {
+          "line": 153,
+          "expression": "data",
           "field": "page"
         },
         {
-          "line": 152,
+          "line": 155,
           "expression": "base.data",
           "field": "dmgType"
-        },
-        {
-          "line": 152,
-          "expression": "base.data",
-          "field": "dmgType"
-        },
-        {
-          "line": 153,
-          "expression": "data",
-          "field": "entries"
-        },
-        {
-          "line": 153,
-          "expression": "base.data",
-          "field": "entries"
         },
         {
           "line": 155,
+          "expression": "base.data",
+          "field": "dmgType"
+        },
+        {
+          "line": 156,
+          "expression": "data",
+          "field": "entries"
+        },
+        {
+          "line": 156,
+          "expression": "base.data",
+          "field": "entries"
+        },
+        {
+          "line": 158,
           "expression": "data",
           "field": "<dynamic>"
         },
         {
-          "line": 157,
+          "line": 160,
           "expression": "data",
           "field": "<dynamic>"
         },
         {
-          "line": 157,
+          "line": 160,
           "expression": "base.data",
           "field": "<dynamic>"
-        },
-        {
-          "line": 159,
-          "expression": "data",
-          "field": "conditionImmune"
-        },
-        {
-          "line": 159,
-          "expression": "base.data",
-          "field": "conditionImmune"
         },
         {
           "line": 162,
           "expression": "data",
-          "field": "<dynamic>"
+          "field": "conditionImmune"
         },
         {
           "line": 162,
+          "expression": "base.data",
+          "field": "conditionImmune"
+        },
+        {
+          "line": 165,
           "expression": "data",
           "field": "<dynamic>"
         },
         {
-          "line": 167,
+          "line": 165,
+          "expression": "data",
+          "field": "<dynamic>"
+        },
+        {
+          "line": 170,
           "expression": "base.data",
           "field": "<dynamic>"
         },
         {
-          "line": 168,
+          "line": 171,
           "expression": "data",
           "field": "<dynamic>"
         },
         {
-          "line": 168,
+          "line": 171,
           "expression": "base.data",
           "field": "<dynamic>"
         },
         {
-          "line": 183,
+          "line": 186,
           "expression": "data",
           "field": "<dynamic>"
         },
         {
-          "line": 184,
+          "line": 187,
           "expression": "data",
           "field": "name"
         },
         {
-          "line": 185,
+          "line": 188,
           "expression": "data",
           "field": "<dynamic>"
         },
         {
-          "line": 188,
+          "line": 191,
           "expression": "data",
           "field": "bardingType"
         },
         {
-          "line": 188,
+          "line": 191,
           "expression": "base.data",
           "field": "type"
         },
         {
-          "line": 190,
+          "line": 193,
           "expression": "data",
           "field": "<dynamic>"
         },
         {
-          "line": 192,
+          "line": 195,
           "expression": "data",
           "field": "<dynamic>"
         },
         {
-          "line": 194,
+          "line": 197,
           "expression": "data",
           "field": "<dynamic>"
         },
         {
-          "line": 230,
+          "line": 233,
           "expression": "record.data",
           "field": "raceName"
         },
         {
-          "line": 230,
+          "line": 233,
           "expression": "record.data",
           "field": "raceSource"
         },
         {
-          "line": 289,
+          "line": 292,
           "expression": "r.data",
           "field": "abbreviation"
-        },
-        {
-          "line": 299,
-          "expression": "record.data",
-          "field": "baseItem"
-        },
-        {
-          "line": 300,
-          "expression": "record.data",
-          "field": "baseItem"
         },
         {
           "line": 302,
@@ -8571,72 +8561,82 @@
           "field": "baseItem"
         },
         {
-          "line": 307,
-          "expression": "data",
-          "field": "<dynamic>"
+          "line": 303,
+          "expression": "record.data",
+          "field": "baseItem"
         },
         {
-          "line": 307,
-          "expression": "data",
-          "field": "<dynamic>"
-        },
-        {
-          "line": 307,
-          "expression": "data",
-          "field": "<dynamic>"
-        },
-        {
-          "line": 309,
-          "expression": "data",
-          "field": "reqAttune"
-        },
-        {
-          "line": 309,
-          "expression": "data",
-          "field": "reqAttune"
-        },
-        {
-          "line": 309,
-          "expression": "data",
-          "field": "reqAttune"
-        },
-        {
-          "line": 309,
-          "expression": "data",
-          "field": "reqAttune"
+          "line": 305,
+          "expression": "record.data",
+          "field": "baseItem"
         },
         {
           "line": 310,
           "expression": "data",
-          "field": "type"
+          "field": "<dynamic>"
         },
         {
           "line": 310,
           "expression": "data",
-          "field": "type"
+          "field": "<dynamic>"
         },
         {
-          "line": 311,
+          "line": 310,
           "expression": "data",
           "field": "<dynamic>"
         },
         {
-          "line": 317,
+          "line": 312,
           "expression": "data",
-          "field": "range"
+          "field": "reqAttune"
         },
         {
-          "line": 317,
+          "line": 312,
+          "expression": "data",
+          "field": "reqAttune"
+        },
+        {
+          "line": 312,
+          "expression": "data",
+          "field": "reqAttune"
+        },
+        {
+          "line": 312,
+          "expression": "data",
+          "field": "reqAttune"
+        },
+        {
+          "line": 313,
           "expression": "data",
           "field": "type"
         },
         {
-          "line": 317,
+          "line": 313,
+          "expression": "data",
+          "field": "type"
+        },
+        {
+          "line": 314,
+          "expression": "data",
+          "field": "<dynamic>"
+        },
+        {
+          "line": 320,
           "expression": "data",
           "field": "range"
         },
         {
           "line": 320,
+          "expression": "data",
+          "field": "type"
+        },
+        {
+          "line": 320,
+          "expression": "data",
+          "field": "range"
+        },
+        {
+          "line": 323,
           "expression": "data",
           "field": "entries"
         }
@@ -8815,12 +8815,12 @@
           "field": "<dynamic>"
         },
         {
-          "line": 56,
+          "line": 59,
           "expression": "definition.data",
           "field": "entriesTemplate"
         },
         {
-          "line": 58,
+          "line": 61,
           "expression": "definition.data",
           "field": "entriesTemplate"
         }
@@ -8833,14 +8833,24 @@
       ],
       "fields": [
         {
-          "line": 26,
+          "line": 19,
           "expression": "definition.data",
           "field": "entries"
         },
         {
-          "line": 26,
+          "line": 19,
           "expression": "definition.data",
           "field": "entries"
+        },
+        {
+          "line": 20,
+          "expression": "definition.data",
+          "field": "template"
+        },
+        {
+          "line": 21,
+          "expression": "definition.data",
+          "field": "template"
         }
       ]
     },

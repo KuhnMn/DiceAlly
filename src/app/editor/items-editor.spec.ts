@@ -12,6 +12,8 @@ import { EquipmentPageComponent } from '../sheet/equipment-page.component';
 import { CharacterStore } from '../stores/character.store';
 import { By } from '@angular/platform-browser';
 import { SourceBookFilterService } from './source-book-filter.service';
+import { IndexedDbContentCache } from '../content/content-cache';
+import { vi } from 'vitest';
 
 const revision: ImportRevision = { id: 'items-test', namespace: 'development-local', source: DEFAULT_CONTENT_SOURCE,
   sourceIdentity: sourceIdentity(DEFAULT_CONTENT_SOURCE), commit: 'a'.repeat(40), adapterVersion: ADAPTER_VERSION,
@@ -25,6 +27,42 @@ describe('Items creator', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
     TestBed.inject(SourceBookFilterService).setSelection([]);
   });
+  it('resolves switch-weapon forms in the catalog description before adding the item', async () => {
+    const cache = new IndexedDbContentCache();
+    const imported = { ...revision, id: crypto.randomUUID(), status: 'staging' as const, source: { ...DEFAULT_CONTENT_SOURCE, owner: crypto.randomUUID() } };
+    const property: ContentRecord = { key: 'switch-property', kind: 'itemProperty', name: 'Switch Weapon', publication: 'TEST', file: 'test.json',
+      data: { template: 'Forms: {{item.customProperties.baseitems}}' }, links: [] };
+    const weapon: ContentRecord = { ...record, key: 'hinge-spear', name: 'Hinge Spear',
+      data: { name: 'Hinge Spear', source: 'TEST', customProperties: { baseitems: '{@item Pike|XPHB}, {@item Spear|XPHB}' }, entries: [] },
+      links: [{ role: 'item-property', target: property.key }] };
+    await cache.stage(imported); await cache.put(imported.id, [property, weapon]);
+    const savedSource = vi.spyOn(IndexedDbContentCache.prototype, 'savedSource').mockResolvedValue(imported.source);
+    const active = vi.spyOn(IndexedDbContentCache.prototype, 'active').mockResolvedValue({ ...imported, status: 'ready' });
+    const fixture = TestBed.createComponent(ItemCatalogComponent);
+    try {
+      fixture.componentRef.setInput('sheet', emptyBasicCharacter());
+      await fixture.whenStable();
+      await fixture.componentInstance.refreshContent();
+      expect(fixture.componentInstance.catalogEntries(weapon)).toEqual([
+        { type: 'entries', name: 'Switch Weapon', entries: ['Forms: {@item Pike|XPHB}, {@item Spear|XPHB}'] },
+      ]);
+      expect(property.data['template']).toBe('Forms: {{item.customProperties.baseitems}}');
+    } finally {
+      fixture.destroy(); savedSource.mockRestore(); active.mockRestore();
+      await cache.discard(imported.id);
+    }
+  });
+  it('shows saved property details in descriptions while keeping custom-description editing separate', async () => {
+    const fixture = TestBed.createComponent(ItemsEditorComponent);
+    fixture.componentRef.setInput('sheet', emptyBasicCharacter());
+    await fixture.whenStable();
+    const editor = fixture.componentInstance;
+    const item = { name: 'Hinge Spear', entity: { item: { name: 'Hinge Spear', source: 'TEST', entries: [] }, properties: [
+      { name: 'Switch Weapon', entry: { type: 'entries' as const, entries: ['Forms: Pike, Spear'] } },
+    ] } };
+    expect(editor.descriptionEntries(item)).toEqual([{ type: 'entries', name: 'Switch Weapon', entries: [item.entity.properties[0].entry] }]);
+    expect(editor.entries(item)).toEqual([]);
+  });
   it('filters type choices by source, clears excluded draft choices, and preserves saved types', async () => {
     const books = TestBed.inject(SourceBookFilterService);
     books.setSelection([]);
@@ -35,6 +73,8 @@ describe('Items creator', () => {
     editorFixture.componentRef.setInput('sheet', sheet);
     await catalogFixture.whenStable(); await editorFixture.whenStable();
     const catalog = catalogFixture.componentInstance, editor = editorFixture.componentInstance;
+    // IndexedDB work is not tracked by fixture stability; finish metadata loading before replacing test choices.
+    await Promise.all([catalog.refreshContent(), editor.ngOnInit()]);
     const types: ContentRecord[] = ['PHB', 'XPHB'].map(publication => ({
       key: publication, kind: 'itemType', name: 'Gear', publication, file: 'test.json',
       data: { abbreviation: 'G' }, links: [],
@@ -74,9 +114,11 @@ describe('Items creator', () => {
     const sheet = emptyBasicCharacter();
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
     const editor = fixture.componentInstance;
+    await editor.ngOnInit();
     const catalogFixture = TestBed.createComponent(ItemCatalogComponent);
     catalogFixture.componentRef.setInput('sheet', sheet); await catalogFixture.whenStable();
     const catalog = catalogFixture.componentInstance;
+    await catalog.refreshContent();
     catalog.itemTypes = [{ key: 'gear-type', kind: 'itemType', name: 'Adventuring Gear', publication: 'TEST',
       file: 'test.json', data: { abbreviation: 'G', source: 'TEST' }, links: [] }];
     catalog.customType = 'gear-type'; catalog.customValue = 250;
