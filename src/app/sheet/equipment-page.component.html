@@ -57,8 +57,8 @@
         }
         @if (item.entity?.properties?.length || item.entity?.masteries?.length) {
         <div class="mt-2 flex flex-wrap items-center gap-1.5">
-          @for (property of item.entity?.properties; track property.name) { <app-item-rule-tag [label]="property.name" [entry]="property.entry" /> }
-          @for (mastery of item.entity?.masteries; track mastery.name) { <app-item-rule-tag [label]="mastery.name" [entry]="mastery.entry" [mastery]="true" /> }
+          @for (property of item.entity?.properties; track property.name) { <app-item-rule-tag [label]="property.name" [entry]="property.entry" [notes]="property.notes" /> }
+          @for (mastery of item.entity?.masteries; track mastery.name) { <app-item-rule-tag [label]="mastery.name" [entry]="mastery.entry" [notes]="mastery.notes" [mastery]="true" /> }
         </div>
         }
         @if (hasItemStatistics(item)) {
@@ -133,9 +133,7 @@
 
         @if (item.uses?.length) { <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">@for (use of item.uses; track use) { <app-feature-uses [uses]="use" (usesUpdated)="updateItemUses(item, $event)" /> }</div> }
           <div [id]="itemKey(item) + '-details'" class="space-y-3 border-t border-outline-variant pt-3">
-            <app-entry-renderer [entries]="getItemEntries(item)" />
-            @if (item.entity?.properties?.length) { <section class="space-y-2"><h4 class="text-sm font-semibold">Properties</h4>@for (property of item.entity?.properties; track property.name) { <app-rule-details [label]="property.name" [entry]="property.entry" /> }</section> }
-            @if (item.entity?.masteries?.length) { <section class="space-y-2"><h4 class="text-sm font-semibold">Masteries</h4>@for (mastery of item.entity?.masteries; track mastery.name) { <app-rule-details [label]="mastery.name" [entry]="mastery.entry" /> }</section> }
+            <app-equipment-details [entity]="item.entity" />
             @if (hasAnyBonus(item)) { <section class="rounded-lg border border-tertiary bg-tertiary-container p-3 text-sm text-on-tertiary-container"><h4 class="mb-1 font-semibold">Bonuses</h4>@for (bonus of bonusFields; track bonus.key) { @if (getItemProp(item, bonus.key)) { <p>{{ bonus.label }}: {{ getItemProp(item, bonus.key) }}</p> } }</section> }
             <app-feature-notes [notes]="item.notes" (notesChanged)="updateItemNotes(item, $event)" />
           </div>

@@ -3,6 +3,7 @@ import { ContentLink, ContentRecord, entityKey, ImportDiagnostic, JsonObject, no
 import { arithmetic } from './copy-variables';
 import { canonicalSpeciesRecord } from './species-adapter';
 import { resolveItemEntries } from './item-entry-resolver';
+import { resolveItemMetadata } from './item-metadata';
 
 const MATERIALIZER_VERSION = 1;
 export const MAX_GENERATED_VARIANTS = 50_000;
@@ -278,21 +279,7 @@ export async function materializeContent(cache: ContentCache, revisionId: string
     progress?.(++processed, added, record.file);
   });
   const lookup = (kind: string, value: unknown, defaultSource: string): ContentRecord => {
-    const token = uid(value); const [identifier, publication] = token.split('|');
-    if (!identifier) throw new Error(`Invalid ${kind} reference.`);
-    const fields = kind === 'itemMastery' ? { name: identifier } : { abbreviation: identifier };
-    const exact = metadata.get(entityKey(kind, { ...fields, source: publication || defaultSource }));
-    if (exact) return exact;
-    // Android's bare abbreviation links predate qualified UIDs. Honor the classic DMG definition
-    // when a bare legacy token has no PHB definition; explicit UIDs never fall back across books.
-    if (!publication && defaultSource === 'PHB') {
-      const legacy = metadata.get(entityKey(kind, { ...fields, source: 'DMG' }));
-      if (legacy) return legacy;
-    }
-    // Legacy bare abbreviations may have a sole definition outside the default book.
-    const candidates = publication ? [] : [...metadata.values()].filter(r => r.kind === kind && normalize(kind === 'itemMastery' ? r.name : string(r.data['abbreviation'])) === normalize(identifier));
-    if (candidates.length === 1) return candidates[0];
-    throw new Error(`Missing or ambiguous ${kind} definition: ${token}`);
+    return resolveItemMetadata(metadata, kind, value, defaultSource);
   };
   await cache.visit(revisionId, async record => {
     signal?.throwIfAborted();

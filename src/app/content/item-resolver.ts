@@ -3,14 +3,15 @@ import { itemDefinition, itemSourceData } from './item-adapter';
 import { ContentCache } from './content-cache';
 import { ContentRecord, JsonObject } from './content.model';
 import { applyItemTemplate } from './item-entry-resolver';
+import { resolveItemMetadata } from './item-metadata';
 
 /** Temporary presentation value, never persisted as part of a content record. */
 export interface ItemView {
   item: JsonObject;
   baseItem?: JsonObject;
   itemType: string | null;
-  properties: { key: string; name: string; entry: unknown; entries: unknown[] }[];
-  masteries: { key: string; name: string; entry: unknown; entries: unknown[] }[];
+  properties: { key: string; name: string; entry: unknown; entries: unknown[]; notes?: string[] }[];
+  masteries: { key: string; name: string; entry: unknown; entries: unknown[]; notes?: string[] }[];
   page: ItemDefinition['page'] | null;
   ac: number | null;
 }
@@ -39,12 +40,22 @@ export async function resolveItemView(cache: Pick<ContentCache, 'get'>, revision
   const base = resolved.find(link => link.role === 'base-item')?.definition;
   const type = resolved.find(link => link.role === 'item-type')?.definition;
   const item = itemSourceData(record);
+  const metadata = new Map(resolved.map(({ definition }) => [definition.key, definition]));
+  const definition = itemDefinition(record);
+  const notes = new Map<string, string[]>();
+  for (const field of ['property', 'mastery'] as const) {
+    for (const reference of definition[field] ?? []) {
+      if (typeof reference === 'string' || !reference.note) continue;
+      const target = resolveItemMetadata(metadata, field === 'property' ? 'itemProperty' : 'itemMastery', reference, field === 'property' ? 'PHB' : 'XPHB');
+      notes.set(target.key, [...notes.get(target.key) ?? [], reference.note]);
+    }
+  }
   const entries = (role: string) => resolved.filter(link => link.role === role).map(({ definition }) => {
     const values = itemRuleEntries(definition, item);
     const entry = values.length > 1 ? { type: 'entries', entries: values } : values[0] ?? null;
-    return { key: definition.key, name: definition.name, entry, entries: values };
+    return { key: definition.key, name: definition.name, entry, entries: values,
+      ...(notes.has(definition.key) ? { notes: notes.get(definition.key) } : {}) };
   });
-  const definition = itemDefinition(record);
   return { item, baseItem: base?.data, itemType: type?.name ?? null,
     properties: entries('item-property'), masteries: entries('item-mastery'),
     page: definition.page ?? (base ? itemDefinition(base).page : undefined) ?? null, ac: definition.ac ?? (base ? itemDefinition(base).ac : undefined) ?? null };

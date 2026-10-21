@@ -3,6 +3,14 @@ import { OverlayContainer } from '@angular/cdk/overlay';
 import { ItemRuleTagComponent } from './item-rule-tag.component';
 
 describe('Item rule tags', () => {
+  it('shows item-specific notes even when no shared rule description is saved', () => {
+    const fixture = TestBed.createComponent(ItemRuleTagComponent);
+    fixture.componentRef.setInput('label', 'Push');
+    fixture.componentRef.setInput('notes', ['Only with both hands']);
+    fixture.detectChanges(); fixture.nativeElement.querySelector('button').click(); fixture.detectChanges();
+    expect(TestBed.inject(OverlayContainer).getContainerElement().textContent).toContain('Only with both hands');
+    fixture.destroy();
+  });
   it('shows the rule on hover, focus and tap and dismisses it with Escape', () => {
     const fixture = TestBed.createComponent(ItemRuleTagComponent);
     fixture.componentRef.setInput('label', 'Finesse');

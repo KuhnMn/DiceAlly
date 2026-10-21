@@ -4,15 +4,14 @@ import { SheetListLayoutComponent } from './sheet-list-layout.component';
 import { ItemRuleTagComponent } from './item-rule-tag.component';
 import { SheetDetailDialogComponent } from './sheet-detail-dialog.component';
 import { HorizontalRowDirective } from './horizontal-row.directive';
-import { RuleDetailsComponent } from './rule-details.component';
+import { EquipmentDetailsComponent } from './equipment-details.component';
 import { ItemCatalogComponent } from '../editor/item-catalog.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { AppDialogService } from '../services/app-dialog.service';
 import { Component, computed, input, signal, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ExportedCharacter, Entry, InventoryItem, ItemEntity, FeatureNotes } from '../models/character.model';
-import { EntryRendererComponent } from '../entries/entry-renderer.component';
+import { ExportedCharacter, InventoryItem, ItemEntity, FeatureNotes } from '../models/character.model';
 import { FeatureUsesComponent } from './feature-uses.component';
 import { FeatureNotesComponent } from './feature-notes.component';
 import { CharacterHelpersService } from './character-helpers.service';
@@ -20,7 +19,7 @@ import { CharacterStore } from '../stores/character.store';
 
 @Component({
   selector: 'app-equipment-page',
-  imports: [ListControlsComponent, SheetListLayoutComponent, ItemRuleTagComponent, SheetDetailDialogComponent, HorizontalRowDirective, RuleDetailsComponent, ItemCatalogComponent, UiIconComponent, CommonModule, FormsModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [ListControlsComponent, SheetListLayoutComponent, ItemRuleTagComponent, SheetDetailDialogComponent, HorizontalRowDirective, EquipmentDetailsComponent, ItemCatalogComponent, UiIconComponent, CommonModule, FormsModule, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     /* Theme colors are plain CSS utilities, not Tailwind responsive utilities. */
     @media (min-width: 768px) {
@@ -224,14 +223,6 @@ export class EquipmentPageComponent {
       return `${silver.toFixed(1)} sp`;
     }
     return `${value} cp`;
-  }
-
-  getItemEntries(item: InventoryItem): Entry[] {
-    const entries = item.entity?.item?.['entries'];
-    if (Array.isArray(entries)) {
-      return entries as Entry[];
-    }
-    return [];
   }
 
   getItemProperties(item: InventoryItem): string {

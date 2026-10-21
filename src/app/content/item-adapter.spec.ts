@@ -70,6 +70,8 @@ describe('Canonical item migration', () => {
     expect(entry.entity?.item.ac).toBe(14); expect(entry.entity?.item.reqAttune).toBe('by anyone');
     expect(entry.entity?.properties?.[0].entry).toEqual({ type: 'entries', entries: ['First property paragraph', 'Second property paragraph'] });
     expect(entry.entity?.masteries?.[0].name).toBe('Push');
+    expect(entry.entity?.properties?.[0].notes).toEqual(['When worn']);
+    expect(entry.entity?.masteries?.[0].notes).toEqual(['Retained note']);
   });
 
   it('saves and exports inventory offline without changing equipment flags, quantities, notes, or uses', async () => {

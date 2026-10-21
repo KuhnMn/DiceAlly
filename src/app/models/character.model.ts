@@ -524,11 +524,21 @@ export interface BaseItemEntity {
 export interface DisplayProperty {
   name: string;
   entry?: Entry | null;
+  notes?: string[];
 }
 
 export interface DisplayMastery {
   name: string;
   entry?: Entry | null;
+  notes?: string[];
+}
+
+/** Offline item spell reference. Usage notes describe source metadata, not executable casting rules. */
+export interface ItemAttachedSpell {
+  name: string;
+  source?: string;
+  usageNotes: string[];
+  spell?: SpellEntity;
 }
 
 export interface DisplayItem {
@@ -537,6 +547,8 @@ export interface DisplayItem {
   itemType?: string | null;
   properties?: DisplayProperty[];
   masteries?: DisplayMastery[];
+  attachedSpells?: ItemAttachedSpell[];
+  spellcastingAbilityDescription?: string;
   page?: number | null;
   ac?: number | null;
   id?: number | null;
