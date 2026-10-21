@@ -27,7 +27,7 @@ import { DialogScrollLockService } from '../editor/dialog-scroll-lock.service';
         <div class="col-span-12 grid grid-cols-5 items-center gap-1">
         <app-sheet-ac-control class="justify-self-center" [characterData]="sheet()" />
         <div #speedControl class="relative justify-self-center">
-          <button type="button" (click)="speedOpen.set(!speedOpen())" [disabled]="!additionalSpeeds().length" [attr.aria-expanded]="additionalSpeeds().length ? speedOpen() : null" [attr.aria-label]="'Walking speed: ' + (character.speeds?.walk ?? 30) + ' feet' + (additionalSpeeds().length ? '. Show other speeds' : '')" class="relative flex h-14 w-14 flex-col items-center justify-center rounded-full border-2 border-primary bg-surface-container-low focus-visible:outline-2 focus-visible:outline-primary">
+          <button type="button" (click)="speedOpen.set(!speedOpen())" [disabled]="!additionalSpeeds().length" [attr.aria-expanded]="additionalSpeeds().length ? speedOpen() : null" [attr.aria-label]="'Walking speed: ' + (character.speeds?.walk ?? 30) + ' feet' + (additionalSpeeds().length ? '. Show other speeds' : '')" class="relative flex h-14 w-14 flex-col items-center justify-center rounded-full border-2 border-primary bg-transparent focus-visible:outline-2 focus-visible:outline-primary">
             <span class="text-lg font-bold leading-tight text-on-surface">{{ character.speeds?.walk ?? 30 }}</span>
             <span class="text-[10px] font-semibold text-primary">Walk</span>
             @if (additionalSpeeds().length) {

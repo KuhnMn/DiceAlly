@@ -320,9 +320,12 @@ import { ConditionsComponent } from './conditions.component';
               }
             </div>
             <div
-              class="border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-20 sm:h-20 bg-surface-container-low flex flex-col items-center justify-center shadow-lg"
+              class="relative border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-20 sm:h-20 bg-surface-container-low flex flex-col items-center justify-center shadow-lg"
             >
-              <div class="inline-flex items-center gap-1 text-xs text-on-surface-variant uppercase font-semibold">@if (character()?.proficiencies?.initiative) { <span class="text-primary" title="Proficient" aria-label="Proficient">●</span> }Initiative</div>
+              @if (character()?.proficiencies?.initiative) {
+                <span title="Proficient in initiative" aria-label="Proficient in initiative" role="img" class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center text-sm text-primary">●</span>
+              }
+              <div class="text-xs text-on-surface-variant uppercase font-semibold">Initiative</div>
               <div class="text-2xl font-bold text-tertiary">{{ helpers.formatSigned(initiative()) }}</div>
             </div>
           </div>

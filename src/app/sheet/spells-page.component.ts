@@ -308,8 +308,15 @@ type SpellLevelFilter = 'ALL' | number;
                     }
                     @if (spellView() === 'PREPARED') { <app-feature-notes [notes]="spell.notes" (notesChanged)="updateSpellNotes(spell, $event)" /> }
                     @if (isExpanded(spellExpansionId(spell))) {
-                      <app-sheet-detail-dialog [title]="spell.name" (closed)="toggleExpanded(spellExpansionId(spell))">
-                      <p class="text-sm text-on-surface-variant">{{ helpers.spellLevelLabel(spell) }} · {{ helpers.spellSchoolLabel(spell.entity?.school ?? '') }} · {{ spell.castingSourceName }} · {{ spell.source }}</p>
+                      <app-sheet-detail-dialog [title]="spell.name" [tags]="spellDialogTags" (closed)="toggleExpanded(spellExpansionId(spell))">
+                      <ng-template #spellDialogTags>
+                        @if (spell.entity?.level !== undefined) { <span class="rounded bg-purple-container px-2 py-0.5 text-xs font-normal text-on-purple-container">{{ helpers.spellLevelLabel(spell) }}</span> }
+                        @if (spell.entity?.school) { <span class="rounded bg-teal-container px-2 py-0.5 text-xs text-on-teal-container">{{ helpers.spellSchoolLabel(spell.entity?.school ?? '') }}</span> }
+                        @if (spell.entity?.meta?.ritual) { <span class="rounded bg-green-container px-2 py-0.5 text-xs text-on-green-container">Ritual</span> }
+                        @if (requiresConcentration(spell)) { <span class="rounded bg-tertiary-container px-2 py-0.5 text-xs text-on-tertiary-container" title="Concentration" aria-label="Concentration">C</span> }
+                        @if (spell.castingSourceName) { <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">{{ spell.castingSourceName }}</span> }
+                        @if (spell.source) { <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ spell.source }}</span> }
+                      </ng-template>
                       <app-spell-details [spell]="spell.entity" />
                       <div class="mt-3 pt-3 border-t border-outline-variant">
                         @if (spell.entity?.entries?.length) {

@@ -5,12 +5,18 @@ describe('Equipment details', () => {
   it('omits an empty combat-statistics row for gear while retaining its details and controls', () => {
     const fixture = TestBed.createComponent(EquipmentPageComponent);
     const item = { editorId: 'fire', name: "Alchemist's Fire", source: 'XPHB', entity: {
-      itemType: 'Adventuring Gear', item: { name: "Alchemist's Fire", source: 'XPHB', weight: 1, value: 5000, entries: ['Throw the flask.'] },
+      itemType: 'Adventuring Gear', item: { name: "Alchemist's Fire", source: 'XPHB', rarity: 'none', weight: 1, value: 5000, entries: ['Throw the flask.'] },
     } };
     fixture.componentRef.setInput('characterData', { character: {}, inventory: [item] });
     fixture.detectChanges();
     fixture.componentInstance.toggleExpanded(fixture.componentInstance.itemKey(item)); fixture.detectChanges();
     const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+    const summary = dialog.querySelector('[aria-label="Item summary"]')!;
+    expect(summary.parentElement!.firstElementChild).toBe(summary);
+    const header = dialog.querySelector('header')!;
+    expect(header.textContent).toContain('Adventuring Gear');
+    expect(header.textContent).toContain('XPHB');
+    expect(header.textContent).not.toContain('none');
     expect(dialog.querySelector('[aria-label="Item combat statistics"]')).toBeNull();
     expect(dialog.textContent).toContain('Equipped');
     expect(dialog.textContent).toContain('Weight: 1 lb.');

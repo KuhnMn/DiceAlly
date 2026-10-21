@@ -40,7 +40,7 @@
         }
         <app-feature-notes [notes]="monster.notes" (notesChanged)="monster.notes = $event" />
         @if (isExpanded(monsterKey(monster))) {
-          <app-sheet-detail-dialog [title]="monster.name || 'Unnamed creature'" (closed)="toggleExpanded(monsterKey(monster))">
+          <app-sheet-detail-dialog [title]="monster.name || 'Unnamed creature'" [tags]="monster.source ? monsterSourceTag : null" (closed)="toggleExpanded(monsterKey(monster))">
         @if (monster.uses?.length) { <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">@for (use of monster.uses; track use) { <app-feature-uses [uses]="use" (usesUpdated)="use.usedFreeUses = $event.usedFreeUses" /> }</div> }
         @if (monster.hpEnabled) {
           <div class="my-2 flex flex-wrap items-stretch gap-2">
@@ -55,7 +55,6 @@
         }
           <div [id]="monsterKey(monster) + '-details'" class="mt-3 space-y-3 border-t border-outline-variant pt-3">
             @if (monster.entity; as entity) {
-              @if (monster.source) { <p class="text-xs text-on-surface-variant">{{ monster.source }}</p> }
               @if (monster.hpEnabled) {
                 <details class="rounded-lg border border-outline-variant">
                   <summary class="min-h-11 cursor-pointer px-3 py-2 text-sm font-semibold">HP settings</summary>
@@ -72,9 +71,12 @@
           </div>
           </app-sheet-detail-dialog>
         }
+        <ng-template #monsterSourceTag>
+          <span class="rounded bg-surface-container-high px-2 py-0.5 text-xs text-on-surface" title="Source book">{{ monster.source }}</span>
+        </ng-template>
         @if (monster.source) {
           <div class="mt-2 flex flex-wrap gap-1">
-            <span class="rounded bg-surface-container-high px-2 py-0.5 text-xs text-on-surface" title="Source book">{{ monster.source }}</span>
+            <ng-container [ngTemplateOutlet]="monsterSourceTag" />
           </div>
         }
       </article>

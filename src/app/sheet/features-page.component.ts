@@ -106,8 +106,11 @@ import { speciesMovementText, speciesTraitText } from '../content/species-compat
                   <div>Creature Type: {{ speciesCreatureTypes() }}</div>
                 }
               </div>
+              <ng-template #speciesSourceTag>
+                <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ species()?.source }}</span>
+              </ng-template>
               @if (species()?.source) {
-              <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ species()?.source }}</span>
+              <ng-container [ngTemplateOutlet]="speciesSourceTag" />
             }
 
           <!-- Reference details open in a modal on every screen size. -->
@@ -120,13 +123,12 @@ import { speciesMovementText, speciesTraitText } from '../content/species-compat
                 }
                 <app-feature-notes [notes]="species()?.notes" (notesChanged)="updateSpeciesNotes($event)" />
                 @if (isExpanded('species')) {
-          <app-sheet-detail-dialog [title]="species()?.name ?? 'Species'" (closed)="toggleExpanded('species')">
+          <app-sheet-detail-dialog [title]="species()?.name ?? 'Species'" [tags]="species()?.source ? speciesSourceTag : null" (closed)="toggleExpanded('species')">
             <div appHorizontalRow role="region" aria-label="Species details" tabindex="0" class="flex flex-nowrap items-center gap-4 overflow-x-auto overscroll-x-contain py-1 text-sm [&>*]:shrink-0 [&>*]:whitespace-nowrap">
               <span>Size: {{ species()?.entity?.size?.join(', ') || '—' }}</span>
               <span>Speed: {{ speciesMovement() }}</span>
               @if (species()?.entity?.darkvision) { <span>Darkvision: {{ species()?.entity?.darkvision }} ft.</span> }
               <span>{{ speciesCreatureTypes() }}</span>
-              <span>{{ species()?.source }}</span>
             </div>
             <div class="mt-3 pt-3 border-t border-outline-variant">
 
@@ -245,8 +247,8 @@ import { speciesMovementText, speciesTraitText } from '../content/species-compat
                 }
                 <app-feature-notes [notes]="feature.notes" (notesChanged)="updateFeatureNotes(feature, $event)" />
                 @if (isExpanded(featureAnchorId(feature) ?? 'feature')) {
-                <app-sheet-detail-dialog [title]="feature.name" (closed)="toggleExpanded(featureAnchorId(feature) ?? 'feature')">
-                  <div class="flex flex-wrap items-center gap-2">
+                <app-sheet-detail-dialog [title]="feature.name" [tags]="featureDialogTags" (closed)="toggleExpanded(featureAnchorId(feature) ?? 'feature')">
+                  <ng-template #featureDialogTags>
                     <ng-container [ngTemplateOutlet]="featureTags" [ngTemplateOutletContext]="{ $implicit: feature }" />
                     @if (feature.featureSourceName) {
                       <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">{{ feature.featureSourceName }}</span>
@@ -254,15 +256,15 @@ import { speciesMovementText, speciesTraitText } from '../content/species-compat
                     @if (feature.source) {
                       <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ feature.source }}</span>
                     }
-                  </div>
-                  <div class="mt-3 pt-3 border-t border-outline-variant">
+                  </ng-template>
+                  <div class="space-y-3 border-t border-outline-variant pt-3 md:border-t-0 md:pt-0">
                     @if ((feature.featEntity?.prerequisite?.length ?? 0) > 0) {
                       <div class="text-base text-on-surface">Prerequisites: {{ helpers.prerequisiteText(feature.featEntity?.prerequisite ?? []) }}</div>
                     }
                     @if ((feature.optionalFeatureEntity?.prerequisite?.length ?? 0) > 0) {
                       <div class="text-base text-on-surface">Prerequisites: {{ helpers.prerequisiteText(feature.optionalFeatureEntity?.prerequisite ?? []) }}</div>
                     }
-                    <div class="mt-3" [attr.id]="feature.featureSourceName ? 'source-' + helpers.sourceId(feature.featureSourceName) : null">
+                    <div [attr.id]="feature.featureSourceName ? 'source-' + helpers.sourceId(feature.featureSourceName) : null">
                       <app-entry-renderer [entries]="helpers.featureEntries(feature)"></app-entry-renderer>
                     </div>
 
