@@ -10,6 +10,10 @@ export interface ContentCache {
   activate(revision: ImportRevision, signal?: AbortSignal): Promise<void>;
   discard(revisionId: string): Promise<void>;
 }
+export interface RevisionRemovalProgress {
+  phase: 'checking' | 'deleting' | 'complete';
+  records: number;
+}
 function request<T>(value: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     value.onsuccess = () => resolve(value.result);
@@ -56,8 +60,8 @@ export class IndexedDbContentCache implements ContentCache {
       storedRecords: await request<number>(db.transaction('records').objectStore('records').index('revision').count(revision.id)),
     })));
   }
-  async deleteRevision(namespace: string, revisionId: string): Promise<void> {
-    await this.exclusive(namespace, () => this.remove(revisionId, namespace));
+  async deleteRevision(namespace: string, revisionId: string, progress?: (value: RevisionRemovalProgress) => void): Promise<void> {
+    await this.exclusive(namespace, () => this.remove(revisionId, namespace, false, progress));
   }
   private connection?: Promise<IDBDatabase>;
   private db(): Promise<IDBDatabase> {
@@ -211,7 +215,8 @@ export class IndexedDbContentCache implements ContentCache {
   async discard(revisionId: string): Promise<void> {
     await this.remove(revisionId, undefined, true);
   }
-  private async remove(revisionId: string, namespace?: string, stagingOnly = false): Promise<void> {
+  private async remove(revisionId: string, namespace?: string, stagingOnly = false, progress?: (value: RevisionRemovalProgress) => void): Promise<void> {
+    progress?.({ phase: 'checking', records: 0 });
     const tx = (await this.db()).transaction(['records', 'revisions', 'active'], 'readwrite');
     const done = complete(tx);
     const [revision, pointers] = await Promise.all([
@@ -224,9 +229,14 @@ export class IndexedDbContentCache implements ContentCache {
       tx.abort(); await done.catch(() => {});
       throw new Error('Only inactive content revisions in this account can be removed; discard requires staging content.');
     }
-    const cursor = tx.objectStore('records').index('revision').openCursor(IDBKeyRange.only(revisionId));
-    cursor.onsuccess = () => { const row = cursor.result; if (row) { row.delete(); row.continue(); } };
+    const records = tx.objectStore('records');
+    const count = progress ? await request<number>(records.index('revision').count(revisionId)) : 0;
+    progress?.({ phase: 'deleting', records: count });
+    // Primary keys are [revisionId, string key]. An array sorts after every string,
+    // so this range includes the whole revision without loading any record bodies.
+    records.delete(IDBKeyRange.bound([revisionId], [revisionId, []], false, true));
     tx.objectStore('revisions').delete(revisionId);
     await done;
+    progress?.({ phase: 'complete', records: count });
   }
 }

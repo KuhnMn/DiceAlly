@@ -17,9 +17,17 @@ export interface ItemView {
 /** Property templates describe this particular item; keep the reusable definition unchanged. */
 export function itemRuleEntries(definition: ContentRecord, item: JsonObject): unknown[] {
   const description = Array.isArray(definition.data['entries']) ? definition.data['entries'] : [];
-  const template = definition.kind === 'itemProperty' && typeof definition.data['template'] === 'string'
-    ? applyItemTemplate(definition.data['template'], item, 'Unspecified') : undefined;
-  return template === undefined ? description : [template, ...description];
+  if (definition.kind !== 'itemProperty' || typeof definition.data['template'] !== 'string') return description;
+  const name = definition.name.replace(/-/g, '\u2011');
+  try {
+    const template = applyItemTemplate(definition.data['template'], item, 'Unspecified', {
+      prop_name: name, prop_name_lower: name.toLowerCase(),
+    });
+    return [template, ...description];
+  } catch {
+    // An unsupported presentation template must not interrupt rendering the entire catalog.
+    return [...description, 'Some details for this property could not be displayed.'];
+  }
 }
 export async function resolveItemView(cache: Pick<ContentCache, 'get'>, revisionId: string, record: ContentRecord): Promise<ItemView> {
   if (record.kind !== 'item') throw new Error('Only playable items have an item view.');

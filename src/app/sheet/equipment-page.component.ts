@@ -212,14 +212,14 @@ export class EquipmentPageComponent {
       || (['weight', 'value'] as const).some(prop => this.getItemProp(item, prop) != null);
   }
 
-  formatGold(copperValue: any): string {
+  formatGold(copperValue: unknown): string {
     const value = Number(copperValue);
-    if (!value || isNaN(value)) return '—';
-    const gold = value / 10000;
+    if (copperValue == null || copperValue === '' || !Number.isFinite(value) || value < 0) return '—';
+    const gold = value / 100;
     if (gold >= 1) {
       return `${gold.toFixed(2)} gp`;
     }
-    const silver = value / 100;
+    const silver = value / 10;
     if (silver >= 1) {
       return `${silver.toFixed(1)} sp`;
     }

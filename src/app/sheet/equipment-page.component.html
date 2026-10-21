@@ -93,11 +93,13 @@
         <app-feature-notes [notes]="item.notes" (notesChanged)="updateItemNotes(item, $event)" />
         @if (isExpanded(itemKey(item))) {
           <app-sheet-detail-dialog [title]="item.name" (closed)="toggleExpanded(itemKey(item))">
-        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+        @if (getItemProp(item, 'dmg1') || (getItemProp(item, 'ac') ?? item.entity?.ac) || getItemProp(item, 'range')) {
+        <div aria-label="Item combat statistics" class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
           @if (getItemProp(item, 'dmg1')) { <span>{{ getItemProp(item, 'dmg1') }} {{ getItemProp(item, 'dmgType') }}@if (getItemProp(item, 'dmg2')) { · {{ getItemProp(item, 'dmg2') }} versatile}</span> }
           @if (getItemProp(item, 'ac') ?? item.entity?.ac) { <span>AC {{ getItemProp(item, 'ac') ?? item.entity?.ac }}</span> }
           @if (getItemProp(item, 'range')) { <span>{{ getItemProp(item, 'range') }} ft.</span> }
         </div>
+        }
         <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
           <label class="flex min-h-11 cursor-pointer items-center gap-2"><input type="checkbox" [checked]="item.isEquipped ?? false" (change)="toggleEquipped(item)" class="h-5 w-5 accent-green" /> Equipped</label>
           @if ((requiresAttunement(item) || item.isAttuned)) { <label class="flex min-h-11 cursor-pointer items-center gap-2 text-purple"><input type="checkbox" [checked]="item.isAttuned ?? false" (change)="toggleAttuned(item)" class="h-5 w-5 accent-purple" /> Attuned</label> }

@@ -20,8 +20,10 @@ function resistanceText(value: unknown, group = false): string {
   }).join('');
 }
 
-export function applyItemTemplate(text: string, item: JsonObject, missingValue?: string): string {
+export function applyItemTemplate(text: string, item: JsonObject, missingValue?: string,
+  context: Readonly<Record<string, string>> = {}): string {
   return text.replace(/\{\{([^}]+)\}\}/g, (_match, expression: string) => {
+    if (Object.hasOwn(context, expression.trim())) return context[expression.trim()];
     const args = expression.trim().split(/\s+/);
     const path = args.at(-1)!.split('.');
     if (path.shift() !== 'item' || !path.length) throw new Error(`Invalid item template path: ${expression}`);

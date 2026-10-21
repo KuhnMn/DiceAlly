@@ -32,10 +32,12 @@ describe('Items creator', () => {
     const imported = { ...revision, id: crypto.randomUUID(), status: 'staging' as const, source: { ...DEFAULT_CONTENT_SOURCE, owner: crypto.randomUUID() } };
     const property: ContentRecord = { key: 'switch-property', kind: 'itemProperty', name: 'Switch Weapon', publication: 'TEST', file: 'test.json',
       data: { template: 'Forms: {{item.customProperties.baseitems}}' }, links: [] };
+    const finesse: ContentRecord = { key: 'finesse-property', kind: 'itemProperty', name: 'Finesse', publication: 'XPHB', file: 'items-base.json',
+      data: { template: '{{prop_name_lower}}' }, links: [] };
     const weapon: ContentRecord = { ...record, key: 'hinge-spear', name: 'Hinge Spear',
       data: { name: 'Hinge Spear', source: 'TEST', customProperties: { baseitems: '{@item Pike|XPHB}, {@item Spear|XPHB}' }, entries: [] },
-      links: [{ role: 'item-property', target: property.key }] };
-    await cache.stage(imported); await cache.put(imported.id, [property, weapon]);
+      links: [{ role: 'item-property', target: property.key }, { role: 'item-property', target: finesse.key }] };
+    await cache.stage(imported); await cache.put(imported.id, [property, finesse, weapon]);
     const savedSource = vi.spyOn(IndexedDbContentCache.prototype, 'savedSource').mockResolvedValue(imported.source);
     const active = vi.spyOn(IndexedDbContentCache.prototype, 'active').mockResolvedValue({ ...imported, status: 'ready' });
     const fixture = TestBed.createComponent(ItemCatalogComponent);
@@ -45,6 +47,7 @@ describe('Items creator', () => {
       await fixture.componentInstance.refreshContent();
       expect(fixture.componentInstance.catalogEntries(weapon)).toEqual([
         { type: 'entries', name: 'Switch Weapon', entries: ['Forms: {@item Pike|XPHB}, {@item Spear|XPHB}'] },
+        { type: 'entries', name: 'Finesse', entries: ['finesse'] },
       ]);
       expect(property.data['template']).toBe('Forms: {{item.customProperties.baseitems}}');
     } finally {

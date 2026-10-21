@@ -2,7 +2,7 @@ import { UiIconComponent } from '../ui-icon.component';
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { IndexedDbContentCache } from './content-cache';
+import { IndexedDbContentCache, RevisionRemovalProgress } from './content-cache';
 import { ContentRecord, DEFAULT_CONTENT_SOURCE, ImportDiagnostic, ImportProgress, ImportRevision, validateSource } from './content.model';
 import { ContentImportRequest } from './content-import-request';
 import { resolveCommit } from './github-source';
@@ -37,6 +37,7 @@ export class ContentImportComponent implements OnInit, OnDestroy {
   readonly itemViews = signal<Record<string, ItemView>>({});
   readonly cachedRevisions = signal<Awaited<ReturnType<IndexedDbContentCache['revisions']>>>([]);
   readonly storage = signal<StorageEstimate | undefined>(undefined);
+  readonly removal = signal<(RevisionRemovalProgress & { revisionId: string }) | null>(null);
   private readonly cache = new IndexedDbContentCache();
   private worker?: Worker;
   private readonly namespace = 'development-local';
@@ -163,14 +164,16 @@ export class ContentImportComponent implements OnInit, OnDestroy {
   async removeRevision(id: string): Promise<void> {
     if (this.busy()) return;
     this.busy.set(true);
+    this.message.set('');
+    this.removal.set({ revisionId: id, phase: 'checking', records: 0 });
     try {
-      await this.cache.deleteRevision(this.namespace, id);
+      await this.cache.deleteRevision(this.namespace, id, progress => this.removal.set({ ...progress, revisionId: id }));
       this.revision.set(await this.cache.active(this.namespace, this.source));
       this.records.set([]); this.itemViews.set({});
-      this.message.set('Inactive content removed. Installed content and character snapshots retained.');
+      this.message.set('Inactive revision removed. Installed content and character snapshots retained.');
       await this.refreshStorage();
     } catch (error) { this.message.set(String(error)); }
-    finally { this.busy.set(false); }
+    finally { this.removal.set(null); this.busy.set(false); }
   }
   async browse(id: string): Promise<void> {
     try {

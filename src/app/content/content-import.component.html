@@ -131,15 +131,26 @@
 
   <details class="editor-card">
     <summary class="text-sm font-semibold cursor-pointer">Local Storage</summary>
-    <p class="text-xs text-on-surface-variant mt-3">Remove older imports to free space. The active library and character snapshots are kept.</p>
+    <p class="text-xs text-on-surface-variant mt-3">Each retained revision stores a complete copy of an earlier import. Removing it frees local space by deleting its imported records. The active library and saved characters are kept.</p>
     <button type="button" [disabled]="busy()" (click)="refreshStorage()" class="secondary-button my-3">Refresh Storage</button>
     @if (storage(); as s) { <p class="text-xs text-on-surface-variant">{{ mb(s.usage ?? 0) }} MB used / {{ mb(s.quota ?? 0) }} MB browser allowance (entire site)</p> }
+    @if (removal(); as cleanup) {
+      <div role="status" aria-live="polite" class="rounded-lg bg-surface-container p-3 mt-3">
+        <p class="text-sm font-medium">
+          @if (cleanup.phase === 'checking') { Preparing to remove the inactive revision… }
+          @else if (cleanup.phase === 'deleting') { Removing {{ cleanup.records.toLocaleString() }} imported records… }
+          @else { Records removed. Updating storage totals… }
+        </p>
+        <progress aria-label="Removing inactive revision" class="w-full mt-2"></progress>
+        <p class="text-xs text-on-surface-variant mt-2">Large revisions can take a while to remove. Keep this page open until cleanup finishes.</p>
+      </div>
+    }
     @for (entry of cachedRevisions(); track entry.revision.id) {
       <div class="rounded-lg bg-surface-container-low p-3 mt-3">
         <p class="text-sm font-medium">{{ entry.revision.source.owner }}/{{ entry.revision.source.repository }} · {{ entry.revision.source.branch }}</p>
         <p class="text-xs text-on-surface-variant mt-1">{{ entry.revision.commit.slice(0, 12) }} · {{ entry.revision.createdAt }} · Adapter {{ entry.revision.adapterVersion }}</p>
         <p class="text-xs mt-1">{{ entry.active ? 'Active' : entry.revision.status === 'staging' ? 'Incomplete Import' : 'Retained' }} · {{ entry.storedRecords }} records</p>
-        <button type="button" [disabled]="busy() || entry.active" (click)="removeRevision(entry.revision.id)" class="secondary-button mt-2">Remove Inactive Revision</button>
+        <button type="button" [disabled]="busy() || entry.active" (click)="removeRevision(entry.revision.id)" class="secondary-button mt-2">{{ removal()?.revisionId === entry.revision.id ? 'Removing…' : 'Remove Inactive Revision' }}</button>
       </div>
     }
   </details>

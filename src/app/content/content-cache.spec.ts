@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { IndexedDbContentCache } from './content-cache';
+import { IndexedDbContentCache, RevisionRemovalProgress } from './content-cache';
 import { ContentRecord, DEFAULT_CONTENT_SOURCE, ImportRevision, sourceIdentity } from './content.model';
 
 function revision(namespace: string): ImportRevision {
@@ -12,6 +12,23 @@ function row(index: number): ContentRecord {
   return { key: String(index).padStart(5, '0'), kind: 'class', name: `Synthetic ${index}`, publication: 'TEST', file: 'test.json', data: {}, links: [] };
 }
 describe('IndexedDB content cache', () => {
+  it('removes the complete revision range, reports completion after commit and preserves adjacent revisions', async () => {
+    const cache = new IndexedDbContentCache(lockManager());
+    const selected = revision('bulk-remove');
+    const before = { ...revision('bulk-remove'), id: selected.id + '-before' };
+    const after = { ...revision('bulk-remove'), id: selected.id + '-after' };
+    for (const value of [before, selected, after]) await cache.stage(value);
+    const records = [...Array.from({ length: 270 }, (_, index) => row(index)), { ...row(300), key: '\uffffextra' }];
+    await cache.put(selected.id, records);
+    await cache.put(before.id, [row(1)]); await cache.put(after.id, [row(2)]);
+    const events: RevisionRemovalProgress[] = [];
+    await cache.deleteRevision('bulk-remove', selected.id, progress => events.push(progress));
+    expect(events).toEqual([{ phase: 'checking', records: 0 }, { phase: 'deleting', records: 271 }, { phase: 'complete', records: 271 }]);
+    expect(await cache.category(selected.id, 'class', 0)).toEqual([]);
+    expect((await cache.revisions('bulk-remove')).map(entry => entry.revision.id).sort()).toEqual([before.id, after.id].sort());
+    expect(await cache.get(before.id, row(1).key)).toBeDefined();
+    expect(await cache.get(after.id, row(2).key)).toBeDefined();
+  });
   it('applies level ordering across the full catalog before paging, with alphabetical ties', async () => {
     const cache = new IndexedDbContentCache(), imported = revision('level-order');
     const records = [

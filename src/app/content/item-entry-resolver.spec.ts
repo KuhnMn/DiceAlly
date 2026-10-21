@@ -1,10 +1,27 @@
 import { mapContent } from './content-adapter';
 import { entityKey } from './content.model';
 import { resolveItemEntries } from './item-entry-resolver';
+import { itemRuleEntries } from './item-resolver';
 
 const templates = (entries: unknown[]) => new Map(mapContent({ itemEntry: entries }, 'items-base.json').records.map(record => [record.key, record]));
 
 describe('Item entry templates', () => {
+  it('resolves property-name tokens alongside item fields in core property templates', () => {
+    const records = mapContent({ itemProperty: [
+      { name: 'Finesse', abbreviation: 'F', source: 'PHB', template: '{{prop_name_lower}}' },
+      { name: 'Two-Handed', abbreviation: '2H', source: 'XPHB', template: '{{prop_name}} / {{prop_name_lower}}' },
+      { name: 'Ammunition', abbreviation: 'A', source: 'XPHB', template: '{{prop_name}} (Range {{item.range}}; {{item.ammoType}})' },
+    ] }, 'items-base.json').records;
+    expect(itemRuleEntries(records[0], {})).toEqual(['finesse']);
+    expect(itemRuleEntries(records[1], {})).toEqual(['Two\u2011Handed / two\u2011handed']);
+    expect(itemRuleEntries(records[2], { range: '80/320', ammoType: 'Arrow|XPHB' })).toEqual(['Ammunition (Range 80/320; Arrow|XPHB)']);
+  });
+  it('keeps static property details usable when a presentation template is unsupported', () => {
+    const definition = mapContent({ itemProperty: [{ name: 'Custom', source: 'TEST', abbreviation: 'C',
+      template: '{{unsupported_token}}', entries: ['Authored description'] }] }, 'homebrew/custom.json').records[0];
+    expect(itemRuleEntries(definition, {})).toEqual(['Authored description', 'Some details for this property could not be displayed.']);
+    expect(definition.data['template']).toBe('{{unsupported_token}}');
+  });
   it('expands exact source references, nested entries, item properties and the resistance formatter', () => {
     const definitions = templates([
       { name: 'Resistance', source: 'DMG', entriesTemplate: ['Classic {{item.resist}}.'] },
