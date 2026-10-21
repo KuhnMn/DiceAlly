@@ -1,6 +1,9 @@
 import type { BrewSourceByKind } from './generated/brew-source';
 import type { ContentRecord } from './content.model';
 
+/** Structured charge metadata already retained in the materialized source payload. */
+export type ItemChargeDefinition = Pick<BrewSourceByKind['item'], 'charges' | 'recharge' | 'rechargeAmount'>;
+
 type SourceFields = Pick<BrewSourceByKind['item'],
   'page' | 'type' | 'typeAlt' | 'rarity' | 'weight' | 'value' | 'dmg1' | 'dmg2' | 'dmgType'
   | 'weaponCategory' | 'range' | 'bonusWeapon' | 'bonusAc' | 'ac' | 'bonusWeaponAttack'

@@ -5,6 +5,16 @@ import { DisplayItem } from '../models/character.model';
 import { itemRuleEntries } from '../content/item-resolver';
 
 describe('Equipment reference details', () => {
+  it('shows the source charge count and actual dawn recovery rule without guessing a rest reset', () => {
+    const fixture = TestBed.createComponent(EquipmentDetailsComponent);
+    fixture.componentRef.setInput('entity', { item: { name: 'Wand of Magic Missiles', source: 'XDMG', charges: 7, recharge: 'dawn', rechargeAmount: '{@dice 1d6 + 1}' } });
+    fixture.detectChanges();
+    const panel = fixture.nativeElement.querySelector('[aria-label="Item charges"]') as HTMLElement;
+    expect(panel.textContent).toContain('Charges: 7'); expect(panel.textContent).toContain('At Dawn');
+    expect(panel.textContent).toContain('1d6 + 1'); expect(panel.textContent).not.toContain('{@dice');
+    expect(prepareEquipmentDetails(fixture.componentInstance.entity()!).charges?.trackerRecoveryCondition).toBe('MANUAL');
+  });
+
   it('renders ammunition references without publication tokens or duplicate rule headings', () => {
     const entries = itemRuleEntries({ kind: 'itemProperty', key: 'ammo', name: 'Ammunition', publication: 'XDMG', file: 'test.json', links: [],
       data: { template: '{{prop_name}} ({{item.range}} ft.; {{item.ammoType}})', entries: [{ type: 'entries', name: 'Ammunition', entries: ['Firearm bullets are destroyed upon use.'] }] },

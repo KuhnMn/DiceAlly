@@ -5,6 +5,7 @@ import { DisplayItem, InventoryItem } from '../models/character.model';
 import { contentReference } from './editor-content-helpers';
 import { newEditorId } from './editor-identity';
 import { prepareItemAttachedSpells } from './item-attached-spells';
+import { createItemChargeTrackers } from '../content/item-charges';
 
 /** Freeze resolved definitions with the character; the viewer never needs the catalog to display an item. */
 export async function createInventoryEntry(cache: Pick<ContentCache, 'get'>, record: ContentRecord, revision: ImportRevision): Promise<InventoryItem> {
@@ -17,7 +18,7 @@ export async function createInventoryEntry(cache: Pick<ContentCache, 'get'>, rec
   Object.assign(entity, await prepareItemAttachedSpells(cache, record, revision.id));
   return { editorId: newEditorId(), contentReference: contentReference(record, revision), name: record.name,
     source: record.publication, count: 1, allowMultiples: false, isEquipped: false, isAttuned: false,
-    entity, uses: [], notes: [] };
+    entity, uses: createItemChargeTrackers(entity.item), notes: [] };
 }
 
 export function setCustomItemDescription(item: InventoryItem, text: string): void {

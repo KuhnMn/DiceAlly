@@ -1,5 +1,6 @@
 import type { SourceEntry } from '../content/content-entries';
 import type { CharacterSpeed } from './character-speed';
+import type { ItemChargeDefinition } from '../content/item.model';
 
 export type Entry =
   | SourceEntry
@@ -426,7 +427,7 @@ export interface Resistance {
   [key: string]: unknown;
 }
 
-export interface ItemEntity {
+export interface ItemEntity extends ItemChargeDefinition {
   id?: number;
   name: string;
   source: string;

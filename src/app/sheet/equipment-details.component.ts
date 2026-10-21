@@ -12,6 +12,15 @@ import { prepareEquipmentDetails } from './equipment-presentation';
   host: { class: 'block space-y-3' },
   template: `
     @if (details(); as detail) {
+      @if (detail.charges; as charges) {
+        <section aria-label="Item charges" class="rounded-lg border border-outline-variant bg-surface-container p-3 text-sm">
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <div><span class="font-semibold">Charges: </span><app-entry-renderer [entry]="{text: '' + charges.maximumCharges}" [inline]="true" /></div>
+            @if (charges.recoveryTimingText) { <div><span class="font-semibold">Recovery: </span>{{ charges.recoveryTimingText }}</div> }
+            @if (charges.recoveryAmount != null) { <div><span class="font-semibold">Amount: </span><app-entry-renderer [entry]="{text: '' + charges.recoveryAmount}" [inline]="true" /></div> }
+          </div>
+        </section>
+      }
       @if (detail.attunementRequirementText) {
         <section class="rounded-lg border border-outline-variant bg-surface-container p-3 text-sm">
           <h4 class="mb-1 font-semibold">Attunement Requirement</h4>

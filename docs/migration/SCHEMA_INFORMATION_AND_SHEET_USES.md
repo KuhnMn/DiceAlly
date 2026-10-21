@@ -211,3 +211,11 @@ Skill names, supplied sense ranges and the standard conditions in the condition 
 The typed `referenceDescriptions` snapshot section contains `skills`, `senses` and `conditions` arrays of explicitly named `name`, `source`, `entries` and `contentReference` fields. Opening or saving a character fills missing definitions from the installed library, preferring exact XPHB identities and using PHB (or MM for historical senses) only as a fallback. Previously saved definitions stay unchanged until **Refresh Descriptions**; that action retains exact publication/library identity and preserves definitions missing from the new library. Save the character to persist newly filled descriptions for export, sync and offline use. Help rendering itself never queries IndexedDB or the network.
 
 The character's proficiency, sense ranges and condition state remain separate from this reference section. No skill, perception, detection or condition effects are automated.
+
+## 15. Preconfigured equipment charges
+
+Adding an item with an explicit numeric `charges` field creates a **Charges** use tracker at full capacity. Adding another copy creates its own independent tracker. The existing editor and sheet tracking controls handle spent/restored charges; the self-contained item definition retains typed `charges`, `recharge` and `rechargeAmount` fields, and equipment details show the maximum and supplied recovery rule.
+
+**At Dawn maps to manual recovery.** Dusk, midnight, other calendar timing, special recovery, rolled amounts, partial amounts and unspecified recovery also remain manual. Short/long-rest recovery is configured only when the structured fields explicitly supply that rest timing and a numeric amount sufficient to restore the full pool. Symbolic charge counts remain readable without inventing or rolling a numeric maximum. No charge spending or recovery rolls are automated.
+
+Description refresh updates item definitions without adding, resetting or replacing existing trackers, including their manually edited maximum, recovery setting and spent charges. Existing inventory can retain its configured tracking unchanged; this prefill applies to newly added items and needs no library reimport.
