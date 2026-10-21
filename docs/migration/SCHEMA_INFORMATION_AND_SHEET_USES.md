@@ -176,3 +176,30 @@ Equipment details show the authored attunement requirement, item-specific proper
 Acquiring equipment or using **Refresh Descriptions** prepares the snapshot. Resolved properties/masteries gain optional, explicitly named `notes` arrays. `DisplayItem.attachedSpells` contains spell `name`, `source`, readable `usageNotes` and an optional detached `spell` snapshot. Repeated usage groups share one spell description; exact previously linked publications are used. `spellcastingAbilityDescription` preserves fixed, chosen and inherited ability information descriptively. Existing item fields remain unchanged, and viewing these details requires no IndexedDB or network query.
 
 Usage labels distinguish at-will, ritual, daily, rest, limited, charges and named resources without inventing reset timing or casting eligibility. Missing historical links remain readable references; a broken resolved link reports an error rather than substituting a different spell. Existing inventory can gain the added snapshots through **Refresh Descriptions** and **Save**, without reimporting the library. The equipment presentation model is prepared separately in [equipment-presentation.ts](../../src/app/sheet/equipment-presentation.ts).
+
+## 12. Structured character movement
+
+The Wizard prepares character speeds from declared species movement fields, including conditional and alternative values, walking-speed references and flight hover. Descriptions are never parsed for movement rules. Conditions remain reminders; equipment and conditions do not automatically activate or suppress a speed.
+
+The manual editor supports adding and removing speed entries, selecting their type, entering conditions and enabling hover for flight. An empty non-walking value means equal to walking speed. The sheet retains its green **+** for alternative speeds; clicking a value sets a play-time override and the teal **X** restores its base value or reference. Walking-speed references follow the current walking override.
+
+The self-contained character snapshot uses a validated, typed `character.speeds` list. Each entry has a stable `id`, a `type` and an explicitly discriminated `value`; optional `condition` and `overrideFeet` belong to that entry, and only flying entries support `canHover`. Historical numeric speed maps convert when loaded or imported. For example:
+
+```json
+"speeds": [
+  { "id": "walk", "type": "walk", "value": { "kind": "fixed", "feet": 30 } },
+  {
+    "id": "fly",
+    "type": "fly",
+    "value": { "kind": "walkingSpeed" },
+    "condition": "without heavy armor",
+    "canHover": true
+  }
+]
+```
+
+## 13. Feat and optional-feature prerequisites
+
+The feature picker's description dialog, saved editor descriptions and sheet details share the same prepared prerequisite display. Picker rows remain compact; prerequisites appear when opening the description before acquisition, with extra spacing below them in the add dialog. Numeric and class-specific levels, ability alternatives, training/proficiencies, spell requirements, prerequisite feats/invocations and EFA Dragonmark categories are rendered from structured fields. Shared requirements are factored while preserving AND/OR relationships. Authored explanations and notes appear in the description. Additional schema fields without a dedicated formatter remain explicitly labeled with their supplied value.
+
+This is reference information only: no eligibility enforcement, automatic ability changes or new stored prerequisite copy is introduced. Existing character snapshots remain self-contained and use the same prerequisite fields, with updated TypeScript declarations for schema-native values and historical Android representations.

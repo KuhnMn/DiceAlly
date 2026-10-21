@@ -14,7 +14,7 @@ describe('Item entry templates', () => {
     ] }, 'items-base.json').records;
     expect(itemRuleEntries(records[0], {})).toEqual(['finesse']);
     expect(itemRuleEntries(records[1], {})).toEqual(['Two\u2011Handed / two\u2011handed']);
-    expect(itemRuleEntries(records[2], { range: '80/320', ammoType: 'Arrow|XPHB' })).toEqual(['Ammunition (Range 80/320; Arrow|XPHB)']);
+    expect(itemRuleEntries(records[2], { range: '80/320', ammoType: 'Arrow|XPHB' })).toEqual(['Ammunition (Range 80/320; {@item Arrow|XPHB})']);
   });
   it('keeps static property details usable when a presentation template is unsupported', () => {
     const definition = mapContent({ itemProperty: [{ name: 'Custom', source: 'TEST', abbreviation: 'C',

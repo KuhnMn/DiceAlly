@@ -40,6 +40,7 @@ type StyleType = 'TAG' | 'BONUS' | 'LINK' | 'BOLD';
   selector: 'app-entry-renderer',
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '[style.display]': "inline() ? 'inline' : null" },
   template: `
     @if (entries()) {
       <div class="space-y-2">
@@ -165,7 +166,7 @@ type StyleType = 'TAG' | 'BONUS' | 'LINK' | 'BOLD';
           <div class="text-sm text-secondary">Optional Feature: {{ asRefOptionalEntry(entry()!)?.optionalfeature }}</div>
         }
         @default {
-          <div class="text-sm whitespace-pre-wrap">
+          <div class="whitespace-pre-wrap" [class.text-sm]="!inline()" [class.inline]="inline()">
             @for (segment of parseStyledText(asStringEntry(entry()!)?.text ?? fallbackText(entry()!)); track $index) {
               @if (segment.type === 'normal') {
                 <span [class.font-bold]="segment.bold">{{ segment.text }}</span>
@@ -190,6 +191,7 @@ export class EntryRendererComponent {
   entries = input<Entry[] | null>(null);
   entry = input<Entry | null>(null);
   compact = input(false);
+  inline = input(false);
 
   trackEntry(entry: Entry, index: number) {
     if (entry && typeof entry === 'object' && 'name' in entry && typeof entry.name === 'string') {

@@ -14,7 +14,7 @@ export function prepareEquipmentDetails(entity: DisplayItem): EquipmentDetails {
   const requirement = entity.item.reqAttune;
   return {
     attunementRequirementText: !requirement || requirement === 'false' ? undefined
-      : requirement === 'by anyone' || requirement === 'true' ? 'Required' : requirement,
+      : requirement === 'by anyone' || requirement === 'true' ? 'Required' : requirement.charAt(0).toUpperCase() + requirement.slice(1),
     descriptionEntries: entity.item.entries ?? [],
     properties: entity.properties ?? [],
     masteries: entity.masteries ?? [],

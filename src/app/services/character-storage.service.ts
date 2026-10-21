@@ -112,7 +112,7 @@ export class CharacterStorageService {
         return null;
       }
 
-      const sheet = JSON.parse(data) as ExportedCharacter;
+      const sheet = portableCharacter(JSON.parse(data) as ExportedCharacter);
       validateSpeciesEntity(sheet.species?.entity);
       return sheet;
     } catch (error) {

@@ -23,6 +23,7 @@ export function itemRuleEntries(definition: ContentRecord, item: JsonObject): un
   try {
     const template = applyItemTemplate(definition.data['template'], item, 'Unspecified', {
       prop_name: name, prop_name_lower: name.toLowerCase(),
+      ...(typeof item['ammoType'] === 'string' ? { 'item.ammoType': `{@item ${item['ammoType']}}` } : {}),
     });
     return [template, ...description];
   } catch {

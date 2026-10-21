@@ -1,6 +1,7 @@
 import { Component, input } from '@angular/core';
 
 const ICON_PATHS: Record<string, string | undefined> = {
+  walk: 'M15 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM7 21l3-6M16 21l-2-5-3-3 1-6M7 12l2-4 3-1 4 5h4',
   search: 'm21 21-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',
   filter: 'M4 6h16M7 12h10M10 18h4',
   list: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',

@@ -8,9 +8,31 @@ import { CharacterHelpersService } from '../sheet/character-helpers.service';
 import { By } from '@angular/platform-browser';
 import { SwipePagesDirective } from '../sheet/swipe-pages.directive';
 import { NgForm } from '@angular/forms';
+import { walkingSpeedFeet, walkingSpeedEntry } from '../models/character-speed';
 
 describe('Basic Info editor', () => {
   beforeEach(() => TestBed.configureTestingModule({ imports: [LocalEditorComponent], providers: [provideRouter([])] }));
+
+  it('saves manual walking references, conditions and hover without a species-copy button', async () => {
+    const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
+    const editor = fixture.componentInstance;
+    editor.character.name = 'Structured movement';
+    editor.basicInfo.addSpeed();
+    const fly = editor.basicInfo.speeds.at(-1)!;
+    editor.basicInfo.setSpeedCondition(fly, 'without heavy armor');
+    editor.basicInfo.setSpeedHover(fly, true);
+    await editor.save(); expect(editor.error()).toBe('');
+    const record = (await new IndexedDbCharacterRepository().get(editor.character.characterUuid!))!;
+    editor.open(record); await fixture.whenStable();
+    expect(editor.character.speeds).toContainEqual({ id: fly.id, type: 'fly', value: { kind: 'walkingSpeed' }, condition: 'without heavy armor', canHover: true });
+    expect(fixture.nativeElement.textContent).not.toContain('Use Species Speeds');
+    const restored = editor.basicInfo.speeds.find(speed => speed.id === fly.id)!;
+    editor.basicInfo.setSpeedType(restored, 'swim');
+    expect(editor.basicInfo.speeds.find(speed => speed.id === fly.id)).not.toHaveProperty('canHover');
+    editor.basicInfo.setSpeedFeet(editor.basicInfo.speeds.find(speed => speed.id === fly.id)!, 20);
+    await editor.save(); expect(editor.error()).toBe('');
+    expect(editor.character.speeds?.find(speed => speed.id === fly.id)?.value).toEqual({ kind: 'fixed', feet: 20 });
+  });
 
   it('preserves base health and AC independently of temporary overrides through save and reopen', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
@@ -174,7 +196,7 @@ describe('Basic Info editor', () => {
     expect(page.querySelector('#speed-walk')).toBeTruthy();
     expect(page.textContent).not.toMatch(/grant|preview|structured editing/i);
     expect(fixture.componentInstance.character.level).toBe(1);
-    expect(fixture.componentInstance.character.speeds?.walk).toBe(30);
+    expect(walkingSpeedFeet(fixture.componentInstance.character.speeds)).toBe(30);
     const senseName = page.querySelector('input[name="sense-name"]') as HTMLInputElement;
     const addSense = senseName.closest('div')!.querySelector('button') as HTMLButtonElement;
     expect(addSense.disabled).toBe(true);
@@ -191,13 +213,18 @@ describe('Basic Info editor', () => {
     editor.sheet.portaitUrl = 'data:image/png;base64,aGVsbG8=';
     editor.basicInfo.resistanceInput = 'Poison'; editor.basicInfo.addResistance();
     editor.basicInfo.senseName = 'Darkvision'; editor.basicInfo.senseRange = 120; editor.basicInfo.addSense();
-    editor.basicInfo.speeds.fly = 40; editor.basicInfo.speeds.swim = 20; editor.basicInfo.speeds.burrow = 10;
+    editor.basicInfo.speeds.push({ id: 'fly', type: 'fly', value: { kind: 'fixed', feet: 40 } },
+      { id: 'swim', type: 'swim', value: { kind: 'fixed', feet: 20 } },
+      { id: 'burrow', type: 'burrow', value: { kind: 'fixed', feet: 10 } });
     await editor.save();
     expect(editor.error()).toBe(''); expect(editor.unsaved).toBe(false);
     const entry = (await new IndexedDbCharacterRepository().list()).find(e => e.id === editor.character.characterUuid)!;
     editor.newCharacter(); editor.open(entry);
     expect(editor.character).toMatchObject({ name: 'Aster', level: 7, maxHp: 43, armorClass: 18,
-      resistances: ['Poison'], senses: { Darkvision: 120 }, speeds: { walk: 30, fly: 40, swim: 20, burrow: 10 } });
+      resistances: ['Poison'], senses: { Darkvision: 120 }, speeds: [walkingSpeedEntry(),
+        { id: 'fly', type: 'fly', value: { kind: 'fixed', feet: 40 } },
+        { id: 'swim', type: 'swim', value: { kind: 'fixed', feet: 20 } },
+        { id: 'burrow', type: 'burrow', value: { kind: 'fixed', feet: 10 } }] });
     expect(editor.sheet.portaitUrl).toBe(entry.sheet.portaitUrl);
   });
 

@@ -1,4 +1,6 @@
 import { contentEntries } from '../content/content-entries';
+import { characterOption, isCharacterOptionKind } from '../content/character-option-adapter';
+import { PrerequisiteDetailsComponent } from '../sheet/prerequisite-details.component';
 import { featureRecordMetadata, matchesFeatureRecord, featureRecordCategories, matchesFeatureRecordCategories } from './feature-selection';
 import { EditorCombatIndex } from './editor-combat-index';
 import { CatalogMembershipIndex } from './catalog-membership-index';
@@ -33,7 +35,7 @@ import { FEATURE_TYPES, FeatureType, classFeatureKey, createFeatureEntry, featur
 
 @Component({
   providers: [EditorCombatIndex],
-  selector: 'app-editor-features', imports: [EditorEntryRowComponent, FeatureFiltersComponent, HorizontalRowDirective, CatalogResultRowComponent, ListControlsComponent, EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
+  selector: 'app-editor-features', imports: [PrerequisiteDetailsComponent, EditorEntryRowComponent, FeatureFiltersComponent, HorizontalRowDirective, CatalogResultRowComponent, ListControlsComponent, EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
   templateUrl: './features-editor.component.html', styleUrl: './editor.css',
 })
 export class FeaturesEditorComponent implements OnInit, OnDestroy, DoCheck {
@@ -114,6 +116,8 @@ export class FeaturesEditorComponent implements OnInit, OnDestroy, DoCheck {
       .sort((a, b) => compareSearchMatches(a.name, b.name, this.listSearch));
   }
   readonly entries = featureEntries;
+  featurePrerequisites(feature: FeatureEntryFull) { return feature.featEntity?.prerequisite ?? feature.optionalFeatureEntity?.prerequisite; }
+  catalogPrerequisites(record: ContentRecord) { return isCharacterOptionKind(record.kind) ? characterOption(record).prerequisites : undefined; }
   catalogMetadata(record: ContentRecord) { return featureRecordMetadata(record); }
   qualifier(record: ContentRecord): string {
     const metadata = featureRecordMetadata(record);

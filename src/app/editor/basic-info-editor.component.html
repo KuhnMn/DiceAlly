@@ -107,9 +107,21 @@
     }</div>
   </div>
   <div>
-    <h3 class="font-semibold mb-3">Speeds</h3>
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">@for (speed of editor.speedFields; track speed.key) {
-      <label><span class="field-label">{{ speed.label }} (ft)</span><input [id]="'speed-' + speed.key" [name]="'speed-' + speed.key" type="number" min="0" step="1" class="editor-input" [(ngModel)]="editor.speeds[speed.key]" (ngModelChange)="editor.changed()" [required]="speed.key === 'walk'" [placeholder]="speed.key === 'walk' ? '30' : '—'" /></label>
+    <div class="mb-3 flex flex-wrap items-center gap-2"><h3 class="mr-auto font-semibold">Speeds</h3>
+      <button type="button" class="secondary-button compact-button" (click)="editor.addSpeed()"><app-ui-icon name="plus" /> Speed</button>
+    </div>
+    <p class="mb-3 text-xs text-on-surface-variant">Leave a non-walking value empty to use your walking speed. Conditions are displayed as written.</p>
+    <div class="space-y-3">@for (speed of editor.speeds; track speed.id) {
+      <div class="rounded-lg border border-outline-variant p-3">
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-[1fr_1fr_auto]">
+          <label><span class="field-label">Type</span><select [name]="'speed-type-' + speed.id" class="editor-input capitalize" [ngModel]="speed.type" (ngModelChange)="editor.setSpeedType(speed, $event)" [disabled]="editor.isPrimaryWalk(speed)">@for (type of editor.speedTypes; track type) { <option [value]="type">{{ type }}</option> }</select></label>
+          <label><span class="field-label">Value (ft)</span><input [id]="'speed-' + speed.id" [name]="'speed-' + speed.id" type="number" min="0" step="1" class="editor-input" [ngModel]="speed.value.kind === 'fixed' ? speed.value.feet : null" (ngModelChange)="editor.setSpeedFeet(speed, $event)" [required]="speed.type === 'walk'" placeholder="Equal to walking speed" /></label>
+          @if (!editor.isPrimaryWalk(speed)) { <button type="button" class="secondary-button icon-button self-end" [attr.aria-label]="'Remove ' + speed.type + ' speed'" (click)="editor.removeSpeed(speed)"><app-ui-icon name="close" /></button> }
+        </div>
+        @if (!editor.isPrimaryWalk(speed)) { <label class="mt-2 block"><span class="field-label">Condition (optional)</span><input [name]="'speed-condition-' + speed.id" class="editor-input" [ngModel]="speed.condition ?? ''" (ngModelChange)="editor.setSpeedCondition(speed, $event)" /></label> }
+        @if (speed.type === 'fly') { <label class="mt-2 flex min-h-9 items-center gap-2 text-sm"><input type="checkbox" [name]="'speed-hover-' + speed.id" [ngModel]="speed.canHover ?? false" (ngModelChange)="editor.setSpeedHover(speed, $event)" /> Can hover</label> }
+        @if (speed.overrideFeet != null) { <p class="mt-2 text-xs text-green">Play override: {{ speed.overrideFeet }} ft. <button type="button" class="underline" (click)="speed.overrideFeet = undefined; editor.changed()">Reset override</button></p> }
+      </div>
     }</div>
   </div>
 </section>

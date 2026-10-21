@@ -38,7 +38,7 @@ export function groupWizardReview(changes: PrefillChange[], before: ExportedChar
       section = 'Spells & Slots'; group = `${id} · Spell Slots`;
     } else if (kind === 'sources') {
       section = 'Feature Sources'; group = 'Sources';
-    } else if (kind === 'species' || kind === 'resistances' || kind === 'character' && ['senses', 'speeds'].includes(id)) {
+    } else if (kind === 'species' || kind === 'resistances' || kind === 'speeds' || kind === 'character' && ['senses', 'speeds'].includes(id)) {
       section = 'Species & Movement'; group = kind === 'species' ? 'Species' : kind === 'resistances' ? 'Resistances' : id === 'senses' ? 'Senses' : 'Speeds';
     } else if (['saves', 'languages', 'custom'].includes(kind) || kind === 'character' && id === 'proficiencies') {
       section = 'Proficiencies';

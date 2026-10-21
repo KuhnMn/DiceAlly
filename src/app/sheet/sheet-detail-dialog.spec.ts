@@ -2,8 +2,29 @@ import { TestBed } from '@angular/core/testing';
 import { HitDiceTrackerComponent } from './hit-dice-tracker.component';
 import { FeaturesPageComponent } from './features-page.component';
 import { SpellsPageComponent } from './spells-page.component';
+import { adaptSpecies } from '../content/species-adapter';
 
 describe('Sheet detail overlays', () => {
+  it('shows all structured species sense ranges in the summary and dialog without parsing descriptions', () => {
+    const fixture = TestBed.createComponent(FeaturesPageComponent);
+    const definition = adaptSpecies({ darkvision: 60, blindsight: 10, tremorsense: 30, truesight: 120 });
+    fixture.componentRef.setInput('characterData', { character: {}, species: {
+      name: 'Test species', entity: { name: 'Test species', source: 'TEST', definition, darkvision: 999 },
+    } });
+    fixture.detectChanges();
+    const summary = fixture.nativeElement.querySelector('[aria-label="Species details"]');
+    for (const text of ['Darkvision: 60 ft.', 'Blindsight: 10 ft.', 'Tremorsense: 30 ft.', 'Truesight: 120 ft.']) expect(summary.textContent).toContain(text);
+    expect(summary.textContent).not.toContain('999');
+    fixture.componentInstance.toggleExpanded('species'); fixture.detectChanges();
+    const dialog = fixture.nativeElement.querySelector('dialog');
+    for (const text of ['Darkvision: 60 ft.', 'Blindsight: 10 ft.', 'Tremorsense: 30 ft.', 'Truesight: 120 ft.']) expect(dialog.textContent).toContain(text);
+    fixture.componentRef.setInput('characterData', { character: {}, species: {
+      name: 'Old species', entity: { name: 'Old species', source: 'TEST', blindsight: 0, entries: [{ text: 'Darkvision 90 feet.' }] },
+    } });
+    fixture.detectChanges();
+    expect(fixture.componentInstance.speciesSenses()).toEqual([{ sense: 'blindsight', label: 'Blindsight', rangeFeet: 0 }]);
+  });
+
   it('opens one feature at a time and dismisses without losing notes or spent uses', () => {
     const fixture = TestBed.createComponent(FeaturesPageComponent);
     const features = [

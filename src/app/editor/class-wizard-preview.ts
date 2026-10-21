@@ -14,6 +14,8 @@ import { deriveOptionalSlots } from '../rules/optional-progression';
 import { deriveSpellGrants, SpellGrantOwner } from '../rules/spell-rules';
 import { deriveSpecies } from '../rules/species-rules';
 import { speciesDefinition } from '../content/species-adapter';
+import { speciesSpeedEntries } from '../content/species-speed-projection';
+import { sizeName } from '../size-names';
 import { DEFENSE_ABILITIES } from './basic-info';
 import { spellSnapshot } from './spell-selection';
 import { PrefillValue, WizardState, mergeWizardPrefill } from './wizard-prefill';
@@ -198,16 +200,27 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
       const species = deriveSpecies({ id: 'wizard-species', key: record.key }, index, [], undefined, state.answers);
       choices.push(...species.choices.map(choice => ({ ownerKey: record.key, id: choice.id, label: `${record.name}: ${choice.label}`,
         count: choice.count, searchable: false,
-        candidates: choice.candidates.map(value => ({ value, label: capitalizeFirst(value) })) })));
+        candidates: choice.candidates.map(value => ({ value, label: choice.label === 'size' ? sizeName(value) : capitalizeFirst(value) })) })));
       warnings.push(...species.diagnostics);
       warnings.push(...species.warnings);
       put('species', `${record.name} species`, ['species'], { editorId: wizardEditorId('species', revision.sourceIdentity, record.key), name: record.name, source: record.publication,
         userAdded: false, contentReference: reference(record), entity: speciesSnapshot(record), notes: [], uses: [] });
       for (const contribution of species.generated) {
         const value = object(contribution.value);
-        if (contribution.field === 'speed' && !value!['condition']) put('species', `${value!['mode']} speed`, ['character', 'speeds', String(value!['mode'])], value!['number']);
         if (contribution.field === 'sense') put('species', `${value!['sense']} sense`, ['character', 'senses', capitalizeFirst(String(value!['sense']))], value!['range']);
         if (contribution.field === 'resist' && typeof contribution.value === 'string') put('species', `${contribution.value} resistance`, ['resistances', capitalizeFirst(contribution.value)], capitalizeFirst(contribution.value));
+      }
+      const speedEntries = speciesSpeedEntries(speciesDefinition(record));
+      for (const speed of speedEntries) put('species', `${speed.type} speed`, ['speeds', speed.id], speed);
+      const movement = speciesDefinition(record).movement;
+      if (movement.kind === 'defined' && movement.choice) {
+        for (const contribution of species.generated.filter(value => value.field === 'speed')) {
+          const value = object(contribution.value)!;
+          const type = movement.choice.from.find(mode => mode === value['mode']);
+          if (type && movement.choice.feet === value['number'] && !speedEntries.some(speed => speed.type === type)) {
+            put('species', `${type} speed`, ['speeds', type], { id: type, type, value: { kind: 'fixed', feet: movement.choice.feet } });
+          }
+        }
       }
       // Species already have their own feature section; only spell grants need a source.
       if (declaresSpellcasting(record)) {

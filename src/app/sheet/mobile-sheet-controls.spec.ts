@@ -2,35 +2,41 @@ import { TestBed } from '@angular/core/testing';
 import { SheetAcControlComponent } from './sheet-ac-control.component';
 import { MobileCharacterInfoPageComponent } from './mobile-character-info-page.component';
 import { MobileSheetStatusComponent } from './mobile-sheet-status.component';
+import { walkingSpeedEntry } from '../models/character-speed';
 
 describe('Mobile sheet controls', () => {
   it('opens other movement speeds on tap and dismisses them outside or with Escape', () => {
     const fixture = TestBed.createComponent(MobileSheetStatusComponent);
-    fixture.componentRef.setInput('sheet', { character: { speeds: { walk: 30, fly: 60, swim: 20, climb: 0 } } });
+    fixture.componentRef.setInput('sheet', { character: { speeds: [walkingSpeedEntry(),
+      { id: 'fly', type: 'fly', value: { kind: 'fixed', feet: 60 } },
+      { id: 'swim', type: 'swim', value: { kind: 'fixed', feet: 20 } }] } });
     fixture.detectChanges();
     const button = fixture.nativeElement.querySelector('button[aria-label^="Walking speed"]') as HTMLButtonElement;
     expect(button.textContent).toContain('30');
-    expect(button.querySelector('app-ui-icon')).not.toBeNull();
+    const expand = fixture.nativeElement.querySelector('button[aria-label="Show other speeds"]') as HTMLButtonElement;
     expect(fixture.nativeElement.querySelector('[aria-label="Other speeds"]')).toBeNull();
-    button.click(); fixture.detectChanges();
+    expand.click(); fixture.detectChanges();
     const speeds = fixture.nativeElement.querySelector('[aria-label="Other speeds"]');
-    expect(speeds.textContent).toContain('fly: 60 ft.');
-    expect(speeds.textContent).toContain('swim: 20 ft.');
+    expect(speeds.textContent).toContain('Fly');
+    expect(speeds.textContent).toContain('60 ft.');
+    expect(speeds.textContent).toContain('Swim');
+    expect(speeds.textContent).toContain('20 ft.');
     expect(speeds.textContent).not.toContain('climb');
-    expect(button.getAttribute('aria-expanded')).toBe('true');
+    expect(expand.getAttribute('aria-expanded')).toBe('true');
     document.dispatchEvent(new Event('pointerdown', { bubbles: true })); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[aria-label="Other speeds"]')).toBeNull();
-    button.click(); fixture.detectChanges();
+    expand.click(); fixture.detectChanges();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); fixture.detectChanges();
-    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(expand.getAttribute('aria-expanded')).toBe('false');
   });
 
   it('shows walking speed without an expansion indicator when no other speeds are available', () => {
     const fixture = TestBed.createComponent(MobileSheetStatusComponent);
-    fixture.componentRef.setInput('sheet', { character: { speeds: { walk: 25 } } }); fixture.detectChanges();
+    fixture.componentRef.setInput('sheet', { character: { speeds: [walkingSpeedEntry(25)] } }); fixture.detectChanges();
     const button = fixture.nativeElement.querySelector('button[aria-label^="Walking speed"]') as HTMLButtonElement;
     expect(button.textContent).toContain('25');
-    expect(button.disabled).toBe(true);
+    expect(button.disabled).toBe(false);
+    expect(fixture.nativeElement.querySelector('button[aria-label="Show other speeds"]')).toBeNull();
     expect(button.querySelector('app-ui-icon')).toBeNull();
   });
 

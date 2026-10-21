@@ -35,7 +35,7 @@
 
             <app-entry-annotations-editor [entry]="feature" (edited)="change()">
               <app-combat-bookmark annotation-combat [sheet]="sheet()" [resource]="feature" [type]="feature.featureType === 'FEAT' ? 'FEAT' : feature.featureType === 'OPTIONAL_FEATURE' ? 'OPTIONAL_FEATURE' : 'CLASS_FEATURE'" (edited)="change()" />
-              <app-description-dialog annotation-description [dense]="true" [title]="feature.name" label="Description"><div class="p-3"><app-entry-renderer [entries]="entries(feature)" /></div></app-description-dialog>
+              <app-description-dialog annotation-description [dense]="true" [title]="feature.name" label="Description"><div class="space-y-3 p-3"><app-prerequisite-details [prerequisites]="featurePrerequisites(feature)" /><app-entry-renderer [entries]="entries(feature)" /></div></app-description-dialog>
             </app-entry-annotations-editor>
           </div>
         }
@@ -79,7 +79,7 @@
             }
             <span class="min-w-0 truncate rounded bg-surface-container-highest px-1 text-on-surface" [title]="record.publication">{{ record.publication }}</span>
           </ng-container>
-          <app-description-dialog catalog-description class="shrink-0 self-stretch" [title]="record.name" [compact]="true"><div class="p-2"><app-entry-renderer [entries]="catalogEntries(record)" /></div></app-description-dialog>
+          <app-description-dialog catalog-description class="shrink-0 self-stretch" [title]="record.name" [compact]="true"><div class="p-2">@if (catalogPrerequisites(record)?.length) { <div class="mb-5"><app-prerequisite-details [prerequisites]="catalogPrerequisites(record)" /></div> }<app-entry-renderer [entries]="catalogEntries(record)" /></div></app-description-dialog>
         </app-catalog-result-row>
       }</div>
       @if (revision()) { <div class="flex flex-wrap items-center justify-between gap-2 text-xs"><span>{{ total() }} matches</span><div class="flex gap-2"><button type="button" class="secondary-button compact-button" [disabled]="loading() || offset === 0" (click)="nextPage(-1)">Previous</button><button type="button" class="secondary-button compact-button" [disabled]="loading() || offset + pageSize >= total()" (click)="nextPage(1)">Next</button></div></div> }

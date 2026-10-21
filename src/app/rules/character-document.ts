@@ -32,6 +32,7 @@ export interface CharacterDocument {
   };
   overrides: ResourceOverrides & {
     maxHp?: number | null; armorClass?: number | null; initiative?: number | null;
+    speedOverrides?: Record<string, number>;
     suppressedFeatureGrants?: string[]; suppressedSpellGrants?: string[];
   };
   contentBindings: { sourceIdentity: string; revisionId: string; commit: string; adapterVersion: number; enabledPublications: string[] }[];
@@ -102,6 +103,9 @@ export function validateCharacterDocument(value: unknown): CharacterDocument {
   if (classes['optionalPrerequisites'] !== undefined) throw new Error('Prerequisite context must be reconstructed from saved selections, not serialized runtime Sets.');
   const overrides = requireObject(root['overrides'],'overrides'); requireArray(overrides['pools'],'resource overrides'); requireArray(overrides['sources'],'source overrides');
   for (const field of ['maxHp','armorClass','initiative']) if (overrides[field] != null && !Number.isSafeInteger(overrides[field])) throw new Error('Invalid scalar override.');
+  if (overrides['speedOverrides'] !== undefined) for (const value of Object.values(requireObject(overrides['speedOverrides'], 'speed overrides'))) {
+    if (!Number.isSafeInteger(value) || Number(value) < 0) throw new Error('Invalid speed override.');
+  }
   if (overrides['maxHp'] != null && Number(overrides['maxHp']) < 0) throw new Error('Invalid maximum HP override.');
   for (const field of ['suppressedFeatureGrants','suppressedSpellGrants']) if (overrides[field] !== undefined && requireArray(overrides[field],field).some(v => typeof v !== 'string')) throw new Error('Invalid grant suppression.');
   const bindings = requireArray(root['contentBindings'],'content bindings');

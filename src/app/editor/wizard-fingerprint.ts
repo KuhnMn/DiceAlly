@@ -5,7 +5,7 @@ export function comparableWizardValue(value: unknown, excludeAnnotations = false
   if (Array.isArray(value)) return value.map(entry => comparableWizardValue(entry));
   if (!value || typeof value !== 'object') return value;
   return Object.fromEntries(Object.entries(value)
-    .filter(([key, entry]) => entry !== undefined && key !== 'used' && key !== 'usedFreeUses'
+    .filter(([key, entry]) => entry !== undefined && key !== 'used' && key !== 'usedFreeUses' && key !== 'overrideFeet'
       && (!excludeAnnotations || (key !== 'notes' && key !== 'uses')))
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, entry]) => [key, comparableWizardValue(entry)]));

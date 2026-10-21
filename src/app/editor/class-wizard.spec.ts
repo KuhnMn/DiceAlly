@@ -9,6 +9,7 @@ import { IndexedDbCharacterRepository } from '../characters/indexeddb-character-
 import { WizardState } from './wizard-prefill';
 import { matchesSubclass, previewClassWizard } from './class-wizard-preview';
 import { ClassWizardComponent } from './class-wizard.component';
+import { primaryWalkingSpeed, walkingSpeedFeet } from '../models/character-speed';
 
 function fixture() {
   const source = { ...DEFAULT_CONTENT_SOURCE, owner: 'class-wizard-test' };
@@ -301,13 +302,30 @@ describe('Optional class wizard prefill', () => {
     f.sheet.character!.proficiencies = { languages: ['Common'], skills: { ARCANA: 'EXPERTISE' } };
     const result = previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet;
     expect(result.character!.level).toBe(4); expect(result.character!.maxHp).toBe(55);
-    expect(result.character!.speeds!.walk).toBe(25); expect(result.character!.senses!['Darkvision']).toBe(60);
+    expect(walkingSpeedFeet(result.character!.speeds)).toBe(25); expect(result.character!.senses!['Darkvision']).toBe(60);
     expect(result.character!.proficiencies!.languages).toEqual(['Common', 'Elvish']);
     expect(result.character!.proficiencies!.skills!['ARCANA']).toBe('EXPERTISE');
     expect(result.species!.name).toBe('Elf'); validateBasicInfo(result);
     expect(result.character!.featureSources!.some(source => source.name === 'Elf (TEST)')).toBe(false);
-    result.character!.speeds!.walk = 50;
-    expect(previewClassWizard(result, result.creatorWizard!, f.revision, f.index).sheet.character!.speeds!.walk).toBe(50);
+    primaryWalkingSpeed(result.character!.speeds)!.value = { kind: 'fixed', feet: 50 };
+    expect(walkingSpeedFeet(previewClassWizard(result, result.creatorWizard!, f.revision, f.index).sheet.character!.speeds)).toBe(50);
+  });
+
+  it('fills structured movement from the Wizard while preserving play overrides on later previews', () => {
+    const f = fixture(); f.state.speciesKey = 'species-test';
+    f.index.get('species-test')!.data['speed'] = { walk: 30, fly: true, canHover: true,
+      swim: { number: 20, condition: 'while transformed' }, alternate: { walk: [{ number: 40, condition: 'on all fours' }] } };
+    const result = previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet;
+    expect(result.character!.speeds).toEqual(expect.arrayContaining([
+      { id: 'fly', type: 'fly', value: { kind: 'walkingSpeed' }, canHover: true },
+      expect.objectContaining({ type: 'swim', condition: 'while transformed' }),
+      expect.objectContaining({ type: 'walk', condition: 'on all fours' }),
+    ]));
+    primaryWalkingSpeed(result.character!.speeds)!.overrideFeet = 50;
+    const updated = previewClassWizard(result, result.creatorWizard!, f.revision, f.index).sheet;
+    expect(walkingSpeedFeet(updated.character!.speeds)).toBe(50);
+    expect(updated.creatorWizard!.protectedPaths).not.toContainEqual(['speeds', 'walk']);
+    validateBasicInfo(updated);
   });
 
   it('offers species resistance choices and replaces generated selections while keeping manual resistances', () => {
@@ -350,7 +368,7 @@ describe('Optional class wizard prefill', () => {
     const state = structuredClone(next.creatorWizard!); state.speciesKey = undefined;
     const removed = previewClassWizard(next, state, f.revision, f.index).sheet;
     expect(removed.species!.notes![0].notes).toEqual(['Keep the trait note']);
-    expect(removed.character!.speeds!.walk).toBe(30); validateBasicInfo(removed);
+    expect(walkingSpeedFeet(removed.character!.speeds)).toBe(30); validateBasicInfo(removed);
   });
 
   it('rejects mismatched subclasses and calculates pact and pooled multiclass slots', () => {

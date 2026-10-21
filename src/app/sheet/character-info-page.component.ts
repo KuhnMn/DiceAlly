@@ -14,81 +14,14 @@ import { FormsModule } from '@angular/forms';
 import { CharacterHelpersService } from './character-helpers.service';
 import { ExportedCharacter, HitDieEntry, ConditionName } from '../models/character.model';
 import { ConditionsComponent } from './conditions.component';
+import { SheetSpeedControlComponent } from './sheet-speed-control.component';
+import { SheetSpeedDescriptionComponent } from './sheet-speed-description.component';
 
 @Component({
   selector: 'app-character-info-page',
-  imports: [BackgroundDetailsComponent, ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
+  imports: [SheetSpeedControlComponent, SheetSpeedDescriptionComponent, BackgroundDetailsComponent, ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
+  styleUrl: './sheet-stat-tooltip.css',
   styles: [`
-    .ac-display {
-      position: relative;
-      cursor: help;
-    }
-    .ac-display .ac-tooltip {
-      visibility: hidden;
-      position: absolute;
-      z-index: 1000;
-      bottom: calc(100% + 8px);
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #1f2937;
-      color: #fff;
-      text-align: center;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      line-height: 1.4;
-      white-space: nowrap;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-      font-weight: 500;
-    }
-    .ac-display:hover .ac-tooltip {
-      visibility: visible;
-    }
-    .ac-display .ac-tooltip::after {
-      content: '';
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      border-width: 6px;
-      border-style: solid;
-      border-color: #1f2937 transparent transparent transparent;
-    }
-    .speed-display {
-      position: relative;
-      cursor: help;
-    }
-    .speed-display .speed-tooltip {
-      visibility: hidden;
-      position: absolute;
-      z-index: 1000;
-      bottom: calc(100% + 8px);
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #1f2937;
-      color: #fff;
-      text-align: left;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      line-height: 1.5;
-      white-space: nowrap;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-      font-weight: 500;
-    }
-    .speed-display:hover .speed-tooltip {
-      visibility: visible;
-    }
-    .speed-display .speed-tooltip::after {
-      content: '';
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      border-width: 6px;
-      border-style: solid;
-      border-color: #1f2937 transparent transparent transparent;
-    }
     .round-tracker-input::-webkit-outer-spin-button,
     .round-tracker-input::-webkit-inner-spin-button {
       -webkit-appearance: none;
@@ -260,7 +193,7 @@ import { ConditionsComponent } from './conditions.component';
           <!-- Top Combat Stats -->
           <div class="flex justify-center gap-3 mb-3">
             <div
-              class="border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-20 sm:h-20 bg-surface-container-low flex flex-col items-center justify-center shadow-lg ac-display relative"
+              class="border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-20 sm:h-20 bg-surface-container-low flex flex-col items-center justify-center shadow-lg stat-display relative"
               [class.cursor-pointer]="!isEditingAcOverride()"
               (click)="!isEditingAcOverride() && startEditingAc()"
             >
@@ -283,7 +216,7 @@ import { ConditionsComponent } from './conditions.component';
                 [class.text-primary]="acOverride() == null"
                 >{{ armorClassInfo().ac }}</div>
               }
-              <div class="ac-tooltip">{{ armorClassInfo().source }}</div>
+              <div class="stat-tooltip">{{ armorClassInfo().source }}</div>
               @if (acOverride() !== null && !isEditingAcOverride()) {
                 <button
                   (click)="resetAcOverride(); $event.stopPropagation()"
@@ -294,31 +227,7 @@ import { ConditionsComponent } from './conditions.component';
                 </button>
               }
             </div>
-            <div
-              class="border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-20 sm:h-20 bg-surface-container-low flex flex-col items-center justify-center shadow-lg speed-display relative"
-            >
-              <div class="text-xs text-on-surface-variant uppercase font-semibold">
-                <span class="inline-flex items-center gap-1">
-                  <span
-                    class=""
-                  >
-                    Walk
-                  </span>
-                  @if (getSpeedsTooltip()) {
-                    <span
-                      class="absolute -top-2 -right-2 bg-green text-on-green rounded-full w-6 h-6 flex items-center justify-center text-xl hover:bg-error-container transition-colors"
-                      aria-hidden="true"
-                    >
-                      <app-ui-icon name="plus" />
-                    </span>
-                  }
-                </span>
-              </div>
-              <div class="text-2xl font-bold text-primary">{{ character()?.speeds?.['walk'] ?? 30 }}</div>
-              @if (getSpeedsTooltip()) {
-                <div class="speed-tooltip">{{ getSpeedsTooltip() }}</div>
-              }
-            </div>
+            @if (characterData(); as sheet) { <app-sheet-speed-control [sheet]="sheet" /> }
             <div
               class="relative border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-20 sm:h-20 bg-surface-container-low flex flex-col items-center justify-center shadow-lg"
             >
@@ -652,8 +561,8 @@ import { ConditionsComponent } from './conditions.component';
                 <div class="text-xs text-on-surface-variant uppercase font-semibold mb-1">Speeds</div>
                 @if (speedEntries().length > 0) {
                   <div class="space-y-1">
-                    @for (speed of speedEntries(); track speed) {
-                      <div>{{ speed }}</div>
+                    @for (speed of speedEntries(); track speed.id) {
+                      <div><app-sheet-speed-description [speed]="speed" [speeds]="speedEntries()" /></div>
                     }
                   </div>
                 } @else {
@@ -1041,23 +950,7 @@ export class CharacterInfoPageComponent {
     die.used = Math.max(0, total - clamped);
   }
 
-  getSpeedsTooltip(): string {
-    const speeds = this.character()?.speeds;
-    if (!speeds) return '';
-    const speedEntries = Object.entries(speeds)
-      .filter(([key, _]) => key !== 'walk')
-      .map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value} ft.`)
-      .join(' | ');
-    return speedEntries;
-  }
-
-  speedEntries(): string[] {
-    const speeds = this.character()?.speeds;
-    if (!speeds) return [];
-    return Object.entries(speeds).map(
-      ([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value} ft.`
-    );
-  }
+  speedEntries() { return this.character()?.speeds ?? []; }
 
   senseEntries(): string[] {
     const senses = this.character()?.senses;

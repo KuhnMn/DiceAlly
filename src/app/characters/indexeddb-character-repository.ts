@@ -2,7 +2,6 @@ import type { CharacterRecord, CharacterRepository } from './character-repositor
 import { ExportedCharacter } from '../models/character.model';
 import { canonicalDocument } from '../rules/canonical-document';
 import { portableCharacter } from './portable-character';
-import { validateSpeciesEntity } from '../content/species-compatibility';
 
 /** Uses the existing creator database, so previously saved creator characters need no conversion. */
 export class IndexedDbCharacterRepository implements CharacterRepository {
@@ -34,7 +33,7 @@ export class IndexedDbCharacterRepository implements CharacterRepository {
       request.onsuccess = () => {
         try {
           const records = request.result as CharacterRecord[];
-          records.forEach(record => validateSpeciesEntity(record.sheet.species?.entity));
+          records.forEach(record => { record.sheet = portableCharacter(record.sheet); if (record.conflict) record.conflict.sheet = portableCharacter(record.conflict.sheet); });
           resolve(records.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
         } catch (error) { reject(error); }
       };
@@ -48,7 +47,11 @@ export class IndexedDbCharacterRepository implements CharacterRepository {
     return new Promise((resolve, reject) => {
       const request = db.transaction('characters').objectStore('characters').get(id);
       request.onsuccess = () => {
-        try { validateSpeciesEntity((request.result as CharacterRecord | undefined)?.sheet.species?.entity); resolve(request.result); }
+        try {
+          const record = request.result as CharacterRecord | undefined;
+          if (record) { record.sheet = portableCharacter(record.sheet); if (record.conflict) record.conflict.sheet = portableCharacter(record.conflict.sheet); }
+          resolve(record);
+        }
         catch (error) { reject(error); }
       };
       request.onerror = () => reject(request.error);

@@ -1,5 +1,5 @@
 import { Component, computed, input } from '@angular/core';
-import { Entry } from '../models/character.model';
+import { Entry, EntriesEntry } from '../models/character.model';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
 
 /** Inline disclosure works with touch, keyboard, and long rule descriptions. */
@@ -22,5 +22,18 @@ export class RuleDetailsComponent {
   readonly label = input.required<string>();
   readonly entry = input<Entry | Entry[] | null>();
   readonly notes = input<readonly string[]>();
-  readonly entries = computed(() => { const entry = this.entry(); return entry ? Array.isArray(entry) ? entry : [entry] : []; });
+  readonly entries = computed(() => {
+    const entry = this.entry();
+    const simplify = (entries: Entry[]): Entry[] => entries.flatMap(value => {
+      if (value && typeof value === 'object' && 'type' in value
+        && (value.type === 'entries' || value.type === 'com.ltx.data.EntriesEntry')) {
+        const group = value as EntriesEntry;
+        const children = simplify(group.entries ?? []);
+        return group.name?.toLowerCase() === this.label().toLowerCase()
+          ? children : [{ ...group, entries: children }];
+      }
+      return [value];
+    });
+    return simplify(entry ? Array.isArray(entry) ? entry : [entry] : []);
+  });
 }

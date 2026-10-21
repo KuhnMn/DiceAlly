@@ -3,6 +3,7 @@ import { CharacterHelpersService } from '../sheet/character-helpers.service';
 import { DEFENSE_ABILITIES } from './basic-info';
 import { AbilityScores, HitDieEntry } from '../models/character.model';
 import { AppDialogService } from '../services/app-dialog.service';
+import { CharacterSpeed, SPEED_TYPES, SpeedType, primaryWalkingSpeed, walkingSpeedEntry } from '../models/character-speed';
 
 /** Editing actions and transient form state for the basic info page. */
 export class BasicInfoEditorModel extends EditorPageModel {
@@ -20,10 +21,7 @@ export class BasicInfoEditorModel extends EditorPageModel {
     { key: 'level', label: 'Level', minimum: 1 },
     { key: 'maxHp', label: 'Max HP', minimum: 0 },
   ] as const;
-  readonly speedFields = [
-    { key: 'walk', label: 'Walk' }, { key: 'fly', label: 'Fly' },
-    { key: 'swim', label: 'Swim' }, { key: 'burrow', label: 'Burrow' },
-  ] as const;
+  readonly speedTypes = SPEED_TYPES;
   resistanceInput = '';
   senseName = '';
   senseRange: number | null = 60;
@@ -33,7 +31,26 @@ export class BasicInfoEditorModel extends EditorPageModel {
   portraitFailed = false;
   get resistances() { return this.character.resistances!; }
   get senses() { return Object.entries(this.character.senses ?? {}); }
-  get speeds() { return this.character.speeds!; }
+  get speeds() { return this.character.speeds ??= [walkingSpeedEntry()]; }
+  addSpeed() { this.speeds.push({ id: crypto.randomUUID(), type: 'fly', value: { kind: 'walkingSpeed' } }); this.changed(); }
+  removeSpeed(speed: CharacterSpeed) { if (speed !== primaryWalkingSpeed(this.speeds)) { this.speeds.splice(this.speeds.indexOf(speed), 1); this.changed(); } }
+  isPrimaryWalk(speed: CharacterSpeed) { return speed === primaryWalkingSpeed(this.speeds); }
+  setSpeedType(speed: CharacterSpeed, type: SpeedType) {
+    const common = { id: speed.id, ...(speed.condition ? { condition: speed.condition } : {}),
+      ...(speed.overrideFeet != null ? { overrideFeet: speed.overrideFeet } : {}) };
+    const next: CharacterSpeed = type === 'walk'
+      ? { ...common, type, value: { kind: 'fixed', feet: speed.value.kind === 'fixed' ? speed.value.feet : 30 } }
+      : { ...common, type, value: speed.value, ...(type === 'fly' && speed.type === 'fly' ? { canHover: speed.canHover } : {}) };
+    this.speeds[this.speeds.indexOf(speed)] = next; this.changed();
+  }
+  setSpeedFeet(speed: CharacterSpeed, value: number | null) {
+    if (value == null && speed.type === 'walk') return;
+    if (value != null) speed.value = { kind: 'fixed', feet: value };
+    else if (speed.type !== 'walk') speed.value = { kind: 'walkingSpeed' };
+    this.changed();
+  }
+  setSpeedCondition(speed: CharacterSpeed, value: string) { if (value) speed.condition = value; else delete speed.condition; this.changed(); }
+  setSpeedHover(speed: CharacterSpeed, value: boolean) { if (speed.type === 'fly') { speed.canHover = value; this.changed(); } }
   get hitDice(): HitDieEntry[] { return Array.isArray(this.character.hitDice) ? this.character.hitDice : []; }
   get legacyHitDice() { return typeof this.character.hitDice === 'string' ? this.character.hitDice : ''; }
   addHitDice() {

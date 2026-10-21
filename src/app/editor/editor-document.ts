@@ -4,7 +4,10 @@ import { projectClassFeatureData } from '../content/class-adapter';
 import { ContentRecord, ImportRevision } from '../content/content.model';
 import { CharacterDocument } from '../rules/character-document';
 import { ContentRulesIndex } from '../rules/feature-rules';
-import { ExportedCharacter, FeatureEntity, FeatEntity, OptionalFeatureEntity, SpellEntity, Speeds } from '../models/character.model';
+import { ExportedCharacter, FeatureEntity, FeatEntity, OptionalFeatureEntity, SpellEntity } from '../models/character.model';
+import { speciesSpeedEntries } from '../content/species-speed-projection';
+import { speciesDefinition } from '../content/species-adapter';
+import { decodeCharacterSpeeds } from '../models/character-speed';
 import { projectSpeciesEntity } from '../content/species-compatibility';
 
 export function bindingFor(revision: ImportRevision): CharacterDocument['contentBindings'][number] {
@@ -84,16 +87,32 @@ export function projectSheet(document: CharacterDocument): ExportedCharacter {
     sheet.species = { name: document.instances.species.snapshot.name,
       ...(same ? sheet.species : {}), source: record.publication, entity: projectSpeciesEntity(record) };
   }
-  const speeds: Speeds = { ...sheet.character.speeds };
+  const speeds = decodeCharacterSpeeds(sheet.character.speeds) ?? [];
+  if (document.instances.species) for (const speed of speciesSpeedEntries(speciesDefinition(document.instances.species.snapshot))) {
+    const existing = speeds.findIndex(entry => entry.id === speed.id);
+    if (existing < 0) speeds.push(speed);
+    else speeds[existing] = { ...speed, ...(speeds[existing].overrideFeet != null ? { overrideFeet: speeds[existing].overrideFeet } : {}) };
+  }
   const senses: Record<string, unknown> = { ...sheet.character.senses };
   const resistances = [...sheet.character.resistances ?? []];
   for (const contribution of document.derived?.speciesContributions ?? []) {
     const value = contribution.value as Record<string, unknown>;
-    if (contribution.field === 'speed' && !value['condition']) speeds[String(value['mode'])] = Number(value['number']);
+    if (contribution.field === 'speed' && document.instances.species) {
+      const movement = speciesDefinition(document.instances.species.snapshot).movement;
+      const choice = movement.kind === 'defined' ? movement.choice : undefined;
+      const type = choice?.from.find(mode => mode === value['mode']);
+      if (type && choice && choice.feet === value['number'] && !speeds.some(speed => speed.type === type)) {
+        speeds.push({ id: type, type, value: { kind: 'fixed', feet: choice.feet } });
+      }
+    }
     if (contribution.field === 'sense') senses[String(value['sense'])] = Number(value['range']);
     if (contribution.field === 'resist') resistances.push(typeof contribution.value === 'string' ? contribution.value : String(value['type'] ?? ''));
   }
   sheet.character.speeds = speeds; sheet.character.senses = senses; sheet.character.resistances = [...new Set(resistances)];
+  if (document.overrides.speedOverrides) for (const speed of speeds) {
+    if (document.overrides.speedOverrides[speed.id] == null) delete speed.overrideFeet;
+    else speed.overrideFeet = document.overrides.speedOverrides[speed.id];
+  }
   return sheet;
 }
 
@@ -116,12 +135,17 @@ export function syncInventoryArmor(document: CharacterDocument): void {
 /** Bring sheet session edits back by stable tags; recalculation inputs stay authoritative. */
 export function captureSheet(document: CharacterDocument, sheet: ExportedCharacter): CharacterDocument {
   const next = structuredClone(document);
+  next.overrides.speedOverrides = Object.fromEntries((sheet.character?.speeds ?? []).filter(speed => speed.overrideFeet != null).map(speed => [speed.id, speed.overrideFeet!]));
   next.presentation['sheet'] = structuredClone(sheet);
   // Species projections are regenerated. Persist the authored base rather than copying derived traits.
   const authored = (document.presentation['sheet'] as ExportedCharacter | undefined)?.character;
   const stored = (next.presentation['sheet'] as ExportedCharacter).character;
   if (stored) {
-    stored.speeds = structuredClone(authored?.speeds);
+    stored.speeds = decodeCharacterSpeeds(authored?.speeds);
+    for (const speed of stored.speeds ?? []) {
+      const played = sheet.character?.speeds?.find(entry => entry.id === speed.id);
+      if (played?.overrideFeet == null) delete speed.overrideFeet; else speed.overrideFeet = played.overrideFeet;
+    }
     stored.senses = structuredClone(authored?.senses);
     stored.resistances = structuredClone(authored?.resistances);
   }

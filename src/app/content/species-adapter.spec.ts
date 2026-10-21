@@ -5,7 +5,7 @@ import { ContentRecord, ADAPTER_VERSION, DEFAULT_CONTENT_SOURCE, ImportRevision,
 import { deriveSpeciesAbilities } from '../rules/ability-rules';
 import { deriveStats } from '../rules/derived-stats';
 import { deriveSpecies } from '../rules/species-rules';
-import { newCharacter, projectSheet } from '../editor/editor-document';
+import { captureSheet, newCharacter, projectSheet } from '../editor/editor-document';
 import { parseCharacterDocument, validateCharacterDocument } from '../rules/character-document';
 import { LocalCharacterRepository } from '../editor/local-character-repository';
 import { emptyBasicCharacter } from '../editor/basic-info';
@@ -170,6 +170,21 @@ describe('Offline species snapshots', () => {
       expect(decoded.sheet.species?.entity?.entries).toEqual(['Offline trait']);
       expect(network).not.toHaveBeenCalled();
     } finally { network.mockRestore(); }
+  });
+
+  it('retains structured speed conditions and play overrides across native capture and reload', () => {
+    const document = validateCharacterDocument(fixture());
+    const projected = projectSheet(document);
+    const fly = projected.character!.speeds!.find(speed => speed.type === 'fly')!;
+    expect(fly.condition).toBe('without armor');
+    fly.overrideFeet = 15;
+    const reloaded = parseCharacterDocument(JSON.stringify(captureSheet(document, projected)));
+    expect(projectSheet(reloaded).character?.speeds?.find(speed => speed.id === fly.id)).toMatchObject({ overrideFeet: 15, condition: 'without armor' });
+    const reset = projectSheet(reloaded);
+    delete reset.character!.speeds!.find(speed => speed.id === fly.id)!.overrideFeet;
+    const restored = projectSheet(captureSheet(reloaded, reset)).character!.speeds!.find(speed => speed.id === fly.id)!;
+    expect(restored.overrideFeet).toBeUndefined();
+    expect(restored.value).toEqual({ kind: 'fixed', feet: 40 });
   });
 
   it('rejects an invalid canonical extension even when cloud transport integrity is valid', async () => {

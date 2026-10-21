@@ -36,6 +36,8 @@ import { IndexedDbContentCache } from '../content/content-cache';
 import { requiresContentReimport } from '../content/content-compatibility';
 import { activeContentRevision } from './active-content-revision';
 import { refreshCharacterDescriptions } from './refresh-character-content';
+import { portableCharacter } from '../characters/portable-character';
+import { defaultWalkingSpeed, primaryWalkingSpeed } from '../models/character-speed';
 
 @Component({
   selector: 'app-local-editor',
@@ -124,10 +126,10 @@ export class LocalEditorComponent implements OnInit {
   open(entry: CharacterRecord, routeApproved = false) {
     if (this.busy()) return;
     if (!routeApproved && !this.canLeave()) return;
-    this.sheet = structuredClone(entry.sheet);
+    this.sheet = portableCharacter(entry.sheet);
     this.character.level ??= 1; this.character.maxHp ??= 0; this.character.armorClass ??= 10;
-    this.character.resistances ??= []; this.character.senses ??= {}; this.character.speeds ??= { walk: 30 };
-    this.character.speeds.walk ??= 30;
+    this.character.resistances ??= []; this.character.senses ??= {}; this.character.speeds ??= [];
+    if (!primaryWalkingSpeed(this.character.speeds)) this.character.speeds.unshift(defaultWalkingSpeed(this.character.speeds));
     this.normalizeAbilities();
     this.version = entry.version;
     this.view.markForCheck();

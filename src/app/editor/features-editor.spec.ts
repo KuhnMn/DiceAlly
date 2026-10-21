@@ -47,6 +47,34 @@ async function catalog() {
 describe('Feature editor', () => {
   beforeEach(() => TestBed.configureTestingModule({ imports: [FeaturesEditorComponent], providers: [provideRouter([])] }));
 
+  it('shows requirements before adding feats and optional features without enforcing eligibility', async () => {
+    const data = await catalog();
+    const fixture = TestBed.createComponent(FeaturesEditorComponent), sheet = featureSheet();
+    fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
+    const editor = fixture.componentInstance; await editor.refreshContent();
+    const examples = mapContent({
+      feat: [{ name: 'Actor', source: 'XPHB', prerequisite: [{ level: 4, ability: [{ cha: 13 }] }], entries: ['Actor description'] }],
+      optionalfeature: [{ name: 'Devouring Blade', source: 'XPHB', featureType: ['EI'], prerequisite: [{ level: { level: 12, class: { name: 'Warlock' } }, optionalfeature: ['thirsting blade|xphb'] }], entries: ['Invocation description'] }],
+    }, 'prerequisite-test.json').records;
+    editor.catalogOpen = true; editor.revision.set(data.revision); editor.selectedSource = 'General';
+    for (const record of examples) {
+      editor.selectedType = record.kind === 'feat' ? 'FEAT' : 'OPTIONAL_FEATURE';
+      editor.results.set([record]); fixture.changeDetectorRef.markForCheck(); fixture.detectChanges();
+      const row = fixture.nativeElement.querySelector('app-catalog-result-row') as HTMLElement;
+      expect(row.textContent).not.toContain('Prerequisites');
+      const button = row.querySelector('button[aria-label^="Add "]') as HTMLButtonElement;
+      expect(button.disabled).toBe(false);
+      row.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"]')!.click(); fixture.detectChanges();
+      const description = row.querySelector('dialog')!;
+      expect(description.textContent).toContain('Prerequisites');
+      expect(description.textContent).toContain(record.kind === 'feat' ? 'Charisma 13+' : 'Thirsting Blade');
+      expect(description.textContent).toContain(record.kind === 'feat' ? 'Level 4+' : 'Warlock Level 12+');
+      expect(description.textContent).not.toContain('|xphb');
+      button.click(); fixture.detectChanges();
+      expect(sheet.features?.some(feature => feature.name === record.name)).toBe(true);
+    }
+  });
+
   it('requires a real feature source for catalog and custom additions', async () => {
     const data = await catalog(), fixture = TestBed.createComponent(FeaturesEditorComponent), sheet = emptyBasicCharacter();
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();

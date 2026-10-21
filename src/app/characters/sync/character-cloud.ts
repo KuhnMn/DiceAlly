@@ -55,7 +55,7 @@ export function validateMeta(value: unknown): CloudCharacterMeta {
 export async function decodeCloudCharacter(id: string, value: CloudCharacter): Promise<CharacterRecord> {
   const meta = validateMeta(value.meta);
   if (typeof value.body !== 'string' || await characterHash(value.body, meta.deleted) !== meta.hash) throw new Error('Cloud character integrity check failed.');
-  const sheet = JSON.parse(value.body) as ExportedCharacter;
+  const sheet = portableCharacter(JSON.parse(value.body) as ExportedCharacter);
   canonicalDocument(sheet);
   validateSpeciesEntity(sheet.species?.entity);
   if (sheet.character?.characterUuid !== id) throw new Error('Cloud character identity does not match its record.');

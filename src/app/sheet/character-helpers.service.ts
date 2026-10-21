@@ -3,7 +3,6 @@ import { castingTimeText, prepareSpellCastingTimes, prepareSpellComponents, prep
 import {
   Entry,
   FeatureEntryFull,
-  Prerequisite,
   SpellComponents,
   SpellDuration,
   SpellEntryFull,
@@ -72,53 +71,6 @@ export class CharacterHelpersService {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
-  }
-
-  prerequisiteText(prerequisites: Prerequisite[]): string {
-    if (!prerequisites.length) return 'None';
-    return prerequisites
-      .map((prereq) => {
-        const parts: string[] = [];
-        if (prereq.level) {
-          if ('class' in prereq.level) {
-            const requisiteClass = (prereq.level as { class: { name: string } }).class;
-            parts.push(`Level ${prereq.level.level} (${requisiteClass.name})`);
-          } else if ('level' in prereq.level) {
-            parts.push(`Level ${prereq.level.level}`);
-          }
-        }
-        if (prereq.other) parts.push(prereq.other);
-        prereq.ability?.forEach((ability) => {
-          if (ability.str) parts.push(`Strength ${ability.str}`);
-          if (ability.dex) parts.push(`Dexterity ${ability.dex}`);
-          if (ability.con) parts.push(`Constitution ${ability.con}`);
-          if (ability.int) parts.push(`Intelligence ${ability.int}`);
-          if (ability.wis) parts.push(`Wisdom ${ability.wis}`);
-          if (ability.cha) parts.push(`Charisma ${ability.cha}`);
-        });
-        if (prereq.race?.length)
-          parts.push(`Race: ${prereq.race.map((r) => r.name).join(' or ')}`);
-        prereq.proficiency?.forEach((prof) => {
-          if (prof.armor) parts.push(`Proficiency: ${prof.armor}`);
-          if (prof.weapon) parts.push(`Proficiency: ${prof.weapon}`);
-          if (prof.weaponGroup) parts.push(`Proficiency: ${prof.weaponGroup} weapons`);
-        });
-        if (prereq.pact) parts.push(`Pact: ${prereq.pact}`);
-        if (prereq.campaign?.length) parts.push(`Campaign: ${prereq.campaign.join(', ')}`);
-        if (prereq.item?.length) parts.push(`Item: ${prereq.item.join(', ')}`);
-        if (prereq.spell?.length) {
-          parts.push(
-            `Spell: ${prereq.spell.map((spell) => ('spellName' in spell ? spell.spellName : spell.entrySummary)).join(' or ')}`
-          );
-        }
-        if (prereq.background?.length)
-          parts.push(`Background: ${prereq.background.map((bg) => bg.name).join(', ')}`);
-        if (prereq.feat?.length) parts.push(`Feat: ${prereq.feat.join(' or ')}`);
-        if (prereq.feature?.length) parts.push(`Feature: ${prereq.feature.join(', ')}`);
-        if (prereq.otherSummary?.entrySummary) parts.push(prereq.otherSummary.entrySummary);
-        return parts.length ? parts.join(', ') : 'Special';
-      })
-      .join(' or ');
   }
 
   // Spell-related helpers

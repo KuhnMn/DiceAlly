@@ -16,11 +16,13 @@ import { FeatureNotesComponent } from './feature-notes.component';
 import { CharacterHelpersService } from './character-helpers.service';
 import { ExportedCharacter, FeatureEntryFull, FeatureNotes } from '../models/character.model';
 import { CharacterStore } from '../stores/character.store';
-import { speciesMovementText, speciesTraitText } from '../content/species-compatibility';
+import { speciesMovementText, speciesSenseRanges, speciesTraitText } from '../content/species-compatibility';
+import { formatSizeNames } from '../size-names';
+import { PrerequisiteDetailsComponent } from './prerequisite-details.component';
 
 @Component({
   selector: 'app-features-page',
-  imports: [FeatureFiltersComponent, ListControlsComponent, SheetListLayoutComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [PrerequisiteDetailsComponent, FeatureFiltersComponent, ListControlsComponent, SheetListLayoutComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: feature-flash 1.6s ease-out;
@@ -94,13 +96,13 @@ import { speciesMovementText, speciesTraitText } from '../content/species-compat
           </div>
               <div appHorizontalRow role="region" aria-label="Species details" tabindex="0" class="flex flex-nowrap items-center gap-4 overflow-x-auto overscroll-x-contain py-1 text-sm text-on-surface-container [&>*]:shrink-0 [&>*]:whitespace-nowrap">
                 @if (species()?.entity?.size?.length) {
-                  <div>Size: {{ species()?.entity?.size?.join(', ') }}</div>
+                  <div>Size: {{ speciesSize() }}</div>
                 }
                 @if (species()?.entity?.speed || species()?.entity?.definition) {
                   <div>Speed: {{ speciesMovement() }}</div>
                 }
-                @if (species()?.entity?.darkvision) {
-                  <div>Darkvision: {{ species()?.entity?.darkvision }} ft.</div>
+                @for (sense of speciesSenses(); track sense.sense) {
+                  <div>{{ sense.label }}: {{ sense.rangeFeet }} ft.</div>
                 }
                 @if (speciesCreatureTypes()) {
                   <div>Creature Type: {{ speciesCreatureTypes() }}</div>
@@ -125,9 +127,9 @@ import { speciesMovementText, speciesTraitText } from '../content/species-compat
                 @if (isExpanded('species')) {
           <app-sheet-detail-dialog [title]="species()?.name ?? 'Species'" [tags]="species()?.source ? speciesSourceTag : null" (closed)="toggleExpanded('species')">
             <div appHorizontalRow role="region" aria-label="Species details" tabindex="0" class="flex flex-nowrap items-center gap-4 overflow-x-auto overscroll-x-contain py-1 text-sm [&>*]:shrink-0 [&>*]:whitespace-nowrap">
-              <span>Size: {{ species()?.entity?.size?.join(', ') || '—' }}</span>
+              <span>Size: {{ speciesSize() || '—' }}</span>
               <span>Speed: {{ speciesMovement() }}</span>
-              @if (species()?.entity?.darkvision) { <span>Darkvision: {{ species()?.entity?.darkvision }} ft.</span> }
+              @for (sense of speciesSenses(); track sense.sense) { <span>{{ sense.label }}: {{ sense.rangeFeet }} ft.</span> }
               <span>{{ speciesCreatureTypes() }}</span>
             </div>
             <div class="mt-3 pt-3 border-t border-outline-variant">
@@ -258,12 +260,7 @@ import { speciesMovementText, speciesTraitText } from '../content/species-compat
                     }
                   </ng-template>
                   <div class="space-y-3 border-t border-outline-variant pt-3 md:border-t-0 md:pt-0">
-                    @if ((feature.featEntity?.prerequisite?.length ?? 0) > 0) {
-                      <div class="text-base text-on-surface">Prerequisites: {{ helpers.prerequisiteText(feature.featEntity?.prerequisite ?? []) }}</div>
-                    }
-                    @if ((feature.optionalFeatureEntity?.prerequisite?.length ?? 0) > 0) {
-                      <div class="text-base text-on-surface">Prerequisites: {{ helpers.prerequisiteText(feature.optionalFeatureEntity?.prerequisite ?? []) }}</div>
-                    }
+                    <app-prerequisite-details [prerequisites]="feature.featEntity?.prerequisite ?? feature.optionalFeatureEntity?.prerequisite" />
                     <div [attr.id]="feature.featureSourceName ? 'source-' + helpers.sourceId(feature.featureSourceName) : null">
                       <app-entry-renderer [entries]="helpers.featureEntries(feature)"></app-entry-renderer>
                     </div>
@@ -325,6 +322,8 @@ export class FeaturesPageComponent {
 
   species = computed(() => this.characterData()?.species ?? null);
   readonly speciesMovement = computed(() => speciesMovementText(this.species()?.entity));
+  readonly speciesSize = computed(() => formatSizeNames(this.species()?.entity?.size));
+  readonly speciesSenses = computed(() => speciesSenseRanges(this.species()?.entity));
   readonly pickerSources = computed(() => this.characterData()?.character?.featureSources?.filter(source => source.isGeneralFeatureSource) ?? []);
   speciesCreatureTypes = computed(() => {
     const definition = this.species()?.entity?.definition;

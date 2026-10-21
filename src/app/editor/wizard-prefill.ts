@@ -28,6 +28,10 @@ function collection(sheet: ExportedCharacter, path: string[], create = false): {
   if (kind === 'features' || kind === 'spells') {
     list = sheet[kind]; if (!list && create) list = sheet[kind] = [];
     index = list?.findIndex(entry => (entry as FeatureEntryFull).editorId === id) ?? -1;
+  } else if (kind === 'speeds') {
+    list = sheet.character?.speeds;
+    if (!list && create) list = sheet.character!.speeds = [];
+    index = sheet.character?.speeds?.findIndex(entry => entry.id === id) ?? -1;
   } else if (kind === 'sources') {
     list = sheet.character?.featureSources;
     if (!list && create) list = sheet.character!.featureSources = [];
@@ -130,7 +134,7 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
       let proposed = structuredClone(entry.value);
       if (current && typeof current === 'object' && proposed && typeof proposed === 'object') {
         const next = proposed as MutableObject; const existing = current as MutableObject;
-        for (const counter of ['used', 'usedFreeUses']) if (existing[counter] !== undefined) next[counter] = existing[counter];
+        for (const counter of ['used', 'usedFreeUses', 'overrideFeet']) if (existing[counter] !== undefined) next[counter] = existing[counter];
         if (['features', 'spells', 'species'].includes(entry.path[0])) {
           next['notes'] = structuredClone(existing['notes'] ?? []);
           if (Array.isArray(existing['uses']) && existing['uses'].length) next['uses'] = structuredClone(existing['uses']);

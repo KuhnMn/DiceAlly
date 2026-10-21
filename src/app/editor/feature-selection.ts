@@ -51,7 +51,7 @@ export function featureCategories(data: unknown, kind: FeatureType): string[] {
 }
 
 export function featureCategoryLabel(type: string): string {
-  const labels: Record<string, string> = { O: 'Origin', G: 'General', FS: 'Fighting Style', EB: 'Epic Boon', EI: 'Eldritch Invocation', MM: 'Metamagic', AS: 'Arcane Shot', 'MV:B': 'Battle Master Maneuver', 'FS:F': 'Fighter Fighting Style', 'FS:P': 'Paladin Fighting Style', 'FS:R': 'Ranger Fighting Style' };
+  const labels: Record<string, string> = { O: 'Origin', G: 'General', FS: 'Fighting Style', EB: 'Epic Boon', D: 'Dragonmark', EI: 'Eldritch Invocation', MM: 'Metamagic', AS: 'Arcane Shot', 'MV:B': 'Battle Master Maneuver', 'FS:F': 'Fighter Fighting Style', 'FS:P': 'Paladin Fighting Style', 'FS:R': 'Ranger Fighting Style' };
   return labels[type] ?? type;
 }
 

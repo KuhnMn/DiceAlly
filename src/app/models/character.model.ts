@@ -1,4 +1,5 @@
 import type { SourceEntry } from '../content/content-entries';
+import type { CharacterSpeed } from './character-speed';
 
 export type Entry =
   | SourceEntry
@@ -167,8 +168,11 @@ export interface StringListItem {
   text: string;
 }
 
-export interface Prerequisite {
-  level?: RequisiteLevel;
+type SourcePrerequisite = import('../content/character-option.model').CharacterOptionDefinition['prerequisites'][number];
+
+/** Current schema fields plus the named historical Android representations. */
+export interface Prerequisite extends Omit<SourcePrerequisite, 'level' | 'ability' | 'proficiency' | 'spell' | 'otherSummary' | 'background'> {
+  level?: number | RequisiteLevel;
   other?: string;
   ability?: AbilityScoreRequirement[];
   feat?: string[];
@@ -177,7 +181,7 @@ export interface Prerequisite {
   campaign?: string[];
   proficiency?: ProficiencyRequirement[];
   background?: BackgroundRequirement[];
-  spell?: RequisiteSpell[];
+  spell?: (string | RequisiteSpell)[];
   item?: string[];
   pact?: string;
   otherSummary?: OtherSummary;
@@ -185,9 +189,12 @@ export interface Prerequisite {
 
 export interface RaceName {
   name: string;
+  displayEntry?: string;
+  subrace?: string;
 }
 
 export interface OtherSummary {
+  entry?: string;
   entrySummary: string;
 }
 
@@ -195,6 +202,7 @@ export interface ProficiencyRequirement {
   armor?: string | null;
   weapon?: string | null;
   weaponGroup?: string | null;
+  skill?: true | string[];
 }
 
 export interface BackgroundRequirement {
@@ -236,7 +244,7 @@ export type RequisiteSpell = ObjectRequisiteSpell | SimpleRequisiteSpell | Unkno
 export interface ObjectRequisiteSpell {
   choose: string;
   entry: string;
-  entrySummary: string;
+  entrySummary?: string;
 }
 
 export interface SimpleRequisiteSpell {
@@ -402,6 +410,9 @@ export interface SpeciesEntity {
   source: string;
   page?: number | null;
   darkvision?: number | null;
+  blindsight?: number | null;
+  tremorsense?: number | null;
+  truesight?: number | null;
   entries?: Entry[] | null;
   size?: string[] | null;
   speed?: Speeds | null;
@@ -738,7 +749,7 @@ export interface CharacterData {
   proficiencies?: Proficiencies;
   featureSources?: FeatureSource[];
   hitDice?: HitDieEntry[] | string | null;
-  speeds?: Speeds;
+  speeds?: CharacterSpeed[];
   savingThrows?: string[];
   currency?: Record<string, number>;
   spellSlots?: Record<string, SpellSlot[]>;

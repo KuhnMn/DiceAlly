@@ -1,4 +1,5 @@
 import { Monster, MonsterCasting, MonsterSpellcasting } from '../models/character.model';
+import { sizeName } from '../size-names';
 
 /** Shared read-only stat-block formatting; health and play mutations stay in the sheet component. */
 export class MonsterPresentation {
@@ -160,17 +161,7 @@ export class MonsterPresentation {
     return Number.isFinite(numeric) ? numeric : Number.MAX_SAFE_INTEGER;
   }
 
-  getSizeText(size: string): string {
-    const sizeMap: Record<string, string> = {
-      'T': 'Tiny',
-      'S': 'Small',
-        'M': 'Medium',
-        'L': 'Large',
-        'H': 'Huge',
-        'G': 'Gargantuan',
-    };
-    return sizeMap[size] || size;
-  }
+  readonly getSizeText = sizeName;
 
   getInitiative(monster: Monster): string {
     if (!monster.entity) return '+0';

@@ -1,5 +1,6 @@
 import { ExportedCharacter, AbilityScores } from '../models/character.model';
 import { canonicalDocument } from '../rules/canonical-document';
+import { primaryWalkingSpeed, validateCharacterSpeeds, walkingSpeedEntry } from '../models/character-speed';
 
 export const DEFENSE_ABILITIES: { key: keyof AbilityScores; label: string }[] = [
   { key: 'strength', label: 'Strength' }, { key: 'dexterity', label: 'Dexterity' },
@@ -11,7 +12,7 @@ export function emptyBasicCharacter(): ExportedCharacter {
   return { character: { characterUuid: crypto.randomUUID(), name: '', description: '', level: 1,
     maxHp: 0, armorClass: 10, calculateAC: false,
     abilityScores: { strength: 10, dexterity: 10, constitution: 10, intelligence: 10, wisdom: 10, charisma: 10 },
-    resistances: [], senses: {}, speeds: { walk: 30 } } };
+    resistances: [], senses: {}, speeds: [walkingSpeedEntry()] } };
 }
 
 export function validateBasicInfo(sheet: ExportedCharacter): void {
@@ -28,7 +29,8 @@ export function validateBasicInfo(sheet: ExportedCharacter): void {
     integer(entry.level, 'Class level', 1);
   }
   integer(character.maxHp, 'Maximum HP');
-  integer(character.speeds?.walk, 'Walk speed');
+  validateCharacterSpeeds(character.speeds);
+  if (!primaryWalkingSpeed(character.speeds)) throw new Error('Add an unconditional walking speed.');
   for (const ability of DEFENSE_ABILITIES) integer(character.abilityScores?.[ability.key], ability.label);
   for (const [skill, bonus] of Object.entries(character.proficiencies?.skillMiscBonuses ?? {})) {
     if (!Number.isSafeInteger(bonus)) throw new Error(`${skill} bonus must be a whole number.`);
@@ -66,9 +68,6 @@ export function validateBasicInfo(sheet: ExportedCharacter): void {
   for (const monster of sheet.monsters ?? []) {
     if (monster.monsterMaxHP != null) integer(monster.monsterMaxHP, `${monster.name ?? 'Monster'} maximum HP`);
     if (monster.monsterMaxHpOverride != null) integer(monster.monsterMaxHpOverride, `${monster.name ?? 'Monster'} maximum HP`);
-  }
-  for (const [mode, speed] of Object.entries(character.speeds ?? {})) {
-    if (speed != null) integer(speed, `${mode} speed`);
   }
   for (const [name, range] of Object.entries(character.senses ?? {})) {
     if (!name.trim()) throw new Error('Senses need a name.');
