@@ -1,5 +1,4 @@
 import type { Routes } from '@angular/router';
-import { ImportComponent } from './import/import.component';
 import { canDeactivateCharacterSheet } from './guards/unsaved-changes.guard';
 import { openCharacterSheet, resolveEditorCharacter } from './characters/character-route';
 import { requireApprovedAccount } from './auth/account.guard';
@@ -13,7 +12,7 @@ export const routes: Routes = [
       resolve: { editorCharacter: resolveEditorCharacter },
       canDeactivate: [(component: { canLeave(): boolean | Promise<boolean> }) => component.canLeave()] },
   { path: 'content', loadComponent: () => import('./content/content-import.component').then(m => m.ContentImportComponent) },
-	{ path: '', component: ImportComponent },
+	{ path: '', loadComponent: () => import('./import/import.component').then(m => m.ImportComponent) },
   { path: 'characters/:id', loadComponent: () => import('./sheet/character-sheet.component').then(m => m.CharacterSheetComponent), canActivate: [openCharacterSheet], canDeactivate: [canDeactivateCharacterSheet] },
   { path: 'sheet', loadComponent: () => import('./sheet/character-sheet.component').then(m => m.CharacterSheetComponent), canDeactivate: [canDeactivateCharacterSheet] },
   ] },
