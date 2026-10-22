@@ -10,6 +10,7 @@ import { characterDescription } from '../character-description';
 import { ScrollToTopComponent } from '../scroll-to-top.component';
 import { CharacterUpdateNoticeComponent } from '../characters/character-update-notice.component';
 import { ThemePickerComponent } from '../theme-picker.component';
+import { MobileSheetActionsComponent } from '../sheet/mobile-sheet-actions.component';
 import { ScrollableTabsDirective } from '../scrollable-tabs.directive';
 import { SwipePagesDirective } from '../sheet/swipe-pages.directive';
 import { AppDialogService } from '../services/app-dialog.service';
@@ -41,7 +42,7 @@ import { defaultWalkingSpeed, primaryWalkingSpeed } from '../models/character-sp
 
 @Component({
   selector: 'app-local-editor',
-  imports: [ScrollToTopComponent, SwipePagesDirective, CombatEditorComponent, CharacterUpdateNoticeComponent, UiIconComponent, ThemePickerComponent, ScrollableTabsDirective, FormsModule, RouterLink, BasicInfoEditorComponent, AbilityScoresEditorComponent, ProficienciesEditorComponent, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, ClassWizardComponent, SpeciesEditorComponent, ItemsEditorComponent, MonstersEditorComponent],
+  imports: [ScrollToTopComponent, SwipePagesDirective, CombatEditorComponent, CharacterUpdateNoticeComponent, UiIconComponent, ThemePickerComponent, MobileSheetActionsComponent, ScrollableTabsDirective, FormsModule, RouterLink, BasicInfoEditorComponent, AbilityScoresEditorComponent, ProficienciesEditorComponent, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, ClassWizardComponent, SpeciesEditorComponent, ItemsEditorComponent, MonstersEditorComponent],
   templateUrl: './local-editor.component.html',
   styleUrl: './editor.css',
 })

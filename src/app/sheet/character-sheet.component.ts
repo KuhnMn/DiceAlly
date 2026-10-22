@@ -46,7 +46,8 @@ import { NotesPageComponent } from './notes-page.component';
   template: `
     <main class="max-w-[1200px] mx-auto my-2 sm:my-6 px-2 py-2 sm:p-4">
       @if (characterData()) {
-        <header class="flex items-center gap-2 min-w-0 mb-3">
+        <ng-template #sheetHeader>
+        <header class="flex items-center gap-2 min-w-0 mb-2 sm:mb-3">
           <a routerLink="/" aria-label="Back to characters"
             class="min-h-10 min-w-10 inline-flex items-center justify-center shrink-0 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high focus-visible:outline-2 focus-visible:outline-primary">
             <app-ui-icon name="left" />
@@ -55,10 +56,12 @@ import { NotesPageComponent } from './notes-page.component';
             <h1 class="break-words text-2xl font-bold">Character Sheet</h1>
             <p class="hidden sm:block text-xs text-on-surface-variant break-words">{{ characterData()?.character?.name || 'Unnamed Character' }}</p>
           </div>
-          <app-mobile-sheet-actions class="min-w-0 flex-1" [saving]="isSaving()" [openingEditor]="isOpeningEditor()" [dirty]="hasUnsavedChanges()" (save)="quickSave()" (edit)="editCharacter()" />
+          <app-mobile-character-header class="min-w-0 flex-1" [characterData]="characterData()" />
+          <app-mobile-sheet-actions [themeOnly]="true" />
         </header>
+        </ng-template>
+        @if (!mobile()) { <ng-container [ngTemplateOutlet]="sheetHeader" /> }
         <app-character-update-notice [characterId]="store.nativeCharacterId()" [characterName]="characterData()?.character?.name || 'Unnamed Character'" [loadedVersion]="session.loadedVersion()" [busy]="isSaving()" (refresh)="refreshCharacter()" />
-        <app-mobile-character-header [characterData]="characterData()" (navigateToFeatures)="navigateToFeatures($event)" />
         <!-- Desktop action bar -->
         <div class="hidden sm:flex sm:flex-wrap items-center gap-2 mb-4">
           <div class="flex items-center gap-1.5 min-w-0 sm:mr-auto">
@@ -96,10 +99,10 @@ import { NotesPageComponent } from './notes-page.component';
 
         <ng-template #restReport>
         @if (restService.report(); as report) {
-          <section class="mb-4 rounded-lg bg-secondary-container text-on-secondary-container p-3" role="status" aria-live="polite">
-            <div class="flex items-center justify-between gap-3">
+          <section class="mb-1 rounded-lg bg-secondary-container text-on-secondary-container px-2 py-1 sm:mb-4 sm:p-3" role="status" aria-live="polite">
+            <div class="flex items-center justify-between gap-2 sm:gap-3">
               <h2 class="font-semibold text-sm">{{ report.title }}</h2>
-              <button type="button" class="rounded px-2 py-1 hover:bg-surface-container focus-visible:outline-2" aria-label="Dismiss rest report" (click)="restService.report.set(null)">Dismiss</button>
+              <button type="button" class="rounded px-1 py-0.5 text-sm sm:px-2 sm:py-1 sm:text-base hover:bg-surface-container focus-visible:outline-2" aria-label="Dismiss rest report" (click)="restService.report.set(null)">Dismiss</button>
             </div>
             @if (report.changes.length) {
               <ul class="mt-1 list-disc pl-5 text-sm space-y-1 max-h-48 overflow-y-auto">
@@ -113,7 +116,8 @@ import { NotesPageComponent } from './notes-page.component';
 
         <div #navigation></div>
         <div #pageNavigation class="sticky top-0 z-30 bg-surface pt-2 sm:static sm:pt-0">
-          @if (characterData(); as sheet) { <app-mobile-sheet-status [sheet]="sheet" [saving]="isSaving()" [dirty]="hasUnsavedChanges()" (save)="quickSave()" (shortRest)="performShortRest()" (longRest)="performLongRest()" /> }
+          @if (mobile()) { <ng-container [ngTemplateOutlet]="sheetHeader" /> }
+          @if (characterData(); as sheet) { <app-mobile-sheet-status [sheet]="sheet" [openingEditor]="isOpeningEditor()" (edit)="editCharacter()" [saving]="isSaving()" [dirty]="hasUnsavedChanges()" (save)="quickSave()" (shortRest)="performShortRest()" (longRest)="performLongRest()" /> }
           @if (mobile()) { <ng-container [ngTemplateOutlet]="restReport" /> }
           <nav [appScrollableTabs]="currentPage()" class="justify-between mb-3 sm:mb-6 items-stretch" aria-label="Character sheet pages">
             @for (page of pages; track page.id) {

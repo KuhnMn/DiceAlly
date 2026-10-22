@@ -2,6 +2,7 @@ import { spellDefinition, spellRecordClasses, projectSpellData } from '../conten
 import { ContentRecord } from '../content/content.model';
 import { newEditorId } from './editor-identity';
 import { FeatureSource, SpellEntryFull, SpellEntity, SpellTime } from '../models/character.model';
+import { SpellEffectFilter, matchesSpellEffects, spellEffectsFromRecord } from '../content/spell-effects';
 
 export type SpellList = 'KNOWN' | 'SPELLBOOK' | 'PREPARED';
 
@@ -50,6 +51,7 @@ export interface SpellCatalogFilter {
   classes: string[];
   levels: number[];
   schools?: SpellSchool[];
+  effects?: SpellEffectFilter;
 }
 
 export function matchesSpell(record: ContentRecord, filter: SpellCatalogFilter): boolean {
@@ -58,6 +60,7 @@ export function matchesSpell(record: ContentRecord, filter: SpellCatalogFilter):
   const level = definition.level;
   if (filter.levels.length && !filter.levels.includes(level)) return false;
   if (!matchesSpellSchool(definition.school, filter.schools ?? [])) return false;
+  if (filter.effects && !matchesSpellEffects(spellEffectsFromRecord(record, definition), filter.effects)) return false;
   const classes = filter.classes.map(name => name.toLowerCase());
   if (classes.length && !spellRecordClasses(record).some(entry => classes.includes(entry.name.toLowerCase()))) return false;
   const text = `${record.name} ${record.publication}`.toLowerCase();

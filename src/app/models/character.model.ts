@@ -1,6 +1,7 @@
 import type { SourceEntry } from '../content/content-entries';
 import type { CharacterSpeed } from './character-speed';
 import type { ItemChargeDefinition } from '../content/item.model';
+import type { SpellEffectFields } from '../content/spell-effects';
 
 export type Entry =
   | SourceEntry
@@ -338,7 +339,7 @@ export interface SpellMeta {
   ritual?: boolean;
 }
 
-export interface SpellEntity {
+export interface SpellEntity extends SpellEffectFields {
   id?: number;
   name: string;
   level: number;
@@ -352,10 +353,6 @@ export interface SpellEntity {
   entries: Entry[];
   entriesHigherLevel?: (Entry | EntriesHigherLevel)[] | null;
   meta?: SpellMeta | null;
-  damageInflict?: string[] | null;
-  spellAttack?: string[] | null;
-  areaTags?: string[] | null;
-  savingThrow?: string[] | null;
 }
 
 export interface FeatureEntity {
@@ -628,10 +625,12 @@ export interface Species {
 }
 
 export interface FeatureSource {
+  associatedAbilities?: import('./feature-source-abilities').SourceAbilityAssignments;
   editorId?: string;
   customDc?: number | null;
   customToHit?: number | null;
   name?: string;
+  /** Historical shared flags; associatedAbilities is authoritative when present. */
   usesStrength?: boolean;
   usesDexterity?: boolean;
   usesConstitution?: boolean;

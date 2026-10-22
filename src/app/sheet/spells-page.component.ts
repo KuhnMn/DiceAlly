@@ -9,6 +9,9 @@ import { ListControlsComponent } from '../list-controls.component';
 import { SheetListLayoutComponent } from './sheet-list-layout.component';
 import { RecoveryIndicatorComponent } from '../recovery-indicator.component';
 import { SpellDetailsComponent } from './spell-details.component';
+import { SpellEffectFilterComponent } from '../spell-effect-filter.component';
+import { SpellEffectFilter, matchesSpellEffects, spellEffectFilterCount } from '../content/spell-effects';
+import { spellCastingStats } from '../editor/spell-source-stats';
 import { SheetDetailDialogComponent } from './sheet-detail-dialog.component';
 import { SpellSummaryComponent } from './spell-summary.component';
 import { UiIconComponent } from '../ui-icon.component';
@@ -37,7 +40,7 @@ type SpellLevelFilter = 'ALL' | number;
 @Component({
   selector: 'app-spells-page',
   host: { class: 'block w-full min-w-0 max-w-full' },
-  imports: [SpellSchoolFilterComponent, SpellViewSwitcherComponent, SpellCastingTimeFilterComponent, ListControlsComponent, SheetListLayoutComponent, RecoveryIndicatorComponent, SpellDetailsComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, SpellSummaryComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [SpellEffectFilterComponent, SpellSchoolFilterComponent, SpellViewSwitcherComponent, SpellCastingTimeFilterComponent, ListControlsComponent, SheetListLayoutComponent, RecoveryIndicatorComponent, SpellDetailsComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, SpellSummaryComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .spell-page-header app-spell-view-switcher { margin-bottom: 0; }
     .spell-page.spell-preparation-view { padding: .75rem; }
@@ -202,6 +205,7 @@ type SpellLevelFilter = 'ALL' | number;
       </div>
       <app-spell-casting-time-filter [selected]="spellCastingTimes()" (selectedChange)="spellCastingTimes.set($event)" />
       <app-spell-school-filter [selected]="spellSchools()" (selectedChange)="spellSchools.set($event)" />
+      <app-spell-effect-filter [selected]="spellEffects()" (selectedChange)="spellEffects.set($event)" />
       <div appHorizontalRow class="mb-2 flex flex-wrap items-center gap-2">
         <span class="text-sm font-semibold text-on-surface">Rituals:</span>
         <button
@@ -317,7 +321,7 @@ type SpellLevelFilter = 'ALL' | number;
                         @if (spell.castingSourceName) { <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">{{ spell.castingSourceName }}</span> }
                         @if (spell.source) { <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ spell.source }}</span> }
                       </ng-template>
-                      <app-spell-details [spell]="spell.entity" />
+                      <app-spell-details [spell]="spell.entity" [castingStats]="castingStats(spell.castingSourceName)" />
                       <div class="mt-3 pt-3 border-t border-outline-variant">
                         @if (spell.entity?.entries?.length) {
                           <div>
@@ -385,16 +389,19 @@ export class SpellsPageComponent {
   readonly spellLevelFilters = signal<number[]>([]);
   readonly spellCastingTimes = signal<SpellCastingTime[]>([]);
   readonly spellSchools = signal<SpellSchool[]>([]);
+  readonly spellEffects = signal<SpellEffectFilter>({});
+  castingStats(sourceName?: string) { return spellCastingStats(this.characterData(), sourceName, this.helpers); }
   readonly spellListLabel = spellListLabel;
   spellCastingSourceFilter = signal<string>('ALL');
   expandedItems = signal<Set<string>>(new Set());
-  readonly activeFilterCount = computed(() => this.spellSchools().length + this.spellCastingTimes().length + this.spellLevelFilters().length + Number(this.spellRitualFilter() !== 'ALL'));
+  readonly activeFilterCount = computed(() => spellEffectFilterCount(this.spellEffects()) + this.spellSchools().length + this.spellCastingTimes().length + this.spellLevelFilters().length + Number(this.spellRitualFilter() !== 'ALL'));
 
   clearFilters() {
     this.searchQuery.set('');
     this.spellLevelFilters.set([]);
     this.spellCastingTimes.set([]);
     this.spellSchools.set([]);
+    this.spellEffects.set({});
     this.spellRitualFilter.set('ALL');
   }
 
@@ -501,6 +508,7 @@ export class SpellsPageComponent {
     const sourceFilter = this.spellCastingSourceFilter();
     const castingTimes = this.spellCastingTimes();
     const schools = this.spellSchools();
+    const effects = this.spellEffects();
     const filtered = spells.filter((spell) => {
       const matchesListType = spell.listType === listTypeFilter;
       const isRitual = spell.entity?.meta?.ritual ?? false;
@@ -510,7 +518,7 @@ export class SpellsPageComponent {
       const spellLevel = spell.entity?.level ?? 0;
       const matchesLevel = !levelFilters.length || levelFilters.includes(spellLevel);
       const matchesSource = sourceFilter === 'ALL' || spell.castingSourceName === sourceFilter;
-      return matchesListType && matchesRitual && matchesLevel && matchesSource && matchesCastingTime(spell.entity?.time, castingTimes) && matchesSpellSchool(spell.entity?.school, schools);
+      return matchesListType && matchesRitual && matchesLevel && matchesSource && matchesCastingTime(spell.entity?.time, castingTimes) && matchesSpellSchool(spell.entity?.school, schools) && matchesSpellEffects(spell.entity, effects);
     });
     return [...filtered].sort((a, b) => {
       const relevance = compareSearchMatches(a.name, b.name, this.searchQuery());
@@ -560,6 +568,7 @@ export class SpellsPageComponent {
           this.spellLevelFilters.set([]);
           this.spellCastingTimes.set([]);
           this.spellSchools.set([]);
+          this.spellEffects.set({});
           this.spellRitualFilter.set('ALL');
           this.expandedItems.set(new Set([this.spellExpansionId(target)]));
         }

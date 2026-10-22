@@ -1,21 +1,22 @@
 <main class="max-w-[1000px] mx-auto p-2 sm:p-4 my-2 sm:my-4 text-on-surface">
   <header class="flex flex-wrap items-center justify-between gap-2 sm:gap-3 mb-3">
-    <div class="flex items-center gap-2 min-w-0">
-      <a routerLink="/" class="secondary-button" aria-label="Back to characters"><app-ui-icon name="left" /></a>
-      <div>
-        <h1 class="text-lg sm:text-2xl font-bold">{{ version ? 'Edit Character' : 'Create Character' }}</h1>
+    <div class="flex w-full flex-nowrap items-center gap-2 min-w-0">
+      <a routerLink="/" class="secondary-button shrink-0" aria-label="Back to characters"><app-ui-icon name="left" /></a>
+      <div class="shrink-0">
+        <h1 class="whitespace-nowrap text-lg sm:text-2xl font-bold">{{ version ? 'Edit Character' : 'Create Character' }}</h1>
         <p class="hidden sm:block text-xs font-semibold uppercase text-on-surface-variant mt-1">{{ pages[page] }}</p>
       </div>
+      <app-mobile-sheet-actions class="ml-auto shrink-0 sm:hidden" [themeOnly]="true" />
+      <app-theme-picker class="ml-auto hidden min-w-0 max-w-44 flex-1 sm:block" />
     </div>
-    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+    <div class="flex flex-wrap items-center gap-2 w-full">
       <button type="button" class="secondary-button justify-center !min-h-10 !px-3 !text-sm" [disabled]="busy()" (click)="refreshDescriptions()" title="Update saved descriptions and reference details from the installed content library">
         {{ refreshingDescriptions() ? 'Refreshing…' : 'Refresh Descriptions' }}
       </button>
-      <button type="button" class="action-button wizard-button justify-center !min-h-10 !px-3 !text-sm" [disabled]="busy()" aria-haspopup="dialog" title="Class Wizard" aria-label="Class Wizard" (click)="wizardOpen = true">
+      <button type="button" class="action-button wizard-button ml-auto justify-center !min-h-10 !px-3 !text-sm" [disabled]="busy()" aria-haspopup="dialog" title="Class Wizard" aria-label="Class Wizard" (click)="wizardOpen = true">
         <app-ui-icon name="wand" class="text-lg" />
         <span class="sr-only sm:not-sr-only">Class Wizard</span>
       </button>
-      <app-theme-picker class="min-w-0 flex-1 sm:flex-none sm:order-last sm:w-44" />
       <button type="submit" form="basic-info" [disabled]="busy()" title="Save character" class="action-button justify-center !min-h-10 !px-3 !text-sm"><app-ui-icon [name]="busy() ? 'loader' : 'save'" [class.animate-spin]="busy()" /><span class="sr-only sm:not-sr-only">{{ refreshingDescriptions() ? 'Refreshing…' : busy() ? 'Saving…' : 'Save' }}</span></button>
       <button type="button" class="action-button justify-center !min-h-10 !px-3 !text-sm" [disabled]="busy()" title="Save and view sheet" (click)="viewSheet()"><app-ui-icon name="right" /><span class="sr-only sm:not-sr-only">Save &amp; View</span></button>
     </div>

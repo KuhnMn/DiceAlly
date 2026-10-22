@@ -1,9 +1,11 @@
 import { CombatAction, ExportedCharacter, FeatureEntryFull, InventoryItem, Monster, Species, SpellEntryFull } from '../models/character.model';
 import { CharacterHelpersService } from '../sheet/character-helpers.service';
-import { featureSourceStats } from './feature-source-stats';
+import { sourceCombatStats } from './feature-source-stats';
 import { newEditorId } from './editor-identity';
 import { spellIdentity } from './spell-selection';
 import { Companion, ObjectCompanion, isObjectCompanion } from '../models/companions';
+import { prepareSpellCombatFields } from './spell-combat-prefill';
+import { spellCastingStats } from './spell-source-stats';
 
 export const COMBAT_TYPES = [
   { value: 'ACTION', label: 'Action' }, { value: 'BONUS', label: 'Bonus Action' },
@@ -11,7 +13,6 @@ export const COMBAT_TYPES = [
 ] as const;
 export type CombatResource = FeatureEntryFull | SpellEntryFull | InventoryItem | Monster | ObjectCompanion | Species;
 export type CombatResourceType = 'CLASS_FEATURE' | 'FEAT' | 'OPTIONAL_FEATURE' | 'SPELL' | 'ITEM' | 'MONSTER' | 'OBJECT' | 'SPECIES';
-const SAVE_ABILITIES: Record<string, string> = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' };
 
 /** Read only textual entries, ignoring unrelated numbers and metadata in imported definitions. */
 export function combatText(value: unknown): string {
@@ -57,47 +58,45 @@ export function prefillCombatAction(sheet: ExportedCharacter, resource: CombatRe
     const action = companionCombatOptions(resource as Companion)[monsterOption];
     if (action) { entries = action.entries; name = `${resource.name}: ${action.name || 'Ability'}`; actionType = action.type; }
   }
-  const text = combatText(entries);
+  const spell = type === 'SPELL' ? (resource as SpellEntryFull).entity : undefined;
+  const text = spell ? '' : combatText(entries);
   const sourceName = (resource as SpellEntryFull).castingSourceName ?? (resource as FeatureEntryFull).featureSourceName;
   const source = sheet.character?.featureSources?.find(value => value.name === sourceName);
-  const stat = source && sheet.character ? featureSourceStats(source, sheet.character, helpers)[0] : undefined;
-  const spell = type === 'SPELL' ? (resource as SpellEntryFull).entity : undefined;
-  if (spell) {
-    const unit = spell.time?.[0]?.unit;
-    actionType = unit === 'bonus' ? 'BONUS' : unit === 'reaction' ? 'REACTION' : unit === 'action' ? 'ACTION' : 'OTHER';
-    const distance = spell.range?.distance;
-    range = distance?.amount != null ? `${distance.amount} ${distance.type || 'ft.'}` : distance?.type ?? spell.range?.type ?? '';
-    if (spell.savingThrow?.length) hitOrDc = `${stat?.save != null ? `DC ${stat.save}` : 'DC ?'} ${spell.savingThrow.map(ability => SAVE_ABILITIES[ability] ?? ability).join('/')}`;
-    else if (spell.spellAttack?.length && stat) hitOrDc = `${stat.attack} to hit`;
-  }
+  const stat = !spell && source && sheet.character ? sourceCombatStats(source, sheet.character, helpers, 'features') : undefined;
   if (!spell && type !== 'MONSTER') {
     if (/bonus action/i.test(text)) actionType = 'BONUS';
     else if (/\breaction\b/i.test(text)) actionType = 'REACTION';
   }
-  const raw = JSON.stringify(entries ?? '');
-  const hit = raw.match(/\{@hit ([+-]?\d+)\}/i) ?? text.match(/([+-]\d+)\s+to hit/i);
-  const dc = raw.match(/\{@dc (\d+)\}/i) ?? text.match(/\bDC\s+(\d+)/i);
-  if (hit) hitOrDc = `${helpers.formatSigned(Number(hit[1]))} to hit`;
-  else if (dc) hitOrDc = `DC ${dc[1]} ${text.match(/(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) (?:saving throw|save)/i)?.[1] ?? ''}`.trim();
-  else if (!hitOrDc && stat && /saving throw/i.test(text)) hitOrDc = `DC ${stat.save ?? '?'} ${text.match(/(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) saving throw/i)?.[1] ?? ''}`.trim();
-  if (!range) range = text.match(/(?:reach|range)\s+(\d+\s*(?:feet|ft\.?))/i)?.[1] ?? '';
-  const dice = [...raw.matchAll(/\{@(?:damage|dice) ([^}|]+)(?:\|[^}]*)?\}/g)].map(match => match[1]);
-  let damageOrHeal = dice.length ? [...new Set(dice)].join(' / ') : text.split(/(?<=[.!?])\s/)[0]?.slice(0, 240) ?? '';
-  if (spell?.damageInflict?.length && dice.length) damageOrHeal += ` ${spell.damageInflict.map(type => type.charAt(0).toUpperCase() + type.slice(1)).join('/')}`;
-  if (type === 'ITEM') {
-    const item = (resource as InventoryItem).entity;
-    const weapon = { ...item?.baseItem, ...item?.item };
-    if (weapon.dmg1 && sheet.character) {
-      const scores = sheet.character.abilityScores;
-      const strength = helpers.modifierNumber(scores?.strength), dexterity = helpers.modifierNumber(scores?.dexterity);
-      const finesse = item?.properties?.some(property => /finesse/i.test(property.name));
-      const modifier = finesse ? Math.max(strength, dexterity) : weapon.type?.startsWith('R') ? dexterity : strength;
-      const bonus = Number(weapon.bonusWeapon ?? 0) || 0;
-      hitOrDc = `${helpers.formatSigned(modifier + helpers.proficiencyBonus(sheet.character) + bonus)} to hit`;
-      const damageTypes: Record<string, string> = { S: 'Slashing', P: 'Piercing', B: 'Bludgeoning', F: 'Fire', C: 'Cold', L: 'Lightning', N: 'Necrotic', R: 'Radiant', O: 'Force', Y: 'Psychic', I: 'Poison', A: 'Acid', T: 'Thunder' };
-      damageOrHeal = `${weapon.dmg1} ${helpers.formatSigned(modifier + bonus)} ${damageTypes[weapon.dmgType ?? ''] ?? weapon.dmgType ?? ''}`.trim();
-      range = weapon.range ?? 'Melee';
+  let damageOrHeal = '';
+  if (!spell) {
+    const raw = JSON.stringify(entries ?? '');
+    const hit = raw.match(/\{@hit ([+-]?\d+)\}/i) ?? text.match(/([+-]\d+)\s+to hit/i);
+    const dc = raw.match(/\{@dc (\d+)\}/i) ?? text.match(/\bDC\s+(\d+)/i);
+    if (hit) hitOrDc = `${helpers.formatSigned(Number(hit[1]))} to hit`;
+    else if (dc) hitOrDc = `DC ${dc[1]} ${text.match(/(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) (?:saving throw|save)/i)?.[1] ?? ''}`.trim();
+    else if (!hitOrDc && stat && /saving throw/i.test(text)) hitOrDc = `DC ${stat.savingThrowDifficulty ?? '?'} ${text.match(/(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) saving throw/i)?.[1] ?? ''}`.trim();
+    if (!range) range = text.match(/(?:reach|range)\s+(\d+\s*(?:feet|ft\.?))/i)?.[1] ?? '';
+    const dice = [...raw.matchAll(/\{@(?:damage|dice) ([^}|]+)(?:\|[^}]*)?\}/g)].map(match => match[1]);
+    damageOrHeal = dice.length ? [...new Set(dice)].join(' / ') : text.split(/(?<=[.!?])\s/)[0]?.slice(0, 240) ?? '';
+    if (type === 'ITEM') {
+      const item = (resource as InventoryItem).entity;
+      const weapon = { ...item?.baseItem, ...item?.item };
+      if (weapon.dmg1 && sheet.character) {
+        const scores = sheet.character.abilityScores;
+        const strength = helpers.modifierNumber(scores?.strength), dexterity = helpers.modifierNumber(scores?.dexterity);
+        const finesse = item?.properties?.some(property => /finesse/i.test(property.name));
+        const modifier = finesse ? Math.max(strength, dexterity) : weapon.type?.startsWith('R') ? dexterity : strength;
+        const bonus = Number(weapon.bonusWeapon ?? 0) || 0;
+        hitOrDc = `${helpers.formatSigned(modifier + helpers.proficiencyBonus(sheet.character) + bonus)} to hit`;
+        const damageTypes: Record<string, string> = { S: 'Slashing', P: 'Piercing', B: 'Bludgeoning', F: 'Fire', C: 'Cold', L: 'Lightning', N: 'Necrotic', R: 'Radiant', O: 'Force', Y: 'Psychic', I: 'Poison', A: 'Acid', T: 'Thunder' };
+        damageOrHeal = `${weapon.dmg1} ${helpers.formatSigned(modifier + bonus)} ${damageTypes[weapon.dmgType ?? ''] ?? weapon.dmgType ?? ''}`.trim();
+        range = weapon.range ?? 'Melee';
+      }
     }
+  }
+  if (spell) {
+    const prepared = prepareSpellCombatFields(spell, spellCastingStats(sheet, (resource as SpellEntryFull).castingSourceName, helpers), helpers.spellRangeLabel(spell.range), sheet.character?.level);
+    actionType = prepared.actionType ?? 'OTHER'; range = prepared.range ?? ''; hitOrDc = prepared.hitOrDc ?? ''; damageOrHeal = prepared.damageOrHeal ?? '';
   }
   return { editorId: newEditorId(), name, range, actionType, hitOrDc, damageOrHeal,
     sourceSnapshot: { name, range, actionType, hitOrDc, damageOrHeal }, sourceOption: monsterOption,

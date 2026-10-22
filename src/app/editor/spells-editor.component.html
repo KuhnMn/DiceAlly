@@ -16,7 +16,7 @@
     (selected)="setSource($event)" (manageSources)="openSources.emit()" />
 
   <app-list-controls label="Search spells" searchName="selected-spell-search" [(query)]="listSearch"
-    [filterCount]="displayedMemberships.length + displayedSchools.length + displayedCastingTimes.length + displayedLevels.length" (cleared)="displayedMemberships = []; displayedSchools = []; displayedCastingTimes = []; displayedLevels = []">
+    [filterCount]="displayedMemberships.length + displayedSchools.length + displayedCastingTimes.length + displayedLevels.length + effectFilterCount(displayedEffects)" (cleared)="displayedMemberships = []; displayedSchools = []; displayedEffects = {}; displayedCastingTimes = []; displayedLevels = []">
   <div appHorizontalRow role="group" aria-label="Spell membership filters" aria-description="Select Prepared, Spellbook, or both. Selecting both shows spells in either list." class="mb-2 flex flex-wrap items-center gap-2">
     <span class="text-sm font-semibold">Show:</span>
     <button type="button" class="min-h-11 rounded-full border border-outline-variant px-3 py-1 text-sm" [class.bg-purple-container]="!displayedMemberships.length" [attr.aria-pressed]="!displayedMemberships.length" (click)="displayedMemberships = []">All</button>
@@ -34,6 +34,7 @@
   </nav>
   <app-spell-casting-time-filter [(selected)]="displayedCastingTimes" />
   <app-spell-school-filter [(selected)]="displayedSchools" />
+  <app-spell-effect-filter [(selected)]="displayedEffects" />
   </app-list-controls>
   <div class="rounded-lg bg-surface-container">
     @for (spell of selected; track spell) {
@@ -77,7 +78,7 @@
             <app-entry-annotations-editor [entry]="prepared ?? spell" [annotationsEnabled]="!!prepared" (edited)="change()">
               <app-combat-bookmark annotation-combat [sheet]="sheet()" [resource]="spell" type="SPELL" (edited)="change()" />
               <app-description-dialog annotation-description [dense]="true" [title]="spell.name" label="Description">
-              <div class="p-3"><app-entry-renderer [entries]="spell.entity?.entries ?? []" />
+              <div class="p-3"><app-spell-effect-summary class="mb-3 block" [spell]="spell.entity" [castingStats]="castingStats(spell.castingSourceName)" /><app-entry-renderer [entries]="spell.entity?.entries ?? []" />
                 @for (higher of spell.entity?.entriesHigherLevel ?? []; track $index) { <div class="mt-3 pt-2 border-t border-outline-variant"><p class="font-semibold mb-1">At Higher Levels</p><app-entry-renderer [entries]="higherLevelEntries(higher)" /></div> }
               </div>
             </app-description-dialog>
@@ -103,7 +104,7 @@
       }
       <details class="rounded-lg bg-surface-container-high px-3 py-2 mb-3"><summary class="cursor-pointer text-sm font-semibold text-primary py-1">Add Custom Spell</summary><div class="mt-2 space-y-2"><div class="flex gap-2"><label class="flex-1"><span class="field-label">Name</span><input class="editor-input" name="custom-spell-name" [(ngModel)]="customName" /></label><label class="w-24"><span class="field-label">Level</span><select class="editor-input" name="custom-spell-level" [(ngModel)]="customLevel">@for (level of levels; track level) { <option [ngValue]="level">{{ level }}</option> }</select></label></div><label><span class="field-label">Description</span><textarea class="editor-input" name="custom-spell-description" rows="2" [(ngModel)]="customDescription"></textarea></label><button type="button" class="action-button" [disabled]="!targetSource || !customName.trim()" (click)="addCustom()">Add to Spelllist</button></div></details>
       <app-list-controls label="Search spells" searchName="spell-search" [query]="filter.search" (queryChange)="filter.search = $event; filterChanged()"
-        [disabled]="adding()" [filterCount]="filter.classes.length + filter.levels.length + (filter.schools?.length ?? 0)" (cleared)="clearCatalogFilters()">
+        [disabled]="adding()" [filterCount]="filter.classes.length + filter.levels.length + (filter.schools?.length ?? 0) + effectFilterCount(filter.effects)" (cleared)="clearCatalogFilters()">
       <button list-toolbar-action type="button" class="flex h-11 w-8 shrink-0 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high" aria-label="Refresh spell catalog" title="Refresh spell catalog" [disabled]="loading() || adding()" (click)="refreshContent()"><app-ui-icon name="reset" /></button>
       <div class="grid min-w-0 grid-cols-1 sm:grid-cols-2 gap-2">
         <div class="min-w-0 rounded border border-outline-variant p-2">
@@ -126,6 +127,7 @@
         </div>
       </div>
       <app-spell-school-filter class="mt-2" [availableSchools]="catalogSchools()" [selected]="filter.schools ?? []" (selectedChange)="filter.schools = $event; filterChanged()" [disabled]="adding()" />
+      <app-spell-effect-filter [selected]="filter.effects ?? {}" (selectedChange)="filter.effects = $event; filterChanged()" [disabled]="adding()" />
       <p class="text-xs text-on-surface-variant">Matches any selection within each group. All includes every option.</p>
       </app-list-controls>
       <div class="flex flex-wrap items-center justify-between gap-2"><span class="text-xs text-on-surface-variant">{{ total() }} matching spells · bulk additions include every page</span><button type="button" class="action-button !py-1.5 !text-sm" [disabled]="!targetSource || loading() || adding() || !revision() || !total()" (click)="addMatching()">{{ adding() ? 'Adding…' : 'Add All Matching to Spelllist' }}</button></div>
@@ -139,7 +141,7 @@
                 @if (definition(record).school; as school) { <span class="shrink-0 rounded bg-teal-container px-1 text-on-teal-container" [title]="helpers.spellSchoolLabel($any(school))">{{ shortSchoolLabel(school) }}</span> }
                 <span class="min-w-0 truncate rounded bg-surface-container-highest px-1 text-on-surface" [title]="record.publication">{{ record.publication }}</span>
               </ng-container>
-            <app-description-dialog catalog-description class="shrink-0 self-stretch" [title]="record.name" [compact]="true"><div class="p-2 text-sm"><app-entry-renderer [entries]="catalogEntries(record)" /></div></app-description-dialog>
+            <app-description-dialog catalog-description class="shrink-0 self-stretch" [title]="record.name" [compact]="true"><div class="p-2 text-sm"><app-spell-effect-summary class="mb-3 block" [spell]="catalogEffects(record)" [castingStats]="castingStats(targetSource)" /><app-entry-renderer [entries]="catalogEntries(record)" /></div></app-description-dialog>
           </app-catalog-result-row>
         }
       </div>

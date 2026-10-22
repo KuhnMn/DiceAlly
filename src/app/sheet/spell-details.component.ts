@@ -3,11 +3,13 @@ import { SpellEntity } from '../models/character.model';
 import { CharacterHelpersService } from './character-helpers.service';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { prepareSpellDetails, spellDurationText } from './spell-presentation';
+import { SpellEffectSummaryComponent } from './spell-effect-summary.component';
+import type { SpellCastingStats } from '../content/spell-effects';
 
 /** Reference information wraps freely in the detail dialog, including material components. */
 @Component({
   selector: 'app-spell-details',
-  imports: [EntryRendererComponent],
+  imports: [EntryRendererComponent, SpellEffectSummaryComponent],
   template: `
     @if (details(); as value) {
       <dl class="grid gap-3 rounded-lg bg-surface-container p-3 text-sm sm:grid-cols-2">
@@ -36,11 +38,13 @@ import { prepareSpellDetails, spellDurationText } from './spell-presentation';
           </dd></div>
         }
       </dl>
+      <app-spell-effect-summary class="mt-2 block" [spell]="spell()" [castingStats]="castingStats()" />
     }
   `,
 })
 export class SpellDetailsComponent {
   readonly spell = input<Partial<SpellEntity> | null | undefined>();
+  readonly castingStats = input<SpellCastingStats>();
   readonly details = computed(() => {
     const spell = this.spell();
     return spell ? prepareSpellDetails(spell) : null;

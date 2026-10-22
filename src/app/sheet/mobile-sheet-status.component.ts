@@ -1,3 +1,4 @@
+import { MobileSheetActionsComponent } from './mobile-sheet-actions.component';
 import { ConcentrationService } from '../services/concentration.service';
 import { CharacterStore } from '../stores/character.store';
 import { SheetAcControlComponent } from './sheet-ac-control.component';
@@ -15,31 +16,45 @@ import { DialogScrollLockService } from '../editor/dialog-scroll-lock.service';
 
 @Component({
   selector: 'app-mobile-sheet-status',
-  imports: [SheetSpeedControlComponent, SheetAcControlComponent, SheetHealthDetailsComponent, SheetStatBadgeComponent, HitDiceTrackerComponent, ConditionsComponent, UiIconComponent],
+  imports: [MobileSheetActionsComponent, SheetSpeedControlComponent, SheetAcControlComponent, SheetHealthDetailsComponent, SheetStatBadgeComponent, HitDiceTrackerComponent, ConditionsComponent, UiIconComponent],
   host: { class: 'block sm:hidden', '(document:pointerdown)': 'dismissRest($event)', '(document:keydown.escape)': 'closeRest()' },
   template: `
     @if (sheet().character; as character) {
-      <div class="grid grid-cols-12 items-center gap-2 pb-2" aria-label="Character status">
-        <button type="button" (click)="openHealth()" class="col-span-10 min-w-0 rounded-lg bg-primary-container px-3 py-2 text-left text-on-primary-container" [attr.aria-label]="'Adjust health and conditions: ' + (character.currentHp ?? 0) + ' of ' + maxHp() + ' HP, ' + temporaryHp() + ' temporary HP'">
-          <div class="text-sm font-semibold">HP {{ character.currentHp ?? 0 }} / {{ maxHp() }}</div>
-          <div class="mt-1.5 flex h-1.5 overflow-hidden rounded-full bg-surface-container" aria-hidden="true"><div class="h-full shrink-0 bg-primary transition-[width] duration-300" [style.width.%]="healthPercent()"></div><div class="h-full shrink-0 bg-green transition-[width] duration-300" [style.width.%]="temporaryHealthPercent()"></div></div>
-        </button>
-        <button type="button" (click)="character.hasInspiration = !character.hasInspiration" [attr.aria-pressed]="character.hasInspiration ?? false" [title]="character.hasInspiration ? 'Use Inspiration' : 'Gain Inspiration'" aria-label="Toggle Inspiration" class="col-span-2 flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-outline-variant text-xl" [class.bg-tertiary-container]="character.hasInspiration" [class.text-on-tertiary-container]="character.hasInspiration" [class.text-on-surface-variant]="!character.hasInspiration"><app-ui-icon name="sparkles" [filled]="character.hasInspiration ?? false" /></button>
-        <div class="col-span-12 grid grid-cols-5 items-center gap-1">
-        <app-sheet-ac-control class="justify-self-center" [characterData]="sheet()" />
-        <app-sheet-speed-control class="justify-self-center" [sheet]="sheet()" [compact]="true" />
-        <app-sheet-stat-badge class="justify-self-center" label="Init." shape="hexagon" [value]="helpers.formatSigned(helpers.initiative(character))" [proficient]="character.proficiencies?.initiative ?? false" />
-        <app-sheet-stat-badge class="justify-self-center" label="PB" shape="octagon" [value]="helpers.formatSigned(helpers.proficiencyBonus(character))" />
-        <details #restMenu name="sheet-actions" class="relative justify-self-center">
-          <summary aria-label="Rest" title="Rest" class="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center rounded-lg bg-surface-container text-xl text-primary [&::-webkit-details-marker]:hidden"><app-ui-icon name="moon" /></summary>
-          <div class="absolute right-0 top-full z-50 mt-1 w-44 rounded-lg border border-outline-variant bg-surface-container-high p-1 shadow-lg">
-            <button type="button" [disabled]="saving()" (click)="restMenu.open = false; shortRest.emit()" class="min-h-11 w-full rounded px-3 py-2 text-left text-sm hover:bg-surface-container"><app-ui-icon name="campfire" /> Short Rest</button>
-            <button type="button" [disabled]="saving()" (click)="restMenu.open = false; longRest.emit()" class="min-h-11 w-full rounded px-3 py-2 text-left text-sm hover:bg-surface-container"><app-ui-icon name="rest" /> Long Rest</button>
+      <div class="grid grid-cols-[minmax(0,1fr)_4rem_minmax(0,1fr)] items-center gap-3 pb-2" aria-label="Character status">
+        <div class="grid min-w-0 grid-cols-[repeat(2,3.25rem)] items-center justify-center gap-x-4 gap-y-1">
+          <app-sheet-ac-control class="justify-self-center" [characterData]="sheet()" />
+          <app-sheet-stat-badge class="justify-self-center" label="Init." shape="octagon" tone="rose" [value]="helpers.formatSigned(helpers.initiative(character))" [proficient]="character.proficiencies?.initiative ?? false" />
+          <app-sheet-stat-badge class="justify-self-center" label="PB" shape="rounded" tone="teal" [value]="helpers.formatSigned(helpers.proficiencyBonus(character))" />
+          <app-sheet-speed-control class="justify-self-center" [sheet]="sheet()" [compact]="true" />
+        </div>
+        <div class="flex min-w-0 flex-col items-center gap-1 self-end">
+          <div class="flex aspect-square w-full max-w-16 items-center justify-center overflow-hidden rounded-full border-2 border-outline bg-secondary-container text-2xl text-on-secondary-container">
+            @if (sheet().portaitUrl) {
+              <img [src]="sheet().portaitUrl" [alt]="'Portrait of ' + (character.name || 'Unnamed Character')" class="h-full w-full object-cover" />
+            } @else { <app-ui-icon name="image" /> }
           </div>
-        </details>
+          <p class="text-center text-[10px] text-on-surface-variant">Level <strong class="text-on-surface">{{ character.level ?? 1 }}</strong></p>
+          <button type="button" (click)="character.hasInspiration = !character.hasInspiration" [attr.aria-pressed]="character.hasInspiration ?? false" [title]="character.hasInspiration ? 'Use Inspiration' : 'Gain Inspiration'" aria-label="Toggle Inspiration" class="flex h-8 w-full max-w-12 items-center justify-center rounded-lg border border-outline-variant text-base" [class.bg-tertiary-container]="character.hasInspiration" [class.text-on-tertiary-container]="character.hasInspiration" [class.text-on-surface-variant]="!character.hasInspiration"><app-ui-icon name="sparkles" [filled]="character.hasInspiration ?? false" /></button>
+        </div>
+        <div class="min-w-0 space-y-1 self-end">
+          <button type="button" (click)="openHealth()" class="min-h-18 w-full min-w-0 rounded-xl bg-surface-container-high px-2 py-2 text-center" [attr.aria-label]="'Adjust health and conditions: ' + (character.currentHp ?? 0) + ' of ' + maxHp() + ' HP, ' + temporaryHp() + ' temporary HP'">
+            <div class="text-xs font-semibold text-on-surface-variant">Health</div>
+            <div class="mt-0.5 text-base font-bold tabular-nums">{{ character.currentHp ?? 0 }} / {{ maxHp() }}</div>
+            <div class="mt-1.5 flex h-1.5 overflow-hidden rounded-full bg-surface" aria-hidden="true"><div class="h-full shrink-0 bg-rose transition-[width] duration-300" [style.width.%]="healthPercent()"></div><div class="h-full shrink-0 bg-green transition-[width] duration-300" [style.width.%]="temporaryHealthPercent()"></div></div>
+          </button>
+          <div class="flex items-center gap-1">
+            <details #restMenu name="sheet-actions" class="relative flex-1">
+              <summary aria-label="Rest" title="Rest" class="flex h-10 min-w-8 cursor-pointer list-none items-center justify-center rounded-full bg-purple-container text-base text-on-purple-container [&::-webkit-details-marker]:hidden"><app-ui-icon name="moon" /></summary>
+              <div class="absolute right-0 top-full z-50 mt-1 w-44 rounded-lg border border-outline-variant bg-surface-container-high p-1 shadow-lg">
+                <button type="button" [disabled]="saving()" (click)="restMenu.open = false; shortRest.emit()" class="min-h-11 w-full rounded px-3 py-2 text-left text-sm hover:bg-surface-container"><app-ui-icon name="campfire" /> Short Rest</button>
+                <button type="button" [disabled]="saving()" (click)="restMenu.open = false; longRest.emit()" class="min-h-11 w-full rounded px-3 py-2 text-left text-sm hover:bg-surface-container"><app-ui-icon name="rest" /> Long Rest</button>
+              </div>
+            </details>
+            <app-mobile-sheet-actions class="min-w-0 flex-[2]" [actionsOnly]="true" [saving]="saving()" [openingEditor]="openingEditor()" [dirty]="dirty()" (save)="save.emit()" (edit)="edit.emit()" />
+          </div>
         </div>
       </div>
-      <button type="button" (click)="openHealth()" class="mb-2 flex min-h-9 w-full items-center gap-2 rounded-lg bg-surface-container px-2 text-left text-xs" aria-label="Manage active conditions"><app-ui-icon name="info" /><span class="font-semibold">Conditions & Effects</span><span class="min-w-0 flex-1 truncate text-primary">{{ sheet().conditions?.length ? sheet().conditions?.join(' · ') : 'None' }}</span><app-ui-icon name="chevron" /></button>
+      <button type="button" (click)="openHealth()" class="mb-1 flex min-h-8 w-full items-center gap-2 rounded-lg bg-surface-container px-2 text-left text-xs" aria-label="Manage active conditions"><app-ui-icon name="info" /><span class="font-semibold">Conditions & Effects</span><span class="min-w-0 flex-1 truncate text-primary">{{ sheet().conditions?.join(' \u00b7 ') || 'None' }}</span><app-ui-icon name="chevron" /></button>
       <dialog #healthDialog (close)="releaseScroll()" (click)="closeOnBackdrop($event)" class="fixed inset-x-0 bottom-0 top-auto m-0 max-h-[85dvh] w-full max-w-none overflow-hidden rounded-t-2xl border border-outline-variant bg-surface p-0 text-on-surface open:flex open:flex-col backdrop:bg-black/50 sm:inset-0 sm:m-auto sm:max-w-md sm:rounded-2xl" aria-labelledby="mobile-health-title">
         <div class="flex shrink-0 items-center justify-between gap-2 border-b border-outline-variant px-4 py-2"><h2 id="mobile-health-title" class="text-lg font-bold">Health, Hit Dice & Conditions</h2><button type="button" (click)="healthDialog.close()" class="flex min-h-11 min-w-11 items-center justify-center rounded-lg bg-surface-container" aria-label="Close health panel"><app-ui-icon name="close" /></button></div>
         <div data-health-content class="min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain p-4">
@@ -67,6 +82,8 @@ export class MobileSheetStatusComponent implements OnDestroy {
   private readonly store = inject(CharacterStore);
   private readonly concentration = inject(ConcentrationService);
   readonly sheet = input.required<ExportedCharacter>();
+  readonly openingEditor = input(false);
+  readonly edit = output<void>();
   readonly saving = input(false);
   readonly dirty = input(false);
   readonly save = output<void>();

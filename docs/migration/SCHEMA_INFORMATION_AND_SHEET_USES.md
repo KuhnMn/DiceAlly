@@ -239,3 +239,32 @@ The self-contained snapshot adds an optional, typed `objects` list. Each entry h
 ## 18. Cloud deletion storage
 
 Deleting a synced character now replaces its Realtime Database record with metadata only. The previous character `body` is removed by the same revision-protected write; deletion metadata remains to prevent another device from resurrecting the record. Offline deletion retries normally and edit-versus-delete conflicts retain the existing explicit resolution options. Historical tombstones that still contain bodies remain readable for compatibility. Publish the updated `firebase/database.rules.json` alongside this client change: Active records require a body and new deletion records must omit it. Frozen share-code snapshots retain their existing expiry/revocation behavior.
+
+## 19. Structured spell effect reminders and filters
+
+Spell details show one compact wrapping effect strip with supplied attack type, saving throw, damage types, possible conditions, area shape and healing/temporary-HP metadata. Empty categories and generic single/multiple-target labels are omitted; ritual, components and duration remain in their existing displays. The same strip appears in the creator's saved-spell and catalog description dialogs. It does not add extra summary cards or duplicate metadata in picker rows.
+
+The creator, spell catalog and playing sheet share damage-type, saving-throw, condition and area filters. Groups are individually collapsible, with OR matching within each group and AND matching between groups. Filter counts and existing reset controls include the new selections. Filtering uses declared metadata only; prose does not supply missing classifications.
+
+Combat bookmarks use structured timing, source attack/save statistics, declared saves, possible conditions and area shapes. Full source ability names and historical abbreviations normalize through one mapping. Description text cannot replace these fields with an unrelated attack or DC. Explicit `damage` tags provide damage expressions; unrelated generic dice rolls are excluded. Cantrips use their declared `scalingLevelDice` table at the character's level when present; no beam counts or scaling rules are invented for spells without tables. Multiple damage types/formulas remain separate possibilities, rather than being assigned a guessed relationship. Healing and temporary-HP tags provide descriptive reminders without inventing missing formulas.
+
+The same compact detail strip also shows the calculated attack modifier and save DC from the spell's exact linked casting source. When that source configures multiple abilities, the highest attack and DC are selected independently using the existing source calculation rules and custom overrides. The viewer, creator, catalog preview and Combat prefill share this preparation. Missing sources or unavailable attack/DC values remain descriptive rather than receiving invented numbers.
+
+These preparations are computed from the self-contained spell snapshot. Source-owned effect metadata now has explicit TypeScript fields, with no duplicate stored presentation data or required library reimport. Existing Combat entries retain authored text; **Refresh from Source** offers updated suggestions for explicit acceptance, including after a character-level change. No attacks, saves, damage, healing, conditions or spell resources are executed automatically.
+
+## 20. Source abilities separated by purpose
+
+Feature Sources can associate abilities independently with **Features** and **Spellcasting**. With only one category enabled, an ability button toggles that category on/off using its blue or purple color. With both enabled, each click cycles **None → Features → Spellcasting → Both → None**; a diagonal blue/purple fill represents both. Tooltips and accessible labels identify the current assignment. Disabling a category preserves its assignments for later use but excludes them from calculations while disabled.
+
+Source cards on feature and spell pages show only their respective abilities. Spell details, catalog previews and Combat calculations use the same category-specific preparation. When more than one ability qualifies, calculations choose the highest applicable attack modifier and save DC independently. The source's existing custom attack/DC overrides remain authoritative.
+
+New manual sources and edited associations use the explicitly typed `associatedAbilities` object, with full ability names in separate `features` and `spellcasting` arrays. For example:
+
+```json
+"associatedAbilities": {
+  "features": ["dexterity", "wisdom"],
+  "spellcasting": ["wisdom"]
+}
+```
+
+Historical `usesStrength`/`usesDexterity`/etc. flags remain readable for existing snapshots and wizard-generated sources. Once associations are edited, the scoped arrays become authoritative and those shared flags are removed from that source. Reading an older snapshot alone does not rewrite it. Portable save/import validates the new arrays; export and sync retain the category assignments.

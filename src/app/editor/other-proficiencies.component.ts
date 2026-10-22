@@ -12,6 +12,8 @@ import { SourceBookFilterService } from './source-book-filter.service';
 import { activeContentRevision } from './active-content-revision';
 import { SearchableSelectComponent, SelectOption } from './searchable-select.component';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
+import { SOURCE_ABILITIES, SourceAbility, SourceUsage } from '../models/feature-source-abilities';
+import { SOURCE_ABILITY_STATE_LABELS, cycleSourceAbility, editableSourceAbilities, sourceAbilityState } from './source-ability-selection';
 
 @Component({
   selector: 'app-other-proficiencies', imports: [InfoButtonComponent, UiIconComponent, FormsModule, RouterLink, SearchableSelectComponent, EntryRendererComponent],
@@ -23,7 +25,7 @@ import { EntryRendererComponent } from '../entries/entry-renderer.component';
     .source-option { display: flex; align-items: center; justify-content: center; gap: .375rem;
       min-height: 2.25rem; padding: .375rem; border: 1px solid var(--md-sys-color-outline-variant);
       border-radius: .5rem; cursor: pointer; font-size: .75rem; }
-    .source-option:has(input:checked), .source-ability:has(input:checked) {
+    .source-option:has(input:checked) {
       background: var(--md-extended-color-custom-color3-color-container);
       color: var(--md-extended-color-custom-color3-on-color-container);
       border-color: var(--md-extended-color-custom-color3-color); }
@@ -33,7 +35,14 @@ import { EntryRendererComponent } from '../entries/entry-renderer.component';
     .source-ability { display: grid; place-items: center; min-height: 2.25rem;
       border: 1px solid var(--md-sys-color-outline-variant); border-radius: .375rem;
       font-size: .6875rem; font-weight: 600; cursor: pointer; }
-    .source-ability:has(input:checked) span { text-decoration: underline; text-underline-offset: .2rem; }
+    .source-ability-features { background: var(--md-extended-color-custom-color3-color-container);
+      color: var(--md-extended-color-custom-color3-on-color-container); border-color: var(--md-extended-color-custom-color3-color); }
+    .source-ability-spellcasting { background: var(--md-extended-color-custom-color5-color-container);
+      color: var(--md-extended-color-custom-color5-on-color-container); border-color: var(--md-extended-color-custom-color5-color); }
+    .source-ability-both { background: linear-gradient(135deg, var(--md-extended-color-custom-color3-color-container) 49%, var(--md-extended-color-custom-color5-color-container) 51%);
+      color: var(--md-sys-color-on-surface); border-color: var(--md-sys-color-outline); }
+    .source-ability[aria-pressed=true] span { text-decoration: underline; text-underline-offset: .2rem; }
+    .source-ability:disabled { cursor: default; opacity: .5; }
     .source-ability:focus-within { outline: 2px solid var(--md-sys-color-primary); outline-offset: 2px; }
     .source-option span { white-space: nowrap; }
     @container (max-width: 15rem) {
@@ -82,11 +91,16 @@ export class OtherProficienciesComponent implements OnInit {
     { value: 'initiative', label: 'Initiative' }, { value: 'death_save', label: 'Death Save' },
     { value: 'other', label: 'Other' },
   ];
-  readonly sourceAbilities: { key: keyof FeatureSource; label: string }[] = [
-    { key: 'usesStrength', label: 'STR' }, { key: 'usesDexterity', label: 'DEX' },
-    { key: 'usesConstitution', label: 'CON' }, { key: 'usesIntelligence', label: 'INT' },
-    { key: 'usesWisdom', label: 'WIS' }, { key: 'usesCharisma', label: 'CHA' },
-  ];
+  readonly sourceAbilities = SOURCE_ABILITIES;
+  readonly sourceAbilityState = sourceAbilityState;
+  sourceAbilityLabel(source: FeatureSource, ability: SourceAbility) { return SOURCE_ABILITY_STATE_LABELS[sourceAbilityState(source, ability)]; }
+  cycleSourceAbility(source: FeatureSource, ability: SourceAbility) { cycleSourceAbility(source, ability); this.change(); }
+  setSourceProvides(source: FeatureSource, usage: SourceUsage, enabled: boolean) {
+    editableSourceAbilities(source);
+    if (usage === 'features') source.isGeneralFeatureSource = enabled;
+    else source.isSpellcastingSource = enabled;
+    this.change();
+  }
   get character() { return this.sheet().character!; }
   get advantages() { return this.character.advantageOn ?? []; }
   get languages() { return this.character.proficiencies?.languages ?? []; }
@@ -154,10 +168,8 @@ export class OtherProficienciesComponent implements OnInit {
     const sources = this.character.featureSources ??= [];
     let name = 'New Source'; let suffix = 2;
     while (sources.some(source => source.name === name)) name = `New Source ${suffix++}`;
-    sources.unshift({ editorId: newEditorId(), name, isGeneralFeatureSource: true, isSpellcastingSource: false, userAdded: true }); this.change();
-  }
-  setSourceAbility(source: FeatureSource, key: keyof FeatureSource, enabled: boolean) {
-    Object.assign(source, { [key]: enabled }); this.change();
+    sources.unshift({ editorId: newEditorId(), name, isGeneralFeatureSource: true, isSpellcastingSource: false,
+      associatedAbilities: { features: [], spellcasting: [] }, userAdded: true }); this.change();
   }
   renameSource(source: FeatureSource, event: Event) {
     const field = event.target as HTMLInputElement;

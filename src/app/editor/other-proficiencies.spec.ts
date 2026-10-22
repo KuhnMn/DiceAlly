@@ -63,13 +63,13 @@ describe('Other Proficiencies', () => {
     page.languageInput = 'Elvish'; page.addLanguage(); page.languageInput = 'elvish'; page.addLanguage();
     page.addSource(); const source = page.sources[0];
     source.isSpellcastingSource = true; source.customDc = 17; source.customToHit = -1;
-    page.setSourceAbility(source, 'usesIntelligence', true); page.setSourceAbility(source, 'usesWisdom', true);
+    page.cycleSourceAbility(source, 'intelligence'); page.cycleSourceAbility(source, 'wisdom');
     const repository = new IndexedDbCharacterRepository(); await repository.save(sheet, 0);
     const saved = (await repository.list()).find(entry => entry.id === sheet.character!.characterUuid)!.sheet;
     expect(saved.character!.proficiencies).toMatchObject({ languages: ['Elvish'], initiative: true, simpleWeapons: true,
       martialWeapons: true, skills: { STEALTH: 'EXPERTISE' }, tools: { 'Legacy tool': 42 }, custom: ['Keep legacy text'] });
     expect(saved.character!.advantageOn![0]).toMatchObject({ aType: 'saving_throw', isDisadvantage: true, appliesTo: 'Poison' });
-    expect(saved.character!.featureSources![0]).toMatchObject({ usesIntelligence: true, usesWisdom: true, customDc: 17, customToHit: -1 });
+    expect(saved.character!.featureSources![0]).toMatchObject({ associatedAbilities: { features: ['intelligence', 'wisdom'], spellcasting: [] }, customDc: 17, customToHit: -1 });
     page.removeLanguage(0); page.removeAdvantage(0); page.removeTool('Legacy tool'); page.removeSource(0);
     expect(page.languages).toEqual([]); expect(page.advantages).toEqual([]); expect(page.sources).toEqual([]);
   });

@@ -2,6 +2,7 @@ import { ExportedCharacter, AbilityScores } from '../models/character.model';
 import { canonicalDocument } from '../rules/canonical-document';
 import { primaryWalkingSpeed, validateCharacterSpeeds, walkingSpeedEntry } from '../models/character-speed';
 import { validateObjectCompanions } from '../models/companions';
+import { validateSourceAbilities } from '../models/feature-source-abilities';
 
 export const DEFENSE_ABILITIES: { key: keyof AbilityScores; label: string }[] = [
   { key: 'strength', label: 'Strength' }, { key: 'dexterity', label: 'Dexterity' },
@@ -40,6 +41,7 @@ export function validateBasicInfo(sheet: ExportedCharacter): void {
     if (!Number.isSafeInteger(bonus)) throw new Error(`${ability} saving throw bonus must be a whole number.`);
   }
   for (const source of character.featureSources ?? []) {
+    validateSourceAbilities(source);
     for (const field of ['customDc', 'customToHit'] as const) {
       if (source[field] != null && !Number.isSafeInteger(source[field])) throw new Error(`${source.name ?? 'Source'} ${field} must be a whole number.`);
     }

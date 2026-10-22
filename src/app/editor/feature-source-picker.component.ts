@@ -103,6 +103,6 @@ export class FeatureSourcePickerComponent {
     return options.map(option => ({ ...option, disabled: this.disabledValues().includes(option.value) }));
   }
 
-  stats(source: FeatureSource) { return featureSourceStats(source, this.character(), this.helpers); }
+  stats(source: FeatureSource) { return featureSourceStats(source, this.character(), this.helpers, this.tone() === 'spells' ? 'spellcasting' : 'features'); }
   displayDc(dc: number | undefined) { return dc != null && Number.isFinite(dc) ? dc : '—'; }
 }

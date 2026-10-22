@@ -33,11 +33,15 @@ import { CatalogDialogComponent } from './catalog-dialog.component';
 import { RemoveEntryDialogComponent } from './remove-entry-dialog.component';
 import { CatalogQuery, EditorCatalog } from './editor-catalog';
 import { contentReference } from './editor-content-helpers';
+import { SpellEffectFilterComponent } from '../spell-effect-filter.component';
+import { SpellEffectSummaryComponent } from '../sheet/spell-effect-summary.component';
+import { SpellEffectFilter, matchesSpellEffects, spellEffectFilterCount, spellEffectsFromRecord } from '../content/spell-effects';
+import { spellCastingStats } from './spell-source-stats';
 
 @Component({
   providers: [EditorCombatIndex],
   selector: 'app-editor-spells',
-  imports: [EditorEntryRowComponent, CatalogResultRowComponent, SpellSchoolFilterComponent, SpellCastingTimeFilterComponent, ListControlsComponent, EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, HorizontalRowDirective, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
+  imports: [SpellEffectFilterComponent, SpellEffectSummaryComponent, EditorEntryRowComponent, CatalogResultRowComponent, SpellSchoolFilterComponent, SpellCastingTimeFilterComponent, ListControlsComponent, EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, HorizontalRowDirective, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
   templateUrl: './spells-editor.component.html',
   styleUrl: './editor.css',
 })
@@ -79,6 +83,10 @@ export class SpellsEditorComponent implements OnInit, OnDestroy, DoCheck {
   displayedLevels: number[] = [];
   displayedCastingTimes: SpellCastingTime[] = [];
   displayedSchools: SpellSchool[] = [];
+  displayedEffects: SpellEffectFilter = {};
+  readonly effectFilterCount = spellEffectFilterCount;
+  readonly catalogEffects = spellEffectsFromRecord;
+  castingStats(sourceName?: string) { return spellCastingStats(this.sheet(), sourceName, this.helpers); }
   readonly shortSchoolLabel = shortSpellSchoolLabel;
   filter: SpellCatalogFilter = { search: '', classes: [], levels: [] };
   customName = '';
@@ -150,6 +158,7 @@ export class SpellsEditorComponent implements OnInit, OnDestroy, DoCheck {
       && (!this.displayedLevels.length || this.displayedLevels.includes(spell.entity?.level ?? 0))
       && matchesCastingTime(spell.entity?.time, this.displayedCastingTimes)
       && matchesSpellSchool(spell.entity?.school, this.displayedSchools)
+      && matchesSpellEffects(spell.entity, this.displayedEffects)
       && spell.name.toLowerCase().includes(this.listSearch.trim().toLowerCase()))
       .sort((a, b) => compareSearchMatches(a.name, b.name, this.listSearch)
         || (a.entity?.level ?? 0) - (b.entity?.level ?? 0) || a.name.localeCompare(b.name));

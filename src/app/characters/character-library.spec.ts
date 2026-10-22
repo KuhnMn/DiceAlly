@@ -6,9 +6,15 @@ import { CharacterStorageService } from '../services/character-storage.service';
 import { CharacterStore } from '../stores/character.store';
 import { emptyBasicCharacter } from '../editor/basic-info';
 import { IndexedDbCharacterRepository } from './indexeddb-character-repository';
+import { IndexedDbContentCache } from '../content/content-cache';
 
 describe('Shared creator/viewer library', () => {
-  beforeEach(() => { localStorage.clear(); TestBed.configureTestingModule({}); });
+  beforeEach(() => {
+    localStorage.clear(); TestBed.configureTestingModule({});
+    // These round-trip fixtures have no installed library; reference enrichment has separate coverage.
+    vi.spyOn(IndexedDbContentCache.prototype, 'active').mockResolvedValue(undefined);
+  });
+  afterEach(() => vi.restoreAllMocks());
 
   it('lists and opens saved sheets even when optional wizard history is unsupported', async () => {
     const repository = new IndexedDbCharacterRepository();

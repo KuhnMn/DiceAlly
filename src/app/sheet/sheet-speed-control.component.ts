@@ -12,19 +12,19 @@ import { SheetSpeedDescriptionComponent } from './sheet-speed-description.compon
   styleUrl: './sheet-stat-tooltip.css',
   host: { class: 'inline-block relative', '(document:pointerdown)': 'outside($event)', '(document:keydown.escape)': 'dismiss()' },
   template: `
-    <div class="relative stat-display" [class]="compact() ? 'h-14 w-14' : 'border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-20 sm:h-20 bg-surface-container-low flex flex-col items-center justify-center shadow-lg'">
+    <div class="relative stat-display" [class]="compact() ? 'h-13 w-13' : 'border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-20 sm:h-20 bg-surface-container-low flex flex-col items-center justify-center shadow-lg'">
       @if (editingId() === walk().id) {
-        <label class="flex flex-col items-center justify-center" [class]="compact() ? 'h-14 w-14 rounded-lg border border-primary bg-surface-container text-xs' : 'h-full w-full'">
+        <label class="flex flex-col items-center justify-center" [class]="compact() ? 'h-13 w-13 rounded-lg border border-primary bg-surface-container text-xs' : 'h-full w-full'">
           <span [class]="compact() ? '' : 'text-xs text-on-surface-variant uppercase font-semibold'">Walk</span>
           <input #overrideInput type="number" min="0" step="1" [ngModel]="inputValue()" (ngModelChange)="inputValue.set('' + $event)" (blur)="saveOverride()" (keydown.enter)="$event.preventDefault(); saveOverride()" (keydown.escape)="cancelEdit(); $event.stopPropagation()" aria-label="Walking speed override" class="text-center font-bold bg-transparent outline-none" [class]="compact() ? 'w-12 border-b border-primary text-lg text-primary' : 'w-16 text-2xl border-b-2 border-primary'" [class.text-teal]="!compact() && walk().overrideFeet != null" [class.text-primary]="!compact() && walk().overrideFeet == null" />
         </label>
       } @else {
         <button type="button" (click)="edit(walk())" [attr.aria-label]="'Walking speed: ' + feet(walk()) + ' feet. Set override'" [attr.title]="walk().overrideFeet == null ? 'Click to override walking speed' : null"
           class="flex flex-col items-center justify-center focus-visible:outline-2 focus-visible:outline-primary"
-          [class]="compact() ? 'h-14 w-14 rounded-full border-2 border-primary bg-transparent' : 'h-full w-full rounded-lg sm:rounded-full'">
+          [class]="compact() ? 'h-13 w-13 rounded-full border-2 border-blue bg-transparent' : 'h-full w-full rounded-lg sm:rounded-full'">
           @if (compact()) {
-            <span class="font-bold leading-tight text-lg" [class.text-teal]="walk().overrideFeet != null" [class.text-on-surface]="walk().overrideFeet == null">{{ feet(walk()) }}</span>
-            <span class="text-[10px] font-semibold text-primary">Walk</span>
+            <span class="font-bold leading-tight text-lg" [class.text-teal]="walk().overrideFeet != null">{{ feet(walk()) }}</span>
+            <span class="text-[10px] font-semibold text-blue">Walk</span>
           } @else {
             <div class="text-xs text-on-surface-variant uppercase font-semibold">Walk</div>
             <div class="text-2xl font-bold" [class.text-teal]="walk().overrideFeet != null" [class.text-primary]="walk().overrideFeet == null">{{ feet(walk()) }}</div>
@@ -33,10 +33,10 @@ import { SheetSpeedDescriptionComponent } from './sheet-speed-description.compon
       }
       @if (walk().overrideFeet != null && editingId() !== walk().id) { <div role="tooltip" class="stat-tooltip">Manual Override</div> }
       @if (alternatives().length) {
-        <button type="button" (click)="open.set(!open())" [attr.aria-expanded]="open()" aria-label="Show other speeds" title="Other speeds" class="absolute -right-2 -bottom-2 flex h-6 w-6 items-center justify-center rounded-full bg-green text-xs text-on-green"><app-ui-icon name="plus" /></button>
+        <button type="button" (click)="open.set(!open())" [attr.aria-expanded]="open()" aria-label="Show other speeds" title="Other speeds" class="absolute z-10 -right-2 -bottom-2 flex h-6 w-6 items-center justify-center rounded-full bg-green text-xs text-on-green"><app-ui-icon name="plus" /></button>
       }
       @if (walk().overrideFeet != null) {
-        <button type="button" (click)="reset(walk())" aria-label="Reset walking speed override" title="Reset walking speed" class="absolute -right-2 flex items-center justify-center rounded-full bg-teal text-on-teal hover:bg-error-container transition-colors" [class]="compact() ? '-top-1 h-7 w-7 text-sm' : '-top-2 h-6 w-6 text-xs'"><app-ui-icon name="close" /></button>
+        <button type="button" (click)="reset(walk())" aria-label="Reset walking speed override" title="Reset walking speed" class="absolute z-20 -right-2 flex items-center justify-center rounded-full bg-teal text-on-teal hover:bg-error-container transition-colors" [class]="compact() ? '-top-1 h-7 w-7 text-sm' : '-top-2 h-6 w-6 text-xs'"><app-ui-icon name="close" /></button>
       }
       @if (open()) {
         <div role="region" aria-label="Other speeds" class="absolute -left-14 top-full z-50 mt-2 w-72 max-w-[calc(100vw_-_2rem)] space-y-2 rounded-lg border border-outline-variant bg-surface-container-high p-2 text-sm shadow-lg sm:left-1/2 sm:-translate-x-1/2">

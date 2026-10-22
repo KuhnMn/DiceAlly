@@ -5,13 +5,25 @@ import { CharacterInfoPageComponent } from './character-info-page.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { RuleReferenceComponent } from './rule-reference.component';
 import { SheetSpeedDescriptionComponent } from './sheet-speed-description.component';
+import { BackgroundDetailsComponent } from '../background-details.component';
 
 /** Mobile composition reuses the full sheet's calculations and editing actions. */
 @Component({
   selector: 'app-mobile-character-info-page',
-  imports: [RuleReferenceComponent, SheetSpeedDescriptionComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent],
+  imports: [BackgroundDetailsComponent, RuleReferenceComponent, SheetSpeedDescriptionComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent],
   template: `
     @if (character(); as c) {
+      <section aria-label="Character Details" class="mb-3 space-y-1 rounded-xl border border-outline-variant bg-surface-container p-3 text-xs">
+        @if (characterData()?.species?.name) {
+          <div>
+            <button type="button" class="min-h-8 text-primary underline" (click)="goToSpecies()">{{ characterData()?.species?.name }}</button>
+          </div>
+        }
+        @if (classDescription()) { <p class="font-medium [overflow-wrap:anywhere]">{{ classDescription() }}</p> }
+        @if (characterData()?.background; as background) {
+          <div class="[overflow-wrap:anywhere]"><span class="text-on-surface-variant">Background: </span><app-background-details [background]="background" /></div>
+        }
+      </section>
       <div class="space-y-2 rounded-lg border border-outline-variant bg-surface-container-highest p-2.5">
           <section aria-label="Ability modifiers and saving throws" class="grid grid-cols-3 gap-1.5">
             @for (ability of abilities(); track ability.name) {

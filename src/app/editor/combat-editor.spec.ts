@@ -51,7 +51,7 @@ describe('Combat creator', () => {
     const action = prefillCombatAction(sheet, source, 'SPELL', helpers);
     expect(action).toMatchObject({ name: 'Flame', actionType: 'BONUS', hitOrDc: '+7 to hit', range: '60 feet', damageOrHeal: '2d6 Fire' });
     source.entity!.savingThrow = ['dex'];
-    expect(prefillCombatAction(sheet, source, 'SPELL', helpers).hitOrDc).toBe('DC 15 Dexterity');
+    expect(prefillCombatAction(sheet, source, 'SPELL', helpers).hitOrDc).toBe('+7 to hit / DC 15 Dexterity');
     const weapon: InventoryItem = { editorId: 'weapon', name: 'Rapier', source: 'TEST', entity: {
       item: { name: 'Rapier', source: 'TEST', dmg1: '1d8', dmgType: 'P', bonusWeapon: '+1' }, properties: [{ name: 'Finesse' }] } };
     expect(prefillCombatAction(sheet, weapon, 'ITEM', helpers)).toMatchObject({ hitOrDc: '+7 to hit', damageOrHeal: '1d8 +4 Piercing' });
