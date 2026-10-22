@@ -875,6 +875,7 @@ export interface Note {
 export type ConditionName = string;
 
 export interface ExportedCharacter {
+  basicActions?: import('./character-references').BasicActionDescription[];
   referenceDescriptions?: import('./character-references').CharacterReferenceDescriptions;
   classes?: CharacterClassEntry[];
   background?: Background;
@@ -898,6 +899,7 @@ export interface ExportedCharacter {
   combatActions?: CombatAction[];
   conditions?: ConditionName[];
   monsters?: Monster[];
+  objects?: import('./companions').ObjectCompanion[];
   notes?: Note[];
 }
 

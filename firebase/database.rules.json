@@ -47,7 +47,7 @@
         "characters": {
           "$characterId": {
             ".write": "auth != null && auth.uid === $uid && root.child('members').child(auth.uid).val() === true && newData.exists() && ((!data.exists() && newData.child('meta/revision').val() === 1) || (data.exists() && newData.child('meta/revision').val() === data.child('meta/revision').val() + 1))",
-            ".validate": "newData.hasChildren(['meta', 'body'])",
+            ".validate": "newData.hasChild('meta') && ((newData.child('meta/deleted').val() === true && !newData.hasChild('body')) || (newData.child('meta/deleted').val() === false && newData.hasChild('body')))",
             "meta": {
               ".validate": "newData.hasChildren(['revision', 'hash', 'updatedAt', 'deleted'])",
               "revision": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() % 1 === 0" },

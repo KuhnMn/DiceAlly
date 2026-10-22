@@ -21,6 +21,14 @@ export interface RuleDescriptionSnapshot {
   contentReference?: ContentReference;
 }
 
+export type BasicActionType = 'ACTION' | 'BONUS' | 'REACTION' | 'OTHER';
+
+/** Prepared timing categories; descriptions remain detached, portable snapshots. */
+export interface BasicActionDescription extends RuleDescriptionSnapshot {
+  source: 'XPHB' | 'XDMG';
+  actionTypes: BasicActionType[];
+}
+
 /** Reference definitions only. Ranges, proficiency and active effects stay in their existing fields. */
 export interface CharacterReferenceDescriptions {
   skills: RuleDescriptionSnapshot[];

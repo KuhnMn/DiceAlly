@@ -4,6 +4,16 @@ import { higherLevelEntries } from './entry-compatibility';
 import { SourceEntries } from '../content/content-entries';
 
 describe('Source descriptions and Android entry compatibility', () => {
+  it('renders nested note references without exposing tags or changing sentence capitalization', () => {
+    const fixture = TestBed.createComponent(EntryRendererComponent);
+    fixture.componentRef.setInput('entry', 'Before. {@note Created by the {@subclassFeature Eldritch Cannon|Artificer|EFA|Artillerist|EFA|3} subclass feature; casting {@spell Mending|XPHB} restores {@dice 2d6} hit points.} After.');
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Before. Created by the Eldritch Cannon subclass feature;');
+    expect(text).toContain('casting Mending restores 2d6 hit points. After.');
+    expect(text).not.toMatch(/\{@|\}|\|EFA|\|XPHB/);
+    expect(fixture.nativeElement.querySelector('.text-primary')?.textContent).toBe('Eldritch Cannon');
+  });
   it('renders quotes recursively with attribution instead of exposing source JSON', () => {
     const fixture = TestBed.createComponent(EntryRendererComponent);
     const entries: SourceEntries = [

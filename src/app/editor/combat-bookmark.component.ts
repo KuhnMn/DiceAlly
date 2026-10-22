@@ -1,10 +1,11 @@
 import { Component, inject, input, output } from '@angular/core';
-import { CombatAction, ExportedCharacter, Monster } from '../models/character.model';
+import { CombatAction, ExportedCharacter } from '../models/character.model';
 import { CharacterHelpersService } from '../sheet/character-helpers.service';
 import { UiIconComponent } from '../ui-icon.component';
 import { InfoButtonComponent } from '../info-button.component';
 import { CombatActionDialogComponent } from './combat-action-dialog.component';
-import { CombatResource, CombatResourceType, combatLinksForResource, monsterCombatOptions, prefillCombatAction } from './combat-actions';
+import { CombatResource, CombatResourceType, combatLinksForResource, companionCombatOptions, prefillCombatAction } from './combat-actions';
+import type { Companion } from '../models/companions';
 import { AppDialogService } from '../services/app-dialog.service';
 
 @Component({
@@ -51,7 +52,7 @@ export class CombatBookmarkComponent {
     this.edited.emit();
   }
   open() {
-    this.suggestions = this.type() === 'MONSTER' ? monsterCombatOptions(this.resource() as Monster).map((ability, index) => ({
+    this.suggestions = this.type() === 'MONSTER' || this.type() === 'OBJECT' ? companionCombatOptions(this.resource() as Companion).map((ability, index) => ({
       label: ability.name || 'Ability', action: prefillCombatAction(this.sheet(), this.resource(), this.type(), this.helpers, index),
     })) : [];
     this.draft = this.suggestions[0]?.action ?? prefillCombatAction(this.sheet(), this.resource(), this.type(), this.helpers);

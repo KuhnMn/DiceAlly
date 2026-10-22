@@ -69,7 +69,7 @@
       } @else if (pages[page] === 'Spells') {
         <app-editor-spells [sheet]="sheet" (edited)="changed()" (openSources)="setPage(3)" />
       }
-      @if (pages[page] === 'Monsters') {
+      @if (pages[page] === 'Companions') {
         <app-editor-monsters [sheet]="sheet" (edited)="changed()" />
       }
       @if (pages[page] === 'Items') {

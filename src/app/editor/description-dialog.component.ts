@@ -1,4 +1,4 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, input, signal, TemplateRef } from '@angular/core';
 import { SheetDetailDialogComponent } from '../sheet/sheet-detail-dialog.component';
 import { UiIconComponent } from '../ui-icon.component';
 
@@ -15,7 +15,7 @@ import { UiIconComponent } from '../ui-icon.component';
       <app-ui-icon name="chevron" />
     </button>
     @if (open()) {
-      <app-sheet-detail-dialog [title]="title()" (closed)="open.set(false)"><ng-content /></app-sheet-detail-dialog>
+      <app-sheet-detail-dialog [title]="title()" [tags]="tags()" (closed)="open.set(false)"><ng-content /></app-sheet-detail-dialog>
     }
   `,
   styles: [`
@@ -30,5 +30,6 @@ export class DescriptionDialogComponent {
   readonly label = input('Description');
   readonly compact = input(false);
   readonly dense = input(false);
+  readonly tags = input<TemplateRef<unknown> | null>(null);
   readonly open = signal(false);
 }

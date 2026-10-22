@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 import { emptyBasicCharacter } from '../../editor/basic-info';
 import { IndexedDbCharacterRepository } from '../indexeddb-character-repository';
 import { CharacterSyncEngine } from './character-sync-engine';
-import { CharacterCloud, CloudCharacter, decodeCloudCharacter, encodeCloudCharacter } from './character-cloud';
+import { CharacterCloud, CloudCharacter, characterHash, decodeCloudCharacter, encodeCloudCharacter } from './character-cloud';
 
 class MemoryCloud implements CharacterCloud {
   rows = new Map<string, CloudCharacter>();
@@ -80,7 +80,7 @@ describe('Character synchronization', () => {
     const engine = new CharacterSyncEngine(local, cloud);
     expect((await engine.run()).pending).toBe(1);
     expect((await engine.run()).pending).toBe(0);
-    expect(JSON.parse(cloud.rows.get(id)!.body).character.name).toBe('Newer edit');
+    expect(JSON.parse(cloud.rows.get(id)!.body!).character.name).toBe('Newer edit');
   });
 
   it('turns simultaneous cloud deletion and local editing into a conflict', async () => {
@@ -95,6 +95,64 @@ describe('Character synchronization', () => {
     expect((await b.run()).conflicts[0].conflict!.deleted).toBe(true);
     await b.resolve(id, 'local'); await b.run();
     expect(cloud.rows.get(id)!.meta.deleted).toBe(false);
+  });
+
+  it('removes the cloud body, retries offline deletion, and propagates the tombstone to existing and new devices', async () => {
+    const first = cache(), second = cache(), third = cache(), cloud = new MemoryCloud();
+    const sheet = emptyBasicCharacter(), id = sheet.character!.characterUuid!;
+    sheet.notes = [{ id: 1, title: 'Private notes', body: 'Remove this definition from the cloud' }];
+    await first.save(sheet, 0);
+    const a = new CharacterSyncEngine(first, cloud), b = new CharacterSyncEngine(second, cloud);
+    await a.run(); await b.run();
+    // A deleted character must not get stuck because its last local edit cannot be uploaded.
+    sheet.portaitUrl = 'data:image/png;base64,abc';
+    await first.save(sheet, 1); await first.delete(id, 2);
+    vi.spyOn(cloud, 'write').mockRejectedValueOnce(new Error('Offline'));
+    expect((await a.run()).pending).toBe(1);
+    expect(cloud.rows.get(id)!.body).toBeDefined();
+    cloud.failAfterWrite = true;
+    expect((await a.run()).pending).toBe(0);
+    const tombstone = cloud.rows.get(id)!;
+    expect(Object.keys(tombstone)).toEqual(['meta']);
+    expect(tombstone.meta).toMatchObject({ deleted: true, revision: 2 });
+    expect(JSON.stringify(tombstone)).not.toContain('Private notes');
+    for (const device of [second, third]) {
+      const engine = device === second ? b : new CharacterSyncEngine(device, cloud);
+      const result = await engine.run();
+      expect(result.errors).toEqual([]); expect(result.pending).toBe(0);
+      expect(await device.list()).toEqual([]);
+      expect((await device.get(id))!.deletedAt).toBeDefined();
+      expect((await engine.run()).changed).toBe(false);
+    }
+  });
+
+  it.each(['cloud', 'both'] as const)('resolves an edit versus metadata-only deletion with %s', async choice => {
+    const first = cache(), second = cache(), cloud = new MemoryCloud();
+    const sheet = emptyBasicCharacter(), id = sheet.character!.characterUuid!;
+    sheet.character!.name = 'Local character';
+    await first.save(sheet, 0);
+    const a = new CharacterSyncEngine(first, cloud), b = new CharacterSyncEngine(second, cloud);
+    await a.run(); await b.run();
+    await first.delete(id, 1); await second.save(sheet, 1); await a.run();
+    expect((await b.run()).conflicts).toHaveLength(1);
+    await b.resolve(id, choice);
+    expect((await b.run()).errors).toEqual([]);
+    const remaining = await second.list();
+    expect(remaining).toHaveLength(choice === 'both' ? 1 : 0);
+    if (choice === 'both') expect(remaining[0].sheet.character!.name).toBe('Local character (Local Copy)');
+    expect(cloud.rows.get(id)!.body).toBeUndefined();
+  });
+
+  it('reads historical deletion records and rejects damaged tombstones or active records without a body', async () => {
+    const sheet = emptyBasicCharacter(), id = sheet.character!.characterUuid!;
+    const record = { id, sheet, version: 1, updatedAt: new Date().toISOString() };
+    const active = await encodeCloudCharacter(record, 1);
+    const legacy = { body: active.body!, meta: { ...active.meta, deleted: true, hash: await characterHash(active.body!, true) } };
+    expect((await decodeCloudCharacter(id, legacy)).deletedAt).toBe(record.updatedAt);
+    const deleted = await encodeCloudCharacter({ ...record, deletedAt: record.updatedAt }, 2);
+    expect((await decodeCloudCharacter(id, deleted)).sheet.character!.characterUuid).toBe(id);
+    await expect(decodeCloudCharacter(id, { meta: active.meta })).rejects.toThrow('integrity');
+    await expect(decodeCloudCharacter(id, { meta: { ...deleted.meta, hash: 'a'.repeat(64) } })).rejects.toThrow('integrity');
   });
 
   it('retains pending work after network failure and rejects corrupt bodies and embedded images', async () => {

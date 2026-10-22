@@ -80,6 +80,17 @@ try {
   const next = { ...record, meta: { ...record.meta, revision: 2 } };
   const racing = await Promise.allSettled([set(ref(alice, path), next), set(ref(alice, path), next)]);
   if (racing.filter(result => result.status === 'fulfilled').length !== 1) throw new Error('Concurrent saves did not have exactly one winner.');
+  const deleted = { meta: { ...record.meta, revision: 3, deleted: true } };
+  await assertFails(set(ref(alice, path), { meta: { ...record.meta, revision: 3 } })); // active records need a body
+  await assertFails(set(ref(alice, path), { ...deleted, body: record.body })); // deleted records must remove it
+  await assertFails(set(ref(bob, path), deleted));
+  await assertSucceeds(set(ref(alice, path), deleted));
+  const tombstone = (await assertSucceeds(get(ref(alice, path)))).val();
+  if ('body' in tombstone || tombstone.meta.deleted !== true) throw new Error('Deletion retained the character definition.');
+  await assertFails(set(ref(alice, path), deleted)); // tombstones retain revision protection
+  await assertFails(set(ref(alice, path + '/body'), record.body));
+  await assertFails(set(ref(alice, path), { meta: { ...record.meta, revision: 4 } }));
+  await assertSucceeds(set(ref(alice, path), { ...record, meta: { ...record.meta, revision: 4 } })); // explicit conflict recovery
   await environment.withSecurityRulesDisabled(async context => {
     await set(ref(context.database(), 'members/alice'), false);
   });

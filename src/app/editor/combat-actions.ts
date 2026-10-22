@@ -3,13 +3,14 @@ import { CharacterHelpersService } from '../sheet/character-helpers.service';
 import { featureSourceStats } from './feature-source-stats';
 import { newEditorId } from './editor-identity';
 import { spellIdentity } from './spell-selection';
+import { Companion, ObjectCompanion, isObjectCompanion } from '../models/companions';
 
 export const COMBAT_TYPES = [
   { value: 'ACTION', label: 'Action' }, { value: 'BONUS', label: 'Bonus Action' },
   { value: 'REACTION', label: 'Reaction' }, { value: 'OTHER', label: 'Other' },
 ] as const;
-export type CombatResource = FeatureEntryFull | SpellEntryFull | InventoryItem | Monster | Species;
-export type CombatResourceType = 'CLASS_FEATURE' | 'FEAT' | 'OPTIONAL_FEATURE' | 'SPELL' | 'ITEM' | 'MONSTER' | 'SPECIES';
+export type CombatResource = FeatureEntryFull | SpellEntryFull | InventoryItem | Monster | ObjectCompanion | Species;
+export type CombatResourceType = 'CLASS_FEATURE' | 'FEAT' | 'OPTIONAL_FEATURE' | 'SPELL' | 'ITEM' | 'MONSTER' | 'OBJECT' | 'SPECIES';
 const SAVE_ABILITIES: Record<string, string> = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' };
 
 /** Read only textual entries, ignoring unrelated numbers and metadata in imported definitions. */
@@ -36,6 +37,14 @@ export function monsterCombatOptions(monster: Monster) {
   ];
 }
 
+export function companionCombatOptions(companion: Companion) {
+  if (!isObjectCompanion(companion)) return monsterCombatOptions(companion);
+  return (companion.entity?.actionEntries ?? []).map((entry, index) => ({
+    name: typeof entry === 'object' && entry && 'name' in entry && typeof entry.name === 'string' ? entry.name : `Action ${index + 1}`,
+    entries: [entry], type: 'ACTION',
+  }));
+}
+
 /** Suggestions are editable snapshots. Never interpret an arbitrary imported formula as executable code. */
 export function prefillCombatAction(sheet: ExportedCharacter, resource: CombatResource, type: CombatResourceType,
   helpers: CharacterHelpersService, monsterOption = 0): CombatAction {
@@ -44,8 +53,8 @@ export function prefillCombatAction(sheet: ExportedCharacter, resource: CombatRe
   let actionType: string = 'ACTION';
   let range = '';
   let hitOrDc = '';
-  if (type === 'MONSTER') {
-    const action = monsterCombatOptions(resource as Monster)[monsterOption];
+  if (type === 'MONSTER' || type === 'OBJECT') {
+    const action = companionCombatOptions(resource as Companion)[monsterOption];
     if (action) { entries = action.entries; name = `${resource.name}: ${action.name || 'Ability'}`; actionType = action.type; }
   }
   const text = combatText(entries);
@@ -92,7 +101,7 @@ export function prefillCombatAction(sheet: ExportedCharacter, resource: CombatRe
   }
   return { editorId: newEditorId(), name, range, actionType, hitOrDc, damageOrHeal,
     sourceSnapshot: { name, range, actionType, hitOrDc, damageOrHeal }, sourceOption: monsterOption,
-    sourceOptionName: type === 'MONSTER' ? monsterCombatOptions(resource as Monster)[monsterOption]?.name : undefined,
+    sourceOptionName: type === 'MONSTER' || type === 'OBJECT' ? companionCombatOptions(resource as Companion)[monsterOption]?.name : undefined,
     linkedResourceType: type, linkedResource: { editorId: resource.editorId, name: resource.name, source: resource.source } };
 }
 
@@ -109,7 +118,7 @@ export function combatLinksForResource(sheet: ExportedCharacter, resource: Comba
 export function resolveCombatResource(sheet: ExportedCharacter, action: CombatAction): CombatResource | undefined {
   const type = action.linkedResourceType;
   const candidates: CombatResource[] = type === 'SPELL' ? sheet.spells ?? [] : type === 'ITEM' ? sheet.inventory ?? []
-    : type === 'MONSTER' ? sheet.monsters ?? [] : type === 'SPECIES' ? sheet.species ? [sheet.species] : [] : sheet.features ?? [];
+    : type === 'MONSTER' ? sheet.monsters ?? [] : type === 'OBJECT' ? sheet.objects ?? [] : type === 'SPECIES' ? sheet.species ? [sheet.species] : [] : sheet.features ?? [];
   const link = action.linkedResource;
   if (!link) return;
   return link.editorId ? candidates.find(value => value.editorId === link.editorId)
@@ -125,10 +134,10 @@ export function combatSourceSuggestion(sheet: ExportedCharacter, action: CombatA
   const resource = resolveCombatResource(sheet, action);
   if (!resource || !action.linkedResourceType) return;
   // Old monster bookmarks have no reliable action identity. Require a new bookmark rather than guessing.
-  if (action.linkedResourceType === 'MONSTER' && action.sourceOption == null) return;
+  if ((action.linkedResourceType === 'MONSTER' || action.linkedResourceType === 'OBJECT') && action.sourceOption == null) return;
   let option = action.sourceOption ?? 0;
-  if (action.linkedResourceType === 'MONSTER' && action.sourceOptionName) {
-    option = monsterCombatOptions(resource as Monster).findIndex(value => value.name === action.sourceOptionName);
+  if ((action.linkedResourceType === 'MONSTER' || action.linkedResourceType === 'OBJECT') && action.sourceOptionName) {
+    option = companionCombatOptions(resource as Companion).findIndex(value => value.name === action.sourceOptionName);
     if (option < 0) return;
   }
   return prefillCombatAction(sheet, resource, action.linkedResourceType as CombatResourceType, helpers, option);

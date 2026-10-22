@@ -5,7 +5,6 @@ import { SheetDetailDialogComponent } from './sheet-detail-dialog.component';
 import { HorizontalRowDirective } from './horizontal-row.directive';
 import { UiIconComponent } from '../ui-icon.component';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
-import { MonsterStatBlockComponent } from './monster-stat-block.component';
 import { MonsterPresentation } from './monster-presentation';
 import { FeatureUsesComponent } from './feature-uses.component';
 import { FeatureNotesComponent } from './feature-notes.component';
@@ -17,10 +16,13 @@ import {
 } from '../models/character.model';
 import { CharacterHelpersService } from './character-helpers.service';
 import { CharacterStore } from '../stores/character.store';
+import { Companion, COMPANION_TYPES, CompanionType, companionHitPoints, companionBaseHitPoints, isObjectCompanion, objectTypeName } from '../models/companions';
+import { CompanionStatBlockComponent } from './companion-stat-block.component';
+import { ObjectStatBlockComponent } from './object-stat-block.component';
 
 @Component({
   selector: 'app-monsters-page',
-  imports: [ListControlsComponent, SheetListLayoutComponent, SheetDetailDialogComponent, HorizontalRowDirective, UiIconComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent, MonsterStatBlockComponent],
+  imports: [CompanionStatBlockComponent, ObjectStatBlockComponent, ListControlsComponent, SheetListLayoutComponent, SheetDetailDialogComponent, HorizontalRowDirective, UiIconComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: monster-flash 1.6s ease-out;
@@ -47,15 +49,30 @@ import { CharacterStore } from '../stores/character.store';
   templateUrl: './monsters-page.component.html',
 })
 export class MonstersPageComponent extends MonsterPresentation {
+  readonly companionTypes = COMPANION_TYPES;
+  readonly companionType = signal<CompanionType>('monster');
+  readonly health = companionHitPoints;
+  readonly baseHitPoints = companionBaseHitPoints;
+  objectCompanion(value: Companion) { return isObjectCompanion(value) ? value : undefined; }
+  objectType(value: Companion) { return isObjectCompanion(value) ? objectTypeName(value.entity) : undefined; }
+  monsterEntity(value: Companion) { return isObjectCompanion(value) ? undefined : value.entity; }
+  override getInitiative(value: Companion) { return isObjectCompanion(value) ? '—' : super.getInitiative(value); }
+  setCompanionType(type: CompanionType) { this.companionType.set(type); this.searchQuery.set(''); this.monsterFilter.set('all'); this.expandedItems.set(new Set()); }
+  baseHitPointsText(value: Companion) {
+    if (isObjectCompanion(value)) { const hp = value.entity?.hp; return typeof hp === 'number' ? String(hp) : hp?.special ?? '—'; }
+    const hp = value.entity?.hp;
+    return [value.monsterMaxHP ?? hp?.average ?? 0, hp?.formula ? `(${hp.formula})` : '', hp?.special].filter(part => part !== undefined && part !== '').join(' ');
+  }
   readonly searchQuery = signal('');
   readonly monsterFilter = signal<'all' | 'companions' | 'reference'>('all');
   readonly monsterFilters = [{ value: 'all', label: 'All' }, { value: 'companions', label: 'Tracked companions' }, { value: 'reference', label: 'Reference' }] as const;
   readonly visibleMonsters = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
     const filter = this.monsterFilter();
-    return rankSearchResults(this.monsters().filter(monster => (monster.name ?? '').toLowerCase().includes(query) && (filter === 'all' || filter === 'companions' && monster.hpEnabled || filter === 'reference' && !monster.hpEnabled)), query, monster => monster.name ?? '');
+    const entries: Companion[] = this.companionType() === 'object' ? [...this.characterData()?.objects ?? []].sort((a, b) => Number(b.hitPoints.enabled) - Number(a.hitPoints.enabled) || (a.name ?? '').localeCompare(b.name ?? '')) : this.monsters();
+    return rankSearchResults(entries.filter(monster => (monster.name ?? '').toLowerCase().includes(query) && (filter === 'all' || filter === 'companions' && this.health(monster).enabled || filter === 'reference' && !this.health(monster).enabled)), query, monster => monster.name ?? '');
   });
-  monsterKey(monster: Monster) { return 'monster-' + (monster.editorId ?? this.helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? ''))); }
+  monsterKey(monster: Companion) { return (isObjectCompanion(monster) ? 'object-' : 'monster-') + (monster.editorId ?? this.helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? ''))); }
   characterData = input.required<ExportedCharacter | null>();
   private store = inject(CharacterStore);
   helpers = inject(CharacterHelpersService);
@@ -104,8 +121,11 @@ export class MonstersPageComponent extends MonsterPresentation {
     // Handle scroll/highlight on navigation
     effect(() => {
       const targetId = this.store.featureScrollTarget();
-      if (!targetId || (!targetId.startsWith('monster-'))) return;
-      const target = this.characterData()?.monsters?.find(monster => `monster-${monster.editorId ?? this.helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? ''))}` === targetId);
+      if (!targetId || (!targetId.startsWith('monster-') && !targetId.startsWith('object-'))) return;
+      const type = targetId.startsWith('object-') ? 'object' : 'monster';
+      const entries: Companion[] = type === 'object' ? this.characterData()?.objects ?? [] : this.characterData()?.monsters ?? [];
+      const target = entries.find(monster => this.monsterKey(monster) === targetId);
+      if (target) this.companionType.set(type);
       if (target) { this.searchQuery.set(''); this.monsterFilter.set('all'); this.expandedItems.set(new Set([this.monsterKey(target)])); }
       if (typeof document === 'undefined') return;
       setTimeout(() => {
@@ -120,68 +140,68 @@ export class MonstersPageComponent extends MonsterPresentation {
     });
   }
 
-  updateMonsterHP(monster: Monster, value: string) {
+  updateMonsterHP(monster: Companion, value: string) {
     const numValue = Number(value);
     if (Number.isFinite(numValue)) {
       const maxHP = this.getEffectiveMonsterMaxHP(monster);
-      monster.monsterCurrentHP = Math.max(0, Math.min(numValue, maxHP ?? 0));
+      this.health(monster).current = Math.max(0, Math.min(numValue, maxHP ?? 0));
     }
   }
 
-  getEffectiveMonsterMaxHP(monster: Monster): number {
-    if (monster.monsterMaxHpOverride !== null && monster.monsterMaxHpOverride !== undefined) {
-      return monster.monsterMaxHpOverride;
-    }
-    return monster.monsterMaxHP ?? monster.entity?.hp?.average ?? 0;
+  getEffectiveMonsterMaxHP(monster: Companion): number {
+    const health = this.health(monster);
+    return health.maximumOverride ?? health.maximum ?? this.baseHitPoints(monster) ?? 0;
   }
 
-  getMonsterMaxHpOverrideInput(monster: Monster): string {
-    if (monster.monsterMaxHpOverride !== null && monster.monsterMaxHpOverride !== undefined) {
-      return String(monster.monsterMaxHpOverride);
+  getMonsterMaxHpOverrideInput(monster: Companion): string {
+    if (this.health(monster).maximumOverride !== null && this.health(monster).maximumOverride !== undefined) {
+      return String(this.health(monster).maximumOverride);
     }
-    return String(monster.monsterMaxHP ?? monster.entity?.hp?.average ?? 0);
+    return String(this.health(monster).maximum ?? this.baseHitPoints(monster) ?? 0);
   }
 
-  onMonsterMaxHpOverrideInput(monster: Monster, value: string) {
+  onMonsterMaxHpOverrideInput(monster: Companion, value: string) {
     const trimmed = value.trim();
     if (!trimmed) {
-      monster.monsterMaxHpOverride = monster.monsterMaxHP ?? monster.entity?.hp?.average ?? 0;
+      this.health(monster).maximumOverride = this.health(monster).maximum ?? this.baseHitPoints(monster) ?? 0;
     } else {
       const numValue = Number(trimmed);
       if (Number.isFinite(numValue) && numValue > 0) {
-        monster.monsterMaxHpOverride = numValue;
+        this.health(monster).maximumOverride = numValue;
       } else {
-        monster.monsterMaxHpOverride = monster.monsterMaxHP ?? monster.entity?.hp?.average ?? 0;
+        this.health(monster).maximumOverride = this.health(monster).maximum ?? this.baseHitPoints(monster) ?? 0;
       }
     }
   }
 
-  commitMonsterMaxHpOverride(monster: Monster) {
+  commitMonsterMaxHpOverride(monster: Companion) {
     // Adjust current HP if it exceeds new max
     const maxHP = this.getEffectiveMonsterMaxHP(monster);
-    if (monster.monsterCurrentHP && monster.monsterCurrentHP > maxHP) {
-      monster.monsterCurrentHP = maxHP;
+    const health = this.health(monster);
+    if (health.current != null && health.current > maxHP) {
+      health.current = maxHP;
     }
   }
 
-  clearMonsterMaxHpOverride(monster: Monster) {
-    monster.monsterMaxHpOverride = undefined;
+  clearMonsterMaxHpOverride(monster: Companion) {
+    this.health(monster).maximumOverride = undefined;
     // Adjust current HP if it exceeds base max
-    const baseMax = monster.monsterMaxHP ?? monster.entity?.hp?.average ?? 0;
-    if (monster.monsterCurrentHP && monster.monsterCurrentHP > baseMax) {
-      monster.monsterCurrentHP = baseMax;
+    const baseMax = this.health(monster).maximum ?? this.baseHitPoints(monster) ?? 0;
+    const health = this.health(monster);
+    if (health.current != null && health.current > baseMax) {
+      health.current = baseMax;
     }
   }
 
-  updateMonsterTempHP(monster: Monster, value: string) {
+  updateMonsterTempHP(monster: Companion, value: string) {
     const numValue = Number(value);
     if (Number.isFinite(numValue)) {
-      monster.monsterTempHP = Math.max(0, numValue);
+      this.health(monster).temporary = Math.max(0, numValue);
     }
   }
 
-  clearMonsterTempHP(monster: Monster) {
-    monster.monsterTempHP = 0;
+  clearMonsterTempHP(monster: Companion) {
+    this.health(monster).temporary = 0;
   }
 
   toggleExpanded(id: string) {

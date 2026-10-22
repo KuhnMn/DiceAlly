@@ -39,7 +39,7 @@ export function normalizeCharacterEditorIdentity(input: ExportedCharacter): Expo
     }
   };
   for (const [kind, entries] of [
-    ['source', sheet.character?.featureSources], ['feature', sheet.features], ['spell', sheet.spells], ['monster', sheet.monsters], ['item', sheet.inventory], ['combat-action', sheet.combatActions],
+    ['source', sheet.character?.featureSources], ['feature', sheet.features], ['spell', sheet.spells], ['monster', sheet.monsters], ['object', sheet.objects], ['item', sheet.inventory], ['combat-action', sheet.combatActions],
   ] as const) entries?.forEach((entry, index) => normalizeEntry(entry, kind, index));
   if (sheet.species) normalizeEntry(sheet.species, 'species', 0);
   return sheet;

@@ -11,7 +11,7 @@ import { ExportedCharacter, FeatureSource, Proficiencies } from '../models/chara
 /** Android exports have database IDs and split casting sources, but no portable editor identities. */
 export function isLegacyCharacterExport(sheet: ExportedCharacter): boolean {
   if (sheet.creatorWizard) return false;
-  const entries = [...(sheet.features ?? []), ...(sheet.spells ?? []), ...(sheet.inventory ?? []), ...(sheet.monsters ?? []),
+  const entries = [...(sheet.features ?? []), ...(sheet.spells ?? []), ...(sheet.inventory ?? []), ...(sheet.monsters ?? []), ...(sheet.objects ?? []),
     ...(sheet.species ? [sheet.species] : [])];
   if (entries.some(entry => entry.editorId || entry.contentReference)) return false;
   const androidSnapshots = entries.some(entry => ['featureEntity', 'featEntity', 'optionalFeatureEntity', 'entity'].some(field => {
@@ -237,7 +237,7 @@ export async function migrateLegacyCharacterExport(sheet: ExportedCharacter): Pr
   const revision = typeof indexedDB !== 'undefined' ? await activeContentRevision(cache) : undefined;
   const records: ContentRecord[] = [];
   if (revision) {
-    const names = new Set([...(sheet.features ?? []), ...(sheet.spells ?? []), ...(sheet.inventory ?? []), ...(sheet.monsters ?? []),
+    const names = new Set([...(sheet.features ?? []), ...(sheet.spells ?? []), ...(sheet.inventory ?? []), ...(sheet.monsters ?? []), ...(sheet.objects ?? []),
       ...(sheet.species ? [sheet.species] : [])].map(entry => normalize(entry.name ?? '')));
     for (const text of [...(sheet.character?.proficiencies?.custom ?? []), ...Object.keys(sheet.character?.proficiencies?.tools ?? {})]) {
       names.add(normalize(text.replace(/\s+\([^()]+\)$/, '')));

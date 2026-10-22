@@ -6,7 +6,6 @@ import { CHARACTER_REPOSITORY, CharacterRecord } from './character-repository';
 import { ExportedCharacter } from '../models/character.model';
 import { APP_RUNTIME_CONFIG } from '../app.tokens';
 import { CharacterStorageService, SavedCharacterMetadata, StorageError } from '../services/character-storage.service';
-import { fillInstalledReferenceDescriptions } from '../content/character-reference-descriptions';
 
 export interface CharacterSummary extends SavedCharacterMetadata { version: number; }
 export interface CharacterImportResult { success: boolean; characterId?: string; error?: StorageError; }
@@ -87,15 +86,22 @@ export class CharacterLibraryService implements OnDestroy {
     const record = await this.repository.get(id);
     if (!record || record.deletedAt) return undefined;
     const sheet = normalizeCharacterEditorIdentity(record.sheet);
-    await fillInstalledReferenceDescriptions(sheet);
+    await this.fillReferences(sheet);
     return { ...record, sheet };
   }
   async save(sheet: ExportedCharacter, expectedVersion: number): Promise<number> {
     const snapshot = normalizeCharacterEditorIdentity(sheet);
-    await fillInstalledReferenceDescriptions(snapshot);
+    await this.fillReferences(snapshot);
     await this.ready();
     const version = await this.repository.save(snapshot, expectedVersion);
     this.notify(); return version;
+  }
+  /** Reference enrichment loads only when needed and cannot block offline character saves. */
+  private async fillReferences(sheet: ExportedCharacter): Promise<void> {
+    try {
+      const { fillInstalledReferenceDescriptions } = await import('../content/character-reference-descriptions');
+      await fillInstalledReferenceDescriptions(sheet);
+    } catch { /* An unavailable optional chunk/library must not prevent local persistence. */ }
   }
   async delete(id: string, expectedVersion: number): Promise<void> {
     await this.ready();

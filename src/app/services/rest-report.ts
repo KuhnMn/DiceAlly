@@ -27,7 +27,7 @@ export function summarizeRest(before: ExportedCharacter, after: ExportedCharacte
       use.usedFreeUses, newUses[index]?.usedFreeUses));
   };
   // Rest only changes counters; entries retain their order and identity.
-  for (const category of ['features', 'spells', 'monsters', 'inventory'] as const) {
+  for (const category of ['features', 'spells', 'monsters', 'objects', 'inventory'] as const) {
     before[category]?.forEach((entry, index) => uses(entry.name || category, entry.uses,
       after[category]?.[index]?.uses));
   }

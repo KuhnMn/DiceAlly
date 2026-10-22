@@ -138,7 +138,15 @@ export function unconditionalMovement(definition: SpeciesDefinition): Partial<Re
 }
 
 export function formatSpeciesMovement(definition: SpeciesDefinition): string {
-  const movement = definition.movement;
+  return formatMovement(definition.movement);
+}
+
+/** Objects and species share the same schema-native speed contract. */
+export function formatSourceMovement(value: unknown): string {
+  return formatMovement(movement(value, false));
+}
+
+function formatMovement(movement: SpeciesMovement): string {
   if (movement.kind === 'unspecified') return '—';
   if (movement.kind === 'variable') return 'Varies';
   const describe = (value: MovementRate) => value.kind === 'walk-reference' ? 'equal to walking speed'

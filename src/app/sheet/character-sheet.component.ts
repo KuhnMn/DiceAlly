@@ -178,7 +178,7 @@ export class CharacterSheetComponent implements OnDestroy {
 
   characterData = this.store.characterData;
   currentPage = signal(1);
-  private readonly standardPages = [{ id: 1, label: 'Sheet' }, { id: 2, label: 'Features' }, { id: 3, label: 'Spells' }, { id: 4, label: 'Inventory' }, { id: 5, label: 'Monsters' }, { id: 6, label: 'Notes' }];
+  private readonly standardPages = [{ id: 1, label: 'Sheet' }, { id: 2, label: 'Features' }, { id: 3, label: 'Spells' }, { id: 4, label: 'Inventory' }, { id: 5, label: 'Companions' }, { id: 6, label: 'Notes' }];
   private readonly mobilePages = [this.standardPages[0], { id: 7, label: 'Combat' }, ...this.standardPages.slice(1)];
   get pages() { return this.mobile() ? this.mobilePages : this.standardPages; }
   swipePage(direction: number) {
@@ -238,8 +238,8 @@ export class CharacterSheetComponent implements OnDestroy {
       page = 3; // Spells page
     } else if (targetId.startsWith('item-')) {
       page = 4; // Inventory page
-    } else if (targetId.startsWith('monster-')) {
-      page = 5; // Monsters page
+    } else if (targetId.startsWith('monster-') || targetId.startsWith('object-')) {
+      page = 5; // Companions page
     } else if (targetId.startsWith('feature-') || targetId === 'species-section') {
       page = 2; // Features & Traits page
     }

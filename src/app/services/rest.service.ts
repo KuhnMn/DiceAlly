@@ -95,8 +95,8 @@ export class RestService {
     condition: 'LONG_REST' | 'SHORT_REST'
   ): void {
     // Features and companions share the same use/recovery settings.
-    if (character.features || character.monsters) {
-      [...character.features ?? [], ...character.monsters ?? []].forEach((feature) => {
+    if (character.features || character.monsters || character.objects) {
+      [...character.features ?? [], ...character.monsters ?? [], ...character.objects ?? []].forEach((feature) => {
         if (feature.uses) {
           feature.uses.forEach((use) => {
             const useCondition = use.freeUsesRegainCondition || 'LONG_REST';
@@ -139,8 +139,8 @@ export class RestService {
   ): void {
     // Restore ONE use for SHORT_REST_ONE features
     // First in features
-    if (character.features || character.monsters) {
-      [...character.features ?? [], ...character.monsters ?? []].forEach((feature) => {
+    if (character.features || character.monsters || character.objects) {
+      [...character.features ?? [], ...character.monsters ?? [], ...character.objects ?? []].forEach((feature) => {
         if (feature.uses) {
           feature.uses.forEach((use) => {
             if (use.freeUsesRegainCondition === condition) {

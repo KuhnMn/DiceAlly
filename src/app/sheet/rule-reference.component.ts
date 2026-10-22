@@ -11,10 +11,10 @@ let nextReferenceId = 0;
 @Component({
   selector: 'app-rule-reference',
   imports: [OverlayModule, EntryRendererComponent, SheetDetailDialogComponent, UiIconComponent],
-  host: { class: 'inline-flex min-w-0 max-w-full', '[class.w-full]': "appearance() === 'row'" },
+  host: { class: 'inline-flex min-w-0 max-w-full', '[class.w-full]': "appearance() === 'row' || appearance() === 'combat'" },
   template: `
     <span cdkOverlayOrigin #origin="cdkOverlayOrigin" class="inline-flex min-w-0 max-w-full items-center gap-1 rounded focus-visible:outline-2 focus-visible:outline-primary"
-      [class]="appearance() === 'tag' ? 'min-h-9 rounded-lg border border-primary/40 bg-primary-container py-0.5 pl-2.5 pr-0.5 text-on-primary-container' : appearance() === 'row' ? 'w-full rounded-lg border border-outline-variant bg-surface-container-low px-2 hover:bg-surface-container' : ''"
+      [class]="appearance() === 'tag' ? 'min-h-9 rounded-lg border border-primary/40 bg-primary-container py-0.5 pl-2.5 pr-0.5 text-on-primary-container' : appearance() === 'row' ? 'w-full rounded-lg border border-outline-variant bg-surface-container-low px-2 hover:bg-surface-container' : appearance() === 'combat' ? 'w-full border-2 border-tertiary bg-surface-container p-2 text-tertiary' : ''"
       (keydown.escape)="close(); $event.stopPropagation()">
       <ng-content />
       @if (reference()?.entries?.length) {
@@ -40,7 +40,7 @@ let nextReferenceId = 0;
 })
 export class RuleReferenceComponent {
   readonly reference = input<RuleDescriptionSnapshot>();
-  readonly appearance = input<'plain' | 'tag' | 'row'>('plain');
+  readonly appearance = input<'plain' | 'tag' | 'row' | 'combat'>('plain');
   readonly desktop = signal(false);
   readonly opened = signal(false);
   readonly dialogOpen = signal(false);

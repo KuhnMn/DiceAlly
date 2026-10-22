@@ -1,15 +1,21 @@
 <section class="editor-card feature-editor">
-  <app-editor-list-header title="Monsters" description="Manage companions, summons, and their tracking settings."
+  <app-editor-list-header title="Companions" description="Manage companions, summons, and their tracking settings."
     [count]="monsters.length" controlsId="added-monsters"
     [(visible)]="listVisible" (add)="openCatalog()" />
+  <nav appHorizontalRow class="mb-4 flex flex-wrap gap-2" aria-label="Companion types">
+    @for (type of types; track type.value) {
+      <button type="button" class="editor-filter" [class.bg-secondary-container]="selectedType === type.value" [class.text-on-secondary-container]="selectedType === type.value" [class.border-secondary]="selectedType === type.value" [class.border-outline-variant]="selectedType !== type.value" [attr.aria-pressed]="selectedType === type.value" (click)="setType(type.value)">{{ type.label }}</button>
+    }
+  </nav>
   <div id="added-monsters" class="space-y-2" [hidden]="!listVisible">
 
-    <app-list-controls label="Search monsters" searchName="selected-monster-search" [(query)]="listSearch" [hasFilters]="false" />
+    <app-list-controls [label]="'Search ' + label.toLowerCase()" searchName="selected-monster-search" [(query)]="listSearch" [hasFilters]="false" />
     <div class="rounded-lg bg-surface-container">
     @for (monster of filteredMonsters; track monster; let i = $index) {
       <app-editor-entry-row [sheet]="sheet()" [resource]="monster" [name]="monster.name || 'Unnamed monster'" [expanded]="expanded.has(monster)" (detailsRequested)="toggle(monster)" (removeRequested)="remove(monster)" [notesCount]="monster.notes?.length || 0" [usesCount]="monster.uses?.length || 0">
         <ng-container entry-metadata>
-          <span class="shrink-0 rounded bg-secondary-container px-1 text-on-secondary-container">@if (monster.hpEnabled) { Max HP {{ monster.monsterMaxHP }} } @else { Stat Block Only }</span>
+          <span class="shrink-0 rounded bg-secondary-container px-1 text-on-secondary-container">@if (health(monster).enabled) { Max HP {{ health(monster).maximum }} } @else { Stat Block Only }</span>
+          @if (objectType(monster); as type) { <span class="rounded bg-teal-container px-1 text-on-teal-container">{{ type }}</span> }
           @if (monster.source) { <span class="min-w-0 truncate rounded bg-surface-container-highest px-1 text-on-surface" [title]="monster.source">{{ monster.source }}</span> }
         </ng-container>
         @if (expanded.has(monster)) {
@@ -17,37 +23,39 @@
 
 
             <label class="block"><span class="field-label">Maximum HP (Optional)</span>
-              <input class="editor-input !w-36" type="number" min="0" step="1" [name]="'monster-max-hp-' + i" [ngModel]="monster.hpEnabled ? monster.monsterMaxHP : null" (ngModelChange)="setMaxHp(monster, $event)" placeholder="Not tracked" />
+              <input class="editor-input !w-36" type="number" min="0" step="1" [name]="'monster-max-hp-' + i" [ngModel]="health(monster).enabled ? health(monster).maximum : null" (ngModelChange)="setMaxHp(monster, $event)" placeholder="Not tracked" />
               <span class="block text-xs text-on-surface-variant mt-1">Leave empty to show the stat block without tracking HP.</span>
             </label>
 
             <app-entry-annotations-editor [entry]="monster" (edited)="change()">
-              <app-combat-bookmark annotation-combat [sheet]="sheet()" [resource]="monster" type="MONSTER" (edited)="change()" />
-              <app-description-dialog annotation-description [dense]="true" [title]="monster.name || 'Monster'" label="Stat Block"><div class="p-3">
-              <app-monster-stat-block [value]="monster" [senseDescriptions]="sheet().referenceDescriptions?.senses ?? []" [compact]="true" />
+              <app-combat-bookmark annotation-combat [sheet]="sheet()" [resource]="monster" [type]="selectedType === 'object' ? 'OBJECT' : 'MONSTER'" (edited)="change()" />
+              <ng-template #companionTags><span class="rounded bg-teal-container px-2 py-0.5 text-xs text-on-teal-container">{{ objectType(monster) }}</span><span class="rounded bg-surface-container-highest px-2 py-0.5 text-xs">{{ monster.source }}</span></ng-template>
+              <app-description-dialog annotation-description [dense]="true" [tags]="objectType(monster) ? companionTags : null" [title]="monster.name || 'Monster'" label="Stat Block"><div class="p-3">
+              <app-companion-stat-block [value]="monster" [senseDescriptions]="sheet().referenceDescriptions?.senses ?? []" [compact]="true" />
             </div></app-description-dialog>
             </app-entry-annotations-editor>
           </div>
         }
       </app-editor-entry-row>
-    } @empty { <p class="text-sm text-on-surface-variant py-2">{{ monsters.length ? 'No monsters match this search.' : 'No monsters selected yet.' }}</p> }
+    } @empty { <p class="text-sm text-on-surface-variant py-2">{{ monsters.length ? 'No ' + label.toLowerCase() + ' match this search.' : 'No ' + label.toLowerCase() + ' selected yet.' }}</p> }
     </div>
   </div>
 </section>
 @if (catalogOpen) {
-  <app-catalog-dialog title="Add Monsters" subtitle="Browse the library or add a custom companion." (closed)="catalogOpen = false">
+  <app-catalog-dialog [title]="'Add ' + label" subtitle="Browse the library or add a custom companion." (closed)="catalogOpen = false">
       <app-source-book-filter />
-    <details class="rounded-lg bg-surface-container-high px-3 py-2 mb-3"><summary class="cursor-pointer text-sm font-semibold text-primary py-1">Add Custom Monster</summary><div class="mt-2 space-y-2"><label><span class="field-label">Name</span><input class="editor-input" name="custom-monster-name" [(ngModel)]="customName" /></label><button type="button" class="action-button" [disabled]="!customName.trim()" (click)="addCustom()">Add</button></div></details>
+    <details class="rounded-lg bg-surface-container-high px-3 py-2 mb-3"><summary class="cursor-pointer text-sm font-semibold text-primary py-1">Add Custom {{ selectedType === 'object' ? 'Object' : 'Monster' }}</summary><div class="mt-2 space-y-2"><label><span class="field-label">Name</span><input class="editor-input" name="custom-monster-name" [(ngModel)]="customName" /></label><button type="button" class="action-button" [disabled]="!customName.trim()" (click)="addCustom()">Add</button></div></details>
     <p role="status" class="text-xs font-semibold text-secondary mb-2">{{ catalogAdded }} added this visit</p>
-    <app-list-controls label="Search monsters" searchName="monster-search" [query]="search" (queryChange)="search = $event; searchChanged()" [hasFilters]="false" (cleared)="search = ''; searchChanged()">
-      <button list-toolbar-action type="button" class="flex h-11 w-8 shrink-0 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high" aria-label="Refresh monster catalog" title="Refresh monster catalog" [disabled]="catalog.loading()" (click)="refreshContent()"><app-ui-icon name="reset" /></button>
+    <app-list-controls [label]="'Search ' + label.toLowerCase()" searchName="monster-search" [query]="search" (queryChange)="search = $event; searchChanged()" [hasFilters]="false" (cleared)="search = ''; searchChanged()">
+      <button list-toolbar-action type="button" class="flex h-11 w-8 shrink-0 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high" [attr.aria-label]="'Refresh ' + selectedType + ' catalog'" [title]="'Refresh ' + selectedType + ' catalog'" [disabled]="catalog.loading()" (click)="refreshContent()"><app-ui-icon name="reset" /></button>
     </app-list-controls>
     @if (catalog.message()) { <p role="status" class="text-sm text-on-surface-variant mb-3">{{ catalog.message() }} <a routerLink="/content" class="text-primary underline">Manage Game Data</a></p> }
     @if (catalog.loading()) { <p role="status" class="text-xs text-on-surface-variant">Searching…</p> }
     <div class="overflow-hidden rounded-lg bg-surface-container">@for (record of catalog.results(); track record.key) {
       <app-catalog-result-row [name]="record.name" [alreadyAdded]="hasExisting(record)" [disabled]="catalog.loading()" (addRequested)="add(record)">
-        <ng-container catalog-metadata><span class="shrink-0 rounded bg-secondary-container px-1 text-on-secondary-container">HP {{ catalogHp(record) }}</span><span class="min-w-0 truncate rounded bg-surface-container-highest px-1 text-on-surface" [title]="record.publication">{{ record.publication }}</span></ng-container>
-        <app-description-dialog catalog-description class="shrink-0 self-stretch" [title]="record.name" label="Stat Block" [compact]="true"><div class="p-2"><app-monster-stat-block [value]="preview(record)" [senseDescriptions]="sheet().referenceDescriptions?.senses ?? []" [compact]="true" /></div></app-description-dialog>
+        <ng-container catalog-metadata>@if (catalogObjectType(record); as type) { <span class="rounded bg-teal-container px-1 text-on-teal-container">{{ type }}</span> }<span class="shrink-0 rounded bg-secondary-container px-1 text-on-secondary-container">HP {{ catalogHp(record) }}</span><span class="min-w-0 truncate rounded bg-surface-container-highest px-1 text-on-surface" [title]="record.publication">{{ record.publication }}</span></ng-container>
+        <ng-template #catalogTags><span class="rounded bg-teal-container px-2 py-0.5 text-xs text-on-teal-container">{{ catalogObjectType(record) }}</span><span class="rounded bg-surface-container-highest px-2 py-0.5 text-xs">{{ record.publication }}</span></ng-template>
+        <app-description-dialog [tags]="catalogObjectType(record) ? catalogTags : null" catalog-description class="shrink-0 self-stretch" [title]="record.name" label="Stat Block" [compact]="true"><div class="p-2"><app-companion-stat-block [value]="preview(record)" [senseDescriptions]="sheet().referenceDescriptions?.senses ?? []" [compact]="true" /></div></app-description-dialog>
       </app-catalog-result-row>
     }</div>
     @if (catalog.revision()) { <div class="flex flex-wrap items-center justify-between gap-2 text-xs mt-3"><span>{{ catalog.total() }} matches</span><div class="flex gap-2"><button type="button" class="secondary-button compact-button" [disabled]="catalog.loading() || catalog.offset === 0" (click)="nextPage(-1)">Previous</button><button type="button" class="secondary-button compact-button" [disabled]="catalog.loading() || catalog.offset + catalog.pageSize >= catalog.total()" (click)="nextPage(1)">Next</button></div></div> }

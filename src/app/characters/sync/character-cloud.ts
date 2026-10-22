@@ -10,7 +10,8 @@ export interface CloudCharacterMeta {
   updatedAt: string;
   deleted: boolean;
 }
-export interface CloudCharacter { meta: CloudCharacterMeta; body: string; }
+/** Active records carry the snapshot; deletion tombstones contain metadata only. */
+export interface CloudCharacter { meta: CloudCharacterMeta; body?: string; }
 export interface CharacterCloud {
   ids(): Promise<string[]>;
   meta(id: string): Promise<CloudCharacterMeta | null>;
@@ -26,11 +27,13 @@ export async function characterHash(body: string, deleted: boolean): Promise<str
 }
 
 export async function encodeCloudCharacter(record: CharacterRecord, revision: number): Promise<CloudCharacter> {
+  if (record.deletedAt) {
+    return { meta: { revision, hash: await characterHash('', true), deleted: true, updatedAt: record.updatedAt } };
+  }
   assertExternalIllustrations(record.sheet);
   const body = JSON.stringify(portableCharacter(record.sheet));
   if (new TextEncoder().encode(body).length > 8_000_000) throw new Error('Character exceeds the 8 MB cloud save limit.');
-  const deleted = !!record.deletedAt;
-  return { body, meta: { revision, hash: await characterHash(body, deleted), deleted, updatedAt: record.updatedAt } };
+  return { body, meta: { revision, hash: await characterHash(body, false), deleted: false, updatedAt: record.updatedAt } };
 }
 
 /** Reject embedded files before upload; artwork must be hosted elsewhere. */
@@ -54,6 +57,12 @@ export function validateMeta(value: unknown): CloudCharacterMeta {
 
 export async function decodeCloudCharacter(id: string, value: CloudCharacter): Promise<CharacterRecord> {
   const meta = validateMeta(value.meta);
+  if (meta.deleted && value.body === undefined) {
+    if (await characterHash('', true) !== meta.hash) throw new Error('Cloud character integrity check failed.');
+    return { id, sheet: { character: { characterUuid: id } }, version: 0,
+      updatedAt: meta.updatedAt, deletedAt: meta.updatedAt, cloudRevision: meta.revision, cloudHash: meta.hash };
+  }
+  // Historical tombstones included bodies. Continue reading them, but never upload one again.
   if (typeof value.body !== 'string' || await characterHash(value.body, meta.deleted) !== meta.hash) throw new Error('Cloud character integrity check failed.');
   const sheet = portableCharacter(JSON.parse(value.body) as ExportedCharacter);
   canonicalDocument(sheet);

@@ -18,10 +18,12 @@ import { SheetSpeedControlComponent } from './sheet-speed-control.component';
 import { SheetSpeedDescriptionComponent } from './sheet-speed-description.component';
 import { RuleReferenceComponent } from './rule-reference.component';
 import { CharacterReferenceCategory, referenceDescription } from '../models/character-references';
+import type { BasicActionDescription } from '../models/character-references';
+import { BasicCombatActionsComponent } from './basic-combat-actions.component';
 
 @Component({
   selector: 'app-character-info-page',
-  imports: [RuleReferenceComponent, SheetSpeedControlComponent, SheetSpeedDescriptionComponent, BackgroundDetailsComponent, ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
+  imports: [BasicCombatActionsComponent, RuleReferenceComponent, SheetSpeedControlComponent, SheetSpeedDescriptionComponent, BackgroundDetailsComponent, ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
   styleUrl: './sheet-stat-tooltip.css',
   styles: [`
     .round-tracker-input::-webkit-outer-spin-button,
@@ -448,15 +450,18 @@ import { CharacterReferenceCategory, referenceDescription } from '../models/char
             <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
               Combat
             </h3>
-            @if (combatActions().length > 0) {
+            @if (combatActions().length > 0 || characterData()?.basicActions?.length) {
               <div class="space-y-3 text-sm max-h-[800px] overflow-y-auto pr-3">
                 @for (actionType of ['ACTION', 'BONUS', 'REACTION', 'OTHER']; track actionType) {
-                  @if ((groupedCombatActions()[actionType]?.length ?? 0) > 0) {
+                  @if ((groupedCombatActions()[actionType]?.length ?? 0) > 0 || (groupedBasicActions()[actionType]?.length ?? 0) > 0) {
                     <div>
                       <h4 class="text-xs font-bold uppercase text-on-surface-variant mb-2 pt-2 border-t border-outline-variant">
                         {{ getActionTypeLabel(actionType) }}
                       </h4>
                       <div class="space-y-1">
+                        @if (groupedBasicActions()[actionType]?.length) {
+                          <app-basic-combat-actions [actions]="groupedBasicActions()[actionType]" />
+                        }
                         @for (action of groupedCombatActions()[actionType]; track action) {
                           <button
                             type="button"
@@ -747,6 +752,13 @@ export class CharacterInfoPageComponent {
   });
 
   combatActions = computed(() => this.characterData()?.combatActions ?? []);
+  groupedBasicActions = computed(() => {
+    const groups: Record<string, BasicActionDescription[]> = { ACTION: [], BONUS: [], REACTION: [], OTHER: [] };
+    for (const action of this.characterData()?.basicActions ?? []) {
+      for (const type of action.actionTypes) groups[type].push(action);
+    }
+    return groups;
+  });
   
   groupedCombatActions = computed(() => {
     const actions = this.combatActions();
@@ -1045,6 +1057,8 @@ export class CharacterInfoPageComponent {
         return `item-${identity}`;
       case 'MONSTER':
         return `monster-${identity}`;
+      case 'OBJECT':
+        return `object-${identity}`;
       default:
         return null;
     }
@@ -1061,7 +1075,7 @@ export class CharacterInfoPageComponent {
     if (anchorId === 'species-section') return 'species';
     if (anchorId.startsWith('spell-')) return 'spell';
     if (anchorId.startsWith('item-')) return 'item';
-    if (anchorId.startsWith('monster-')) return 'monster';
+    if (anchorId.startsWith('monster-') || anchorId.startsWith('object-')) return 'monster';
     if (anchorId.startsWith('feature-')) return 'feature';
     return null;
   }

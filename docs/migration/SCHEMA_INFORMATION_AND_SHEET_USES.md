@@ -219,3 +219,23 @@ Adding an item with an explicit numeric `charges` field creates a **Charges** us
 **At Dawn maps to manual recovery.** Dusk, midnight, other calendar timing, special recovery, rolled amounts, partial amounts and unspecified recovery also remain manual. Short/long-rest recovery is configured only when the structured fields explicitly supply that rest timing and a numeric amount sufficient to restore the full pool. Symbolic charge counts remain readable without inventing or rolling a numeric maximum. No charge spending or recovery rolls are automated.
 
 Description refresh updates item definitions without adding, resetting or replacing existing trackers, including their manually edited maximum, recovery setting and spent charges. Existing inventory can retain its configured tracking unchanged; this prefill applies to newly added items and needs no library reimport.
+
+## 16. Basic combat actions
+
+Desktop and mobile combat sections start with a collapsed **Basic** group wherever generic actions are available, including sections without character-specific actions. Rows retain the combat action styling with the theme's tertiary color, distinct from feature, species, spell, item and monster actions. They show only a name and an info button: Hover/focus that button on desktop for reference help, or tap it on mobile for a description dialog.
+
+Only canonical imported `action` definitions from **XPHB and XDMG** supply the names, entries and timing. Structured `action`, `bonus` and `reaction` timings map directly to their sections; multiple timings appear in each applicable section. Free, variable and unspecified timing remains under **Other**, without parsing descriptions. Duplicate names prefer XPHB over XDMG. Actions from other publications are excluded.
+
+The optional, typed `basicActions` snapshot list stores explicit `name`, `source`, `actionTypes`, `entries` and `contentReference` fields. Opening or saving a character fills this list from the installed IndexedDB library. **Refresh Descriptions** refreshes exact saved references and adds newly available actions, retaining missing and foreign references. Saving preserves the descriptions for export, sync and offline play. These are reference entries only, with no automated action effects or eligibility enforcement.
+
+## 17. Object companions
+
+The creator and viewer now group **Monsters** and **Objects** under **Companions**, with the same category-switch styling used for features. Both use the existing selection, description dialogs, notes, use trackers, opt-in HP tracking, temporary HP and maximum-HP override controls. Source and readable object-type tags appear in the object list, catalog and description headers.
+
+Object details follow the monster stat-block layout: Summary cards, supplied ability scores and defenses, a blue-accented description block and individually accented action blocks. HP cards use smaller text on both monsters and objects so formulas and special HP rules remain readable. Object stat blocks retain special AC/HP values, conditional movement, senses and recursive description/action entries. Missing creature statistics are not invented. The maximum-HP tracker remains opt-in and is independent of the source's numeric or special HP rule.
+
+The self-contained snapshot adds an optional, typed `objects` list. Each entry has `kind: "object"`, its own editor identity and content reference, a detached canonical `entity`, `notes`, `uses`, and an explicitly named `hitPoints` object with `enabled`, `maximum`, `current`, `temporary` and `maximumOverride`. Monster snapshot fields retain their existing format. Portable import/save validates object state; export, cloud sync and share snapshots preserve it. **Refresh Descriptions** replaces the object definition while retaining authored tracking and annotations. Object uses participate in the same rest rules/reports as monster uses, and object actions can be bookmarked for Combat and navigated back to their object detail view.
+
+## 18. Cloud deletion storage
+
+Deleting a synced character now replaces its Realtime Database record with metadata only. The previous character `body` is removed by the same revision-protected write; deletion metadata remains to prevent another device from resurrecting the record. Offline deletion retries normally and edit-versus-delete conflicts retain the existing explicit resolution options. Historical tombstones that still contain bodies remain readable for compatibility. Publish the updated `firebase/database.rules.json` alongside this client change: Active records require a body and new deletion records must omit it. Frozen share-code snapshots retain their existing expiry/revocation behavior.

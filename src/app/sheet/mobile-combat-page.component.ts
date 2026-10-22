@@ -2,10 +2,11 @@ import { ConcentrationControlComponent } from './concentration-control.component
 import { Component } from '@angular/core';
 import { CharacterInfoPageComponent } from './character-info-page.component';
 import { UiIconComponent } from '../ui-icon.component';
+import { BasicCombatActionsComponent } from './basic-combat-actions.component';
 
 @Component({
   selector: 'app-mobile-combat-page',
-  imports: [UiIconComponent, ConcentrationControlComponent],
+  imports: [BasicCombatActionsComponent, UiIconComponent, ConcentrationControlComponent],
   template: `
     @if (character(); as c) {
           <!-- Combat Actions -->
@@ -25,15 +26,18 @@ import { UiIconComponent } from '../ui-icon.component';
                 <button type="button" (click)="resetRoundTracker()" [class.invisible]="(c.roundTracker ?? 0) === 0" [disabled]="(c.roundTracker ?? 0) === 0" title="Reset" aria-label="Reset round tracker" class="flex h-11 w-10 items-center justify-center rounded-lg border border-outline-variant bg-surface-container-high text-lg text-on-surface transition-colors hover:bg-primary-container hover:text-on-primary-container focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="reset" /></button>
               </div>
             </div>
-            @if (combatActions().length > 0) {
+            @if (combatActions().length > 0 || characterData()?.basicActions?.length) {
               <div class="space-y-3 text-sm ">
                 @for (actionType of ['ACTION', 'BONUS', 'REACTION', 'OTHER']; track actionType) {
-                  @if ((groupedCombatActions()[actionType]?.length ?? 0) > 0) {
+                  @if ((groupedCombatActions()[actionType]?.length ?? 0) > 0 || (groupedBasicActions()[actionType]?.length ?? 0) > 0) {
                     <div>
                       <h4 class="text-xs font-bold uppercase text-on-surface-variant mb-2 pt-2 border-t border-outline-variant">
                         {{ getActionTypeLabel(actionType) }}
                       </h4>
                       <div class="space-y-1">
+                        @if (groupedBasicActions()[actionType]?.length) {
+                          <app-basic-combat-actions [actions]="groupedBasicActions()[actionType]" />
+                        }
                         @for (action of groupedCombatActions()[actionType]; track action) {
                           <button
                             type="button"

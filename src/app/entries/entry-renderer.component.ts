@@ -306,15 +306,31 @@ export class EntryRendererComponent {
     return typeof entry === 'string' ? entry : JSON.stringify(entry, null, 2);
   }
 
-  private readonly tagRegex = /\{@(\w*)\s*([^}]*)\}/g;
+  /** Match complete outer tags, keeping nested reference/formatting tags in their payload. */
+  private inlineTagMatches(text: string): RegExpMatchArray[] {
+    const matches: RegExpMatchArray[] = [];
+    for (let start = text.indexOf('{@'); start >= 0;) {
+      let depth = 1, end = start + 2;
+      for (; end < text.length && depth; end++) {
+        if (text[end] === '{') depth++;
+        else if (text[end] === '}') depth--;
+      }
+      if (depth) break;
+      const match = /^\{@(\w*)\s*([\s\S]*)\}$/.exec(text.slice(start, end));
+      if (match) { match.index = start; matches.push(match); }
+      start = text.indexOf('{@', end);
+    }
+    return matches;
+  }
   private readonly bonusRegex = /\{=(\w*)\}/g;
   private readonly linkRegex = /\{#(\w*)\s*([^}]*)\}/g;
 
-  parseStyledText(text: string): StyledTextSegment[] {
+  parseStyledText(text: string, depth = 0): StyledTextSegment[] {
     if (!text) return [];
+    if (depth > 32) return [{ text, type: 'normal' }];
 
     const segments: StyledTextSegment[] = [];
-    const tagMatches = Array.from(text.matchAll(this.tagRegex)).map(m => ({ match: m, type: 'TAG' as StyleType }));
+    const tagMatches = this.inlineTagMatches(text).map(match => ({ match, type: 'TAG' as StyleType }));
     const bonusMatches = Array.from(text.matchAll(this.bonusRegex)).map(m => ({ match: m, type: 'BONUS' as StyleType }));
     const linkMatches = Array.from(text.matchAll(this.linkRegex)).map(m => ({ match: m, type: 'LINK' as StyleType }));
     const boldMatches = Array.from(text.matchAll(/\*\*([^*]+)\*\*/g)).map(m => ({ match: m, type: 'BOLD' as StyleType }));
@@ -339,7 +355,12 @@ export class EntryRendererComponent {
       if (match.index! < lastIndex) continue;
 
       if (type === 'BOLD') {
-        segments.push(...this.parseStyledText(match[1]).map(segment => ({ ...segment, bold: true })));
+        segments.push(...this.parseStyledText(match[1], depth + 1).map(segment => ({ ...segment, bold: true })));
+        lastIndex = match.index! + match[0].length;
+        continue;
+      }
+      if (type === 'TAG' && match[1] === 'note') {
+        segments.push(...this.parseStyledText(match[2], depth + 1));
         lastIndex = match.index! + match[0].length;
         continue;
       }

@@ -1,4 +1,4 @@
-import { ContentCache } from '../content/content-cache';
+import type { BasicActionCache } from '../content/basic-action-descriptions';
 import { ContentRecord, ImportRevision, JsonObject, entityKey } from '../content/content.model';
 import { characterOptionSourceData } from '../content/character-option-adapter';
 import { ContentReference, ExportedCharacter } from '../models/character.model';
@@ -9,6 +9,7 @@ import { createInventoryEntry } from './item-selection';
 import { createMonsterEntry } from './monster-selection';
 import { spellSnapshot } from './spell-selection';
 import { prepareCharacterReferenceDescriptions } from '../content/character-reference-descriptions';
+import { createObjectEntry } from './object-selection';
 
 export interface DescriptionRefreshResult {
   sheet: ExportedCharacter;
@@ -20,7 +21,7 @@ type LinkedEntry = { name?: string; source?: string; contentReference?: ContentR
 
 /** Refresh detached definitions only. Character choices, annotations and play state remain authored state. */
 export async function refreshCharacterDescriptions(
-  sheet: ExportedCharacter, cache: Pick<ContentCache, 'get'>, revision: ImportRevision,
+  sheet: ExportedCharacter, cache: BasicActionCache, revision: ImportRevision,
 ): Promise<DescriptionRefreshResult> {
   const result: DescriptionRefreshResult = { sheet: structuredClone(sheet), refreshed: 0, skipped: [] };
   const records = new Map<string, Promise<ContentRecord | undefined>>();
@@ -105,6 +106,12 @@ export async function refreshCharacterDescriptions(
   if (background) {
     const record = await find(background, ['background']);
     if (record) { background.entity = characterOptionSourceData(record); updated(background, record); }
+  }
+  for (const object of result.sheet.objects ?? []) {
+    const record = await find(object, ['object']);
+    if (!record) continue;
+    object.entity = createObjectEntry(record, revision).entity;
+    updated(object, record);
   }
   result.refreshed += await prepareCharacterReferenceDescriptions(result.sheet, cache, revision, true);
   // No recalculation: wizard baselines, manual character fields and combat overrides remain untouched.

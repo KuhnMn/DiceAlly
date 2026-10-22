@@ -1,6 +1,7 @@
 import { ExportedCharacter, AbilityScores } from '../models/character.model';
 import { canonicalDocument } from '../rules/canonical-document';
 import { primaryWalkingSpeed, validateCharacterSpeeds, walkingSpeedEntry } from '../models/character-speed';
+import { validateObjectCompanions } from '../models/companions';
 
 export const DEFENSE_ABILITIES: { key: keyof AbilityScores; label: string }[] = [
   { key: 'strength', label: 'Strength' }, { key: 'dexterity', label: 'Dexterity' },
@@ -57,7 +58,7 @@ export function validateBasicInfo(sheet: ExportedCharacter): void {
       integer(die.used, `${die.dieType} used`);
     }
   }
-  for (const feature of [...sheet.features ?? [], ...sheet.spells ?? [], ...sheet.monsters ?? [], ...(sheet.species ? [sheet.species] : [])]) {
+  for (const feature of [...sheet.features ?? [], ...sheet.spells ?? [], ...sheet.monsters ?? [], ...sheet.objects ?? [], ...(sheet.species ? [sheet.species] : [])]) {
     for (const usage of feature.uses ?? []) {
       integer(usage.totalFreeUses ?? 1, `${feature.name} uses`);
       integer(usage.usedFreeUses ?? 0, `${feature.name} used count`);
@@ -69,6 +70,7 @@ export function validateBasicInfo(sheet: ExportedCharacter): void {
     if (monster.monsterMaxHP != null) integer(monster.monsterMaxHP, `${monster.name ?? 'Monster'} maximum HP`);
     if (monster.monsterMaxHpOverride != null) integer(monster.monsterMaxHpOverride, `${monster.name ?? 'Monster'} maximum HP`);
   }
+  validateObjectCompanions(sheet.objects);
   for (const [name, range] of Object.entries(character.senses ?? {})) {
     if (!name.trim()) throw new Error('Senses need a name.');
     integer(range, `${name} range`);

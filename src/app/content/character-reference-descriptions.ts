@@ -1,8 +1,9 @@
-import { ContentCache, IndexedDbContentCache } from './content-cache';
+import { IndexedDbContentCache } from './content-cache';
 import { ImportRevision, entityKey } from './content.model';
 import { activeContentRevision } from '../editor/active-content-revision';
 import type { ExportedCharacter } from '../models/character.model';
 import { CharacterReferenceDescriptions, SKILL_DEFINITIONS, STANDARD_CONDITIONS, STANDARD_SENSES, referenceDescription } from '../models/character-references';
+import { BasicActionCache, isBasicActionSource, prepareBasicActionDescriptions } from './basic-action-descriptions';
 
 const GROUPS = [
   { category: 'skills', kind: 'skill', names: SKILL_DEFINITIONS.map(skill => skill.name) },
@@ -11,7 +12,7 @@ const GROUPS = [
 ] as const;
 
 /** Copy only description fields from canonical reference definitions, using exact identities. */
-export async function prepareCharacterReferenceDescriptions(sheet: ExportedCharacter, cache: Pick<ContentCache, 'get'>, revision: ImportRevision, refresh = false): Promise<number> {
+export async function prepareCharacterReferenceDescriptions(sheet: ExportedCharacter, cache: BasicActionCache, revision: ImportRevision, refresh = false): Promise<number> {
   const descriptions: CharacterReferenceDescriptions = structuredClone(sheet.referenceDescriptions ?? { skills: [], senses: [], conditions: [] });
   let updated = 0;
   await Promise.all(GROUPS.flatMap(group => group.names.map(async name => {
@@ -39,12 +40,12 @@ export async function prepareCharacterReferenceDescriptions(sheet: ExportedChara
     for (const group of GROUPS) descriptions[group.category].sort((a, b) => a.name.localeCompare(b.name));
     sheet.referenceDescriptions = descriptions;
   }
-  return updated;
+  return updated + await prepareBasicActionDescriptions(sheet, cache, revision, refresh);
 }
 
 /** Optional enrichment cannot make existing character saves depend on an installed library. */
 export async function fillInstalledReferenceDescriptions(sheet: ExportedCharacter): Promise<void> {
-  if (typeof indexedDB === 'undefined' || GROUPS.every(group => group.names.every(name => referenceDescription(sheet, group.category, name)))) return;
+  if (typeof indexedDB === 'undefined' || (sheet.basicActions !== undefined && sheet.basicActions.every(action => isBasicActionSource(action.source)) && GROUPS.every(group => group.names.every(name => referenceDescription(sheet, group.category, name))))) return;
   try {
     const cache = new IndexedDbContentCache();
     const revision = await activeContentRevision(cache);

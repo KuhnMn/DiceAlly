@@ -15,7 +15,7 @@ describe('Portable character metadata', () => {
     const record = (await repository.get(sheet.character!.characterUuid!))!;
     expect('installationId' in record.sheet).toBe(false);
     const cloud = await encodeCloudCharacter({ ...record, sheet }, 1);
-    expect(JSON.parse(cloud.body).installationId).toBeUndefined();
-    expect(JSON.parse(cloud.body).character.characterUuid).toBe(sheet.character!.characterUuid);
+    expect(JSON.parse(cloud.body!).installationId).toBeUndefined();
+    expect(JSON.parse(cloud.body!).character.characterUuid).toBe(sheet.character!.characterUuid);
   });
 });
