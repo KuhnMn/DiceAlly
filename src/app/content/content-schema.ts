@@ -1,3 +1,4 @@
+import { loadWithRetry } from '../loading/lazy-load';
 import { REFERENCE_VALIDATORS } from './generated/reference-registry';
 import type { ReferenceKind } from './reference-content.model';
 import type { SchemaValidator } from './generated/site-validators.mjs';
@@ -24,8 +25,10 @@ type Validators = Record<string, SchemaValidator>;
 const profiles: Partial<Record<SchemaProfile, Promise<Validators>>> = {};
 async function validators(profile: SchemaProfile): Promise<Validators> {
   // The schema compiler is build-time only. Load brew code only for brew input.
-  return profiles[profile] ??= (profile === 'site'
-    ? import('./generated/site-validators.mjs') : import('./generated/brew-validators.mjs'));
+  return profiles[profile] ??= loadWithRetry<Validators>(() => profile === 'site'
+    ? import('./generated/site-validators.mjs') : import('./generated/brew-validators.mjs'),
+    profile === 'site' ? 'generated_tables' : 'homebrew')
+    .catch(error => { delete profiles[profile]; throw error; });
 }
 
 export class ContentSchemaError extends Error {

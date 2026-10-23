@@ -25,7 +25,7 @@ import { speciesMovementText } from '../content/species-compatibility';
   selector: 'app-editor-species',
   imports: [EditorEntryRowComponent, CatalogResultRowComponent, ListControlsComponent, DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent],
   templateUrl: './species-editor.component.html',
-  styleUrl: './editor.css',
+  styleUrls: ['./editor.css', './editor-feature-fields.css'],
 })
 export class SpeciesEditorComponent implements OnDestroy {
   readonly sheet = input.required<ExportedCharacter>();

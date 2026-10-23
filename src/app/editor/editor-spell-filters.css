@@ -1,0 +1,18 @@
+
+.spell-filter-chip {
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 9999px;
+  padding: .25rem .625rem;
+  font-size: .75rem;
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface);
+}
+.spell-filter-chip:hover {
+  background: var(--md-sys-color-surface-container-high);
+}
+.spell-filter-chip.spell-filter-active {
+  border-color: var(--md-sys-color-secondary);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+@media (max-width: 639px) { .spell-filter-chip { min-height: 2.25rem; } }

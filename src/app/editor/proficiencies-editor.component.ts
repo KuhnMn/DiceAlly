@@ -9,7 +9,7 @@ import { MasonryCardsDirective } from './masonry-cards.directive';
   selector: 'app-editor-proficiencies',
   imports: [FormsModule, UiIconComponent, OtherProficienciesComponent, MasonryCardsDirective],
   templateUrl: './proficiencies-editor.component.html',
-  styleUrl: './editor.css',
+  styleUrls: ['./editor.css', './editor-proficiencies.css'],
   host: { class: 'block min-w-0 space-y-4' },
   // Keep the controls in the shell's form, including validation and submit behavior.
   viewProviders: [{ provide: ControlContainer, useExisting: NgForm }],

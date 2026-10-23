@@ -43,7 +43,7 @@ import { spellCastingStats } from './spell-source-stats';
   selector: 'app-editor-spells',
   imports: [SpellEffectFilterComponent, SpellEffectSummaryComponent, EditorEntryRowComponent, CatalogResultRowComponent, SpellSchoolFilterComponent, SpellCastingTimeFilterComponent, ListControlsComponent, EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, HorizontalRowDirective, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
   templateUrl: './spells-editor.component.html',
-  styleUrl: './editor.css',
+  styleUrls: ['./editor.css', './editor-feature-fields.css', './editor-spell-filters.css'],
 })
 export class SpellsEditorComponent implements OnInit, OnDestroy, DoCheck {
   readonly catalogEntries = contentEntries;

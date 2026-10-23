@@ -10,7 +10,7 @@ import { ClassesEditorComponent } from './classes-editor.component';
   selector: 'app-editor-basic-info',
   imports: [FormsModule, UiIconComponent, InfoButtonComponent, BackgroundEditorComponent, ClassesEditorComponent],
   templateUrl: './basic-info-editor.component.html',
-  styleUrl: './editor.css',
+  styleUrls: ['./editor.css', './editor-steppers.css'],
   host: { class: 'block min-w-0 space-y-4' },
   // Keep the controls in the shell's form, including validation and submit behavior.
   viewProviders: [{ provide: ControlContainer, useExisting: NgForm }],

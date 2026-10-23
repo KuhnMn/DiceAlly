@@ -126,7 +126,7 @@ describe('Refresh saved character descriptions', () => {
   });
 
   it('provides the creator button, keeps refresh unsaved until Save, and clears busy state on failure', async () => {
-    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    await TestBed.configureTestingModule({ imports: [LocalEditorComponent], providers: [provideRouter([])] }).compileComponents();
     const { revision, spell } = fixtureData();
     const cache = new IndexedDbContentCache();
     await cache.stage(revision); await cache.put(revision.id, [spell]);
@@ -157,7 +157,7 @@ describe('Refresh saved character descriptions', () => {
   });
 
   it('rejects a completed refresh if the draft was edited while IndexedDB was being read', async () => {
-    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    await TestBed.configureTestingModule({ imports: [LocalEditorComponent], providers: [provideRouter([])] }).compileComponents();
     const { revision, spell } = fixtureData();
     let finishRead!: (record: ContentRecord) => void;
     let started!: () => void;

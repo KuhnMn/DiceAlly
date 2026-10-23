@@ -17,7 +17,21 @@
     <app-sync-status [compact]="sheetOpen()" (signOut)="signOut()" />
   }
 
-  <section class="app-content">
+  @if (navigation.loading()) {
+    <p class="mx-3 mb-3 rounded-lg bg-surface-container px-3 py-2 text-sm text-on-surface-variant" role="status" aria-live="polite">Loading page…</p>
+  }
+  @if (navigation.failure(); as failure) {
+    <section class="mx-3 mb-3 rounded-lg border border-error bg-error-container p-3 text-sm text-on-error-container" role="alert">
+      <p>{{ failure.module ? 'This page could not be downloaded. Check your connection and try again. If the app was updated, reload to get the latest version.' : 'This page could not be opened. Please try again.' }}</p>
+      <div class="mt-2 flex flex-wrap gap-2">
+        <button type="button" class="min-h-10 rounded-lg bg-primary px-3 py-2 text-on-primary" (click)="navigation.retry()">Try Again</button>
+        @if (failure.module) { <button type="button" class="min-h-10 rounded-lg bg-surface px-3 py-2 text-on-surface" (click)="reloadPage()">Reload App</button> }
+        <button type="button" class="min-h-10 rounded-lg px-3 py-2" (click)="navigation.dismiss()">Dismiss</button>
+      </div>
+      @if (failure.module) { <p class="mt-2 text-xs">Save any unsaved changes before reloading.</p> }
+    </section>
+  }
+  <section class="app-content" [attr.aria-busy]="navigation.loading()">
     <div class="page-transition">
       @if (account.accessible() && !sync.initialReady()) {
         <div class="mx-auto max-w-sm p-6 text-center" role="status" aria-live="polite">

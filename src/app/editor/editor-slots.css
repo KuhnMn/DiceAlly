@@ -1,0 +1,32 @@
+
+.spell-slot-editor .editor-input {
+  padding: .5rem .625rem;
+}
+.spell-slot-editor .field-label {
+  margin-bottom: .25rem;
+}
+.spell-slot-editor .stepper-button {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+.spell-slot-editor .slot-total-stepper {
+  grid-template-columns: 2rem 2.75rem 2rem;
+  gap: .25rem;
+  width: 7.25rem;
+}
+.spell-slot-editor .slot-total-stepper .stepper-button { width: 2rem; height: 2rem; }
+.spell-slot-editor .slot-total-stepper .editor-input {
+  padding: .25rem;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.slot-total-stepper input::-webkit-inner-spin-button,
+.slot-total-stepper input::-webkit-outer-spin-button {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+}
+.spell-slot-editor .editor-input.slot-recovery-select {
+  height: 2.25rem;
+  padding: .375rem .625rem;
+}

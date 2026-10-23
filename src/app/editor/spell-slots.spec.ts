@@ -10,7 +10,7 @@ import { By } from '@angular/platform-browser';
 import { FeatureSourcePickerComponent } from './feature-source-picker.component';
 
 describe('Spell Slots editor', () => {
-  beforeEach(() => TestBed.configureTestingModule({ imports: [SpellSlotsComponent, LocalEditorComponent], providers: [provideRouter([])] }));
+  beforeEach(async () => { await TestBed.configureTestingModule({ imports: [SpellSlotsComponent, LocalEditorComponent], providers: [provideRouter([])] }).compileComponents(); });
 
   it('keeps configured levels at one slot or more through buttons, typing and save validation', async () => {
     const fixture = TestBed.createComponent(SpellSlotsComponent);

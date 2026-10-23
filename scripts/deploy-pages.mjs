@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { retainReleaseAssets } from './retain-release-assets.mjs';
 import { runInNewContext } from 'node:vm';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -27,6 +28,19 @@ if (config.siteUrl !== `https://${domain}` && config.siteUrl !== `https://${doma
 }
 
 run('node_modules/@angular/cli/bin/ng.js', ['build', '--configuration=production', '--base-href=/', '--output-path=dist/dice-ally-pages']);
+// Old tabs still reference the previous release's hashed modules. Fetch before publishing;
+// a failed fetch aborts deployment instead of silently dropping compatibility assets.
+const fetch = spawnSync('git', ['fetch', '--depth=1', target, 'gh-pages'], { cwd: root, stdio: 'inherit' });
+if (fetch.status !== 0) throw new Error('Could not fetch the previous release assets. Deployment stopped.');
+const previous = arguments_ => {
+  const result = spawnSync('git', arguments_, { cwd: root, maxBuffer: 64 * 1024 * 1024 });
+  if (result.status !== 0) throw new Error('Could not read the previous release assets.');
+  return result.stdout;
+};
+const previousFiles = previous(['ls-tree', '-r', '--name-only', 'FETCH_HEAD']).toString('utf8').trim().split('\n');
+const retained = retainReleaseAssets(new URL(`../${output}/`, import.meta.url), previousFiles,
+  file => previous(['show', `FETCH_HEAD:${file}`]));
+console.log(`Retained ${retained} hashed assets from up to two previous releases for open tabs.`);
 // The source fallback targets the custom domain root, including builds published without this script.
 const redirect = readFileSync(new URL('../public/404.html', import.meta.url), 'utf8');
 writeFileSync(new URL(`../${output}/404.html`, import.meta.url), redirect);

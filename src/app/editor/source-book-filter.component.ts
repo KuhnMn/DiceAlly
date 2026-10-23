@@ -10,7 +10,7 @@ import { activeContentRevision } from './active-content-revision';
   selector: 'app-source-book-filter',
   imports: [UiIconComponent, FormsModule],
   templateUrl: './source-book-filter.component.html',
-  styleUrl: './editor.css',
+  styleUrls: ['./editor.css', './editor-selectors.css'],
 })
 export class SourceBookFilterComponent implements OnInit {
   readonly heading = input('Source Books');

@@ -1,0 +1,22 @@
+
+.note-entries {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-bottom: .25rem;
+  scrollbar-width: thin;
+}
+.note-entry { flex-shrink: 0; max-width: 16rem; }
+.note-entry-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.note-entry-remove {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  min-height: 1.5rem;
+}

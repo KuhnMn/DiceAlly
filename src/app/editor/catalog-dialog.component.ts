@@ -21,7 +21,7 @@ import { UiIconComponent } from '../ui-icon.component';
       <div class="catalog-footer"><ng-content select="[catalog-footer]" /></div>
     </section>
   `,
-  styleUrl: './editor.css',
+  styleUrls: ['./editor.css', './editor-feature-fields.css'],
   styles: [`
     .catalog-window { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
     :host { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 1rem; }

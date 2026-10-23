@@ -9,7 +9,7 @@ describe('Password reset feedback', () => {
   function setup() {
     const resetPassword = vi.fn< (email: string) => Promise<void> >();
     TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: AccountService, useValue: {
-      configured: true, accessible: signal(false), loading: signal(false), user: signal(null), approved: signal(false), error: signal(''), resetPassword,
+      configured: true, initializationFailed: signal(false), accessible: signal(false), loading: signal(false), user: signal(null), approved: signal(false), error: signal(''), resetPassword,
     } }] });
     const fixture = TestBed.createComponent(LoginComponent); fixture.detectChanges();
     const button = [...fixture.nativeElement.querySelectorAll('button')].find((b: any) => b.textContent.includes('Reset Password')) as HTMLButtonElement;

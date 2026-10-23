@@ -1,0 +1,32 @@
+
+.stat-stepper {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 2.75rem) 2.25rem;
+  gap: .5rem;
+  width: 8.25rem;
+  flex-shrink: 0;
+}
+.stat-stepper .editor-input {
+  width: 100%;
+  min-width: 0;
+  padding: .375rem .25rem;
+}
+.stat-stepper .stepper-button {
+  width: 100%;
+  height: 2.25rem;
+}
+.sense-list { display: grid; gap: .5rem; }
+@media (max-width: 639px) {
+  .sense-list { grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
+  .sense-card { padding: .375rem .5rem; gap: .375rem; font-size: .75rem; }
+  .sense-card .editor-input { width: 4rem !important; padding: .25rem; }
+  .sense-card .icon-button { min-width: 1.75rem; width: 1.75rem; min-height: 1.75rem; padding: .125rem; }
+  .sense-card > div { gap: .375rem; }
+}
+@media (max-width: 639px) {
+  .stepper-field {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .5rem;
+  }
+}

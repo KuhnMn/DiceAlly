@@ -1,0 +1,28 @@
+
+.advantage-entry .editor-input {
+  padding: .375rem .5rem;
+}
+.advantage-entry .field-label {
+  margin-bottom: .25rem;
+}
+.proficiency-layout {
+  column-gap: 1rem;
+}
+.proficiency-layout > .editor-card, .proficiency-sections > .editor-card {
+  break-inside: avoid;
+  margin-bottom: 1rem;
+}
+.proficiency-layout app-other-proficiencies, .proficiency-sections {
+  display: contents;
+}
+@media (min-width: 1024px) {
+  .proficiency-layout {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+  .proficiency-layout.masonry-ready {
+    grid-auto-rows: 1px;
+    grid-auto-flow: dense;
+  }
+}

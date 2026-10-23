@@ -1,3 +1,4 @@
+import { NavigationLoadingService } from './loading/navigation-loading.service';
 import { AppDialogComponent } from './app-dialog.component';
 import { AppDialogService } from './services/app-dialog.service';
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
@@ -21,6 +22,7 @@ import { UnsavedChangesGuard } from './guards/unsaved-changes.guard';
   host: { class: 'block min-w-0 w-full', '(window:beforeunload)': 'warnBeforeUnload($event)' }
 })
 export class App {
+  readonly navigation = inject(NavigationLoadingService);
   readonly account = inject(AccountService);
   readonly sync = inject(CharacterSyncService);
   private readonly router = inject(Router);
@@ -41,6 +43,7 @@ export class App {
       this.hadAccess = accessible;
     });
   }
+  reloadPage() { window.location.reload(); }
   async signOut() {
     if (this.signingOut()) return;
     const warning = this.sync.busy() || this.sync.pending() || this.sync.settings.busy() || this.sync.settings.pending()

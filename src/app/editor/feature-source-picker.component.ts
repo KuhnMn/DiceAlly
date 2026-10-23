@@ -13,7 +13,7 @@ import { SpellSourceCount } from './spell-selection';
 @Component({
   selector: 'app-feature-source-picker',
   imports: [HorizontalRowDirective, NgClass, SearchableSelectComponent, SourceStatsComponent, UiIconComponent],
-  styleUrl: './editor.css',
+  styleUrls: ['./editor.css', './editor-selectors.css'],
   template: `
     <div class="source-picker" [class.selector-panel]="!compact()" [class.mb-3]="mode() === 'cards'" [attr.data-tone]="tone()">
       @if (compact() && mode() === 'dropdown') {

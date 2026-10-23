@@ -1,5 +1,6 @@
 /* Tailwind v4 entry */
-@import 'tailwindcss';
+@import 'tailwindcss' source('./');
+@source not './**/*.spec.ts';
 @import '@angular/cdk/overlay-prebuilt.css';
 
 /* Register error colors so Tailwind also generates container and border utilities. */
@@ -11,16 +12,6 @@
 }
 
 /* Import Material Design theme colors */
-@import './Color Themes/light-mc.css';
-@import './Color Themes/dark-mc.css';
-@import './Color Themes/light-royal.css';
-@import './Color Themes/dark-royal.css';
-@import './Color Themes/light-ethereal.css';
-@import './Color Themes/dark-ethereal.css';
-@import './Color Themes/light-forge.css';
-@import './Color Themes/dark-forge.css';
-@import './Color Themes/light-glade.css';
-@import './Color Themes/dark-glade.css';
 
 /* Apply theme classes to root based on theme mode */
 :root {

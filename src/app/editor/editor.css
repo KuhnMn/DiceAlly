@@ -1,78 +1,6 @@
 :host {
   display: block;
 }
-/* Shared source-selection surface; individual selectors can override the accent. */
-.selector-panel {
-  --selector-tone: var(--selector-accent, var(--md-sys-color-secondary));
-  min-width: 0;
-  border: 1px solid color-mix(in srgb, var(--selector-tone) 25%, var(--md-sys-color-outline-variant));
-  border-inline-start: 3px solid var(--selector-tone);
-  border-radius: .5rem;
-  padding: .625rem;
-  background: color-mix(in srgb, var(--selector-tone) 7%, var(--md-sys-color-surface-container-low));
-}
-.selector-heading, .selector-arrow { color: var(--selector-tone); }
-.selector-summary { min-height: 1.5rem; }
-.selector-summary::-webkit-details-marker { display: none; }
-.selector-summary:focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 3px; }
-.selector-arrow { display: inline-block; }
-details[open] > .selector-summary .selector-arrow { transform: rotate(90deg); }
-@media (max-width: 639px) {
-  .selector-summary { min-height: 2.25rem; }
-}
-.advantage-entry .editor-input {
-  padding: .375rem .5rem;
-}
-.advantage-entry .field-label {
-  margin-bottom: .25rem;
-}
-.spell-slot-editor .editor-input {
-  padding: .5rem .625rem;
-}
-.spell-slot-editor .field-label {
-  margin-bottom: .25rem;
-}
-.spell-slot-editor .stepper-button {
-  width: 2.25rem;
-  height: 2.25rem;
-}
-.spell-slot-editor .slot-total-stepper {
-  grid-template-columns: 2rem 2.75rem 2rem;
-  gap: .25rem;
-  width: 7.25rem;
-}
-.spell-slot-editor .slot-total-stepper .stepper-button { width: 2rem; height: 2rem; }
-.spell-slot-editor .slot-total-stepper .editor-input {
-  padding: .25rem;
-  appearance: textfield;
-  -moz-appearance: textfield;
-}
-.slot-total-stepper input::-webkit-inner-spin-button,
-.slot-total-stepper input::-webkit-outer-spin-button {
-  appearance: none;
-  -webkit-appearance: none;
-  margin: 0;
-}
-.editor-input.compact-select,
-.spell-slot-editor .editor-input.slot-recovery-select {
-  height: 2.25rem;
-  padding: .375rem .625rem;
-}
-.feature-editor .editor-input {
-  padding: .375rem .5rem;
-}
-.feature-editor .field-label {
-  margin-bottom: .25rem;
-}
-.feature-editor .feature-section {
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: .5rem;
-  padding: .625rem;
-  background: var(--md-sys-color-surface-container-high);
-}
-.feature-editor .note-group {
-  background: var(--md-sys-color-surface-container-lowest);
-}
 .editor-card {
   border: 2px solid var(--md-sys-color-outline-variant);
   border-radius: .5rem;
@@ -86,10 +14,6 @@ details[open] > .selector-summary .selector-arrow { transform: rotate(90deg); }
   margin-bottom: 1rem;
 }
 .editor-card h3 {
-  font-size: .875rem;
-  color: var(--md-sys-color-secondary);
-}
-.feature-section h3 {
   font-size: .875rem;
   color: var(--md-sys-color-secondary);
 }
@@ -109,6 +33,10 @@ details[open] > .selector-summary .selector-arrow { transform: rotate(90deg); }
   font-size: .875rem;
   color: var(--md-sys-color-on-surface);
   background: var(--md-sys-color-surface);
+}
+.editor-input.compact-select {
+  height: 2.25rem;
+  padding: .375rem .625rem;
 }
 .editor-input:focus-visible, button:focus-visible, a:focus-visible {
   outline: 2px solid var(--md-sys-color-primary);
@@ -167,73 +95,20 @@ details[open] > .selector-summary .selector-arrow { transform: rotate(90deg); }
 }
 button {
   cursor: pointer;
-} button:disabled { opacity: .5; cursor: default; }
+}
+button:disabled { opacity: .5; cursor: default; }
 input[type=checkbox] {
   width: 1.2rem;
   height: 1.2rem;
   accent-color: var(--md-sys-color-primary);
 }
-.spell-filter-chip {
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: 9999px;
-  padding: .25rem .625rem;
-  font-size: .75rem;
-  background: var(--md-sys-color-surface-container);
-  color: var(--md-sys-color-on-surface);
-}
-.spell-filter-chip:hover {
-  background: var(--md-sys-color-surface-container-high);
-}
-.spell-filter-chip.spell-filter-active {
-  border-color: var(--md-sys-color-secondary);
-  background: var(--md-sys-color-secondary-container);
-  color: var(--md-sys-color-on-secondary-container);
-}
-.proficiency-layout {
-  column-gap: 1rem;
-}
-.proficiency-layout > .editor-card, .proficiency-sections > .editor-card {
-  break-inside: avoid;
-  margin-bottom: 1rem;
-}
-.proficiency-layout app-other-proficiencies, .proficiency-sections {
-  display: contents;
-}
-@media (min-width: 1024px) {
-  .proficiency-layout {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-  }
-  .proficiency-layout.masonry-ready {
-    grid-auto-rows: 1px;
-    grid-auto-flow: dense;
-  }
-}
 .editor-card {
   min-width: 0;
   overflow-wrap: anywhere;
 }
-.stat-stepper {
-  display: grid;
-  grid-template-columns: 2.25rem minmax(0, 2.75rem) 2.25rem;
-  gap: .5rem;
-  width: 8.25rem;
-  flex-shrink: 0;
-}
-.stat-stepper .editor-input {
-  width: 100%;
-  min-width: 0;
-  padding: .375rem .25rem;
-}
-.stat-stepper .stepper-button {
-  width: 100%;
-  height: 2.25rem;
-}
 input[type=checkbox] {
   flex-shrink: 0;
 }
-/* Shared control sizes keep catalogs, annotations and wizard actions consistent. */
 .compact-button {
   min-height: 2rem;
   padding: .25rem .5rem;
@@ -250,65 +125,7 @@ input[type=checkbox] {
   padding: .25rem;
   flex-shrink: 0;
 }
-.editor-filter {
-  min-height: 2rem;
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: 9999px;
-  padding: .25rem .75rem;
-  font-size: .875rem;
-  background: var(--md-sys-color-surface-container);
-}
-.editor-filter:hover {
-  background: var(--md-sys-color-surface-container-high);
-}
-.editor-filter[aria-pressed=true] {
-  background: var(--md-sys-color-secondary-container);
-  color: var(--md-sys-color-on-secondary-container);
-  border-color: var(--md-sys-color-secondary);
-}
-.entry-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: .5rem;
-}
-.entry-header > button:first-child {
-  flex: 0 0 100%;
-  width: 100%;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.entry-header > button:not(:first-child) {
-  flex-shrink: 0;
-}
-.note-entries {
-  display: flex;
-  align-items: center;
-  gap: .25rem;
-  min-width: 0;
-  max-width: 100%;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  padding-bottom: .25rem;
-  scrollbar-width: thin;
-}
-.note-entry { flex-shrink: 0; max-width: 16rem; }
-.note-entry-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.note-entry-remove {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  min-height: 1.5rem;
-}
-.sense-list { display: grid; gap: .5rem; }
 @media (max-width: 639px) {
-  .sense-list { grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
-  .sense-card { padding: .375rem .5rem; gap: .375rem; font-size: .75rem; }
-  .sense-card .editor-input { width: 4rem !important; padding: .25rem; }
-  .sense-card .icon-button { min-width: 1.75rem; width: 1.75rem; min-height: 1.75rem; padding: .125rem; }
-  .sense-card > div { gap: .375rem; }
   .editor-card {
     padding: .75rem;
   }
@@ -326,12 +143,5 @@ input[type=checkbox] {
 @media (prefers-reduced-motion: reduce) {
   button {
     transition: none;
-  }
-}
-@media (max-width: 639px) {
-  .stepper-field {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: .5rem;
   }
 }

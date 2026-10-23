@@ -1,7 +1,6 @@
 import { Injectable, OnDestroy, inject, signal } from '@angular/core';
 import { normalizeCharacterEditorIdentity } from '../editor/editor-identity';
 import { characterDescription } from '../character-description';
-import { migrateLegacyCharacterExport } from './legacy-character-import';
 import { CHARACTER_REPOSITORY, CharacterRecord } from './character-repository';
 import { ExportedCharacter } from '../models/character.model';
 import { APP_RUNTIME_CONFIG } from '../app.tokens';
@@ -133,7 +132,9 @@ export class CharacterLibraryService implements OnDestroy {
         error: { code: 'IMPORT_CONFLICT', message: `Character "${existing.sheet.character?.name}" with ID ${id} already exists.` },
       };
       if (existing && sheet.portaitUrl == null) sheet.portaitUrl = existing.sheet.portaitUrl;
-      const imported = convertLegacy ? await migrateLegacyCharacterExport(sheet) : sheet;
+      const imported = convertLegacy
+        ? await (await import('./legacy-character-import')).migrateLegacyCharacterExport(sheet)
+        : sheet;
       await this.repository.save(normalizeCharacterEditorIdentity(imported), existing?.version ?? 0);
       this.notify(); return { success: true, characterId: id };
     } catch (error) {

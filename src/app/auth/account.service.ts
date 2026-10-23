@@ -1,13 +1,16 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { initializeApp } from 'firebase/app';
-import { Auth, User, getAuth, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import type { User } from 'firebase/auth';
+import type { FirebaseAuthClient } from './firebase-auth';
+import { AUTH_CLIENT_LOADER } from './auth-client-loader';
 import { APP_RUNTIME_CONFIG } from '../app.tokens';
 
 /** Authentication identifies a user; the database independently decides whether they are approved. */
 @Injectable({ providedIn: 'root' })
 export class AccountService {
   private readonly config = inject(APP_RUNTIME_CONFIG).firebase;
-  private auth?: Auth;
+  private auth?: FirebaseAuthClient;
+  private readonly loadAuth = inject(AUTH_CLIENT_LOADER);
+  readonly initializationFailed = signal(false);
   readonly user = signal<User | null>(null);
   readonly approved = signal(false);
   readonly loading = signal(true);
@@ -22,17 +25,27 @@ export class AccountService {
       this.ready = Promise.resolve();
       return;
     }
-    this.auth = getAuth(initializeApp(this.config));
-    this.ready = new Promise(resolve => {
-      onAuthStateChanged(this.auth!, async user => {
-        this.loading.set(true);
-        this.approved.set(false);
-        this.user.set(user);
-        this.error.set('');
-        await this.checkApproval();
-        resolve();
+    this.ready = this.initialize();
+  }
+
+  private async initialize(): Promise<void> {
+    try {
+      this.auth = await this.loadAuth(this.config!);
+      await new Promise<void>(resolve => {
+        this.auth!.observe(async user => {
+          this.loading.set(true);
+          this.approved.set(false);
+          this.user.set(user);
+          this.error.set('');
+          await this.checkApproval();
+          resolve();
+        });
       });
-    });
+    } catch {
+      this.initializationFailed.set(true);
+      this.error.set('Sign-in could not be loaded. Check your connection and reload the app to try again.');
+      this.loading.set(false);
+    }
   }
 
   /** Recheck after an administrator changes membership, without requiring another sign-in. */
@@ -66,15 +79,17 @@ export class AccountService {
   }
 
   async signIn(email: string, password: string) {
-    if (!this.auth) throw new Error('Firebase is not configured.');
-    await signInWithEmailAndPassword(this.auth, email.trim(), password);
+    await this.ready;
+    if (!this.auth) throw new Error(this.error() || 'Firebase is not configured.');
+    await this.auth.signIn(email.trim(), password);
   }
   async resetPassword(email: string) {
-    if (!this.auth) throw new Error('Firebase is not configured.');
-    await sendPasswordResetEmail(this.auth, email.trim());
+    await this.ready;
+    if (!this.auth) throw new Error(this.error() || 'Firebase is not configured.');
+    await this.auth.resetPassword(email.trim());
   }
   async signOut() {
-    if (this.auth) await signOut(this.auth);
+    if (this.auth) await this.auth.signOut();
     this.approved.set(false);
     this.user.set(null);
     this.loading.set(false);

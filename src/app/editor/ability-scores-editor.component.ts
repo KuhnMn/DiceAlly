@@ -7,7 +7,7 @@ import { AbilityScoresEditorModel } from './ability-scores-editor-model';
   selector: 'app-editor-ability-scores',
   imports: [FormsModule, UiIconComponent],
   templateUrl: './ability-scores-editor.component.html',
-  styleUrl: './editor.css',
+  styleUrls: ['./editor.css', './editor-steppers.css'],
   host: { class: 'block min-w-0 space-y-4' },
   // Keep the controls in the shell's form, including validation and submit behavior.
   viewProviders: [{ provide: ControlContainer, useExisting: NgForm }],

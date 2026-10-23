@@ -17,7 +17,7 @@ import { SOURCE_ABILITY_STATE_LABELS, cycleSourceAbility, editableSourceAbilitie
 
 @Component({
   selector: 'app-other-proficiencies', imports: [InfoButtonComponent, UiIconComponent, FormsModule, RouterLink, SearchableSelectComponent, EntryRendererComponent],
-  templateUrl: './other-proficiencies.component.html', styleUrl: './editor.css',
+  templateUrl: './other-proficiencies.component.html', styleUrls: ['./editor.css', './editor-proficiencies.css'],
   styles: [`
     .source-editor { container-type: inline-size; }
     .source-editor .editor-input { min-width: 0; padding: .375rem .5rem; }

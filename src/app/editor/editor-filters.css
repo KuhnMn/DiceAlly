@@ -1,0 +1,18 @@
+
+.editor-filter {
+  min-height: 2rem;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 9999px;
+  padding: .25rem .75rem;
+  font-size: .875rem;
+  background: var(--md-sys-color-surface-container);
+}
+.editor-filter:hover {
+  background: var(--md-sys-color-surface-container-high);
+}
+.editor-filter[aria-pressed=true] {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  border-color: var(--md-sys-color-secondary);
+}
+@media (max-width: 639px) { .editor-filter { min-height: 2.25rem; } }

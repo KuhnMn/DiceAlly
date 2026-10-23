@@ -10,7 +10,7 @@ import { FeatureSourcePickerComponent } from './feature-source-picker.component'
 
 @Component({
   selector: 'app-editor-spell-slots', imports: [InfoButtonComponent, RecoveryIndicatorComponent, UiIconComponent, FormsModule, FeatureSourcePickerComponent],
-  templateUrl: './spell-slots.component.html', styleUrl: './editor.css',
+  templateUrl: './spell-slots.component.html', styleUrls: ['./editor.css', './editor-slots.css', './editor-steppers.css'],
 })
 export class SpellSlotsComponent {
   readonly sheet = input.required<ExportedCharacter>();

@@ -32,7 +32,7 @@ import { HorizontalRowDirective } from '../sheet/horizontal-row.directive';
   providers: [EditorCombatIndex],
   selector: 'app-editor-monsters',
   imports: [HorizontalRowDirective, CompanionStatBlockComponent, EditorEntryRowComponent, CatalogResultRowComponent, ListControlsComponent, EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, RemoveEntryDialogComponent, EntryAnnotationsComponent, SourceBookFilterComponent],
-  templateUrl: './monsters-editor.component.html', styleUrl: './editor.css',
+  templateUrl: './monsters-editor.component.html', styleUrls: ['./editor.css', './editor-feature-fields.css', './editor-filters.css'],
 })
 export class MonstersEditorComponent implements OnInit, OnDestroy, DoCheck {
   catalogHp(record: ContentRecord): number | string {

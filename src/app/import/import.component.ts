@@ -291,7 +291,6 @@ export class ImportComponent {
           this.openingCharacter.set({ id: segments[1].path, editing: segments[2]?.path === 'edit' });
         }
       } else if (event instanceof NavigationEnd || event instanceof NavigationCancel || event instanceof NavigationError || event instanceof NavigationSkipped) {
-        if (event instanceof NavigationError) this.library.error.set(String(event.error));
         this.openingCharacter.set(null);
       }
     });

@@ -36,7 +36,7 @@ import { FEATURE_TYPES, FeatureType, classFeatureKey, createFeatureEntry, featur
 @Component({
   providers: [EditorCombatIndex],
   selector: 'app-editor-features', imports: [PrerequisiteDetailsComponent, EditorEntryRowComponent, FeatureFiltersComponent, HorizontalRowDirective, CatalogResultRowComponent, ListControlsComponent, EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
-  templateUrl: './features-editor.component.html', styleUrl: './editor.css',
+  templateUrl: './features-editor.component.html', styleUrls: ['./editor.css', './editor-feature-fields.css', './editor-filters.css'],
 })
 export class FeaturesEditorComponent implements OnInit, OnDestroy, DoCheck {
   readonly catalogEntries = contentEntries;

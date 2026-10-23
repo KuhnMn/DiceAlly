@@ -16,6 +16,8 @@ import { passwordResetErrorMessage, signInErrorMessage } from './auth-error';
         <p role="alert">Firebase is not configured. Set the environment variables and restart the app.</p>
       } @else if (account.loading()) {
         <p role="status">Checking account…</p>
+      } @else if (account.initializationFailed()) {
+        <button type="button" class="min-h-10 rounded-lg px-4 py-2 bg-primary text-on-primary" (click)="reload()">Reload App</button>
       } @else if (account.user()) {
         <p>{{ account.user()?.email }}</p>
         @if (!account.approved()) {
@@ -55,6 +57,7 @@ export class LoginComponent {
   readonly message = signal('');
   email = '';
   password = '';
+  reload() { window.location.reload(); }
   open() { void this.router.navigateByUrl('/'); }
   async submit() {
     this.busy.set(true);

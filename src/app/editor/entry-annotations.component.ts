@@ -9,7 +9,7 @@ import { HorizontalRowDirective } from '../sheet/horizontal-row.directive';
   selector: 'app-entry-annotations-editor',
   imports: [HorizontalRowDirective, RecoveryIndicatorComponent, UiIconComponent, FormsModule],
   templateUrl: './entry-annotations.component.html',
-  styleUrl: './editor.css',
+  styleUrls: ['./editor.css', './editor-annotations.css'],
   host: { class: 'block min-w-0' },
   styles: [`
     .annotation-panel { border: 1px solid var(--md-sys-color-outline-variant); border-radius: .5rem; padding: .5rem; margin-top: .5rem; }

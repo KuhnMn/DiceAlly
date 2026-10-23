@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { TestBed } from '@angular/core/testing';
+import { DeferBlockBehavior, DeferBlockState, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { LocalEditorComponent } from './local-editor.component';
 import { IndexedDbCharacterRepository } from '../characters/indexeddb-character-repository';
@@ -11,7 +11,28 @@ import { NgForm } from '@angular/forms';
 import { walkingSpeedFeet, walkingSpeedEntry } from '../models/character-speed';
 
 describe('Basic Info editor', () => {
-  beforeEach(() => TestBed.configureTestingModule({ imports: [LocalEditorComponent], providers: [provideRouter([])] }));
+  beforeEach(async () => { await TestBed.configureTestingModule({ imports: [LocalEditorComponent], providers: [provideRouter([])] }).compileComponents(); });
+
+  it('keeps the editor draft available when the deferred wizard cannot download', async () => {
+    TestBed.configureTestingModule({ deferBlockBehavior: DeferBlockBehavior.Manual });
+    const fixture = TestBed.createComponent(LocalEditorComponent);
+    await fixture.whenStable();
+    const editor = fixture.componentInstance;
+    editor.character.name = 'Keep this draft';
+    editor.wizardOpen = true;
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    const [wizard] = await fixture.getDeferBlocks();
+    await wizard.render(DeferBlockState.Loading);
+    expect(fixture.nativeElement.textContent).toContain('Loading Class Wizard');
+    await wizard.render(DeferBlockState.Error);
+    expect(fixture.nativeElement.textContent).toContain('Save your changes');
+    expect(editor.character.name).toBe('Keep this draft');
+    const dismiss = [...fixture.nativeElement.querySelectorAll('button')].find((button: unknown) => (button as HTMLButtonElement).textContent?.trim() === 'Dismiss') as HTMLButtonElement;
+    dismiss.click(); await fixture.whenStable();
+    expect(editor.wizardOpen).toBe(false);
+    expect(editor.character.name).toBe('Keep this draft');
+  });
 
   it('saves manual walking references, conditions and hover without a species-copy button', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
