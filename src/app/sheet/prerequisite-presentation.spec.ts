@@ -28,6 +28,16 @@ describe('Prerequisite reference display', () => {
     expect(result.notes).toEqual(['Ask your DM.']);
   });
 
+  it('renders Bastion focus, expertise and membership requirements with cumulative and alternative semantics', () => {
+    expect(preparePrerequisites([{ spellcastingFocus: ['arcane', 'tool'] }]).detailText)
+      .toBe('Ability to use an Arcane Focus as a Spellcasting Focus OR Ability to use a Tool as a Spellcasting Focus');
+    expect(preparePrerequisites([{ spellcastingFocus: true }]).detailText).toBe('Ability to use a Spellcasting Focus');
+    expect(preparePrerequisites([{ spellcastingFocus: ['artisansTool'] }]).detailText).toContain('Artisan’s Tools');
+    expect(preparePrerequisites([{ expertise: [{ skill: true }] }]).detailText).toBe('Expertise in a skill');
+    expect(preparePrerequisites([{ membership: ['Horizon Weavers'], spellcastingFocus: ['arcane', 'holy'] }]).detailText)
+      .toBe('Member of: Horizon Weavers AND (Ability to use an Arcane Focus as a Spellcasting Focus OR Ability to use a Holy Symbol as a Spellcasting Focus)');
+  });
+
   it('keeps historical spell/level representations readable and leaves unconstrained options empty', () => {
     expect(preparePrerequisites([{ level: { type: 'simple', level: 4 }, spell: [{ type: 'simple', spellName: 'hex' }] }]).detailText).toBe('Level 4+ AND Hex spell');
     expect(preparePrerequisites([]).expression).toBeNull();

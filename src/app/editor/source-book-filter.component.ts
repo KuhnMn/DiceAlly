@@ -1,6 +1,6 @@
 import { rankSearchResults } from '../search-ranking';
 import { UiIconComponent } from '../ui-icon.component';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { IndexedDbContentCache } from '../content/content-cache';
 import { SourceBookFilterService } from './source-book-filter.service';
@@ -13,6 +13,8 @@ import { activeContentRevision } from './active-content-revision';
   styleUrl: './editor.css',
 })
 export class SourceBookFilterComponent implements OnInit {
+  readonly heading = input('Source Books');
+  readonly description = input('Filter the creator’s classes, species, features, spells and tools by book. These books also become the default filters in the compendium. No selection includes all books. Already added entries stay visible.');
   readonly filter = inject(SourceBookFilterService);
   readonly books = signal<string[]>([]);
   readonly loading = signal(false);

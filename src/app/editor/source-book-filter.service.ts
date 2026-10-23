@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 
 const STORAGE_KEY = 'ally-creator-source-books';
 
-/** A browsing preference shared by every creator catalog, independent of the sheet. */
+/** A browsing preference shared by creator catalogs and compendium defaults, independent of the sheet. */
 @Injectable({ providedIn: 'root' })
 export class SourceBookFilterService {
   readonly selected = signal<string[]>(this.readSelection());

@@ -1,0 +1,145 @@
+<main class="mx-auto max-w-7xl p-2 text-on-surface sm:p-5">
+  <app-library-navigation />
+  <header class="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div class="min-w-0">
+      <a [routerLink]="type() || invalidType() ? '/compendium' : '/'" class="inline-flex min-h-11 items-center gap-1 text-sm text-primary">
+        <app-ui-icon name="left" /> {{ type() || invalidType() ? 'All Categories' : 'Characters' }}
+      </a>
+      <h1 class="text-2xl font-bold sm:text-3xl">{{ type()?.label || 'Compendium' }}</h1>
+      <p class="mt-1 text-sm text-on-surface-variant">{{ type() ? 'Browse your installed library. Select an entry to read its details.' : 'Choose the kind of content you want to explore.' }}</p>
+    </div>
+    <div class="flex items-center gap-2 text-sm">
+      <button type="button" (click)="reload()" [disabled]="loading()" class="compendium-button" aria-label="Refresh compendium"><app-ui-icon name="reset" /><span class="hidden sm:inline">Refresh</span></button>
+      <a routerLink="/content" class="compendium-button"><app-ui-icon name="book" /> Manage Game Data</a>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div role="alert" class="mb-4 rounded-xl border border-outline-variant bg-surface-container p-4">
+      <p>{{ error() }}</p><button type="button" (click)="reload()" class="compendium-button mt-2">Try Again</button>
+    </div>
+  }
+  @if (invalidType()) {
+    <section class="rounded-xl bg-surface-container p-5"><h2 class="font-semibold">Category Not Found</h2><a routerLink="/compendium" class="inline-flex min-h-11 items-center text-primary underline">Choose a Category</a></section>
+  } @else if (!revision() && !loading() && !error()) {
+    <section class="rounded-xl border border-outline-variant bg-surface-container p-5">
+      <app-ui-icon name="book" class="text-2xl text-primary" />
+      <h2 class="mt-2 text-xl font-semibold">Your Compendium Is Empty</h2>
+      <p class="mt-2 text-sm text-on-surface-variant">Import game data or homebrew to browse it here. No content is downloaded automatically.</p>
+      <a routerLink="/content" class="compendium-button mt-4">Import Game Data</a>
+    </section>
+  } @else if (!type()) {
+    @if (loading()) { <p role="status" class="mb-3 text-sm">Reading your library…</p> }
+    <app-source-book-filter heading="Default Source Books" description="Shared with the character creator. Each compendium list starts with these books. Changes inside a list apply only to that screen and its subviews. No selection includes all books." />
+    <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4" aria-label="Compendium categories">
+      @for (category of types; track category.id) {
+        <a [routerLink]="['/compendium', category.id]" class="category-card">
+          <app-ui-icon [name]="category.icon" class="text-2xl text-primary" />
+          <h2 class="mt-3 font-semibold">{{ category.label }}</h2>
+          <p class="mt-1 text-xs text-on-surface-variant">{{ loading() ? 'Loading…' : count(category) + (count(category) === 1 ? ' entry' : ' entries') }}</p>
+        </a>
+      }
+    </div>
+    <p class="mt-4 text-xs text-on-surface-variant">Category counts include the entire active library and installed homebrew. Lists start with your default Source Books.</p>
+  } @else if (revision()) {
+    <app-list-controls [label]="'Search ' + type()!.label.toLowerCase()" searchName="compendium-search"
+      [(query)]="query" (queryChange)="scheduleSearch()" [filterCount]="filterCount" [disabled]="loading() && !facets().length" (cleared)="clearFilters()">
+      <div class="grid items-start gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        @for (facet of facets(); track facet.key) {
+          @if (facet.key === 'source') {
+            <app-compendium-source-filter [books]="facet.values" [selected]="filters.source || []" (selectedChange)="setSources($event)" [defaults]="sourceDefaults.selected()" />
+          } @else {
+          <details class="min-w-0 rounded-lg border border-outline-variant bg-surface-container">
+            <summary class="flex min-h-11 cursor-pointer items-center justify-between gap-2 px-3 text-sm font-semibold">
+              <span>{{ facet.label }}</span><span class="inline-flex items-center gap-1 text-xs text-primary">{{ filters[facet.key]?.length || '' }} <app-ui-icon name="chevron-down" /></span>
+            </summary>
+            <div class="max-h-52 overflow-y-auto border-t border-outline-variant p-1" role="group" [attr.aria-label]="facet.label">
+              @for (value of facet.values; track value) {
+                <label class="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 text-sm hover:bg-surface-container-high">
+                  <input type="checkbox" class="h-4 w-4 shrink-0 accent-[var(--md-sys-color-primary)]" [checked]="!!filters[facet.key]?.includes(value)" (change)="toggle(facet.key, value)" />
+                  <span class="[overflow-wrap:anywhere]">{{ facetLabel(facet.key, value) }}</span>
+                </label>
+              }
+            </div>
+          </details>
+          }
+        }
+      </div>
+      @if (type()?.id === 'spell') {
+        <app-spell-effect-filter [selected]="effects" (selectedChange)="effects = $event; scheduleSearch()" />
+      }
+      <p class="mt-2 text-xs text-on-surface-variant">Matches any selection in each filter; combines different filters. Prerequisites are reference information, not a character eligibility check.</p>
+    </app-list-controls>
+    @if (query || filterCount) {
+      <div class="mb-3 flex flex-wrap gap-1" aria-label="Active filters">
+        @if (query) { <button type="button" class="filter-chip" (click)="removeQuery()" [attr.aria-label]="'Remove search ' + query">Search: {{ query }} <app-ui-icon name="close" /></button> }
+        @for (facet of facets(); track facet.key) {
+          @for (value of filters[facet.key] || []; track value) {
+            <button type="button" class="filter-chip" (click)="toggle(facet.key, value)" [attr.aria-label]="'Remove ' + facet.label + ' ' + facetLabel(facet.key, value)">{{ facet.label }}: {{ facetLabel(facet.key, value) }} <app-ui-icon name="close" /></button>
+          }
+        }
+      </div>
+    }
+    <div class="mb-2 flex items-center justify-between gap-2 text-sm" role="status" aria-live="polite">
+      <p>{{ loading() ? 'Searching…' : total() + (total() === 1 ? ' entry' : ' entries') }}</p>
+      <label class="flex items-center gap-2 text-xs">Sort
+        <select class="min-h-11 rounded-lg border border-outline-variant bg-surface-container px-2 text-on-surface" [value]="sort" (change)="sort = $any($event.target).value; scheduleSearch()">
+          <option value="name">Name</option><option value="source">Source Book</option>
+          @if (type()?.id === 'spell' || type()?.id === 'feature') { <option value="level">Level</option> }
+        </select>
+      </label>
+    </div>
+    <div class="compendium-layout">
+      <section aria-label="Compendium results" [attr.aria-busy]="loading()" class="min-w-0">
+        <div class="overflow-hidden rounded-xl border border-outline-variant bg-surface-container">
+          @for (entry of results(); track entry.key) {
+            <button type="button" class="result-row" [class.selected]="selected()?.key === entry.key" [attr.aria-pressed]="selected()?.key === entry.key" [disabled]="loading()" (click)="openDetails(entry)">
+              <div class="min-w-0 flex-1">
+                <h2 class="font-semibold [overflow-wrap:anywhere]">{{ entry.name }}</h2>
+                <p class="mt-0.5 text-xs text-on-surface-variant">{{ kindLabel(entry.kind) }} · {{ entry.publication }}@if (entry.file.startsWith('homebrew/')) { · Homebrew }</p>
+                @if (summary(entry); as text) { <p class="mt-1 text-xs text-on-surface-variant [overflow-wrap:anywhere]">{{ text }}</p> }
+                @if (speciesBadges(entry).length) {
+                  <div class="mt-2 flex flex-wrap gap-1">
+                    @for (badge of speciesBadges(entry); track badge) { <span class="rounded-md bg-secondary-container px-2 py-1 text-xs text-on-secondary-container">{{ badge }}</span> }
+                  </div>
+                }
+              </div>
+              <app-ui-icon name="chevron" class="shrink-0 text-primary" />
+            </button>
+          } @empty {
+            @if (!loading() && !error()) {
+              <div class="p-5"><h2 class="font-semibold">{{ count(type()!) ? 'No Matching Entries' : 'No Entries in This Category' }}</h2>
+                <p class="mt-2 text-sm text-on-surface-variant">{{ count(type()!) ? 'Try another search or remove some filters.' : 'Import more game data to populate this category.' }}</p>
+                @if (query || filterCount) { <button type="button" (click)="clearFilters()" class="compendium-button mt-3">Clear Search & Filters</button> }
+              </div>
+            }
+          }
+        </div>
+        <nav class="mt-3 flex items-center justify-between gap-3" aria-label="Compendium pagination">
+          <button type="button" class="compendium-button" [disabled]="loading() || offset === 0" (click)="turnPage(-1)"><app-ui-icon name="left" /> Previous</button>
+          <span class="text-xs text-on-surface-variant">{{ total() ? offset + 1 : 0 }}–{{ offset + results().length }} of {{ total() }}</span>
+          <button type="button" class="compendium-button" [disabled]="loading() || offset + pageSize >= total()" (click)="turnPage(1)">Next <app-ui-icon name="right" /></button>
+        </nav>
+      </section>
+      <aside class="desktop-details" aria-label="Entry details">
+        @if (!mobile() && selected(); as entry) {
+          <header class="mb-3 flex items-start justify-between gap-2"><h2 class="text-xl font-bold [overflow-wrap:anywhere]">{{ entry.name }}</h2><button type="button" (click)="closeDetails()" class="compendium-button" aria-label="Close entry details"><app-ui-icon name="close" /></button></header>
+          <app-compendium-details [record]="entry" [revision]="revision()!" [related]="related()" [itemView]="itemView()" (opened)="openDetails($event)" />
+          @if (detailLoading()) { <p role="status" class="mt-3 text-sm">Loading related entries…</p> }
+          @if (detailError()) { <p role="alert" class="mt-3 text-sm">{{ detailError() }}</p> }
+        } @else {
+          <div class="py-10 text-center text-on-surface-variant"><app-ui-icon name="book" class="text-3xl" /><p class="mt-3">Select an entry to read its details.</p></div>
+        }
+      </aside>
+    </div>
+    @if (mobile() && selected(); as entry) {
+      <div class="mobile-details">
+        <app-sheet-detail-dialog [title]="entry.name" (closed)="closeDetails()">
+          <app-compendium-details [record]="entry" [revision]="revision()!" [related]="related()" [itemView]="itemView()" (opened)="openDetails($event)" />
+          @if (detailLoading()) { <p role="status" class="mt-3 text-sm">Loading related entries…</p> }
+          @if (detailError()) { <p role="alert" class="mt-3 text-sm">{{ detailError() }}</p> }
+        </app-sheet-detail-dialog>
+      </div>
+    }
+  }
+</main>

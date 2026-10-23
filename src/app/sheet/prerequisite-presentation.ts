@@ -13,6 +13,10 @@ export interface PreparedPrerequisites {
 }
 
 const ABILITIES = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' } as const;
+const SPELLCASTING_FOCI: Record<string, string> = {
+  arcane: 'an Arcane Focus', druid: 'a Druidic Focus', holy: 'a Holy Symbol',
+  tool: 'a Tool', artisansTool: "Artisan’s Tools",
+};
 const title = (value: string) => value.replace(/\b\w/g, letter => letter.toUpperCase());
 const referenceName = (value: string) => title(value.split('#')[0].split('|')[0]);
 const leaf = (text: string, summaryText = text): PrerequisiteExpression => ({ kind: 'requirement', text, summaryText });
@@ -71,6 +75,8 @@ export function preparePrerequisites(prerequisites: readonly Prerequisite[] | nu
     any(prerequisite.background?.map(background => background.displayEntry ?? title(background.name)) ?? [], 'Background: ');
     any(prerequisite.item ?? [], 'Item: ');
     any(prerequisite.campaign ?? [], 'Campaign: ');
+    any(prerequisite.membership ?? [], 'Member of: ');
+    if (prerequisite.expertise?.some(expertise => expertise.skill)) add('Expertise in a skill');
     if (prerequisite.pact) add(`Pact of the ${prerequisite.pact}`);
     if (prerequisite.patron) add(`Patron: ${prerequisite.patron}`);
     if (prerequisite.spell?.length) requirements.push(group('anyOf', prerequisite.spell.map(spell => {
@@ -84,6 +90,9 @@ export function preparePrerequisites(prerequisites: readonly Prerequisite[] | nu
       const text = 'entry' in spell && typeof spell.entry === 'string' ? spell.entry : summary ?? 'Unspecified spell requirement';
       return leaf(text, summary ?? text);
     })));
+    if (prerequisite.spellcastingFocus === true) add('Ability to use a Spellcasting Focus');
+    else if (Array.isArray(prerequisite.spellcastingFocus)) any(prerequisite.spellcastingFocus.map(focus =>
+      `Ability to use ${SPELLCASTING_FOCI[focus] ?? title(focus)} as a Spellcasting Focus`));
     if (prerequisite.spellcasting) add('Ability to cast at least one spell');
     if (prerequisite.spellcasting2020) requirements.push(group('anyOf', [leaf('Spellcasting feature'), leaf('Pact Magic feature')]));
     if (prerequisite.spellcastingFeature) add('Spellcasting feature');
@@ -94,7 +103,7 @@ export function preparePrerequisites(prerequisites: readonly Prerequisite[] | nu
     if (prerequisite.other) add(prerequisite.other);
     if (prerequisite.otherSummary) add(prerequisite.otherSummary.entry ?? prerequisite.otherSummary.entrySummary, prerequisite.otherSummary.entrySummary);
     if (prerequisite.note) notes.push(prerequisite.note);
-    const handled = new Set(['level', 'ability', 'proficiency', 'feat', 'optionalfeature', 'feature', 'race', 'background', 'item', 'campaign', 'pact', 'patron', 'spell', 'spellcasting', 'spellcasting2020', 'spellcastingFeature', 'spellcastingPrepared', 'featCategory', 'exclusiveFeatCategory', 'other', 'otherSummary', 'note']);
+    const handled = new Set(['level', 'ability', 'proficiency', 'feat', 'optionalfeature', 'feature', 'race', 'background', 'item', 'campaign', 'pact', 'patron', 'spell', 'spellcasting', 'spellcasting2020', 'spellcastingFeature', 'spellcastingPrepared', 'featCategory', 'exclusiveFeatCategory', 'other', 'otherSummary', 'note', 'spellcastingFocus', 'membership', 'expertise']);
     for (const [key, value] of Object.entries(prerequisite)) if (value !== undefined && !handled.has(key)) add(`Additional requirement (${key}): ${JSON.stringify(value)}`);
     return requirements;
   });

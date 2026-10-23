@@ -1,0 +1,69 @@
+<section aria-label="Class progression and resources">
+  <header class="mb-3 flex flex-wrap items-center justify-between gap-3">
+    <div><h2 class="text-lg font-semibold">Progression & Resources</h2><p class="mt-1 text-xs text-on-surface-variant">Class and selected subclass values are shown separately.</p></div>
+    <label class="flex min-h-11 items-center gap-2 text-sm">Preview Level
+      <select [value]="selectedLevel()" (change)="levelChanged($any($event.target).value)" class="min-h-11 rounded-lg border border-outline-variant bg-surface-container px-3 text-on-surface">
+        @for (level of levels(); track level) { <option [value]="level">{{ level }}</option> }
+      </select>
+    </label>
+  </header>
+  @if (notes().length) {
+    <dl class="mb-4 grid gap-3 rounded-xl border border-outline-variant bg-surface-container p-3 text-sm sm:grid-cols-2">
+      @for (note of notes(); track $index) {
+        <div class="min-w-0"><dt class="text-xs font-semibold text-on-surface-variant">{{ note.owner }} · {{ note.label }}</dt><dd class="mt-1 [overflow-wrap:anywhere]">{{ note.text }}</dd></div>
+      }
+    </dl>
+  }
+  @for (table of tables(); track table.id) {
+    <section class="mb-4 min-w-0 overflow-hidden rounded-xl border border-outline-variant bg-surface-container" [attr.aria-label]="table.owner + ' ' + table.title">
+      <header class="border-b border-outline-variant bg-surface-container-high px-3 py-2">
+        <div class="flex flex-wrap items-center justify-between gap-1"><h3 class="text-sm font-semibold">{{ table.title }}</h3>
+          @if (table.subclass) { <span class="rounded bg-secondary-container px-2 py-1 text-xs text-on-secondary-container">Subclass</span> }
+        </div>
+        <p class="mt-1 text-xs text-on-surface-variant">{{ table.owner }} · {{ table.publication }}</p>
+      </header>
+      <div class="p-3 lg:hidden">
+        <h4 class="mb-2 text-xs font-bold text-primary">Level {{ selectedLevel() }}</h4>
+        <dl class="grid grid-cols-2 gap-x-4 gap-y-3">
+          @for (label of table.labels; track $index; let column = $index) {
+            <div class="min-w-0"><dt class="text-xs text-on-surface-variant"><app-entry-renderer [entry]="{text: label}" [inline]="true" /></dt>
+              <dd class="mt-1 text-sm font-semibold"><app-entry-renderer [entry]="cell(table, selectedLevel() - 1, column)" [compact]="true" /></dd>
+            </div>
+          }
+        </dl>
+      </div>
+      <div class="table-scroll hidden max-w-full overflow-x-auto lg:block" tabindex="0" role="region" [attr.aria-label]="table.owner + ' ' + table.title + ' by level'">
+        <table class="w-full text-sm">
+          <caption class="sr-only">{{ table.owner }} · {{ table.title }}</caption>
+          <thead><tr><th class="level-cell" scope="col">Level</th>
+            @for (label of table.labels; track $index) { <th scope="col"><app-entry-renderer [entry]="{text: label}" [inline]="true" /></th> }
+          </tr></thead>
+          <tbody>
+            @for (row of table.rows; track $index; let level = $index) {
+              <tr [class.preview-level]="selectedLevel() === level + 1"><th class="level-cell" scope="row">{{ level + 1 }}</th>
+                @for (label of table.labels; track $index; let column = $index) { <td><app-entry-renderer [entry]="cell(table, level, column)" [compact]="true" /></td> }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (table.note) { <p class="border-t border-outline-variant px-3 py-2 text-xs text-on-surface-variant">{{ table.note }}</p> }
+    </section>
+  } @empty {
+    <p class="mb-4 rounded-xl bg-surface-container p-3 text-sm text-on-surface-variant">This entry does not include a progression table.</p>
+  }
+  @if (grants().length) {
+    <section aria-label="Granted and expanded spells" class="mb-4">
+      <h3 class="mb-2 font-semibold">Granted & Expanded Spells</h3>
+      <div class="grid items-start gap-2 sm:grid-cols-2">
+        @for (group of grants(); track group.id) {
+          <section class="min-w-0 rounded-xl border border-outline-variant bg-surface-container p-3">
+            <h4 class="text-sm font-semibold">{{ group.title }}</h4><p class="mt-1 text-xs text-on-surface-variant">{{ group.owner }} · {{ group.requirement }}@if (group.frequency) { · {{ group.frequency }} }</p>
+            <div class="mt-2 text-sm"><app-entry-renderer [entries]="group.entries" /></div>
+            @if (group.expanded) { <p class="mt-2 border-l-2 border-outline-variant pl-2 text-xs text-on-surface-variant">These expand spell choices; they are not automatically known or prepared.</p> }
+          </section>
+        }
+      </div>
+    </section>
+  }
+</section>

@@ -1,10 +1,10 @@
 <details class="selector-panel mb-4">
   <summary class="selector-summary cursor-pointer flex items-center justify-between gap-2 text-sm font-semibold">
-    <span class="selector-heading flex items-center gap-2"><span class="selector-arrow" aria-hidden="true"><app-ui-icon name="chevron" /></span>Source Books</span>
+    <span class="selector-heading flex items-center gap-2"><span class="selector-arrow" aria-hidden="true"><app-ui-icon name="chevron" /></span>{{ heading() }}</span>
     <span class="text-xs font-normal text-on-surface-variant" [title]="filter.selected().join(', ')">{{ filter.selected().length ? filter.selected().length + ' selected' : 'All Books' }}</span>
   </summary>
   <div class="mt-3 space-y-2">
-    <p class="text-xs text-on-surface-variant">Filter the creator’s classes, species, features, spells and tools by book. No selection includes all books. Already added entries stay visible.</p>
+    <p class="text-xs text-on-surface-variant">{{ description() }}</p>
     <div class="flex flex-wrap gap-2">
       <label class="flex-1 min-w-32"><span class="sr-only">Search source books</span><input class="editor-input !py-1.5" [ngModel]="search" (ngModelChange)="search = $event" [ngModelOptions]="{standalone: true}" placeholder="Search source books…" /></label>
       <button type="button" class="secondary-button compact-button" (click)="filter.setSelection([])">All Books</button>

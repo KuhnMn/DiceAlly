@@ -3,14 +3,14 @@ import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { IndexedDbContentCache, RevisionRemovalProgress } from './content-cache';
-import { ContentRecord, DEFAULT_CONTENT_SOURCE, ImportDiagnostic, ImportProgress, ImportRevision, validateSource } from './content.model';
+import { DEFAULT_CONTENT_SOURCE, ImportDiagnostic, ImportProgress, ImportRevision, validateSource } from './content.model';
 import { ContentImportRequest } from './content-import-request';
 import { resolveCommit } from './github-source';
-import { ItemView, resolveItemView } from './item-resolver';
+import { LibraryNavigationComponent } from '../library-navigation.component';
 import { requiresContentReimport } from './content-compatibility';
 
 @Component({
-  selector: 'app-content-import', imports: [UiIconComponent, FormsModule, RouterLink],
+  selector: 'app-content-import', imports: [LibraryNavigationComponent, UiIconComponent, FormsModule, RouterLink],
   styleUrls: ['../editor/editor.css', './content-import.component.css'],
   templateUrl: './content-import.component.html',
 })
@@ -18,7 +18,6 @@ export class ContentImportComponent implements OnInit, OnDestroy {
   source = { ...DEFAULT_CONTENT_SOURCE };
   homebrewUrl = '';
   homebrewFile?: File;
-  browseKind = 'class';
   readonly busy = signal(false);
   readonly importing = signal(false);
   phaseLabel(phase: ImportProgress['phase']): string {
@@ -33,8 +32,6 @@ export class ContentImportComponent implements OnInit, OnDestroy {
   readonly hasImportErrors = computed(() => this.diagnostics().some(issue => issue.severity === 'error'));
   readonly visibleDiagnostics = computed(() => [...this.diagnostics()]
     .sort((a, b) => Number(b.severity === 'error') - Number(a.severity === 'error')).slice(0, 100));
-  readonly records = signal<ContentRecord[]>([]);
-  readonly itemViews = signal<Record<string, ItemView>>({});
   readonly cachedRevisions = signal<Awaited<ReturnType<IndexedDbContentCache['revisions']>>>([]);
   readonly storage = signal<StorageEstimate | undefined>(undefined);
   readonly removal = signal<(RevisionRemovalProgress & { revisionId: string }) | null>(null);
@@ -117,7 +114,6 @@ export class ContentImportComponent implements OnInit, OnDestroy {
     if (typeof Worker === 'undefined') throw new Error('Content imports require browser Web Workers.');
     this.busy.set(true);
     this.diagnostics.set([]);
-    this.records.set([]);
     this.progress.set(null);
     this.revision.set(await this.cache.active(this.namespace, request.source));
     const estimate = await navigator.storage?.estimate();
@@ -169,21 +165,10 @@ export class ContentImportComponent implements OnInit, OnDestroy {
     try {
       await this.cache.deleteRevision(this.namespace, id, progress => this.removal.set({ ...progress, revisionId: id }));
       this.revision.set(await this.cache.active(this.namespace, this.source));
-      this.records.set([]); this.itemViews.set({});
       this.message.set('Inactive revision removed. Installed content and character snapshots retained.');
       await this.refreshStorage();
     } catch (error) { this.message.set(String(error)); }
     finally { this.removal.set(null); this.busy.set(false); }
-  }
-  async browse(id: string): Promise<void> {
-    try {
-      const records = await this.cache.category(id, this.browseKind);
-      const views = await Promise.all(records.filter(record => record.kind === 'item').map(async record =>
-        [record.key, await resolveItemView(this.cache, id, record)] as const));
-      this.itemViews.set(Object.fromEntries(views));
-      this.records.set(records);
-    }
-    catch (error) { this.message.set(String(error)); }
   }
   mb(bytes: number): string { return (bytes / 1024 / 1024).toFixed(1); }
   ngOnDestroy(): void {

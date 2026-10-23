@@ -1,0 +1,83 @@
+<main class="mx-auto max-w-5xl p-2 text-on-surface sm:p-5">
+  <app-library-navigation />
+  <header class="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <a routerLink="/compendium" class="inline-flex min-h-11 items-center gap-1 text-sm text-primary"><app-ui-icon name="left" /> All Categories</a>
+      <h1 class="text-2xl font-bold sm:text-3xl">Classes</h1>
+      <p class="mt-1 text-sm text-on-surface-variant">Choose a class, explore its subclasses and follow its features level by level.</p>
+    </div>
+    <button type="button" class="compendium-button" [disabled]="loading()" (click)="reload()" aria-label="Refresh classes"><app-ui-icon name="reset" /> Refresh</button>
+  </header>
+  @if (error()) { <p role="alert" class="mb-4 rounded-xl bg-surface-container p-4">{{ error() }}</p> }
+  @if (loading()) { <p role="status">Reading your classes…</p> }
+  @else if (!revision()) {
+    <section class="rounded-xl bg-surface-container p-5"><h2 class="font-semibold">No Library Installed</h2><a routerLink="/content" class="compendium-button mt-3">Import Game Data</a></section>
+  } @else if (selectedClass(); as owner) {
+    <section class="mb-4 rounded-xl border border-outline-variant bg-surface-container p-3 sm:p-4" aria-label="Selected class">
+      <button type="button" class="mb-2 inline-flex min-h-11 items-center gap-1 text-sm text-primary" (click)="showAllClasses()"><app-ui-icon name="left" /> All Classes</button>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div><h2 class="text-xl font-bold">{{ owner.name }} <span class="text-sm font-normal text-on-surface-variant">{{ owner.publication }}</span></h2><p class="mt-1 text-sm text-on-surface-variant">{{ classSummary() }}</p></div>
+        <button type="button" class="compendium-button" (click)="openDetails(owner)"><app-ui-icon name="info" /> Class Details</button>
+      </div>
+    </section>
+    @if (progressionLoading()) { <p role="status" class="py-4">Loading subclasses and class features…</p> }
+    @else {
+      <section class="mb-5" aria-label="Subclasses">
+        <h2 class="mb-1 text-lg font-semibold">Subclasses</h2>
+        <p class="mb-3 text-xs text-on-surface-variant">Select a subclass to add its features to the progression below.</p>
+        <app-compendium-source-filter class="mb-3" label="Subclass Source Books" [books]="subclassBooks()" [selected]="subclassSources()" [defaults]="selectedSources()" (selectedChange)="setSubclassSources($event)" />
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+          <button type="button" (click)="chooseSubclass(null)" [attr.aria-pressed]="!selectedSubclass()" class="subclass-option" [class.active-subclass]="!selectedSubclass()">Base Class Only</button>
+          @for (subclass of visibleSubclasses(); track subclass.key) {
+            <button type="button" (click)="chooseSubclass(subclass)" [attr.aria-pressed]="selectedSubclass()?.key === subclass.key" class="subclass-option" [class.active-subclass]="selectedSubclass()?.key === subclass.key">
+              <span class="block font-semibold">{{ subclass.name }}</span><span class="mt-1 block text-xs opacity-80">{{ subclass.publication }}</span>
+            </button>
+          }
+        </div>
+        @if (!visibleSubclasses().length) { <p class="mt-2 text-sm text-on-surface-variant">{{ subclasses().length ? 'No subclasses match these source books. Choose other books or All Books to see more.' : 'No subclasses for this class edition are installed.' }}</p> }
+      </section>
+      <app-class-resources [owner]="owner" [subclass]="selectedSubclass()" />
+      <section aria-label="Class feature progression" [attr.aria-busy]="subclassLoading()">
+        <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2"><h2 class="text-lg font-semibold">Features by Level</h2><p class="text-xs text-on-surface-variant">{{ selectedSubclass()?.name || 'Base Class' }}</p></div>
+        <app-list-controls label="Search class features" searchName="class-feature-search" [hasFilters]="false" [query]="featureQuery()" (queryChange)="featureQuery.set($event)" />
+        @if (subclassLoading()) { <p role="status" class="mb-3 text-sm">Adding subclass features…</p> }
+        @if (progressionError()) { <p role="alert" class="mb-3 rounded-lg bg-surface-container p-3">{{ progressionError() }} <button type="button" (click)="chooseClass(owner)" class="compendium-button">Retry Class</button></p> }
+        @if (missingCount()) { <p role="status" class="mb-3 rounded-lg border border-outline-variant p-3 text-sm">{{ missingCount() }} linked features are not available in this library. Update your game data to see the complete progression.</p> }
+        @for (group of levels(); track group.level) {
+          <section class="mb-4 overflow-hidden rounded-xl border border-outline-variant bg-surface-container" [attr.aria-label]="'Level ' + group.level + ' features'">
+            <h3 class="border-b border-outline-variant bg-surface-container-high px-3 py-2 text-sm font-bold">Level {{ group.level }}</h3>
+            @for (feature of group.features; track feature.record.key) {
+              <button type="button" (click)="openDetails(feature.record)" class="result-row" [class.subclass-feature]="feature.subclass">
+                <div class="min-w-0 flex-1"><span class="block font-semibold [overflow-wrap:anywhere]">{{ feature.record.name }}</span>
+                  <span class="mt-1 block text-xs text-on-surface-variant">{{ feature.subclass ? selectedSubclass()?.name : owner.name }} · {{ feature.record.publication }}</span>
+                </div>
+                @if (feature.subclass) { <span class="rounded bg-secondary-container px-2 py-1 text-xs text-on-secondary-container">Subclass</span> }
+                <app-ui-icon name="chevron" class="shrink-0 text-primary" />
+              </button>
+            }
+          </section>
+        } @empty {
+          @if (!subclassLoading() && !progressionError()) { <p class="rounded-xl bg-surface-container p-4 text-sm text-on-surface-variant">{{ featureQuery() ? 'No features match your search.' : 'No class features are available in this library.' }}</p> }
+        }
+      </section>
+    }
+  } @else {
+    <app-list-controls label="Search classes" searchName="class-search" [query]="query()" (queryChange)="query.set($event)" [filterCount]="selectedSources().length" (cleared)="selectedSources.set([])">
+      <app-compendium-source-filter [books]="sources()" [selected]="selectedSources()" [defaults]="sourceDefaults.selected()" (selectedChange)="selectedSources.set($event)" />
+    </app-list-controls>
+    <p class="mb-3 text-sm text-on-surface-variant" role="status">{{ visibleClasses().length }} classes</p>
+    <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" aria-label="Classes">
+      @for (owner of visibleClasses(); track owner.key) {
+        <button type="button" class="category-card flex min-h-20 items-center gap-3 text-left" (click)="chooseClass(owner)">
+          <app-ui-icon name="book" class="shrink-0 text-xl text-primary" /><div class="min-w-0 flex-1"><h2 class="font-semibold [overflow-wrap:anywhere]">{{ owner.name }}</h2><p class="mt-1 text-xs text-on-surface-variant">{{ owner.publication }}@if (owner.file.startsWith('homebrew/')) { · Homebrew }</p></div><app-ui-icon name="chevron" />
+        </button>
+      } @empty { <p class="rounded-xl bg-surface-container p-4 text-sm text-on-surface-variant">{{ classes().length ? 'No classes match your search.' : 'No classes are installed. Add game data to get started.' }}</p> }
+    </div>
+  }
+  @if (detail(); as entry) {
+    <app-sheet-detail-dialog [title]="entry.name" (closed)="closeDetails()">
+      <app-compendium-details [record]="entry" [revision]="revision()!" [related]="detailRelated()" (opened)="openDetails($event)" />
+      @if (detailError()) { <p role="alert" class="mt-3 text-sm">{{ detailError() }}</p> }
+    </app-sheet-detail-dialog>
+  }
+</main>

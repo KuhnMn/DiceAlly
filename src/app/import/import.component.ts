@@ -11,32 +11,43 @@ import { CharacterSharingService } from '../characters/character-sharing.service
 import { ThemeService, type Theme } from '../services/theme.service';
 import { ExportOptionsModalComponent } from './export-options-modal.component';
 import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.component';
+import { LibraryNavigationComponent } from '../library-navigation.component';
 
 @Component({
   selector: 'app-import',
-  imports: [UiIconComponent, CommonModule, FormsModule, RouterLink, ExportOptionsModalComponent, RemoveEntryDialogComponent],
+  imports: [LibraryNavigationComponent, UiIconComponent, CommonModule, FormsModule, RouterLink, ExportOptionsModalComponent, RemoveEntryDialogComponent],
   template: `
-    <main class="max-w-[1000px] mx-auto my-8 p-4">
+    <main class="home-screen max-w-[1000px] mx-auto my-8 p-4">
+      <app-library-navigation />
+      <section aria-label="Explore your library" class="library-shortcuts mb-6 grid gap-3 sm:grid-cols-2">
+        <a routerLink="/compendium" class="flex min-w-0 items-start gap-3 rounded-xl border border-outline-variant bg-primary-container p-4 text-on-primary-container hover:brightness-110 focus-visible:outline-2 focus-visible:outline-primary">
+          <app-ui-icon name="book" class="mt-1 shrink-0 text-2xl" />
+          <div><h2 class="text-lg font-bold">Explore the Compendium</h2><p class="mt-1 text-sm">Look up classes, spells, species and rules from your library.</p><span class="mt-3 inline-flex items-center gap-1 text-sm font-semibold">Browse Categories <app-ui-icon name="right" /></span></div>
+        </a>
+        <a routerLink="/content" class="flex min-w-0 items-start gap-3 rounded-xl border border-outline-variant bg-surface-container p-4 hover:bg-surface-container-high focus-visible:outline-2 focus-visible:outline-primary">
+          <app-ui-icon name="stack" class="mt-1 shrink-0 text-2xl text-primary" />
+          <div><h2 class="text-lg font-bold">Manage Game Data</h2><p class="mt-1 text-sm text-on-surface-variant">Install or update your rules library and add homebrew files.</p><span class="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary">Manage Library <app-ui-icon name="right" /></span></div>
+        </a>
+      </section>
       @if (library.error()) { <p role="alert" class="mb-4 text-error">{{ library.error() }}</p> }
       @for (issue of library.migrationIssues(); track issue) { <p role="alert" class="text-error">{{ issue }}</p> }
       <!-- Saved Characters Section -->
       @let characters = savedCharacters();
       @if (characters.length >= 0) {
-        <section class="mb-12" [attr.aria-busy]="loadingCharacters() || !!openingCharacter()">
-          <div class="flex flex-col sm:flex-row justify-between items-start mb-4">
-            <div class="flex flex-col items-start justify-between">
-              <h2 class="text-3xl font-bold mb-2">Your Characters</h2>
+        <section class="character-library mb-12" aria-labelledby="character-library-title" [attr.aria-busy]="loadingCharacters() || !!openingCharacter()">
+          <div class="library-header flex flex-col sm:flex-row justify-between items-start mb-4">
+            <div class="library-heading flex flex-col items-start justify-between">
+              <h2 id="character-library-title" class="text-3xl font-bold mb-2">Your Characters</h2>
               <p class="text-on-surface-variant mb-4">Saved on this device and synced with your account</p>
               @if (creatorAvailable) {
                 <nav aria-label="Character library actions" class="flex flex-wrap gap-2 mb-4">
                   <a routerLink="/characters/new" class="px-4 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:opacity-90 transition-opacity">Create Character</a>
-                  <a routerLink="/content" class="px-4 py-2 rounded-lg bg-secondary-container text-on-secondary-container text-sm font-semibold hover:opacity-90 transition-opacity" title="Manage rules content and homebrew for the creator">Manage Game Data</a>
                 </nav>
               }
             </div>
-            <div class="mb-8 flex justify-end">
+            <div class="library-theme mb-8 flex justify-end">
               <label class="text-sm font-medium flex items-center gap-2">
-                <span class="text-on-surface-variant">Theme:</span>
+                <span class="theme-caption text-on-surface-variant">Theme:</span>
                 <select
                   [value]="themeService.currentTheme()"
                   (change)="onThemeChange($event)"
@@ -64,20 +75,22 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
           }
           @if (openingCharacter()) { <p role="status" class="mb-4 flex items-center gap-2 text-sm text-on-surface-variant"><app-ui-icon name="loader" class="animate-spin" />Opening character…</p> }
           @if (characters.length > 0) {
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <ul class="character-list grid grid-cols-1 md:grid-cols-2 gap-4" aria-label="Saved characters">
               @for (char of characters; track char.characterId) {
-                <div class="bg-surface-container border-2 border-outline-variant rounded-lg p-4 hover:bg-surface-container-high transition-colors" [attr.aria-busy]="openingCharacter()?.id === char.characterId">
-                  <div class="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 class="text-lg font-semibold text-on-surface">{{ char.name }}</h3>
-                      <p class="text-sm text-on-surface-variant">Level {{ char.level }}</p>
-                      <p class="text-sm text-on-surface-variant">{{ char.description }}</p>
+                <li class="character-card min-w-0 bg-surface-container border-2 border-outline-variant rounded-lg p-4 hover:bg-surface-container-high transition-colors" [attr.aria-busy]="openingCharacter()?.id === char.characterId">
+                  <div class="character-header flex items-start justify-between gap-2 mb-3">
+                    <div class="min-w-0 flex-1">
+                      <div class="character-title">
+                        <h3 class="text-lg font-semibold text-on-surface [overflow-wrap:anywhere]">{{ char.name }}</h3>
+                        <p class="character-level text-sm text-on-surface-variant">Level {{ char.level }}</p>
+                      </div>
+                      <p class="character-description text-sm text-on-surface-variant [overflow-wrap:anywhere]">{{ char.description }}</p>
                     </div>
-                    <div class="text-xs text-on-surface-variant">
+                    <div class="character-date text-xs text-on-surface-variant">
                       {{ formatDate(char.lastModified) }}
                     </div>
                   </div>
-                  <div class="grid gap-2" [class.grid-cols-3]="creatorAvailable" [class.grid-cols-2]="!creatorAvailable">
+                  <div class="character-actions grid gap-2" [class.grid-cols-3]="creatorAvailable" [class.grid-cols-2]="!creatorAvailable">
                     <button
                       (click)="loadCharacter(char.characterId)"
                       [disabled]="!!openingCharacter()"
@@ -100,10 +113,10 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
                       Delete
                     </button>
                   </div>
-                  <p class="text-on-surface-variant text-xs pt-2">Id: {{ char.characterId }}</p>
-                </div>
+                  <p class="character-id text-on-surface-variant text-xs pt-2 [overflow-wrap:anywhere]">Id: {{ char.characterId }}</p>
+                </li>
               }
-            </div>
+            </ul>
             <div class="mt-4 text-xs text-on-surface-variant">
               Storage used: {{ getStorageUsage() | number:'1.2-2' }} KB
             </div>
@@ -116,12 +129,12 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
       }
 
       <!-- Import Section -->
-      <section class="border-t-2 border-outline pt-8">
-        <h2 class="text-3xl font-bold mb-2">Import Character</h2>
+      <section class="character-import border-t-2 border-outline pt-8" aria-labelledby="character-import-title">
+        <h2 id="character-import-title" class="text-3xl font-bold mb-2">Import Character</h2>
         <p class="text-on-surface-variant mb-6">Load a character from a JSON file, Share Code, or JSON paste</p>
 
         <!-- URL Import -->
-        <div class="mb-6">
+        <div class="share-code-import mb-6">
           <label class="block">
             <span class="block text-sm font-medium mb-3">Import Share Code</span>
             <div class="flex gap-2">
@@ -130,7 +143,7 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
                 type="text"
                 (keydown.enter)="importFromUrl()"
                 placeholder="XXXXXX-XXXXXX-XXXXXX-XXXXXX"
-                class="flex-1 px-4 py-2 border-2 border-outline-variant rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-surface text-on-surface"
+                class="min-w-0 flex-1 px-4 py-2 border-2 border-outline-variant rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-surface text-on-surface"
               />
               <button
                 (click)="importFromUrl()"
@@ -171,7 +184,7 @@ import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.compon
           </div>
         }
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="import-methods grid grid-cols-1 lg:grid-cols-2 gap-8">
           <!-- File Upload -->
           <div>
             <label class="block">
