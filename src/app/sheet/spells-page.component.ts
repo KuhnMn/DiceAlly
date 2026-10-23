@@ -1,3 +1,4 @@
+import { SpellCastControlComponent } from './spell-cast-control.component';
 import { higherLevelEntries } from '../entries/entry-compatibility';
 import { compareSearchMatches } from '../search-ranking';
 import { SpellViewSwitcherComponent } from '../spell-view-switcher.component';
@@ -17,13 +18,13 @@ import { SpellSummaryComponent } from './spell-summary.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { SheetSourcePickerComponent } from './sheet-source-picker.component';
 import { HorizontalRowDirective } from './horizontal-row.directive';
-import { Component, inject, computed, signal, input, effect } from '@angular/core';
+import { Component, inject, computed, signal, input, output, TemplateRef, untracked, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { FeatureUsesComponent } from './feature-uses.component';
 import { FeatureNotesComponent } from './feature-notes.component';
 import { CharacterHelpersService } from './character-helpers.service';
-import { ExportedCharacter, FeatureNotes } from '../models/character.model';
+import { ExportedCharacter, FeatureNotes, SpellEntryFull } from '../models/character.model';
 import { CharacterStore } from '../stores/character.store';
 import { AppDialogService } from '../services/app-dialog.service';
 
@@ -40,7 +41,7 @@ type SpellLevelFilter = 'ALL' | number;
 @Component({
   selector: 'app-spells-page',
   host: { class: 'block w-full min-w-0 max-w-full' },
-  imports: [SpellEffectFilterComponent, SpellSchoolFilterComponent, SpellViewSwitcherComponent, SpellCastingTimeFilterComponent, ListControlsComponent, SheetListLayoutComponent, RecoveryIndicatorComponent, SpellDetailsComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, SpellSummaryComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [SpellCastControlComponent,SpellEffectFilterComponent, SpellSchoolFilterComponent, SpellViewSwitcherComponent, SpellCastingTimeFilterComponent, ListControlsComponent, SheetListLayoutComponent, RecoveryIndicatorComponent, SpellDetailsComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, SpellSummaryComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .spell-page-header app-spell-view-switcher { margin-bottom: 0; }
     .spell-page.spell-preparation-view { padding: .75rem; }
@@ -75,7 +76,57 @@ type SpellLevelFilter = 'ALL' | number;
       }
     }
   `],
-  template: `
+  template: `<ng-template #spellDetail let-spell>
+<app-sheet-detail-dialog [title]="spell.name" [tags]="spellDialogTags" (closed)="closeDetail(spellExpansionId(spell))">
+                      <ng-template #spellDialogTags>
+                        @if (spell.entity?.level !== undefined) { <span class="rounded bg-purple-container px-2 py-0.5 text-xs font-normal text-on-purple-container">{{ helpers.spellLevelLabel(spell) }}</span> }
+                        @if (spell.entity?.school) { <span class="rounded bg-teal-container px-2 py-0.5 text-xs text-on-teal-container">{{ helpers.spellSchoolLabel(spell.entity?.school ?? '') }}</span> }
+                        @if (spell.entity?.meta?.ritual) { <span class="rounded bg-green-container px-2 py-0.5 text-xs text-on-green-container">Ritual</span> }
+                        @if (requiresConcentration(spell)) { <span class="rounded bg-tertiary-container px-2 py-0.5 text-xs text-on-tertiary-container" title="Concentration" aria-label="Concentration">C</span> }
+                        @if (spell.castingSourceName) { <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">{{ spell.castingSourceName }}</span> }
+                        @if (spell.source) { <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ spell.source }}</span> }
+                      </ng-template>
+                      <app-spell-details [spell]="spell.entity" [castingStats]="castingStats(spell.castingSourceName)" />
+                      <div class="mt-3 pt-3 border-t border-outline-variant">
+                        @if (spell.entity?.entries?.length) {
+                          <div>
+                            <app-entry-renderer [entries]="spell.entity?.entries ?? []"></app-entry-renderer>
+                          </div>
+                        }
+                        @if (spell.entity?.entriesHigherLevel?.length) {
+                          <div class="mt-3 border-t border-outline-variant pt-3">
+                            <div class="text-sm font-semibold text-on-surface">At Higher Levels</div>
+                            @for (higher of spell.entity?.entriesHigherLevel ?? []; track $index) {
+                              <app-entry-renderer [entries]="higherLevelEntries(higher)"></app-entry-renderer>
+                            }
+                          </div>
+                        }
+
+                      </div>
+                        @if (spell.uses?.length) {
+                          <div class="mt-2 sm:mt-4 border-t border-outline-variant pt-2 sm:pt-4">
+                            <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
+                              @for (use of spell.uses; track use) {
+                                                            <app-feature-uses
+                                                              [uses]="use"
+                                                              (usesUpdated)="use.usedFreeUses = $event.usedFreeUses"
+                                                            />
+                                                          }
+                            </div>
+                          </div>
+                        }
+                        <app-feature-notes
+                          [notes]="spell.notes"
+                          (notesChanged)="updateSpellNotes(spell, $event)"
+                        />
+                      <app-spell-cast-control [spell]="spell" [sheet]="characterData()!" />
+                      <ng-container [ngTemplateOutlet]="detailNavigation()" />
+</app-sheet-detail-dialog>
+</ng-template>
+@if (detailEntry(); as spell) {
+  <ng-container [ngTemplateOutlet]="spellDetail" [ngTemplateOutletContext]="{ $implicit: spell }" />
+} @else {
+
     <ng-template #prepareControl let-spell let-compact="compact">
       @let prepared = hasSpellListType(spell, 'PREPARED');
       @let locked = isPreparationLocked(spell);
@@ -104,7 +155,7 @@ type SpellLevelFilter = 'ALL' | number;
                 <div class="text-sm font-semibold text-on-surface mb-1.5">{{ group.source }}</div>
                 <div appHorizontalRow class="grid gap-2 sm:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))]">
                   @for (slot of group.slots; track slot.level) {
-                    <div 
+                    <div
                       class="max-sm:w-44 border-2 border-surface rounded-md px-2 py-1 bg-surface-container-high"
 
                     >
@@ -312,49 +363,7 @@ type SpellLevelFilter = 'ALL' | number;
                     }
                     @if (spellView() === 'PREPARED') { <app-feature-notes [notes]="spell.notes" (notesChanged)="updateSpellNotes(spell, $event)" /> }
                     @if (isExpanded(spellExpansionId(spell))) {
-                      <app-sheet-detail-dialog [title]="spell.name" [tags]="spellDialogTags" (closed)="toggleExpanded(spellExpansionId(spell))">
-                      <ng-template #spellDialogTags>
-                        @if (spell.entity?.level !== undefined) { <span class="rounded bg-purple-container px-2 py-0.5 text-xs font-normal text-on-purple-container">{{ helpers.spellLevelLabel(spell) }}</span> }
-                        @if (spell.entity?.school) { <span class="rounded bg-teal-container px-2 py-0.5 text-xs text-on-teal-container">{{ helpers.spellSchoolLabel(spell.entity?.school ?? '') }}</span> }
-                        @if (spell.entity?.meta?.ritual) { <span class="rounded bg-green-container px-2 py-0.5 text-xs text-on-green-container">Ritual</span> }
-                        @if (requiresConcentration(spell)) { <span class="rounded bg-tertiary-container px-2 py-0.5 text-xs text-on-tertiary-container" title="Concentration" aria-label="Concentration">C</span> }
-                        @if (spell.castingSourceName) { <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">{{ spell.castingSourceName }}</span> }
-                        @if (spell.source) { <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ spell.source }}</span> }
-                      </ng-template>
-                      <app-spell-details [spell]="spell.entity" [castingStats]="castingStats(spell.castingSourceName)" />
-                      <div class="mt-3 pt-3 border-t border-outline-variant">
-                        @if (spell.entity?.entries?.length) {
-                          <div>
-                            <app-entry-renderer [entries]="spell.entity?.entries ?? []"></app-entry-renderer>
-                          </div>
-                        }
-                        @if (spell.entity?.entriesHigherLevel?.length) {
-                          <div class="mt-3 border-t border-outline-variant pt-3">
-                            <div class="text-sm font-semibold text-on-surface">At Higher Levels</div>
-                            @for (higher of spell.entity?.entriesHigherLevel ?? []; track $index) {
-                              <app-entry-renderer [entries]="higherLevelEntries(higher)"></app-entry-renderer>
-                            }
-                          </div>
-                        }
-
-                      </div>
-                        @if (spell.uses?.length) {
-                          <div class="mt-2 sm:mt-4 border-t border-outline-variant pt-2 sm:pt-4">
-                            <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
-                              @for (use of spell.uses; track use) {
-                                                            <app-feature-uses 
-                                                              [uses]="use"
-                                                              (usesUpdated)="use.usedFreeUses = $event.usedFreeUses"
-                                                            />
-                                                          }
-                            </div>
-                          </div>
-                        }
-                        <app-feature-notes
-                          [notes]="spell.notes"
-                          (notesChanged)="updateSpellNotes(spell, $event)"
-                        />
-                    </app-sheet-detail-dialog>
+                      <ng-container [ngTemplateOutlet]="spellDetail" [ngTemplateOutletContext]="{ $implicit: spell }" />
                     }
                   </div>
                 }
@@ -367,9 +376,19 @@ type SpellLevelFilter = 'ALL' | number;
       </div>
       </section>
     </div>
+}
   `,
 })
 export class SpellsPageComponent {
+  /** Render the same source dialog in place, without mounting the catalog or consuming navigation. */
+  readonly detailEntry = input<SpellEntryFull | null>(null);
+  readonly detailNavigation = input<TemplateRef<unknown> | null>(null);
+  readonly detailClosed = output<void>();
+  closeDetail(id: string) {
+    if (this.detailEntry()) this.detailClosed.emit();
+    else this.toggleExpanded(id);
+  }
+
   readonly higherLevelEntries = higherLevelEntries;
 
 
@@ -377,7 +396,7 @@ export class SpellsPageComponent {
   private store = inject(CharacterStore);
   private readonly dialogs = inject(AppDialogService);
   helpers = inject(CharacterHelpersService);
-  
+
   highlightedId = signal<string | null>(null);
 
   readonly searchQuery = signal('');
@@ -557,28 +576,37 @@ export class SpellsPageComponent {
   constructor() {
     // Handle scroll/highlight on navigation
     effect(() => {
+      if (this.detailEntry()) return;
       const targetId = this.store.featureScrollTarget();
       if (!targetId || (!targetId.startsWith('spell-'))) return;
-      if (targetId.startsWith('spell-')) {
-        const target = this.characterData()?.spells?.find(spell => `spell-${spell.editorId ?? this.helpers.sourceId(spell.name + '-' + (spell.source ?? ''))}` === targetId);
-        if (target) {
-          this.spellView.set((target.listType ?? 'KNOWN') as 'PREPARED' | 'KNOWN' | 'SPELLBOOK');
-          this.searchQuery.set('');
-          this.spellCastingSourceFilter.set('ALL');
-          this.spellLevelFilters.set([]);
-          this.spellCastingTimes.set([]);
-          this.spellSchools.set([]);
-          this.spellEffects.set({});
-          this.spellRitualFilter.set('ALL');
-          this.expandedItems.set(new Set([this.spellExpansionId(target)]));
-        }
+      let destinationId = targetId;
+      const spells = this.characterData()?.spells ?? [];
+      const target = spells.find(spell => `spell-${spell.editorId ?? this.helpers.sourceId(spell.name + '-' + (spell.source ?? ''))}` === targetId);
+      if (target) {
+        const identity = spellIdentity(target);
+        const copies = spells.filter(spell => spellIdentity(spell) === identity);
+        const prepared = copies.find(spell => spell.listType === 'PREPARED');
+        // Prefer the same spell in the current list; a prepared copy keeps a
+        // bookmark to Known/Spellbook from unnecessarily leaving Prepared.
+        const currentView = untracked(this.spellView);
+        const destination = copies.find(spell => spell.listType === currentView) ?? prepared ?? target;
+        this.spellView.set((destination.listType ?? 'KNOWN') as 'PREPARED' | 'KNOWN' | 'SPELLBOOK');
+        destinationId = `spell-${destination.editorId ?? this.helpers.sourceId(destination.name + '-' + (destination.source ?? ''))}`;
+        this.searchQuery.set('');
+        this.spellCastingSourceFilter.set('ALL');
+        this.spellLevelFilters.set([]);
+        this.spellCastingTimes.set([]);
+        this.spellSchools.set([]);
+        this.spellEffects.set({});
+        this.spellRitualFilter.set('ALL');
+        this.expandedItems.set(new Set([this.spellExpansionId(destination)]));
       }
       if (typeof document === 'undefined') return;
       setTimeout(() => {
-        const el = document.getElementById(targetId);
+        const el = document.getElementById(destinationId);
         if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          this.highlightedId.set(targetId);
+          this.highlightedId.set(destinationId);
           setTimeout(() => this.highlightedId.set(null), 1600);
         }
         this.store.setFeatureScrollTarget(null);
@@ -611,7 +639,7 @@ export class SpellsPageComponent {
 
   async togglePreparedSpell(spell: any, event: Event) {
     event.stopPropagation();
-    
+
     const key = this.spellKey(spell);
     const isPrepared = this.hasSpellListType(spell, 'PREPARED');
     if (this.isPreparationLocked(spell)) {
@@ -632,7 +660,7 @@ export class SpellsPageComponent {
       const preparedSpell = copySpellToList(spell, 'PREPARED');
       allSpells.push(preparedSpell);
     }
-    
+
     // Update the store
     const character = this.characterData();
     if (character) {

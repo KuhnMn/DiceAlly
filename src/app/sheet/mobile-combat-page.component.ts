@@ -1,3 +1,4 @@
+import { CombatActionComponent } from './combat-action.component';
 import { ConcentrationControlComponent } from './concentration-control.component';
 import { Component } from '@angular/core';
 import { CharacterInfoPageComponent } from './character-info-page.component';
@@ -6,7 +7,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
 
 @Component({
   selector: 'app-mobile-combat-page',
-  imports: [BasicCombatActionsComponent, UiIconComponent, ConcentrationControlComponent],
+  imports: [CombatActionComponent, BasicCombatActionsComponent, UiIconComponent, ConcentrationControlComponent],
   template: `
     @if (character(); as c) {
           <!-- Combat Actions -->
@@ -39,43 +40,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
                           <app-basic-combat-actions [actions]="groupedBasicActions()[actionType]" />
                         }
                         @for (action of groupedCombatActions()[actionType]; track action) {
-                          <button
-                            type="button"
-                            data-page-swipe
-                            [disabled]="!isActionClickable(action)"
-                            (click)="navigateToCombatAction(action)"
-                            class="w-full text-left p-2 rounded transition-colors duration-300 border-2 bg-surface-container"
-                            [class.border-blue]="getCombatActionLinkType(action) === 'feature'"
-                            [class.border-rose]="getCombatActionLinkType(action) === 'species'"
-                            [class.border-purple]="getCombatActionLinkType(action) === 'spell'"
-                            [class.border-green]="getCombatActionLinkType(action) === 'item'"
-                            [class.border-teal]="getCombatActionLinkType(action) === 'monster'"
-                            [class.border-outline-variant]="getCombatActionLinkType(action) === null"
-                            [class.hover:border-blue]="getCombatActionLinkType(action) === 'feature'"
-                            [class.hover:border-rose]="getCombatActionLinkType(action) === 'species'"
-                            [class.hover:border-purple]="getCombatActionLinkType(action) === 'spell'"
-                            [class.hover:border-green]="getCombatActionLinkType(action) === 'item'"
-                            [class.hover:border-teal]="getCombatActionLinkType(action) === 'monster'"
-                            [class.hover:bg-blue-container]="getCombatActionLinkType(action) === 'feature'"
-                            [class.hover:bg-rose-container]="getCombatActionLinkType(action) === 'species'"
-                            [class.hover:bg-purple-container]="getCombatActionLinkType(action) === 'spell'"
-                            [class.hover:bg-green-container]="getCombatActionLinkType(action) === 'item'"
-                            [class.hover:bg-teal-container]="getCombatActionLinkType(action) === 'monster'"
-                            [class.cursor-pointer]="isActionClickable(action)"
-                            [class.text-blue]="getCombatActionLinkType(action) === 'feature'"
-                            [class.text-rose]="getCombatActionLinkType(action) === 'species'"
-                            [class.text-purple]="getCombatActionLinkType(action) === 'spell'"
-                            [class.text-green]="getCombatActionLinkType(action) === 'item'"
-                            [class.text-teal]="getCombatActionLinkType(action) === 'monster'"
-                            [class.cursor-default]="!isActionClickable(action)"
-                            [class.text-on-surface-variant]="!isActionClickable(action)"
-                          >
-                            <div class="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,2fr)] gap-2 text-sm">
-                              <div class="font-semibold break-words">{{ action.name }}@if (action.range) { <span class="block text-xs font-normal text-on-surface-variant">{{ action.range }}</span> }</div>
-                              <div class="min-w-0 line-clamp-2 text-center font-mono text-xs [overflow-wrap:anywhere]" [title]="action.hitOrDc">{{ action.hitOrDc }}</div>
-                              <div class="min-w-0 line-clamp-5 text-right font-mono text-xs [overflow-wrap:anywhere]" [title]="action.damageOrHeal">{{ action.damageOrHeal }}</div>
-                            </div>
-                          </button>
+                          <app-combat-action [action]="action" [sheet]="characterData()!" [linkType]="getCombatActionLinkType(action)" [navigable]="isActionClickable(action)" (navigated)="navigateToCombatAction(action)" />
                         }
                       </div>
                     </div>

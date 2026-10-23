@@ -92,6 +92,39 @@ describe('Combat creator', () => {
     expect(viewer.componentInstance.getCombatActionAnchorId(first)).toBe('spell-test-spell');
     editor.unlink(first); expect(viewer.componentInstance.getCombatActionAnchorId(first)).toBeNull();
   });
+  it('offers Update only on changed actions and previews source changes without mutating until saved', async () => {
+    const sheet = emptyBasicCharacter(); sheet.character!.abilityScores = { strength: 14 };
+    const weapon: InventoryItem = { editorId: 'sword', name: 'Sword', entity: { item: { name: 'Sword', source: 'TEST', dmg1: '1d8', dmgType: 'S' } } };
+    sheet.inventory = [weapon];
+    const helpers = TestBed.inject(CharacterHelpersService);
+    const action = prefillCombatAction(sheet, weapon, 'ITEM', helpers);
+    action.name = 'My Sword'; action.damageOrHeal = 'My custom damage'; action.orderIndex = 5;
+    sheet.character!.abilityScores!.strength = 18;
+    const unchanged = prefillCombatAction(sheet, weapon, 'ITEM', helpers);
+    sheet.combatActions = [action, unchanged, { name: 'Custom Action', actionType: 'BONUS' }];
+    const before = structuredClone(sheet);
+    const fixture = TestBed.createComponent(CombatEditorComponent);
+    fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
+    const edited = vi.fn(); fixture.componentInstance.edited.subscribe(edited);
+    expect(fixture.nativeElement.querySelector('app-combat-source-review')).toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('button[aria-label^="Update "]')).toHaveLength(1);
+    fixture.nativeElement.querySelector('button[aria-label="Update My Sword"]').click(); await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('input[name="combat-hit"]').value).toBe('+6 to hit');
+    expect(fixture.nativeElement.querySelector('textarea[name="combat-effect"]').value).toBe('My custom damage');
+    expect(sheet).toEqual(before); expect(edited).not.toHaveBeenCalled();
+    const buttons = () => [...fixture.nativeElement.querySelectorAll('button')] as HTMLButtonElement[];
+    buttons().find(button => button.textContent?.trim() === 'Cancel')!.click(); await fixture.whenStable();
+    expect(sheet).toEqual(before); expect(edited).not.toHaveBeenCalled();
+    fixture.nativeElement.querySelector('button[aria-label="Update My Sword"]').click(); await fixture.whenStable();
+    fixture.nativeElement.querySelector('button[aria-label="Use Source for Damage / effect"]').click(); await fixture.whenStable();
+    buttons().find(button => button.textContent?.trim() === 'Save Update')!.click(); await fixture.whenStable();
+    expect(action.hitOrDc).toBe('+6 to hit'); expect(action.damageOrHeal).toBe('1d8 +4 Slashing');
+    expect(action.name).toBe('My Sword'); expect(action.editorId).toBe(before.combatActions![0].editorId); expect(action.orderIndex).toBe(5);
+    expect(sheet.combatActions).toHaveLength(3); expect(edited).toHaveBeenCalledOnce();
+    expect(fixture.nativeElement.querySelectorAll('button[aria-label^="Update "]')).toHaveLength(0);
+    expect(weapon).toEqual(before.inventory![0]); fixture.destroy();
+  });
+
   it('opens a bookmarked spell even when viewer filters would otherwise hide it', async () => {
     const sheet = emptyBasicCharacter(); sheet.spells = [spell()];
     const fixture = TestBed.createComponent(SpellsPageComponent); fixture.componentRef.setInput('characterData', sheet); await fixture.whenStable();

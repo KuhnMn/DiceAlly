@@ -8,7 +8,7 @@ import { SheetDetailDialogComponent } from './sheet-detail-dialog.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { SheetSourcePickerComponent } from './sheet-source-picker.component';
 import { HorizontalRowDirective } from './horizontal-row.directive';
-import { Component, inject, computed, signal, input, effect } from '@angular/core';
+import { Component, inject, computed, signal, input, output, TemplateRef, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { FeatureUsesComponent } from './feature-uses.component';
@@ -67,7 +67,102 @@ import { referenceDescription } from '../models/character-references';
       }
     }
   `],
-  template: `
+  template: `<ng-template #speciesSourceTag>
+                <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ species()?.source }}</span>
+              </ng-template>
+<ng-template #featureTags let-feature>
+        @if (helpers.featureTypeLabel(feature) === 'CLASS_FEATURE') {
+          <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded">Level {{ helpers.featureLevel(feature) }}</span>
+        }
+        @if (helpers.featureTypeLabel(feature) === 'FEAT' && feature.featEntity?.category) {
+          <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded" title="Feat category">{{ categoryLabel(feature.featEntity.category) }}</span>
+        }
+        @if (helpers.featureTypeLabel(feature) === 'OPTIONAL_FEATURE') {
+          @for (type of feature.optionalFeatureEntity?.featureType ?? []; track $index) {
+            <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded" title="Optional feature type">{{ categoryLabel(type) }}</span>
+          }
+        }
+      </ng-template>
+<ng-template #speciesDetail>
+<app-sheet-detail-dialog [title]="species()?.name ?? 'Species'" [tags]="species()?.source ? speciesSourceTag : null" (closed)="closeDetail('species')">
+            <div appHorizontalRow role="region" aria-label="Species details" tabindex="0" class="flex flex-nowrap items-center gap-4 overflow-x-auto overscroll-x-contain py-1 text-sm [&>*]:shrink-0 [&>*]:whitespace-nowrap">
+              <span>Size: {{ speciesSize() || '—' }}</span>
+              <span>Speed: {{ speciesMovement() }}</span>
+              @for (sense of speciesSenses(); track sense.sense) { <app-rule-reference [reference]="senseDescription(sense.label)">{{ sense.label }}: {{ sense.rangeFeet }} ft.</app-rule-reference> }
+              <span>{{ speciesCreatureTypes() }}</span>
+            </div>
+            <div class="mt-3 pt-3 border-t border-outline-variant">
+
+              @if (species()?.entity?.entries?.length) {
+                <div class="mt-3">
+                  <app-entry-renderer [entries]="species()?.entity?.entries ?? []"></app-entry-renderer>
+                </div>
+              }
+
+            </div>
+              @if (species()?.uses?.length) {
+                <div class="mt-2 sm:mt-4 border-t border-outline-variant pt-2 sm:pt-4">
+                  <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
+                    @for (use of species()?.uses ?? []; track use) {
+                                        <app-feature-uses
+                                          [uses]="use"
+                                          (usesUpdated)="use.usedFreeUses = $event.usedFreeUses"
+                                        />
+                                      }
+                  </div>
+                </div>
+              }
+              <app-feature-notes
+                [notes]="species()?.notes"
+                (notesChanged)="updateSpeciesNotes($event)"
+              />
+            <ng-container [ngTemplateOutlet]="detailNavigation()" />
+</app-sheet-detail-dialog>
+</ng-template>
+<ng-template #featureDetail let-feature>
+<app-sheet-detail-dialog [title]="feature.name" [tags]="featureDialogTags" (closed)="closeDetail(featureAnchorId(feature) ?? 'feature')">
+                  <ng-template #featureDialogTags>
+                    <ng-container [ngTemplateOutlet]="featureTags" [ngTemplateOutletContext]="{ $implicit: feature }" />
+                    @if (feature.featureSourceName) {
+                      <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">{{ feature.featureSourceName }}</span>
+                    }
+                    @if (feature.source) {
+                      <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ feature.source }}</span>
+                    }
+                  </ng-template>
+                  <div class="space-y-3 border-t border-outline-variant pt-3 md:border-t-0 md:pt-0">
+                    <app-prerequisite-details [prerequisites]="feature.featEntity?.prerequisite ?? feature.optionalFeatureEntity?.prerequisite" />
+                    <div [attr.id]="feature.featureSourceName ? 'source-' + helpers.sourceId(feature.featureSourceName) : null">
+                      <app-entry-renderer [entries]="helpers.featureEntries(feature)"></app-entry-renderer>
+                    </div>
+
+                  </div>
+
+                    @if (feature.uses?.length) {
+                      <div class="mt-2 sm:mt-4 border-t border-outline-variant pt-2 sm:pt-4">
+                        <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
+                          @for (use of feature.uses; track use) {
+                                                    <app-feature-uses
+                                                      [uses]="use"
+                                                      (usesUpdated)="use.usedFreeUses = $event.usedFreeUses"
+                                                    />
+                                                  }
+                        </div>
+                      </div>
+                    }
+                    <app-feature-notes
+                      [notes]="feature.notes"
+                      (notesChanged)="updateFeatureNotes(feature, $event)"
+                    />
+                  <ng-container [ngTemplateOutlet]="detailNavigation()" />
+</app-sheet-detail-dialog>
+</ng-template>
+@if (detailEntry(); as feature) {
+  <ng-container [ngTemplateOutlet]="featureDetail" [ngTemplateOutletContext]="{ $implicit: feature }" />
+} @else if (detailSpecies()) {
+  <ng-container [ngTemplateOutlet]="speciesDetail" />
+} @else {
+
     <div class="bg-surface-container-highest p-3 sm:p-5 rounded-lg border-2 border-outline  shadow-lg">
       <div class="mb-3 flex items-center justify-between gap-2">
         <h2 class="text-xl sm:text-3xl font-bold">Features & Traits</h2>
@@ -82,7 +177,7 @@ import { referenceDescription } from '../models/character-references';
           [class.flash-highlight]="highlightedId() === 'species-section'"
         >
           <!-- Header (always visible, clickable) -->
-          <button 
+          <button
             type="button"
             class="w-full text-left hover:bg-surface-container-low transition-colors rounded py-0.5"
             (click)="toggleExpanded('species')" aria-haspopup="dialog">
@@ -110,9 +205,7 @@ import { referenceDescription } from '../models/character-references';
                   <div>Creature Type: {{ speciesCreatureTypes() }}</div>
                 }
               </div>
-              <ng-template #speciesSourceTag>
-                <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ species()?.source }}</span>
-              </ng-template>
+
               @if (species()?.source) {
               <ng-container [ngTemplateOutlet]="speciesSourceTag" />
             }
@@ -127,39 +220,7 @@ import { referenceDescription } from '../models/character-references';
                 }
                 <app-feature-notes [notes]="species()?.notes" (notesChanged)="updateSpeciesNotes($event)" />
                 @if (isExpanded('species')) {
-          <app-sheet-detail-dialog [title]="species()?.name ?? 'Species'" [tags]="species()?.source ? speciesSourceTag : null" (closed)="toggleExpanded('species')">
-            <div appHorizontalRow role="region" aria-label="Species details" tabindex="0" class="flex flex-nowrap items-center gap-4 overflow-x-auto overscroll-x-contain py-1 text-sm [&>*]:shrink-0 [&>*]:whitespace-nowrap">
-              <span>Size: {{ speciesSize() || '—' }}</span>
-              <span>Speed: {{ speciesMovement() }}</span>
-              @for (sense of speciesSenses(); track sense.sense) { <app-rule-reference [reference]="senseDescription(sense.label)">{{ sense.label }}: {{ sense.rangeFeet }} ft.</app-rule-reference> }
-              <span>{{ speciesCreatureTypes() }}</span>
-            </div>
-            <div class="mt-3 pt-3 border-t border-outline-variant">
-
-              @if (species()?.entity?.entries?.length) {
-                <div class="mt-3">
-                  <app-entry-renderer [entries]="species()?.entity?.entries ?? []"></app-entry-renderer>
-                </div>
-              }
-
-            </div>
-              @if (species()?.uses?.length) {
-                <div class="mt-2 sm:mt-4 border-t border-outline-variant pt-2 sm:pt-4">
-                  <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
-                    @for (use of species()?.uses ?? []; track use) {
-                                        <app-feature-uses 
-                                          [uses]="use"
-                                          (usesUpdated)="use.usedFreeUses = $event.usedFreeUses"
-                                        />
-                                      }
-                  </div>
-                </div>
-              }
-              <app-feature-notes
-                [notes]="species()?.notes"
-                (notesChanged)="updateSpeciesNotes($event)"
-              />
-          </app-sheet-detail-dialog>
+          <ng-container [ngTemplateOutlet]="speciesDetail" />
           }
         </div>
       }
@@ -189,19 +250,7 @@ import { referenceDescription } from '../models/character-references';
           [categories]="featureCategoryOptions()" [selectedCategories]="featureCategoriesFilter()" (selectedCategoriesChange)="featureCategoriesFilter.set($event)"
           [selectedLevels]="featureLevels()" (selectedLevelsChange)="featureLevels.set($event)" />
       </app-list-controls>
-      <ng-template #featureTags let-feature>
-        @if (helpers.featureTypeLabel(feature) === 'CLASS_FEATURE') {
-          <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded">Level {{ helpers.featureLevel(feature) }}</span>
-        }
-        @if (helpers.featureTypeLabel(feature) === 'FEAT' && feature.featEntity?.category) {
-          <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded" title="Feat category">{{ categoryLabel(feature.featEntity.category) }}</span>
-        }
-        @if (helpers.featureTypeLabel(feature) === 'OPTIONAL_FEATURE') {
-          @for (type of feature.optionalFeatureEntity?.featureType ?? []; track $index) {
-            <span class="text-xs bg-teal-container text-on-teal-container px-2 py-0.5 rounded" title="Optional feature type">{{ categoryLabel(type) }}</span>
-          }
-        }
-      </ng-template>
+
       <div class="space-y-4">
         @for (group of featureGroups(); track group.label) {
           <section>
@@ -214,7 +263,7 @@ import { referenceDescription } from '../models/character-references';
               [class.flash-highlight]="highlightedId() === featureAnchorId(feature)"
             >
                 <!-- Header (always visible, clickable) -->
-                <button 
+                <button
                   type="button"
                   class="w-full text-left hover:bg-surface-container-low transition-colors rounded py-0.5"
                   (click)="toggleExpanded(featureAnchorId(feature) ?? 'feature')" aria-haspopup="dialog"
@@ -251,41 +300,7 @@ import { referenceDescription } from '../models/character-references';
                 }
                 <app-feature-notes [notes]="feature.notes" (notesChanged)="updateFeatureNotes(feature, $event)" />
                 @if (isExpanded(featureAnchorId(feature) ?? 'feature')) {
-                <app-sheet-detail-dialog [title]="feature.name" [tags]="featureDialogTags" (closed)="toggleExpanded(featureAnchorId(feature) ?? 'feature')">
-                  <ng-template #featureDialogTags>
-                    <ng-container [ngTemplateOutlet]="featureTags" [ngTemplateOutletContext]="{ $implicit: feature }" />
-                    @if (feature.featureSourceName) {
-                      <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">{{ feature.featureSourceName }}</span>
-                    }
-                    @if (feature.source) {
-                      <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ feature.source }}</span>
-                    }
-                  </ng-template>
-                  <div class="space-y-3 border-t border-outline-variant pt-3 md:border-t-0 md:pt-0">
-                    <app-prerequisite-details [prerequisites]="feature.featEntity?.prerequisite ?? feature.optionalFeatureEntity?.prerequisite" />
-                    <div [attr.id]="feature.featureSourceName ? 'source-' + helpers.sourceId(feature.featureSourceName) : null">
-                      <app-entry-renderer [entries]="helpers.featureEntries(feature)"></app-entry-renderer>
-                    </div>
-
-                  </div>
-
-                    @if (feature.uses?.length) {
-                      <div class="mt-2 sm:mt-4 border-t border-outline-variant pt-2 sm:pt-4">
-                        <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
-                          @for (use of feature.uses; track use) {
-                                                    <app-feature-uses
-                                                      [uses]="use"
-                                                      (usesUpdated)="use.usedFreeUses = $event.usedFreeUses"
-                                                    />
-                                                  }
-                        </div>
-                      </div>
-                    }
-                    <app-feature-notes
-                      [notes]="feature.notes"
-                      (notesChanged)="updateFeatureNotes(feature, $event)"
-                    />
-                </app-sheet-detail-dialog>
+                <ng-container [ngTemplateOutlet]="featureDetail" [ngTemplateOutletContext]="{ $implicit: feature }" />
                 }
             </div>
           }
@@ -296,9 +311,20 @@ import { referenceDescription } from '../models/character-references';
         }
       </div>
     </div>
+}
   `,
 })
 export class FeaturesPageComponent {
+  /** Render the same source dialog in place, without mounting the catalog or consuming navigation. */
+  readonly detailEntry = input<FeatureEntryFull | null>(null);
+  readonly detailNavigation = input<TemplateRef<unknown> | null>(null);
+  readonly detailClosed = output<void>();
+  readonly detailSpecies = input(false);
+  closeDetail(id: string) {
+    if (this.detailEntry() || this.detailSpecies()) this.detailClosed.emit();
+    else this.toggleExpanded(id);
+  }
+
   characterData = input.required<ExportedCharacter | null>();
   helpers = inject(CharacterHelpersService);
   store = inject(CharacterStore);
@@ -336,6 +362,7 @@ export class FeaturesPageComponent {
 
   constructor() {
     effect(() => {
+      if (this.detailEntry() || this.detailSpecies()) return;
       const targetId = this.store.featureScrollTarget();
       if (!targetId || (!targetId.startsWith('feature-') && targetId !== 'species-section')) return;
       if (targetId === 'species-section') this.expandedItems.set(new Set(['species']));

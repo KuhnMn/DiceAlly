@@ -8,7 +8,7 @@ import { EquipmentDetailsComponent } from './equipment-details.component';
 import { ItemCatalogComponent } from '../editor/item-catalog.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { AppDialogService } from '../services/app-dialog.service';
-import { Component, computed, input, signal, effect, inject } from '@angular/core';
+import { Component, computed, input, output, TemplateRef, signal, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ExportedCharacter, InventoryItem, ItemEntity, FeatureNotes } from '../models/character.model';
@@ -76,6 +76,15 @@ import { CharacterStore } from '../stores/character.store';
   templateUrl: './equipment-page.component.html',
 })
 export class EquipmentPageComponent {
+  /** Render the same source dialog in place, without mounting the catalog or consuming navigation. */
+  readonly detailEntry = input<InventoryItem | null>(null);
+  readonly detailNavigation = input<TemplateRef<unknown> | null>(null);
+  readonly detailClosed = output<void>();
+  closeDetail(id: string) {
+    if (this.detailEntry()) this.detailClosed.emit();
+    else this.toggleExpanded(id);
+  }
+
   readonly coins = [
     { kind: 'gold', label: 'Gold (GP)', name: 'Gold', unit: 'GP' },
     { kind: 'silver', label: 'Silver (SP)', name: 'Silver', unit: 'SP' },
@@ -137,6 +146,7 @@ export class EquipmentPageComponent {
 
     // Handle scroll/highlight on navigation
     effect(() => {
+      if (this.detailEntry()) return;
       const targetId = this.store.featureScrollTarget();
       if (!targetId || (!targetId.startsWith('item-'))) return;
       const target = this.characterData()?.inventory?.find(item => `item-${item.editorId ?? this.helpers.sourceId(item.name + '-' + (item.source ?? ''))}` === targetId);

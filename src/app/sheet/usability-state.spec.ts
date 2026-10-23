@@ -8,7 +8,7 @@ import { vi } from 'vitest';
 import { emptyBasicCharacter } from '../editor/basic-info';
 import { prefillCombatAction, combatSourceChanged } from '../editor/combat-actions';
 import { CharacterHelpersService } from './character-helpers.service';
-import { CombatSourceReviewComponent } from './combat-source-review.component';
+import { CombatEditorComponent } from '../editor/combat-editor.component';
 import { ConcentrationControlComponent } from './concentration-control.component';
 import { CharacterStore } from '../stores/character.store';
 import { AppDialogService } from '../services/app-dialog.service';
@@ -27,14 +27,14 @@ describe('Usability state protection', () => {
     expect(combatSourceChanged(sheet, action, helpers)).toBe(false);
     sheet.character!.abilityScores!.strength = 18;
     expect(combatSourceChanged(sheet, action, helpers)).toBe(true);
-    const fixture = TestBed.createComponent(CombatSourceReviewComponent);
+    const fixture = TestBed.createComponent(CombatEditorComponent);
     fixture.componentRef.setInput('sheet', sheet); fixture.detectChanges();
     const review = fixture.componentInstance;
     const id = action.editorId;
-    review.open(action);
-    expect(review.rows.find(row => row.key === 'damageOrHeal')?.selected).toBe(false);
-    expect(review.rows.find(row => row.key === 'hitOrDc')?.selected).toBe(true);
-    review.apply();
+    review.update(action);
+    expect(review.draft?.damageOrHeal).toBe('Custom damage for this campaign');
+    expect(review.draft?.hitOrDc).toBe('+6 to hit');
+    review.save(review.draft!);
     expect(action.hitOrDc).toBe('+6 to hit');
     expect(action.damageOrHeal).toBe('Custom damage for this campaign');
     expect(action.editorId).toBe(id);
@@ -47,10 +47,10 @@ describe('Usability state protection', () => {
     sheet.inventory = [resource];
     const action = prefillCombatAction(sheet, resource, 'ITEM', TestBed.inject(CharacterHelpersService));
     delete action.sourceSnapshot;
-    const fixture = TestBed.createComponent(CombatSourceReviewComponent);
+    const fixture = TestBed.createComponent(CombatEditorComponent);
     fixture.componentRef.setInput('sheet', sheet); fixture.detectChanges();
-    fixture.componentInstance.open(action);
-    expect(fixture.componentInstance.rows.every(row => !row.selected)).toBe(true);
+    fixture.componentInstance.update(action);
+    for (const key of ['name', 'range', 'hitOrDc', 'damageOrHeal', 'actionType'] as const) expect(fixture.componentInstance.draft?.[key]).toBe(action[key]);
   });
 
   it('tracks a custom concentration effect, reminds after damage, and ends manually', async () => {

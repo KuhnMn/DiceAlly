@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, DestroyRef, inject, input, signal } from '@angular/core';
 import { OverlayModule, ConnectedPosition } from '@angular/cdk/overlay';
 import { RuleDescriptionSnapshot } from '../models/character-references';
@@ -7,21 +8,32 @@ import { UiIconComponent } from '../ui-icon.component';
 
 let nextReferenceId = 0;
 
-/** Hover/focus reference on desktop; a separate info action opens a mobile dialog. */
+/** Reference help; combat rows also open their description from the whole row. */
 @Component({
   selector: 'app-rule-reference',
-  imports: [OverlayModule, EntryRendererComponent, SheetDetailDialogComponent, UiIconComponent],
+  imports: [NgTemplateOutlet, OverlayModule, EntryRendererComponent, SheetDetailDialogComponent, UiIconComponent],
   host: { class: 'inline-flex min-w-0 max-w-full', '[class.w-full]': "appearance() === 'row' || appearance() === 'combat'" },
   template: `
     <span cdkOverlayOrigin #origin="cdkOverlayOrigin" class="inline-flex min-w-0 max-w-full items-center gap-1 rounded focus-visible:outline-2 focus-visible:outline-primary"
-      [class]="appearance() === 'tag' ? 'min-h-9 rounded-lg border border-primary/40 bg-primary-container py-0.5 pl-2.5 pr-0.5 text-on-primary-container' : appearance() === 'row' ? 'w-full rounded-lg border border-outline-variant bg-surface-container-low px-2 hover:bg-surface-container' : appearance() === 'combat' ? 'w-full border-2 border-tertiary bg-surface-container p-2 text-tertiary' : ''"
+      [class]="appearance() === 'tag' ? 'min-h-9 rounded-lg border border-primary/40 bg-primary-container py-0.5 pl-2.5 pr-0.5 text-on-primary-container' : appearance() === 'row' ? 'w-full rounded-lg border border-outline-variant bg-surface-container-low px-2 hover:bg-surface-container' : appearance() === 'combat' ? 'w-full border-2 border-tertiary bg-surface-container text-tertiary' : ''"
       (keydown.escape)="close(); $event.stopPropagation()">
-      <ng-content />
+      @if (appearance() === 'combat') {
+        <button type="button" data-page-swipe (click)="openDescription()" aria-haspopup="dialog" [attr.aria-label]="'About ' + reference()?.name" [attr.aria-expanded]="dialogOpen()"
+          class="inline-flex min-h-11 w-full min-w-0 items-center gap-1 rounded p-2 text-left hover:bg-surface-container-high focus-visible:outline-2 focus-visible:outline-primary">
+          <ng-container [ngTemplateOutlet]="label" />
+          @if (reference()?.entries?.length) {
+            <span (mouseenter)="show()" (mouseleave)="scheduleClose()" class="inline-flex h-8 w-8 shrink-0 items-center justify-center text-on-surface-variant"><app-ui-icon name="info" /></span>
+          }
+        </button>
+      } @else {
+      <ng-container [ngTemplateOutlet]="label" />
       @if (reference()?.entries?.length) {
         <button type="button" (mouseenter)="show()" (mouseleave)="scheduleClose()" (focus)="show()" (blur)="scheduleClose()" (click)="desktop() ? show() : dialogOpen.set(true); $event.stopPropagation()" [attr.aria-label]="'About ' + reference()!.name" [attr.aria-haspopup]="desktop() ? null : 'dialog'" [attr.aria-describedby]="desktop() && opened() ? tooltipId : null" class="inline-flex shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-primary" [class.text-on-surface-variant]="appearance() !== 'tag'" [class.text-on-primary-container]="appearance() === 'tag'" [class.hover:bg-primary/15]="appearance() === 'tag'" [class.hover:bg-surface-container-high]="appearance() !== 'tag'" [class]="appearance() === 'tag' ? 'h-7 w-7 text-xs' : desktop() ? 'h-5 w-5 text-xs' : 'h-8 w-8'"><app-ui-icon name="info" /></button>
       }
+      }
       <ng-content select="[reference-actions]" />
     </span>
+    <ng-template #label><ng-content /></ng-template>
     <ng-template cdkConnectedOverlay [cdkConnectedOverlayOrigin]="origin" [cdkConnectedOverlayOpen]="opened() && desktop() && !!reference()?.entries?.length"
       [cdkConnectedOverlayPositions]="positions" [cdkConnectedOverlayPush]="true" [cdkConnectedOverlayViewportMargin]="12" (overlayOutsideClick)="close()" (overlayKeydown)="overlayKey($event)">
       <div role="tooltip" [id]="tooltipId" tabindex="0" (mouseenter)="keepOpen()" (mouseleave)="scheduleClose()" (focusin)="keepOpen()" (focusout)="scheduleClose()"
@@ -58,6 +70,7 @@ export class RuleReferenceComponent {
     changed(); media?.addEventListener('change', changed);
     destroy.onDestroy(() => { media?.removeEventListener('change', changed); this.close(); });
   }
+  openDescription() { this.close(); this.dialogOpen.set(true); }
   show() { if (this.desktop() && this.reference()?.entries.length) this.keepOpen(); }
   keepOpen() { clearTimeout(this.closeTimer); this.opened.set(true); }
   scheduleClose() { clearTimeout(this.closeTimer); this.closeTimer = setTimeout(() => this.opened.set(false), 120); }

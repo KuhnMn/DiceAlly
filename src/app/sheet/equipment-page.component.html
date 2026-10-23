@@ -1,3 +1,62 @@
+<ng-template #itemTypeTag let-item>
+          @if (item.entity?.itemType) { <span class="inline-block max-w-full rounded bg-green-container px-2 py-0.5 text-xs font-normal text-on-green-container [overflow-wrap:anywhere]">{{ item.entity?.itemType }}</span> }
+        </ng-template>
+<ng-template #itemTags let-item>
+          @if (getItemProp(item, 'weaponCategory')) { <span class="inline-block whitespace-nowrap rounded bg-blue-container px-2 py-0.5 text-xs font-normal capitalize text-on-blue-container">{{ getItemProp(item, 'weaponCategory') }}</span> }
+          @for (tag of getItemTypeTags(item); track tag) { <span class="inline-block whitespace-nowrap rounded bg-surface-container-lowest px-2 py-0.5 text-xs font-normal">{{ tag }}</span> }
+          @if (getItemProp(item, 'rarity') && getItemProp(item, 'rarity') !== 'none') { <span class="inline-block whitespace-nowrap rounded bg-purple-container px-2 py-0.5 text-xs font-normal capitalize text-on-purple-container">{{ getItemProp(item, 'rarity') }}</span> }
+        </ng-template>
+<ng-template #itemDetail let-item>
+<app-sheet-detail-dialog [title]="item.name" [tags]="itemDialogTags" (closed)="closeDetail(itemKey(item))">
+            <ng-template #itemDialogTags>
+              <ng-container [ngTemplateOutlet]="itemTypeTag" [ngTemplateOutletContext]="{ $implicit: item }" />
+              <ng-container [ngTemplateOutlet]="itemTags" [ngTemplateOutletContext]="{ $implicit: item }" />
+              @if (item.source) { <span class="rounded bg-surface-container-high px-2 py-0.5 text-xs">{{ item.source }}</span> }
+              @if (item.isDummy) { <span role="img" aria-label="Created in-app" title="Created in-app" class="inline-flex items-center rounded bg-surface-container-high px-1.5 py-1 text-sm"><app-ui-icon name="wand" /></span> }
+              @for (property of item.entity?.properties; track property.name) { <span class="rounded bg-teal-container px-2 py-0.5 text-xs text-on-teal-container">{{ property.name }}</span> }
+              @for (mastery of item.entity?.masteries; track mastery.name) { <span class="rounded bg-secondary-container px-2 py-0.5 text-xs text-on-secondary-container">{{ mastery.name }}</span> }
+            </ng-template>
+        <div class="space-y-3">
+          <div aria-label="Item summary" class="space-y-2">
+            <div class="flex flex-wrap gap-3 text-sm">
+              @if (getItemProp(item, 'weight') != null) { <span>Weight: {{ getItemProp(item, 'weight') }} lb.</span> }
+              @if (getItemProp(item, 'value') != null) { <span>Value: {{ formatGold(getItemProp(item, 'value')) }}</span> }
+              @if (getItemProp(item, 'scfType')) { <span>Focus: {{ getItemProp(item, 'scfType') }}</span> }
+            </div>
+          </div>
+        @if (getItemProp(item, 'dmg1') || (getItemProp(item, 'ac') ?? item.entity?.ac) || getItemProp(item, 'range')) {
+        <div aria-label="Item combat statistics" class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          @if (getItemProp(item, 'dmg1')) { <span>{{ getItemProp(item, 'dmg1') }} {{ getItemProp(item, 'dmgType') }}@if (getItemProp(item, 'dmg2')) { · {{ getItemProp(item, 'dmg2') }} versatile}</span> }
+          @if (getItemProp(item, 'ac') ?? item.entity?.ac) { <span>AC {{ getItemProp(item, 'ac') ?? item.entity?.ac }}</span> }
+          @if (getItemProp(item, 'range')) { <span>{{ getItemProp(item, 'range') }} ft.</span> }
+        </div>
+        }
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          <label class="flex min-h-11 cursor-pointer items-center gap-2"><input type="checkbox" [checked]="item.isEquipped ?? false" (change)="toggleEquipped(item)" class="h-5 w-5 accent-green" /> Equipped</label>
+          @if ((requiresAttunement(item) || item.isAttuned)) { <label class="flex min-h-11 cursor-pointer items-center gap-2 text-purple"><input type="checkbox" [checked]="item.isAttuned ?? false" (change)="toggleAttuned(item)" class="h-5 w-5 accent-purple" /> Attuned</label> }
+          @if (item.allowMultiples) {
+            <div class="inline-flex items-center gap-1" role="group" [attr.aria-label]="item.name + ' quantity'">
+              <span class="mr-1 text-sm">Qty</span>
+              <button type="button" (click)="updateItemCount(item, '' + ((item.count ?? 1) - 1))" [disabled]="(item.count ?? 1) <= 0" [attr.aria-label]="'Decrease quantity of ' + item.name" class="flex h-8 w-8 items-center justify-center rounded border border-outline-variant bg-surface-container-high disabled:opacity-35"><app-ui-icon name="minus" /></button>
+              <input type="number" inputmode="numeric" min="0" [attr.aria-label]="'Quantity of ' + item.name" [value]="item.count ?? 1" (input)="updateItemCount(item, $any($event.target).value)" class="h-8 w-12 rounded border border-outline-variant bg-surface px-1 text-center text-base [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
+              <button type="button" (click)="updateItemCount(item, '' + ((item.count ?? 1) + 1))" [attr.aria-label]="'Increase quantity of ' + item.name" class="flex h-8 w-8 items-center justify-center rounded border border-outline-variant bg-surface-container-high"><app-ui-icon name="plus" /></button>
+            </div>
+          }
+        </div>
+
+        @if (item.uses?.length) { <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">@for (use of item.uses; track use) { <app-feature-uses [uses]="use" (usesUpdated)="updateItemUses(item, $event)" /> }</div> }
+          <div [id]="itemKey(item) + '-details'" class="space-y-3 border-t border-outline-variant pt-3">
+            <app-equipment-details [entity]="item.entity" />
+            @if (hasAnyBonus(item)) { <section class="rounded-lg border border-tertiary bg-tertiary-container p-3 text-sm text-on-tertiary-container"><h4 class="mb-1 font-semibold">Bonuses</h4>@for (bonus of bonusFields; track bonus.key) { @if (getItemProp(item, bonus.key)) { <p>{{ bonus.label }}: {{ getItemProp(item, bonus.key) }}</p> } }</section> }
+            <app-feature-notes [notes]="item.notes" (notesChanged)="updateItemNotes(item, $event)" />
+          </div>
+        </div>
+            <ng-container [ngTemplateOutlet]="detailNavigation()" />
+</app-sheet-detail-dialog>
+</ng-template>
+@if (detailEntry(); as item) {
+  <ng-container [ngTemplateOutlet]="itemDetail" [ngTemplateOutletContext]="{ $implicit: item }" />
+} @else {
 <section class="rounded-lg border-2 border-outline bg-surface-container-highest p-3 sm:p-5">
   <div class="mb-3 flex items-center justify-between gap-2">
     <h2 class="text-xl font-bold sm:text-3xl">Inventory</h2>
@@ -42,19 +101,13 @@
         <div class="sheet-entry-list" [class.sheet-entry-list-two-columns]="listLayout.columns() === 2" [class.sheet-entry-list-three-columns]="listLayout.columns() === 3">
     @for (item of group.items; track item.editorId ?? item) {
       <article class="min-w-0 rounded-lg border border-green bg-surface-container px-3 py-1.5 sm:py-2" [id]="itemKey(item)" [class.flash-highlight]="highlightedId() === itemKey(item)">
-          <h3 class="min-w-0"><button type="button" (click)="toggleExpanded(itemKey(item))" aria-haspopup="dialog" [attr.aria-expanded]="isExpanded(itemKey(item))" [attr.aria-controls]="itemKey(item) + '-details'" class="flex min-h-8 w-full items-center justify-between gap-2 rounded text-left text-base font-bold sm:gap-3 text-green sm:text-xl focus-visible:outline-2 focus-visible:outline-primary"><span class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1"><span class="min-w-0 max-w-full truncate" [title]="item.name">{{ item.name }}</span><ng-container [ngTemplateOutlet]="itemTypeTag" /></span>
+          <h3 class="min-w-0"><button type="button" (click)="toggleExpanded(itemKey(item))" aria-haspopup="dialog" [attr.aria-expanded]="isExpanded(itemKey(item))" [attr.aria-controls]="itemKey(item) + '-details'" class="flex min-h-8 w-full items-center justify-between gap-2 rounded text-left text-base font-bold sm:gap-3 text-green sm:text-xl focus-visible:outline-2 focus-visible:outline-primary"><span class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1"><span class="min-w-0 max-w-full truncate" [title]="item.name">{{ item.name }}</span><ng-container [ngTemplateOutlet]="itemTypeTag" [ngTemplateOutletContext]="{ $implicit: item }" /></span>
           <app-ui-icon class="shrink-0" name="chevron" /></button></h3>
-        <ng-template #itemTypeTag>
-          @if (item.entity?.itemType) { <span class="inline-block max-w-full rounded bg-green-container px-2 py-0.5 text-xs font-normal text-on-green-container [overflow-wrap:anywhere]">{{ item.entity?.itemType }}</span> }
-        </ng-template>
-        <ng-template #itemTags>
-          @if (getItemProp(item, 'weaponCategory')) { <span class="inline-block whitespace-nowrap rounded bg-blue-container px-2 py-0.5 text-xs font-normal capitalize text-on-blue-container">{{ getItemProp(item, 'weaponCategory') }}</span> }
-          @for (tag of getItemTypeTags(item); track tag) { <span class="inline-block whitespace-nowrap rounded bg-surface-container-lowest px-2 py-0.5 text-xs font-normal">{{ tag }}</span> }
-          @if (getItemProp(item, 'rarity') && getItemProp(item, 'rarity') !== 'none') { <span class="inline-block whitespace-nowrap rounded bg-purple-container px-2 py-0.5 text-xs font-normal capitalize text-on-purple-container">{{ getItemProp(item, 'rarity') }}</span> }
-        </ng-template>
+
+
         @if (getItemProp(item, 'weaponCategory') || getItemTypeTags(item).length || (getItemProp(item, 'rarity') && getItemProp(item, 'rarity') !== 'none')) {
         <div class="mt-2 flex flex-wrap items-center gap-1.5">
-          <ng-container [ngTemplateOutlet]="itemTags" />
+          <ng-container [ngTemplateOutlet]="itemTags" [ngTemplateOutletContext]="{ $implicit: item }" />
         </div>
         }
         @if (item.entity?.properties?.length || item.entity?.masteries?.length) {
@@ -97,51 +150,7 @@
         }
         <app-feature-notes [notes]="item.notes" (notesChanged)="updateItemNotes(item, $event)" />
         @if (isExpanded(itemKey(item))) {
-          <app-sheet-detail-dialog [title]="item.name" [tags]="itemDialogTags" (closed)="toggleExpanded(itemKey(item))">
-            <ng-template #itemDialogTags>
-              <ng-container [ngTemplateOutlet]="itemTypeTag" />
-              <ng-container [ngTemplateOutlet]="itemTags" />
-              @if (item.source) { <span class="rounded bg-surface-container-high px-2 py-0.5 text-xs">{{ item.source }}</span> }
-              @if (item.isDummy) { <span role="img" aria-label="Created in-app" title="Created in-app" class="inline-flex items-center rounded bg-surface-container-high px-1.5 py-1 text-sm"><app-ui-icon name="wand" /></span> }
-              @for (property of item.entity?.properties; track property.name) { <span class="rounded bg-teal-container px-2 py-0.5 text-xs text-on-teal-container">{{ property.name }}</span> }
-              @for (mastery of item.entity?.masteries; track mastery.name) { <span class="rounded bg-secondary-container px-2 py-0.5 text-xs text-on-secondary-container">{{ mastery.name }}</span> }
-            </ng-template>
-        <div class="space-y-3">
-          <div aria-label="Item summary" class="space-y-2">
-            <div class="flex flex-wrap gap-3 text-sm">
-              @if (getItemProp(item, 'weight') != null) { <span>Weight: {{ getItemProp(item, 'weight') }} lb.</span> }
-              @if (getItemProp(item, 'value') != null) { <span>Value: {{ formatGold(getItemProp(item, 'value')) }}</span> }
-              @if (getItemProp(item, 'scfType')) { <span>Focus: {{ getItemProp(item, 'scfType') }}</span> }
-            </div>
-          </div>
-        @if (getItemProp(item, 'dmg1') || (getItemProp(item, 'ac') ?? item.entity?.ac) || getItemProp(item, 'range')) {
-        <div aria-label="Item combat statistics" class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-          @if (getItemProp(item, 'dmg1')) { <span>{{ getItemProp(item, 'dmg1') }} {{ getItemProp(item, 'dmgType') }}@if (getItemProp(item, 'dmg2')) { · {{ getItemProp(item, 'dmg2') }} versatile}</span> }
-          @if (getItemProp(item, 'ac') ?? item.entity?.ac) { <span>AC {{ getItemProp(item, 'ac') ?? item.entity?.ac }}</span> }
-          @if (getItemProp(item, 'range')) { <span>{{ getItemProp(item, 'range') }} ft.</span> }
-        </div>
-        }
-        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-          <label class="flex min-h-11 cursor-pointer items-center gap-2"><input type="checkbox" [checked]="item.isEquipped ?? false" (change)="toggleEquipped(item)" class="h-5 w-5 accent-green" /> Equipped</label>
-          @if ((requiresAttunement(item) || item.isAttuned)) { <label class="flex min-h-11 cursor-pointer items-center gap-2 text-purple"><input type="checkbox" [checked]="item.isAttuned ?? false" (change)="toggleAttuned(item)" class="h-5 w-5 accent-purple" /> Attuned</label> }
-          @if (item.allowMultiples) {
-            <div class="inline-flex items-center gap-1" role="group" [attr.aria-label]="item.name + ' quantity'">
-              <span class="mr-1 text-sm">Qty</span>
-              <button type="button" (click)="updateItemCount(item, '' + ((item.count ?? 1) - 1))" [disabled]="(item.count ?? 1) <= 0" [attr.aria-label]="'Decrease quantity of ' + item.name" class="flex h-8 w-8 items-center justify-center rounded border border-outline-variant bg-surface-container-high disabled:opacity-35"><app-ui-icon name="minus" /></button>
-              <input type="number" inputmode="numeric" min="0" [attr.aria-label]="'Quantity of ' + item.name" [value]="item.count ?? 1" (input)="updateItemCount(item, $any($event.target).value)" class="h-8 w-12 rounded border border-outline-variant bg-surface px-1 text-center text-base [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
-              <button type="button" (click)="updateItemCount(item, '' + ((item.count ?? 1) + 1))" [attr.aria-label]="'Increase quantity of ' + item.name" class="flex h-8 w-8 items-center justify-center rounded border border-outline-variant bg-surface-container-high"><app-ui-icon name="plus" /></button>
-            </div>
-          }
-        </div>
-
-        @if (item.uses?.length) { <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">@for (use of item.uses; track use) { <app-feature-uses [uses]="use" (usesUpdated)="updateItemUses(item, $event)" /> }</div> }
-          <div [id]="itemKey(item) + '-details'" class="space-y-3 border-t border-outline-variant pt-3">
-            <app-equipment-details [entity]="item.entity" />
-            @if (hasAnyBonus(item)) { <section class="rounded-lg border border-tertiary bg-tertiary-container p-3 text-sm text-on-tertiary-container"><h4 class="mb-1 font-semibold">Bonuses</h4>@for (bonus of bonusFields; track bonus.key) { @if (getItemProp(item, bonus.key)) { <p>{{ bonus.label }}: {{ getItemProp(item, bonus.key) }}</p> } }</section> }
-            <app-feature-notes [notes]="item.notes" (notesChanged)="updateItemNotes(item, $event)" />
-          </div>
-        </div>
-          </app-sheet-detail-dialog>
+          <ng-container [ngTemplateOutlet]="itemDetail" [ngTemplateOutletContext]="{ $implicit: item }" />
         }
 
       </article>
@@ -151,3 +160,5 @@
     } @empty { <p class="py-4 text-sm text-on-surface-variant">{{ inventory().length ? 'No items match these filters.' : 'No items in inventory.' }}</p> }
   </div>
 </section>
+
+}

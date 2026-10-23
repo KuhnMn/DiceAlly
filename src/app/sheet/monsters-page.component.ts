@@ -8,7 +8,7 @@ import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { MonsterPresentation } from './monster-presentation';
 import { FeatureUsesComponent } from './feature-uses.component';
 import { FeatureNotesComponent } from './feature-notes.component';
-import { Component, computed, input, signal, inject, effect } from '@angular/core';
+import { Component, computed, input, output, TemplateRef, signal, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ExportedCharacter,
@@ -49,6 +49,15 @@ import { ObjectStatBlockComponent } from './object-stat-block.component';
   templateUrl: './monsters-page.component.html',
 })
 export class MonstersPageComponent extends MonsterPresentation {
+  /** Render the same source dialog in place, without mounting the catalog or consuming navigation. */
+  readonly detailEntry = input<Companion | null>(null);
+  readonly detailNavigation = input<TemplateRef<unknown> | null>(null);
+  readonly detailClosed = output<void>();
+  closeDetail(id: string) {
+    if (this.detailEntry()) this.detailClosed.emit();
+    else this.toggleExpanded(id);
+  }
+
   readonly companionTypes = COMPANION_TYPES;
   readonly companionType = signal<CompanionType>('monster');
   readonly health = companionHitPoints;
@@ -120,6 +129,7 @@ export class MonstersPageComponent extends MonsterPresentation {
     super();
     // Handle scroll/highlight on navigation
     effect(() => {
+      if (this.detailEntry()) return;
       const targetId = this.store.featureScrollTarget();
       if (!targetId || (!targetId.startsWith('monster-') && !targetId.startsWith('object-'))) return;
       const type = targetId.startsWith('object-') ? 'object' : 'monster';
