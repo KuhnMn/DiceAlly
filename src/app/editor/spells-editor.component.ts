@@ -297,11 +297,13 @@ export class SpellsEditorComponent implements OnInit, OnDestroy, DoCheck {
           return false;
         });
         if (isCurrent()) {
+          // Keep active choices visible and reversible even when the current book scope
+          // has no matching spells. Refreshing content must not change user filters.
+          this.filter.classes.forEach(name => classes.add(name));
+          this.filter.levels.forEach(level => levels.add(level));
+          this.filter.schools?.forEach(school => schools.add(school));
           this.classNames.set([...classes].sort()); this.catalogLevels.set([...levels].sort((a, b) => a - b));
           this.catalogSchools.set(SPELL_SCHOOLS.filter(school => schools.has(school.value)));
-          this.filter.classes = this.filter.classes.filter(name => classes.has(name));
-          this.filter.levels = this.filter.levels.filter(level => levels.has(level));
-          this.filter.schools = this.filter.schools?.filter(school => schools.has(school));
         }
       },
     );

@@ -46,8 +46,12 @@ describe('Shared creator Source Books filter', () => {
     spells.componentInstance.filter.classes = ['Wizard']; spells.componentInstance.filter.schools = ['A'];
     books.setSelection(['TCE']); await spells.whenStable(); await features.whenStable();
     await spells.componentInstance.refreshContent(); await features.componentInstance.refreshContent();
-    expect(spells.componentInstance.classNames()).toEqual(['Warrior Sidekick']);
-    expect(spells.componentInstance.filter.classes).toEqual([]); expect(spells.componentInstance.filter.schools).toEqual([]);
+    // Selected spell filters remain visible so switching books cannot silently
+    // broaden the search or discard choices the user may return to.
+    expect(spells.componentInstance.classNames()).toEqual(['Warrior Sidekick', 'Wizard']);
+    expect(spells.componentInstance.filter.classes).toEqual(['Wizard']); expect(spells.componentInstance.filter.schools).toEqual(['A']);
+    expect(spells.componentInstance.catalogSchools().map(school => school.value)).toEqual(['A', 'E']);
+    expect(spells.componentInstance.total()).toBe(0);
     expect(features.componentInstance.catalogOptions()).toEqual({ classes: ['Warrior Sidekick'], levels: [6], categories: [] });
     features.componentInstance.setType('FEAT'); await features.componentInstance.refreshContent();
     expect(features.componentInstance.catalogOptions().categories).toEqual(['EB']);

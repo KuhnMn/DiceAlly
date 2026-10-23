@@ -6,6 +6,9 @@ import { CatalogDialogComponent } from './catalog-dialog.component';
 import { FeaturesEditorComponent } from './features-editor.component';
 import { SpellsEditorComponent } from './spells-editor.component';
 import { emptyBasicCharacter } from './basic-info';
+import { IndexedDbContentCache } from '../content/content-cache';
+import { mapContent } from '../content/content-adapter';
+import { ADAPTER_VERSION, DEFAULT_CONTENT_SOURCE, ImportRevision, sourceIdentity } from '../content/content.model';
 
 describe('Creator catalog dialogs', () => {
   beforeEach(() => TestBed.configureTestingModule({ providers: [provideRouter([])] }));
@@ -37,9 +40,21 @@ describe('Creator catalog dialogs', () => {
   });
 
   it('keeps spell multi-selection when returning to the character and reopening the catalog', async () => {
+    localStorage.removeItem('ally-creator-source-books');
+    const cache = new IndexedDbContentCache();
+    const source = { ...DEFAULT_CONTENT_SOURCE, owner: 'catalog-dialog-test' };
+    const revision: ImportRevision = { id: crypto.randomUUID(), namespace: 'development-local', source,
+      sourceIdentity: sourceIdentity(source), commit: 'a'.repeat(40), adapterVersion: ADAPTER_VERSION,
+      status: 'staging', createdAt: new Date().toISOString(), files: [], diagnostics: [],
+      metrics: { bytes: 0, records: 3, mappedBytes: 0, elapsedMs: 0 } };
+    const records = mapContent({ spell: [0, 1, 9].map(level => ({ name: `Shield ${level}`, source: 'TEST', level,
+      classes: { fromClassList: [{ name: 'Wizard', source: 'TEST' }, { name: 'Artificer', source: 'TEST' }] } })) }, 'dialog-spells.json').records;
+    await cache.stage(revision); await cache.put(revision.id, records); await cache.activate(revision);
+    await cache.saveSource('development-local', source);
     const fixture = TestBed.createComponent(SpellsEditorComponent);
     fixture.componentRef.setInput('sheet', emptyBasicCharacter()); await fixture.whenStable();
     const editor = fixture.componentInstance;
+    await editor.refreshContent();
     editor.filter = { search: 'shield', classes: ['Wizard', 'Artificer'], levels: [0, 1, 9] };
     const trigger = fixture.nativeElement.querySelector('button[aria-haspopup="dialog"]') as HTMLButtonElement;
     trigger.click(); await fixture.whenStable();

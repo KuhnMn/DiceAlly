@@ -138,6 +138,39 @@ describe('Spell creator and playing sheet', () => {
     editor.clearCatalogFilters(); await fixture.whenStable(); await editor.searchContent(); expect(editor.total()).toBe(43);
   });
 
+  it('retains selected filters across book changes and catalog refreshes without broadening results', async () => {
+    await catalog();
+    const fixture = TestBed.createComponent(SpellsEditorComponent);
+    fixture.componentRef.setInput('sheet', emptyBasicCharacter());
+    await fixture.whenStable();
+    const editor = fixture.componentInstance;
+    await editor.refreshContent();
+    const selected = { search: '', classes: ['Bard'], levels: [1], schools: ['E' as const] };
+    editor.filter = structuredClone(selected);
+    await editor.searchContent();
+    expect(editor.total()).toBe(1);
+
+    const books = TestBed.inject(SourceBookFilterService);
+    books.setSelection(['OTHER']);
+    await fixture.whenStable();
+    await editor.refreshContent();
+    expect(editor.filter).toEqual(selected);
+    expect(editor.total()).toBe(0);
+    expect(editor.classNames()).toContain('Bard');
+    expect(editor.catalogLevels()).toContain(1);
+    expect(editor.catalogSchools().map(school => school.value)).toContain('E');
+
+    books.setSelection(['TEST']);
+    await fixture.whenStable();
+    await editor.refreshContent();
+    editor.openCatalog(); editor.catalogOpen = false; editor.openCatalog();
+    expect(editor.filter).toEqual(selected);
+    expect(editor.total()).toBe(1);
+    editor.clearCatalogFilters();
+    await editor.searchContent();
+    expect(editor.total()).toBe(42);
+  });
+
   it('combines multiple classes and non-contiguous levels for browsing and bulk addition', async () => {
     const data = await catalog();
     const records = mapContent({ spell: [

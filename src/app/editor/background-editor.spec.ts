@@ -9,7 +9,7 @@ import { ADAPTER_VERSION, DEFAULT_CONTENT_SOURCE, ImportRevision, sourceIdentity
 import { IndexedDbContentCache } from '../content/content-cache';
 import { IndexedDbCharacterRepository } from '../characters/indexeddb-character-repository';
 import { characterDescription } from '../character-description';
-import { MobileCharacterHeaderComponent } from '../sheet/mobile-character-header.component';
+import { MobileCharacterInfoPageComponent } from '../sheet/mobile-character-info-page.component';
 import { CharacterInfoPageComponent } from '../sheet/character-info-page.component';
 
 describe('Optional backgrounds', () => {
@@ -68,7 +68,7 @@ describe('Optional backgrounds', () => {
     expect(characterDescription(sheet)).toBe('Elf Ranger');
   });
 
-  it.each([MobileCharacterHeaderComponent, CharacterInfoPageComponent])('shows an inspectable background on the sheet in %s', async component => {
+  it.each([MobileCharacterInfoPageComponent, CharacterInfoPageComponent])('shows an inspectable background on the sheet in %s', async component => {
     const sheet = emptyBasicCharacter(); sheet.background = { name: 'Sage', source: 'PHB', entity: { entries: [{ text: 'Saved background entry.' }] } };
     const fixture = TestBed.createComponent(component); fixture.componentRef.setInput('characterData', sheet); fixture.detectChanges();
     fixture.nativeElement.querySelector('[aria-label="View background Sage"]').click(); await fixture.whenStable();

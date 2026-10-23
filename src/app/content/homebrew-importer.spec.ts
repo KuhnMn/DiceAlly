@@ -155,6 +155,8 @@ describe('Explicit single-file homebrew imports', () => {
     await expect(importHomebrew(f.cache, { ...f, base: removed, removeFileId: first.id, bytes: 0 })).rejects.toThrow('no longer installed');
     expect((await f.cache.active(f.namespace, f.source))!.id).toBe(removed.id);
   });
+  // Full schema-validated core reimport plus variant generation needs more than
+  // the default five seconds under parallel suite load.
   it('keeps homebrew dependency warnings nonfatal when core recipes generate magic weapons on reimport', async () => {
     const f = await fixture();
     const file = await readHomebrewFile({ baseitem: [
@@ -184,7 +186,7 @@ describe('Explicit single-file homebrew imports', () => {
     const variable = items.find(item => item.name === 'Vicious Incomplete Gun')!;
     expect(variable.data['entries']).toEqual(["Deals damage of the weapon's normal type."]);
     expect(variable.itemDefinition?.dmgType).toBeUndefined();
-  });
+  }, 30000);
   it('retains explicitly selected files through a core-library reimport', async () => {
     const f = await fixture();
     const brew = await importHomebrew(f.cache, { ...f, file: await readHomebrewFile(document(), 'selected.json'), bytes: 100 });

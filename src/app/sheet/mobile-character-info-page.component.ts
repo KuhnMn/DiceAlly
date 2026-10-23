@@ -13,15 +13,17 @@ import { BackgroundDetailsComponent } from '../background-details.component';
   imports: [BackgroundDetailsComponent, RuleReferenceComponent, SheetSpeedDescriptionComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent],
   template: `
     @if (character(); as c) {
-      <section aria-label="Character Details" class="mb-3 space-y-1 rounded-xl border border-outline-variant bg-surface-container p-3 text-xs">
+      <section aria-label="Character Details" class="mb-3 flex flex-wrap items-center gap-x-2 rounded-xl border border-outline-variant bg-surface-container px-3 py-1.5 text-xs">
         @if (characterData()?.species?.name) {
-          <div>
-            <button type="button" class="min-h-8 text-primary underline" (click)="goToSpecies()">{{ characterData()?.species?.name }}</button>
-          </div>
+          <button type="button" class="min-h-8 text-primary underline [overflow-wrap:anywhere]" (click)="goToSpecies()">{{ characterData()?.species?.name }}</button>
         }
-        @if (classDescription()) { <p class="font-medium [overflow-wrap:anywhere]">{{ classDescription() }}</p> }
+        @if (classDescription()) { <span class="font-medium [overflow-wrap:anywhere]">{{ classDescription() }}</span> }
+        @if (!classDescription() && !characterData()?.species?.name) { <span>Level {{ c.level ?? 1 }}</span> }
         @if (characterData()?.background; as background) {
-          <div class="[overflow-wrap:anywhere]"><span class="text-on-surface-variant">Background: </span><app-background-details [background]="background" /></div>
+          <span class="inline-flex min-w-0 items-center gap-2 [overflow-wrap:anywhere]">
+            <span aria-hidden="true" class="text-on-surface-variant">·</span>
+            <app-background-details [background]="background" />
+          </span>
         }
       </section>
       <div class="space-y-2 rounded-lg border border-outline-variant bg-surface-container-highest p-2.5">
