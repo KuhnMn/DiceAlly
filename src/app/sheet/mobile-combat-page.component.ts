@@ -1,3 +1,4 @@
+import { CombatActionColumnsComponent } from './combat-action-columns.component';
 import { CombatActionComponent } from './combat-action.component';
 import { ConcentrationControlComponent } from './concentration-control.component';
 import { Component } from '@angular/core';
@@ -7,7 +8,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
 
 @Component({
   selector: 'app-mobile-combat-page',
-  imports: [CombatActionComponent, BasicCombatActionsComponent, UiIconComponent, ConcentrationControlComponent],
+  imports: [CombatActionColumnsComponent, CombatActionComponent, BasicCombatActionsComponent, UiIconComponent, ConcentrationControlComponent],
   template: `
     @if (character(); as c) {
           <!-- Combat Actions -->
@@ -39,6 +40,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
                         @if (groupedBasicActions()[actionType]?.length) {
                           <app-basic-combat-actions [actions]="groupedBasicActions()[actionType]" />
                         }
+                        @if (groupedCombatActions()[actionType]?.length) { <app-combat-action-columns /> }
                         @for (action of groupedCombatActions()[actionType]; track action) {
                           <app-combat-action [action]="action" [sheet]="characterData()!" [linkType]="getCombatActionLinkType(action)" [navigable]="isActionClickable(action)" (navigated)="navigateToCombatAction(action)" />
                         }

@@ -1,3 +1,4 @@
+import { CombatActionColumnsComponent } from './combat-action-columns.component';
 import { CombatActionComponent } from './combat-action.component';
 import { characterClasses } from '../character-description';
 import { BackgroundDetailsComponent } from '../background-details.component';
@@ -24,7 +25,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
 
 @Component({
   selector: 'app-character-info-page',
-  imports: [CombatActionComponent, BasicCombatActionsComponent, RuleReferenceComponent, SheetSpeedControlComponent, SheetSpeedDescriptionComponent, BackgroundDetailsComponent, ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
+  imports: [CombatActionColumnsComponent, CombatActionComponent, BasicCombatActionsComponent, RuleReferenceComponent, SheetSpeedControlComponent, SheetSpeedDescriptionComponent, BackgroundDetailsComponent, ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
   styleUrl: './sheet-stat-tooltip.css',
   styles: [`
     .round-tracker-input::-webkit-outer-spin-button,
@@ -463,6 +464,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
                         @if (groupedBasicActions()[actionType]?.length) {
                           <app-basic-combat-actions [actions]="groupedBasicActions()[actionType]" />
                         }
+                        @if (groupedCombatActions()[actionType]?.length) { <app-combat-action-columns /> }
                         @for (action of groupedCombatActions()[actionType]; track action) {
                           <app-combat-action [action]="action" [sheet]="characterData()!" [linkType]="getCombatActionLinkType(action)" [navigable]="isActionClickable(action)" (navigated)="navigateToCombatAction(action)" />
                         }

@@ -25,18 +25,21 @@ const LINK_STYLES = {
   host: { class: 'block min-w-0' },
   imports: [NgClass, NgTemplateOutlet, UiIconComponent, SheetDetailDialogComponent, EntryRendererComponent, SpellsPageComponent, FeaturesPageComponent, EquipmentPageComponent, MonstersPageComponent],
   template: `
-    <div class="flex min-w-0 items-stretch rounded border-2 bg-surface-container transition-colors" [ngClass]="style()">
+    <div class="relative min-w-0 rounded border-2 bg-surface-container transition-colors" [ngClass]="style()">
       <button type="button" data-page-swipe (click)="opened.set(true)" aria-haspopup="dialog" [attr.aria-label]="'Details for ' + (action().name || 'Combat Action')" [attr.aria-expanded]="opened()"
-        class="min-h-11 min-w-0 flex-1 rounded p-2 text-left focus-visible:outline-2 focus-visible:outline-primary">
-        <span class="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,2fr)] gap-2 text-sm">
-          <span class="font-semibold [overflow-wrap:anywhere]">{{ action().name || 'Combat Action' }}@if (action().range) { <span class="block text-xs font-normal text-on-surface-variant">{{ action().range }}</span> }</span>
-          <span class="min-w-0 line-clamp-2 text-center font-mono text-xs [overflow-wrap:anywhere]" [title]="action().hitOrDc">{{ action().hitOrDc }}</span>
-          <span class="min-w-0 line-clamp-5 text-right font-mono text-xs [overflow-wrap:anywhere]" [title]="action().damageOrHeal">{{ action().damageOrHeal }}</span>
+        class="block min-h-11 w-full min-w-0 rounded px-2 py-1.5 text-left sm:p-2 focus-visible:outline-2 focus-visible:outline-primary">
+        <span class="mb-0.5 flex min-h-6 items-center text-sm font-semibold sm:mb-1 sm:min-h-8" [class]="navigable() ? 'pr-8 sm:pr-11' : ''">
+          <span class="min-w-0 [overflow-wrap:anywhere]">{{ action().name || 'Combat Action' }}</span>
+        </span>
+        <span class="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,2fr)] gap-2 font-sans text-[11px] font-normal leading-4 text-on-surface-variant sm:text-xs">
+          <span class="min-w-0 [overflow-wrap:anywhere]" [title]="action().range">{{ action().range }}</span>
+          <span class="min-w-0 line-clamp-2 text-center [overflow-wrap:anywhere]" [title]="action().hitOrDc">{{ action().hitOrDc }}</span>
+          <span class="min-w-0 line-clamp-5 text-right [overflow-wrap:anywhere]" [title]="action().damageOrHeal">{{ action().damageOrHeal }}</span>
         </span>
       </button>
       @if (navigable()) {
         <button type="button" (click)="goToSource()" [attr.aria-label]="'Go to source for ' + (action().name || 'Combat Action')" title="Go to source"
-          class="flex min-h-11 w-11 shrink-0 items-center justify-center rounded border-l border-current/20 focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="right" /></button>
+          class="absolute right-0 top-0 flex h-8 w-8 items-center justify-center rounded border-l border-current/20 sm:h-11 sm:w-11 focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="right" /></button>
       }
     </div>
     <ng-template #navigation>
