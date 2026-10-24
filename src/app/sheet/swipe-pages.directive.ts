@@ -7,7 +7,6 @@ import { captureSwipePane, SwipeSnapshot } from './swipe-snapshot';
   selector: '[appSwipePages]',
   host: {
     '(touchstart)': 'start($event)',
-    '(touchmove)': 'move($event)',
     '(touchend)': 'end($event)',
     '(touchcancel)': 'cancel()',
     '(window:resize)': 'reset()',
@@ -32,6 +31,8 @@ export class SwipePagesDirective {
   private hidden = false;
   private opacity = '';
   private suppressClickUntil = 0;
+  private scrollLock?: { root: HTMLElement; overflow: string; overflowPriority: string; gutter: string; gutterPriority: string };
+  private readonly preventScroll = (event: Event) => { if (event.cancelable) event.preventDefault(); };
 
   constructor() {
     const host = this.element.nativeElement;
@@ -39,11 +40,41 @@ export class SwipePagesDirective {
       if (performance.now() >= this.suppressClickUntil) return;
       event.preventDefault(); event.stopImmediatePropagation();
     };
+    // Explicitly non-passive so the first horizontal movement can cancel native scrolling.
+    const move = (event: TouchEvent) => this.move(event);
+    host.addEventListener('touchmove', move, { capture: true, passive: false });
     host.addEventListener('click', preventSwipeClick, true);
     inject(DestroyRef).onDestroy(() => {
       this.reset();
       host.removeEventListener('click', preventSwipeClick, true);
+      host.removeEventListener('touchmove', move, true);
     });
+  }
+
+  private lockScroll() {
+    if (this.scrollLock) return;
+    const document = this.element.nativeElement.ownerDocument;
+    const root = document.documentElement;
+    this.scrollLock = { root, overflow: root.style.getPropertyValue('overflow-y'), overflowPriority: root.style.getPropertyPriority('overflow-y'),
+      gutter: root.style.getPropertyValue('scrollbar-gutter'), gutterPriority: root.style.getPropertyPriority('scrollbar-gutter') };
+    // Keep classic scrollbar space on hybrid tablets without changing overlay-scrollbar layouts.
+    if (root.clientWidth > 0 && window.innerWidth > root.clientWidth && !getComputedStyle(root).scrollbarGutter.includes('stable')) {
+      root.style.setProperty('scrollbar-gutter', 'stable', 'important');
+    }
+    root.style.setProperty('overflow-y', 'hidden', 'important');
+    document.addEventListener('touchmove', this.preventScroll, { capture: true, passive: false });
+    document.addEventListener('wheel', this.preventScroll, { capture: true, passive: false });
+  }
+
+  private unlockScroll() {
+    const lock = this.scrollLock;
+    if (!lock) return;
+    const document = lock.root.ownerDocument;
+    lock.root.style.setProperty('overflow-y', lock.overflow, lock.overflowPriority);
+    lock.root.style.setProperty('scrollbar-gutter', lock.gutter, lock.gutterPriority);
+    document.removeEventListener('touchmove', this.preventScroll, true);
+    document.removeEventListener('wheel', this.preventScroll, true);
+    this.scrollLock = undefined;
   }
 
   private reducedMotion() { return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches; }
@@ -110,6 +141,7 @@ export class SwipePagesDirective {
       if (Math.abs(dy) >= 12 && Math.abs(dy) > Math.abs(dx) * 1.2) { this.cancel(); return; }
       if (Math.abs(dx) < 12 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
       this.horizontal = true;
+      this.lockScroll();
     }
     if (event.cancelable) event.preventDefault();
     this.picture();
@@ -126,6 +158,7 @@ export class SwipePagesDirective {
     const dx = point.clientX - origin.x, dy = point.clientY - origin.y;
     if (Math.abs(dx) < 70 || (!this.horizontal && Math.abs(dx) < Math.abs(dy) * 1.4) || !this.allowed(dx)) { this.cancel(); return; }
     this.suppressClickUntil = performance.now() + 500;
+    this.lockScroll();
     this.picture();
     const outgoing = this.current;
     const active = document.activeElement;
@@ -156,6 +189,7 @@ export class SwipePagesDirective {
   }
 
   reset() {
+    this.unlockScroll();
     this.origin = undefined;
     if (this.frame) cancelAnimationFrame(this.frame);
     this.frame = 0; clearTimeout(this.timer); this.timer = undefined;

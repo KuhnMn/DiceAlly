@@ -300,6 +300,59 @@ describe('Mobile page swipes', () => {
     touch(content, 'touchstart', 280, 100, true); touch(content, 'touchend', 100, 100);
     expect(pages).toEqual([]);
   });
+
+  it('locks document scrolling after horizontal recognition, including vertical drift and the outgoing transition', async () => {
+    const { fixture, content, pages, touch } = setup();
+    vi.spyOn(content.parentElement!, 'getBoundingClientRect').mockReturnValue({ left: 8, top: 100, bottom: 800, width: 374, height: 700 } as DOMRect);
+    const root = document.documentElement;
+    const before = root.style.overflowY;
+    touch(content, 'touchstart', 280, 200);
+    expect(root.style.overflowY).toBe(before);
+    touch(content, 'touchmove', 240, 205);
+    expect(root.style.overflowY).toBe('hidden');
+    expect(touch(content, 'touchmove', 180, 400).defaultPrevented).toBe(true);
+    const outside = new Event('touchmove', { bubbles: true, cancelable: true });
+    document.body.dispatchEvent(outside); expect(outside.defaultPrevented).toBe(true);
+    touch(content, 'touchend', 100, 400);
+    expect(pages).toEqual([1]); expect(root.style.overflowY).toBe('hidden');
+    await new Promise(resolve => setTimeout(resolve, 300));
+    expect(root.style.overflowY).toBe(before);
+    const released = new Event('touchmove', { bubbles: true, cancelable: true });
+    document.body.dispatchEvent(released); expect(released.defaultPrevented).toBe(false);
+    fixture.destroy();
+  });
+
+  it('releases scroll locks after cancellation, resize and destruction and restores prior inline styles', async () => {
+    const { fixture, content, pages, touch } = setup();
+    vi.spyOn(content.parentElement!, 'getBoundingClientRect').mockReturnValue({ left: 8, top: 100, bottom: 800, width: 374, height: 700 } as DOMRect);
+    const root = document.documentElement, previous = root.getAttribute('style');
+    root.style.setProperty('overflow-y', 'scroll', 'important');
+    root.style.setProperty('scrollbar-gutter', 'stable both-edges', 'important');
+    const priority = root.style.getPropertyPriority('overflow-y');
+    try {
+      for (const finish of ['cancel', 'resize', 'destroy']) {
+        touch(content, 'touchstart', 280, 200); touch(content, 'touchmove', 240, 205);
+        expect(root.style.overflowY).toBe('hidden');
+        if (finish === 'cancel') { content.dispatchEvent(new Event('touchcancel', { bubbles: true })); await new Promise(resolve => setTimeout(resolve, 200)); }
+        else if (finish === 'resize') window.dispatchEvent(new Event('resize'));
+        else fixture.destroy();
+        expect(root.style.overflowY).toBe('scroll');
+        expect(root.style.getPropertyPriority('overflow-y')).toBe(priority);
+        expect(root.style.scrollbarGutter).toBe('stable both-edges');
+      }
+      expect(pages).toEqual([]);
+    } finally { if (previous === null) root.removeAttribute('style'); else root.setAttribute('style', previous); }
+  });
+
+  it('never locks document scrolling for an initially vertical gesture', () => {
+    const { content, pages, touch } = setup();
+    const before = document.documentElement.style.overflowY;
+    touch(content, 'touchstart', 280, 200);
+    expect(touch(content, 'touchmove', 275, 250).defaultPrevented).toBe(false);
+    expect(document.documentElement.style.overflowY).toBe(before);
+    touch(content, 'touchend', 100, 260);
+    expect(pages).toEqual([]);
+  });
 });
 
 describe('Shared sheet health adjustments', () => {
