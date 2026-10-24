@@ -1,7 +1,7 @@
 import { Component, computed, input, signal } from '@angular/core';
 import { ContentRecord } from '../content/content.model';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
-import { classCastingNotes, classGrantedSpells, classResourceTables, resourceCell, ResourceTable } from './class-resources';
+import { classCastingNotes, classGrantedSpells, classResourceTables, groupGrantedSpells, resourceCell, ResourceTable } from './class-resources';
 
 @Component({
   selector: 'app-class-resources',
@@ -24,6 +24,7 @@ export class ClassResourcesComponent {
   readonly tables = computed(() => classResourceTables(this.owner(), this.subclass()));
   readonly notes = computed(() => classCastingNotes(this.owner(), this.subclass()));
   readonly grants = computed(() => classGrantedSpells(this.owner(), this.subclass()));
+  readonly grantLists = computed(() => groupGrantedSpells(this.grants()));
   readonly levels = computed(() => Array.from({ length: Math.max(20, ...this.tables().map(table => table.rows.length)) }, (_, index) => index + 1));
   cell(table: ResourceTable, level: number, column: number) { return resourceCell(table.rows[level]?.[column]); }
   levelChanged(value: string) { const level = Number(value); if (this.levels().includes(level)) this.selectedLevel.set(level); }

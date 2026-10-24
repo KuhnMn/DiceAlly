@@ -17,27 +17,41 @@
       <button type="button" class="mb-2 inline-flex min-h-11 items-center gap-1 text-sm text-primary" (click)="showAllClasses()"><app-ui-icon name="left" /> All Classes</button>
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div><h2 class="text-xl font-bold">{{ owner.name }} <span class="text-sm font-normal text-on-surface-variant">{{ owner.publication }}</span></h2><p class="mt-1 text-sm text-on-surface-variant">{{ classSummary() }}</p></div>
-        <button type="button" class="compendium-button" (click)="openDetails(owner)"><app-ui-icon name="info" /> Class Details</button>
       </div>
+      @if (owner.file.startsWith('homebrew/')) { <p class="mt-1 text-xs text-on-surface-variant">Homebrew</p> }
+      <app-compendium-details [record]="owner" [revision]="revision()!" [overview]="true" />
     </section>
     @if (progressionLoading()) { <p role="status" class="py-4">Loading subclasses and class features…</p> }
     @else {
-      <section class="mb-5" aria-label="Subclasses">
+      <section class="mb-4" aria-label="Subclasses">
         <h2 class="mb-1 text-lg font-semibold">Subclasses</h2>
-        <p class="mb-3 text-xs text-on-surface-variant">Select a subclass to add its features to the progression below.</p>
+        <p class="mb-2 text-xs text-on-surface-variant">Select a subclass to add its features to the progression below.</p>
         <app-compendium-source-filter class="mb-3" label="Subclass Source Books" [books]="subclassBooks()" [selected]="subclassSources()" [defaults]="selectedSources()" (selectedChange)="setSubclassSources($event)" />
         @if (subclassSources().length) {
           <div class="mb-3 flex flex-wrap gap-1" aria-label="Active subclass filters"><app-active-filter-chips [groups]="[{key: 'source', label: 'Subclass Source Books', values: subclassSources()}]" (removed)="setSubclassSources([])" /></div>
         }
-        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+        <label class="block sm:hidden"><span class="sr-only">Subclass</span>
+          <select aria-label="Subclass" class="min-h-11 w-full min-w-0 rounded-lg border border-outline-variant bg-surface-container px-2 text-base text-on-surface"
+            [value]="selectedSubclass()?.key || ''" (change)="selectSubclass($any($event.target).value)">
+            <option value="">Base Class Only</option>
+            @for (subclass of visibleSubclasses(); track subclass.key) { <option [value]="subclass.key">{{ subclass.name }} · {{ subclass.publication }}</option> }
+          </select>
+        </label>
+        <div class="hidden flex-wrap gap-1.5 sm:flex" aria-label="Subclass selection">
           <button type="button" (click)="chooseSubclass(null)" [attr.aria-pressed]="!selectedSubclass()" class="subclass-option" [class.active-subclass]="!selectedSubclass()">Base Class Only</button>
           @for (subclass of visibleSubclasses(); track subclass.key) {
             <button type="button" (click)="chooseSubclass(subclass)" [attr.aria-pressed]="selectedSubclass()?.key === subclass.key" class="subclass-option" [class.active-subclass]="selectedSubclass()?.key === subclass.key">
-              <span class="block font-semibold">{{ subclass.name }}</span><span class="mt-1 block text-xs opacity-80">{{ subclass.publication }}</span>
+              <span class="font-semibold">{{ subclass.name }}</span><span class="text-[11px] opacity-80">{{ subclass.publication }}</span>
             </button>
           }
         </div>
         @if (!visibleSubclasses().length) { <p class="mt-2 text-sm text-on-surface-variant">{{ subclasses().length ? 'No subclasses match these source books. Choose other books or All Books to see more.' : 'No subclasses for this class edition are installed.' }}</p> }
+        @if (selectedSubclass(); as subclass) {
+          <section class="mt-3 border-t border-outline-variant pt-2" aria-label="Selected subclass description">
+            <h3 class="text-sm font-semibold">{{ subclass.name }} <span class="text-xs font-normal text-on-surface-variant">{{ subclass.publication }}</span></h3>
+            <app-compendium-details [record]="subclass" [revision]="revision()!" [overview]="true" />
+          </section>
+        }
       </section>
       <app-class-resources [owner]="owner" [subclass]="selectedSubclass()" />
       <section aria-label="Class feature progression" [attr.aria-busy]="subclassLoading()">
@@ -82,8 +96,7 @@
   }
   @if (detail(); as entry) {
     <app-sheet-detail-dialog [title]="entry.name" (closed)="closeDetails()">
-      <app-compendium-details [record]="entry" [revision]="revision()!" [related]="detailRelated()" (opened)="openDetails($event)" />
-      @if (detailError()) { <p role="alert" class="mt-3 text-sm">{{ detailError() }}</p> }
+      <app-compendium-details [record]="entry" [revision]="revision()!" />
     </app-sheet-detail-dialog>
   }
 </main>

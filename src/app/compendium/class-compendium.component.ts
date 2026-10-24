@@ -26,7 +26,6 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
   private readonly cache = new IndexedDbContentCache();
   private version = 0;
   private subclassVersion = 0;
-  private detailVersion = 0;
   private destroyed = false;
   readonly revision = signal<ImportRevision | null>(null);
   readonly classes = signal<ContentRecord[]>([]);
@@ -43,8 +42,6 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
   readonly error = signal('');
   readonly progressionError = signal('');
   readonly detail = signal<ContentRecord | null>(null);
-  readonly detailRelated = signal<ContentRecord[]>([]);
-  readonly detailError = signal('');
   readonly query = signal('');
   readonly selectedSources = signal([...this.sourceDefaults.selected()]);
   readonly subclassSources = signal([...this.selectedSources()]);
@@ -142,21 +139,8 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
     } catch (error) { if (version === this.subclassVersion) this.progressionError.set(`Could not load this subclass: ${String(error)}`); }
     finally { if (version === this.subclassVersion) this.subclassLoading.set(false); }
   }
-  async openDetails(record: ContentRecord) {
-    const revision = this.revision(), version = ++this.detailVersion;
-    this.detail.set(record); this.detailRelated.set([]); this.detailError.set('');
-    if (!revision) return;
-    try {
-      const keys = [...new Set(record.links.filter(link => link.scope !== 'provenance' && link.status !== 'missing').map(link => link.target))].filter(key => key !== record.key);
-      const records: ContentRecord[] = [];
-      for (let start = 0; start < keys.length; start += 20) {
-        if (version !== this.detailVersion) return;
-        const batch = await Promise.all(keys.slice(start, start + 20).map(key => this.cache.get(revision.id, key)));
-        records.push(...batch.filter((value): value is ContentRecord => !!value));
-      }
-      if (version === this.detailVersion) this.detailRelated.set(records);
-    } catch (error) { if (version === this.detailVersion) this.detailError.set(`Related entries could not be loaded: ${String(error)}`); }
-  }
-  closeDetails() { ++this.detailVersion; this.detail.set(null); this.detailRelated.set([]); this.detailError.set(''); }
-  ngOnDestroy() { this.destroyed = true; ++this.version; ++this.subclassVersion; ++this.detailVersion; }
+  selectSubclass(key: string) { return this.chooseSubclass(this.visibleSubclasses().find(record => record.key === key) ?? null); }
+  openDetails(record: ContentRecord) { this.detail.set(record); }
+  closeDetails() { this.detail.set(null); }
+  ngOnDestroy() { this.destroyed = true; ++this.version; ++this.subclassVersion; }
 }

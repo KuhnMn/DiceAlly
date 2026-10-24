@@ -20,6 +20,7 @@ import { FACET_LABELS, Facet, facetLabel, kindLabel, recordFacets } from './comp
   selector: 'app-compendium-details',
   imports: [EntryRendererComponent, SpellDetailsComponent, MonsterStatBlockComponent, ObjectStatBlockComponent, PrerequisiteDetailsComponent],
   template: `
+    @if (!overview()) {
     <p class="mb-3 text-sm text-on-surface-variant">{{ kindLabel(record().kind) }} · {{ record().publication }}
       @if (sourceData()['page']; as page) { · Page {{ page }} }
     </p>
@@ -33,8 +34,9 @@ import { FACET_LABELS, Facet, facetLabel, kindLabel, recordFacets } from './comp
         <div class="min-w-0"><dt class="text-xs text-on-surface-variant">{{ field.label }}</dt><dd class="font-medium [overflow-wrap:anywhere]">{{ field.value }}</dd></div>
       }
     </dl>
+    }
     <app-prerequisite-details [prerequisites]="prerequisites()" />
-    @if (statistics().length) {
+    @if (!overview() && statistics().length) {
       <dl class="mb-4 grid grid-cols-2 gap-3 text-sm">
         @for (stat of statistics(); track stat.label) {
           <div><dt class="text-xs text-on-surface-variant">{{ stat.label }}</dt><dd><app-entry-renderer [entry]="{text: stat.value}" [compact]="true" /></dd></div>
@@ -48,12 +50,12 @@ import { FACET_LABELS, Facet, facetLabel, kindLabel, recordFacets } from './comp
       <app-object-stat-block [value]="object" />
     } @else {
       @for (section of sections(); track section.title) {
-        <section class="mt-4 min-w-0">
+        <section class="min-w-0" [class.mt-4]="!overview()" [class.mt-2]="overview()">
           @if (section.title) { <h3 class="mb-2 text-base font-semibold">{{ section.title }}</h3> }
           <app-entry-renderer [entries]="section.entries" />
         </section>
       }
-      @if (!sections().length) { <p class="mt-3 text-sm text-on-surface-variant">No description is included in this entry.</p> }
+      @if (!sections().length && !overview()) { <p class="mt-3 text-sm text-on-surface-variant">No description is included in this entry.</p> }
     }
     @if (related().length) {
       <section class="mt-5 border-t border-outline-variant pt-3"><h3 class="mb-2 font-semibold">Related Entries</h3>
@@ -69,6 +71,8 @@ import { FACET_LABELS, Facet, facetLabel, kindLabel, recordFacets } from './comp
   `,
 })
 export class CompendiumDetailsComponent {
+  /** Class/subclass descriptions live beside their existing summary and resource information. */
+  readonly overview = input(false);
   readonly record = input.required<ContentRecord>();
   readonly revision = input.required<ImportRevision>();
   readonly related = input<ContentRecord[]>([]);

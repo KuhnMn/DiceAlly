@@ -11,7 +11,7 @@
 .result-row.selected { background: var(--md-sys-color-secondary-container); }
 .result-row:disabled { opacity: .5; }
 .desktop-details { display: none; }
-.subclass-option { min-height: 3rem; min-width: 0; border: 1px solid var(--md-sys-color-outline-variant); border-radius: .75rem; padding: .65rem .75rem; background: var(--md-sys-color-surface-container); text-align: left; font-size: .875rem; overflow-wrap: anywhere; }
+.subclass-option { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.75rem; min-width: 0; max-width: 100%; border: 1px solid var(--md-sys-color-outline-variant); border-radius: .5rem; padding: .35rem .6rem; background: var(--md-sys-color-surface-container); text-align: left; font-size: .75rem; overflow-wrap: anywhere; }
 .subclass-option:hover { background: var(--md-sys-color-surface-container-high); }
 .subclass-option:focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 2px; }
 .active-subclass { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); border-color: var(--md-sys-color-primary); }

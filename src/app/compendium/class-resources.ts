@@ -13,7 +13,18 @@ export interface ResourceTable {
   labels: string[]; rows: SourceEntries[]; note?: string;
 }
 export interface CastingNote { owner: string; label: string; text: string; }
-export interface GrantedSpellGroup { id: string; owner: string; title: string; requirement: string; frequency: string; entries: SourceEntries; expanded: boolean; }
+export interface GrantedSpellGroup { id: string; listId: string; owner: string; title: string; requirement: string; requirementShort: string; frequency: string; entries: SourceEntries; expanded: boolean; }
+export interface GrantedSpellList { id: string; owner: string; title: string; groups: GrantedSpellGroup[]; expanded: boolean; }
+
+/** Keep alternative lists, owners and grant kinds separate while sharing one heading per list. */
+export function groupGrantedSpells(groups: GrantedSpellGroup[]): GrantedSpellList[] {
+  const lists = new Map<string, GrantedSpellList>();
+  for (const group of groups) {
+    if (!lists.has(group.listId)) lists.set(group.listId, { id: group.listId, owner: group.owner, title: group.title, expanded: group.expanded, groups: [] });
+    lists.get(group.listId)!.groups.push(group);
+  }
+  return [...lists.values()];
+}
 
 /** The shared prose renderer does not format the schema's specialized numeric table cells. */
 export function resourceCell(value: SourceEntry | undefined): SourceEntry {
@@ -131,9 +142,10 @@ export function classGrantedSpells(owner: ContentRecord, selected: ContentRecord
       for (const list of SPELL_GRANT_LISTS) {
         for (const [requirement, values] of Object.entries(block[list] ?? {})) {
           visitSpellGrantGroups(values, `${blockIndex}.${list}.${requirement}`, (entries, path, frequency, count) => {
-            result.push({ id: `${record.key}:${path}`, owner: record.name,
+            result.push({ id: `${record.key}:${path}`, listId: `${record.key}:${blockIndex}.${list}`, owner: record.name,
               title: `${LIST_NAMES[list]}${block.name ? ` · ${block.name}` : blocks.length > 1 ? ` · Option ${blockIndex + 1}` : ''}`,
               requirement: requirement === '_' ? 'On Gaining This Class or Subclass' : requirement.startsWith('s') ? `When Spell Level ${requirement.slice(1)} Is Available` : `Class Level ${requirement}`,
+              requirementShort: requirement === '_' ? 'On Selection' : requirement.startsWith('s') ? `Spell Lv. ${requirement.slice(1)}` : `Class Lv. ${requirement}`,
               frequency: frequency ? `${FREQUENCIES[frequency] ?? frequency}${count ? ` · ${count.replace(/e$/, ' Each')}` : ''}` : '',
               entries: entries.map(grantEntry), expanded: list === 'expanded' });
           });

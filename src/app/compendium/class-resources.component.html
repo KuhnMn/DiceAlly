@@ -52,15 +52,28 @@
   } @empty {
     <p class="mb-4 rounded-xl bg-surface-container p-3 text-sm text-on-surface-variant">This entry does not include a progression table.</p>
   }
-  @if (grants().length) {
+  @if (grantLists().length) {
     <section aria-label="Granted and expanded spells" class="mb-4">
       <h3 class="mb-2 font-semibold">Granted & Expanded Spells</h3>
-      <div class="grid items-start gap-2 sm:grid-cols-2">
-        @for (group of grants(); track group.id) {
-          <section class="min-w-0 rounded-xl border border-outline-variant bg-surface-container p-3">
-            <h4 class="text-sm font-semibold">{{ group.title }}</h4><p class="mt-1 text-xs text-on-surface-variant">{{ group.owner }} · {{ group.requirement }}@if (group.frequency) { · {{ group.frequency }} }</p>
-            <div class="mt-2 text-sm"><app-entry-renderer [entries]="group.entries" /></div>
-            @if (group.expanded) { <p class="mt-2 border-l-2 border-outline-variant pl-2 text-xs text-on-surface-variant">These expand spell choices; they are not automatically known or prepared.</p> }
+      <div class="space-y-2">
+        @for (list of grantLists(); track list.id) {
+          <section class="min-w-0 overflow-hidden rounded-lg border border-outline-variant bg-surface-container" [attr.aria-label]="list.owner + ' ' + list.title">
+            <header class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 border-b border-outline-variant px-2.5 py-2">
+              <h4 class="text-xs font-semibold sm:text-sm">{{ list.title }}</h4><span class="text-[11px] text-on-surface-variant">{{ list.owner }}</span>
+            </header>
+            <dl class="divide-y divide-outline-variant">
+              @for (group of list.groups; track group.id) {
+                <div class="grid grid-cols-[6rem_minmax(0,1fr)] items-baseline gap-x-2 px-2.5 py-2 text-xs leading-5 sm:grid-cols-[8rem_minmax(0,1fr)] sm:text-sm">
+                  <dt class="text-on-surface-variant"><span [title]="group.requirement" [attr.aria-label]="group.requirement">{{ group.requirementShort }}</span>
+                    @if (group.frequency) { <span class="block text-[11px] leading-4">{{ group.frequency }}</span> }
+                  </dt>
+                  <dd class="min-w-0 [overflow-wrap:anywhere]">
+                    @for (entry of group.entries; track $index; let last = $last) { <app-entry-renderer [entry]="entry" [inline]="true" [compact]="true" />@if (!last) {, } }
+                  </dd>
+                </div>
+              }
+            </dl>
+            @if (list.expanded) { <p class="border-t border-outline-variant px-2.5 py-2 text-[11px] leading-4 text-on-surface-variant">These expand spell choices; they are not automatically known or prepared.</p> }
           </section>
         }
       </div>

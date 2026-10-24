@@ -130,6 +130,37 @@ describe('Class compendium progression', () => {
     expect(screen.baseFeatures()).toHaveLength(2); fixture.destroy();
   });
 
+  it('shows class and selected subclass descriptions inline, keeps mobile selection filterable and omits related-entry reads', async () => {
+    const f = await catalog(); TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const owner = f.find('class', 'Mage'), school = f.find('subclass', 'School', 'TCE');
+    owner.data['entries'] = ['Inline class introduction.']; school.data['entries'] = ['Inline subclass introduction.'];
+    await f.cache.put(f.revision.id, [owner, school]);
+    const fixture = TestBed.createComponent(ClassCompendiumComponent), screen = fixture.componentInstance;
+    fixture.detectChanges(); await vi.waitFor(() => expect(screen.loading()).toBe(false));
+    await screen.chooseClass(owner); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[aria-label="Selected class"]').textContent).toContain('Inline class introduction.');
+    expect(fixture.nativeElement.textContent).not.toContain('Class Details');
+    expect(fixture.nativeElement.querySelector('app-sheet-detail-dialog')).toBeNull();
+    const select = fixture.nativeElement.querySelector('select[aria-label="Subclass"]') as HTMLSelectElement;
+    expect(select.options.length).toBe(3);
+    select.value = school.key; select.dispatchEvent(new Event('change'));
+    await vi.waitFor(() => expect(screen.subclassLoading()).toBe(false)); fixture.detectChanges();
+    expect(screen.selectedSubclass()?.key).toBe(school.key);
+    expect(fixture.nativeElement.querySelector('[aria-label="Selected subclass description"]').textContent).toContain('Inline subclass introduction.');
+    const feature = f.find('classFeature', 'Gift');
+    feature.links = [{ role: 'related', target: f.find('classFeature', 'Greater Gift').key }];
+    const get = vi.spyOn(IndexedDbContentCache.prototype, 'get');
+    screen.openDetails(feature); fixture.detectChanges();
+    expect(get).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('app-sheet-detail-dialog').textContent).toContain('Gift description.');
+    expect(fixture.nativeElement.textContent).not.toContain('Related Entries');
+    screen.closeDetails(); screen.setSubclassSources(['XGE']); fixture.detectChanges();
+    expect(screen.selectedSubclass()).toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label="Selected subclass description"]')).toBeNull();
+    expect(screen.baseFeatures()).toHaveLength(2);
+    fixture.destroy();
+  });
+
   it('inherits multiple sources into subclasses, keeps child overrides local and removes excluded subclass features', async () => {
     const f = await catalog(); TestBed.configureTestingModule({ providers: [provideRouter([])] });
     const defaults = TestBed.inject(SourceBookFilterService); defaults.setSelection(['PHB', 'TCE']);

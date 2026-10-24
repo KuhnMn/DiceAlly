@@ -97,6 +97,31 @@ describe('Compendium source progression tables', () => {
 });
 
 describe('Class resource presentation', () => {
+  it('groups spell requirements into compact lists without merging grant kinds, alternatives or frequencies', () => {
+    const record = owner({ additionalSpells: [{ expanded: { s1: ['shield|PHB', 'magic missile|PHB'], s2: ['misty step|PHB'] } }] });
+    const selected = subclass({ additionalSpells: [
+      { name: 'School Spells', known: { '3': { daily: { '1': ['detect magic|PHB'], '2e': ['shield|PHB'] } } }, expanded: { s1: ['burning hands|PHB'], s2: ['invisibility|PHB'] } },
+      { name: 'School Spells', expanded: { s1: ['charm person|PHB'] } },
+    ] });
+    const fixture = TestBed.createComponent(ClassResourcesComponent);
+    fixture.componentRef.setInput('owner', record); fixture.componentRef.setInput('subclass', selected); fixture.detectChanges();
+    const lists = fixture.componentInstance.grantLists();
+    expect(lists).toHaveLength(4);
+    expect(lists.map(list => list.groups.length)).toEqual([2, 2, 2, 1]);
+    expect(lists[1].groups.map(group => group.frequency)).toEqual(['Per Day · 1', 'Per Day · 2 Each']);
+    expect(lists[0].groups[0].requirement).toBe('When Spell Level 1 Is Available');
+    expect(lists[0].groups[0].requirementShort).toBe('Spell Lv. 1');
+    const section = fixture.nativeElement.querySelector('[aria-label="Granted and expanded spells"]') as HTMLElement;
+    expect(section.querySelectorAll('section').length).toBe(4);
+    expect(section.querySelectorAll('dl > div').length).toBe(7);
+    expect(section.textContent?.match(/not automatically known or prepared/g)).toHaveLength(3);
+    for (const spell of ['shield', 'magic missile', 'misty step', 'detect magic', 'burning hands', 'invisibility', 'charm person']) expect(section.textContent?.toLowerCase()).toContain(spell);
+    fixture.componentRef.setInput('subclass', null); fixture.detectChanges();
+    expect(fixture.componentInstance.grantLists()).toHaveLength(1);
+    expect(section.textContent).not.toContain('School Spells');
+    fixture.destroy();
+  });
+
   it('renders structured resource values, previews a level, and removes a deselected subclass table', () => {
     const record = owner({ classTableGroups: [{ colLabels: ['Uses', 'Die'], rows: Array.from({ length: 20 }, (_, index) => [index, { type: 'dice', toRoll: [{ number: 1, faces: 6 }] }]) }] });
     const fixture = TestBed.createComponent(ClassResourcesComponent);
