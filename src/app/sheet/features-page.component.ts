@@ -255,7 +255,7 @@ import { referenceDescription } from '../models/character-references';
         @for (group of featureGroups(); track group.label) {
           <section>
             <h4 class="mb-2 border-b-2 border-blue pb-1 text-lg font-bold text-blue">{{ group.label }}</h4>
-            <div class="sheet-entry-list" [class.sheet-entry-list-two-columns]="listLayout.columns() === 2" [class.sheet-entry-list-three-columns]="listLayout.columns() === 3">
+            <div class="sheet-entry-list" [class.sheet-entry-list-two-columns]="listLayout.displayColumns() === 2" [class.sheet-entry-list-three-columns]="listLayout.displayColumns() === 3">
           @for (feature of group.features; track feature.editorId ?? feature) {
             <div
               class="min-w-0 border-2 border-blue rounded-lg px-3 py-1.5 sm:py-2 bg-surface-container transition-colors"

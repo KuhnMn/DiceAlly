@@ -17,11 +17,16 @@ import { DialogScrollLockService } from '../editor/dialog-scroll-lock.service';
 @Component({
   selector: 'app-mobile-sheet-status',
   imports: [MobileSheetActionsComponent, SheetSpeedControlComponent, SheetAcControlComponent, SheetHealthDetailsComponent, SheetStatBadgeComponent, HitDiceTrackerComponent, ConditionsComponent, UiIconComponent],
-  host: { class: 'block sm:hidden', '(document:pointerdown)': 'dismissRest($event)', '(document:keydown.escape)': 'closeRest()' },
+  host: { class: 'block', '[class.tablet]': 'tablet()', '[class.desktop]': 'desktop()', '(document:pointerdown)': 'dismissRest($event)', '(document:keydown.escape)': 'closeRest()' },
+  styles: [`
+    :host(.desktop) .status-grid, :host(.desktop) .condition-trigger { display: none; }
+    :host(.tablet) .status-stats { grid-template-columns: repeat(4, 3.25rem); gap: .75rem; }
+    :host(.tablet) .status-grid { grid-template-columns: minmax(15rem, 1fr) 4rem minmax(11rem, 1fr); gap: .75rem; }
+  `],
   template: `
     @if (sheet().character; as character) {
-      <div class="grid grid-cols-[minmax(0,1fr)_4rem_minmax(0,1fr)] items-center gap-3 pb-2" aria-label="Character status">
-        <div class="grid min-w-0 grid-cols-[repeat(2,3.25rem)] items-center justify-center gap-x-4 gap-y-1">
+      <div class="status-grid grid grid-cols-[minmax(0,1fr)_4rem_minmax(0,1fr)] items-center gap-3 pb-2" aria-label="Character status">
+        <div class="status-stats grid min-w-0 grid-cols-[repeat(2,3.25rem)] items-center justify-center gap-x-4 gap-y-1">
           <app-sheet-ac-control class="justify-self-center" [characterData]="sheet()" />
           <app-sheet-stat-badge class="justify-self-center" label="Init." shape="octagon" tone="rose" [value]="helpers.formatSigned(helpers.initiative(character))" [proficient]="character.proficiencies?.initiative ?? false" />
           <app-sheet-stat-badge class="justify-self-center" label="PB" shape="rounded" tone="teal" [value]="helpers.formatSigned(helpers.proficiencyBonus(character))" />
@@ -50,11 +55,11 @@ import { DialogScrollLockService } from '../editor/dialog-scroll-lock.service';
                 <button type="button" [disabled]="saving()" (click)="restMenu.open = false; longRest.emit()" class="min-h-11 w-full rounded px-3 py-2 text-left text-sm hover:bg-surface-container"><app-ui-icon name="rest" /> Long Rest</button>
               </div>
             </details>
-            <app-mobile-sheet-actions class="min-w-0 flex-[2]" [actionsOnly]="true" [saving]="saving()" [openingEditor]="openingEditor()" [dirty]="dirty()" (save)="save.emit()" (edit)="edit.emit()" />
+            <app-mobile-sheet-actions [expanded]="tablet()" class="min-w-0 flex-[2]" [actionsOnly]="true" [saving]="saving()" [openingEditor]="openingEditor()" [dirty]="dirty()" (save)="save.emit()" (edit)="edit.emit()" />
           </div>
         </div>
       </div>
-      <button type="button" (click)="openHealth()" class="mb-1 flex min-h-8 w-full items-center gap-2 rounded-lg bg-surface-container px-2 text-left text-xs" aria-label="Manage active conditions"><app-ui-icon name="info" /><span class="font-semibold">Conditions & Effects</span><span class="min-w-0 flex-1 truncate text-primary">{{ sheet().conditions?.join(' \u00b7 ') || 'None' }}</span><app-ui-icon name="chevron" /></button>
+      <button type="button" (click)="openHealth()" class="condition-trigger mb-1 flex min-h-8 w-full items-center gap-2 rounded-lg bg-surface-container px-2 text-left text-xs" aria-label="Manage active conditions"><app-ui-icon name="info" /><span class="font-semibold">Conditions & Effects</span><span class="min-w-0 flex-1 truncate text-primary">{{ sheet().conditions?.join(' \u00b7 ') || 'None' }}</span><app-ui-icon name="chevron" /></button>
       <dialog #healthDialog (close)="releaseScroll()" (click)="closeOnBackdrop($event)" class="fixed inset-x-0 bottom-0 top-auto m-0 max-h-[85dvh] w-full max-w-none overflow-hidden rounded-t-2xl border border-outline-variant bg-surface p-0 text-on-surface open:flex open:flex-col backdrop:bg-black/50 sm:inset-0 sm:m-auto sm:max-w-md sm:rounded-2xl" aria-labelledby="mobile-health-title">
         <div class="flex shrink-0 items-center justify-between gap-2 border-b border-outline-variant px-4 py-2"><h2 id="mobile-health-title" class="text-lg font-bold">Health, Hit Dice & Conditions</h2><button type="button" (click)="healthDialog.close()" class="flex min-h-11 min-w-11 items-center justify-center rounded-lg bg-surface-container" aria-label="Close health panel"><app-ui-icon name="close" /></button></div>
         <div data-health-content class="min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain p-4">
@@ -81,6 +86,8 @@ import { DialogScrollLockService } from '../editor/dialog-scroll-lock.service';
 export class MobileSheetStatusComponent implements OnDestroy {
   private readonly store = inject(CharacterStore);
   private readonly concentration = inject(ConcentrationService);
+  readonly tablet = input(false);
+  readonly desktop = input(false);
   readonly sheet = input.required<ExportedCharacter>();
   readonly openingEditor = input(false);
   readonly edit = output<void>();

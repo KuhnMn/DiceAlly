@@ -5,7 +5,8 @@ import { UiIconComponent } from '../ui-icon.component';
 @Component({
   selector: 'app-mobile-sheet-actions',
   imports: [ThemePickerComponent, UiIconComponent],
-  host: { class: 'block sm:hidden', '(document:keydown.escape)': 'closeMenus()', '(document:pointerdown)': 'dismissOutside($event)' },
+  host: { class: 'block sm:hidden', '[class.expanded]': 'expanded()', '(document:keydown.escape)': 'closeMenus()', '(document:pointerdown)': 'dismissOutside($event)' },
+  styles: [':host(.expanded) { display: block; }'],
   template: `
     <div class="flex items-center gap-1">
       @if (!themeOnly()) {
@@ -28,6 +29,7 @@ export class MobileSheetActionsComponent {
   private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
   closeMenus() { this.element.nativeElement.querySelectorAll('details[open]').forEach(menu => menu.removeAttribute('open')); }
   dismissOutside(event: Event) { if (event.target instanceof Node && !this.element.nativeElement.contains(event.target)) this.closeMenus(); }
+  readonly expanded = input(false);
   readonly themeOnly = input(false);
   readonly actionsOnly = input(false);
   readonly saving = input(false);

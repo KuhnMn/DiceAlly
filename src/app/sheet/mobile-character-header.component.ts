@@ -3,7 +3,7 @@ import { ExportedCharacter } from '../models/character.model';
 
 @Component({
   selector: 'app-mobile-character-header',
-  host: { class: 'block sm:hidden' },
+  host: { class: 'block' },
   template: `
     @if (characterData()?.character; as c) {
       <section aria-label="Character Name">

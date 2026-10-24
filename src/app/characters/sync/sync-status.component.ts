@@ -6,17 +6,25 @@ import { CharacterLibraryService } from '../character-library.service';
 
 @Component({
   selector: 'app-sync-status',
+  host: { '[class.compact]': 'compact()', '[class.details-open]': 'detailsOpen()' },
+  styles: [`
+    .sync-details.details-hidden { display: none; }
+    @media (min-width: 1280px) {
+      .sync-details.details-hidden { display: block; }
+      .sync-summary { display: none; }
+    }
+  `],
   imports: [UiIconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="mx-3 mb-3 rounded-lg bg-secondary-container text-on-secondary-container px-3 py-2 text-sm" aria-label="Character synchronization">
       @if (compact()) {
-        <button type="button" class="flex min-h-9 w-full items-center justify-between gap-2 text-left text-xs sm:hidden" [attr.aria-expanded]="detailsOpen()" (click)="detailsOpen.set(!detailsOpen())">
+        <button type="button" class="sync-summary flex min-h-9 w-full items-center justify-between gap-2 text-left text-xs" [attr.aria-expanded]="detailsOpen()" (click)="detailsOpen.set(!detailsOpen())">
           <span role="status" [title]="lastSyncTitle()">{{ sync.busy() || sync.settings.busy() ? 'Syncing…' : sync.conflicts().length ? 'Sync conflicts: ' + sync.conflicts().length : sync.error() || sync.settings.error() ? 'Saved locally · Sync needs attention' : sync.pending() + sync.settings.pending() ? 'Pending changes: ' + (sync.pending() + sync.settings.pending()) : lastSyncText() }}</span>
           <span>{{ detailsOpen() ? 'Hide' : 'Details' }}</span>
         </button>
       }
-      <div [class.hidden]="compact() && !detailsOpen()" class="sm:!block">
+      <div [class.details-hidden]="compact() && !detailsOpen()" class="sync-details">
       <div class="flex flex-wrap items-center gap-2">
         @if (sync.busy() || sync.settings.busy()) { <app-ui-icon name="loader" class="animate-spin sm:!inline-flex" [class.hidden]="compact()" /> }
         <span role="status" [title]="lastSyncTitle()" [class.hidden]="compact()" class="sm:!inline">{{ sync.busy() || sync.settings.busy() ? 'Syncing…' : sync.error() || sync.settings.error() ? 'Saved Locally · Sync Needs Attention' : sync.pending() + sync.settings.pending() ? 'Pending Changes: ' + (sync.pending() + sync.settings.pending()) : lastSyncText() }}</span>

@@ -1,6 +1,6 @@
 # Sheet layout concept: phones, landscape phones and tablets
 
-Status: Proposal only. No application code has been changed.
+Status: Implemented on `codex/tablet-sheet-layout`. The approved layout contract below is retained as the design reference.
 
 ## Current causes
 
@@ -102,3 +102,14 @@ Resize scenarios are more important than static screenshots:
 - Compare normal phone and wide desktop screenshots/computed layouts against their current versions. The intentional desktop difference is the added Combat tab; other unrelated desktop layout changes are excluded.
 
 Run targeted layout/state/navigation tests and browser touch checks. Since the implementation changes responsive composition, finish with a production build and check that startup size stays within its existing budget.
+
+
+## Implementation and validation
+
+The shared layout service owns the 640/768/1280px viewport boundaries and the short-tablet height query. Overview and Combat column layouts additionally use measured content width. List layouts support two columns at 656px of content width and three at 992px; unavailable choices are disabled. The preferred count is retained independently from the count currently displayed.
+
+Compact and desktop overview instances are created on first use and retained thereafter. Changing the overview family waits while a detail overlay is open. Header/health components keep one instance through rotation; the desktop presentation hides their triggers rather than destroying an open health dialog. Existing tab pages are retained, including spell filters and note drafts. Tablet touch swipes are enabled below the desktop boundary, while the editor retains its existing gesture boundary.
+
+Sticky chrome and sticky tabs are siblings. A ResizeObserver measures the header height to place the tabs below it; on short tablets, only the tabs remain sticky. No new layout-containment ancestor is introduced around fixed-position dialogs. The sheet navigation variant preserves the shared editor tab bar's behavior.
+
+Verified using the full 705-test suite, focused tablet/gesture tests, and Chromium across 320/390/639/640/667/767/768/820/844/932/1023/1024/1180/1279/1280/1440px widths. Browser checks cover header visibility, absence of document overflow, single-row tabs, short-landscape sticky navigation, Combat/group state, list column fallback/restoration, open source/health dialogs, health-panel inputs, unsaved note drafts, and tablet touch navigation. Production initial assets remain about 518 kB, within the unchanged 520 kB warning budget.

@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, DestroyRef, Directive, ElementRef, inject, input, output } from '@angular/core';
+import { SHEET_BREAKPOINTS } from './sheet-layout.service';
 import { captureSwipePane, SwipeSnapshot } from './swipe-snapshot';
 
 /** Finger-following page transitions without disturbing native scrolling, Angular views or form state. */
@@ -14,6 +15,7 @@ import { captureSwipePane, SwipeSnapshot } from './swipe-snapshot';
 })
 export class SwipePagesDirective {
   readonly pageSwipe = output<-1 | 1>();
+  readonly swipeMaxWidth = input<number>(SHEET_BREAKPOINTS.tablet);
   readonly swipePrevious = input(true);
   readonly swipeNext = input(true);
   private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -67,7 +69,7 @@ export class SwipePagesDirective {
 
   start(event: TouchEvent) {
     this.reset(); this.suppressClickUntil = 0;
-    if (event.touches.length !== 1 || window.innerWidth >= 640 || window.getSelection()?.toString()) return;
+    if (event.touches.length !== 1 || window.innerWidth >= this.swipeMaxWidth() || window.getSelection()?.toString()) return;
     if (document.querySelector('dialog[open], [aria-modal="true"]')) return;
     const point = event.touches[0];
     if (point.clientX < 24 || point.clientX > window.innerWidth - 24) return;

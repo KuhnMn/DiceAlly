@@ -64,7 +64,7 @@ describe('Sheet navigation and mobile health integration', () => {
     store.nativeCharacterId.set(sheet.character!.characterUuid!);
     store.nativeSave = vi.fn(async () => {});
     const fixture = TestBed.createComponent(CharacterSheetComponent);
-    vi.spyOn(fixture.componentInstance, 'mobile').mockReturnValue(mobile);
+    vi.spyOn(fixture.componentInstance, 'compact').mockReturnValue(mobile);
     fixture.detectChanges();
     return { fixture, sheet, store, component: fixture.componentInstance };
   }
@@ -76,7 +76,7 @@ describe('Sheet navigation and mobile health integration', () => {
     spells.spellRitualFilter.set('RITUAL');
     component.switchPage(6, false); fixture.detectChanges();
     component.switchPage(7, false);
-    expect(component.currentPage()).toBe(6);
+    expect(component.currentPage()).toBe(7);
     component.switchPage(3, false); fixture.detectChanges();
     expect(fixture.debugElement.query(By.directive(SpellsPageComponent)).componentInstance).toBe(spells);
     expect(spells.spellRitualFilter()).toBe('RITUAL');
@@ -105,7 +105,7 @@ describe('Sheet navigation and mobile health integration', () => {
     damage.click(); fixture.detectChanges();
     expect(sheet.character!.currentHp).toBe(12);
     expect(component.hasUnsavedChanges()).toBe(true);
-    const desktopSave = fixture.nativeElement.querySelector('main > div.hidden button') as HTMLButtonElement;
+    const desktopSave = fixture.nativeElement.querySelector('.desktop-actions button') as HTMLButtonElement;
     expect(desktopSave.textContent).toContain('Save changes');
     await component.quickSave();
     fixture.detectChanges();

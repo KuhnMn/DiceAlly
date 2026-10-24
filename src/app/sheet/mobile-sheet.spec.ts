@@ -10,9 +10,9 @@ import { applyHealthAdjustment } from './sheet-health';
 
 @Component({
   imports: [SwipePagesDirective, BasicCombatActionsComponent],
-  template: `<div appSwipePages [swipePrevious]="previous" [swipeNext]="next" (pageSwipe)="page = page + $event"><p>Page {{page}}</p><div data-horizontal-row><span>Slots</span></div><input /><textarea></textarea><select><option>Choice</option></select><label><input type="checkbox" />Checkbox</label><button>Action</button><a href="#destination"><span>Linked entry</span></a><svg><path d="M0 0h10" /></svg><app-basic-combat-actions [actions]="[]" /><details><summary>Other Section</summary></details><dialog><span>Detail text</span></dialog></div>`,
+  template: `<div appSwipePages [swipeMaxWidth]="maxWidth" [swipePrevious]="previous" [swipeNext]="next" (pageSwipe)="page = page + $event"><p>Page {{page}}</p><div data-horizontal-row><span>Slots</span></div><input /><textarea></textarea><select><option>Choice</option></select><label><input type="checkbox" />Checkbox</label><button>Action</button><a href="#destination"><span>Linked entry</span></a><svg><path d="M0 0h10" /></svg><app-basic-combat-actions [actions]="[]" /><details><summary>Other Section</summary></details><dialog><span>Detail text</span></dialog></div>`,
 })
-class SwipeHost { page = 0; previous = true; next = true; }
+class SwipeHost { maxWidth = 640; page = 0; previous = true; next = true; }
 
 describe('Mobile page swipes', () => {
   afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
@@ -35,6 +35,19 @@ describe('Mobile page swipes', () => {
     };
     return { fixture, pages, touch, content: fixture.nativeElement.querySelector('p') as HTMLElement };
   }
+
+  it('supports tablet touch swipes when enabled by the sheet while leaving the desktop boundary unchanged', () => {
+    const { fixture, content, pages, touch } = setup();
+    vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(820);
+    touch(content, 'touchstart', 280, 200); touch(content, 'touchend', 100, 200);
+    expect(pages).toEqual([]);
+    fixture.componentInstance.maxWidth = 1280; fixture.detectChanges();
+    touch(content, 'touchstart', 280, 200); touch(content, 'touchend', 100, 200);
+    expect(pages).toEqual([1]);
+    vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(1280);
+    touch(content, 'touchstart', 280, 200); touch(content, 'touchend', 100, 200);
+    expect(pages).toEqual([1]);
+  });
 
   it('recognizes deliberate left and right gestures', () => {
     const { content, pages, touch } = setup();

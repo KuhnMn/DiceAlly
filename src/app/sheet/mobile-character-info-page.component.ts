@@ -1,6 +1,6 @@
 import { SheetProficienciesComponent } from './sheet-proficiencies.component';
 import { AdvantageBadgeComponent } from './advantage-badge.component';
-import { Component } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { CharacterInfoPageComponent } from './character-info-page.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { RuleReferenceComponent } from './rule-reference.component';
@@ -11,6 +11,12 @@ import { BackgroundDetailsComponent } from '../background-details.component';
 @Component({
   selector: 'app-mobile-character-info-page',
   imports: [BackgroundDetailsComponent, RuleReferenceComponent, SheetSpeedDescriptionComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent],
+  styles: [`
+    :host { display: block; min-width: 0; }
+    .overview-primary, .overview-secondary { min-width: 0; }
+    .overview-two-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: start; }
+    .overview-two-columns .overview-secondary { margin-top: 0; }
+  `],
   template: `
     @if (character(); as c) {
       <section aria-label="Character Details" class="mb-3 flex flex-wrap items-center gap-x-2 rounded-xl border border-outline-variant bg-surface-container px-3 py-1.5 text-xs">
@@ -26,7 +32,8 @@ import { BackgroundDetailsComponent } from '../background-details.component';
           </span>
         }
       </section>
-      <div class="space-y-2 rounded-lg border border-outline-variant bg-surface-container-highest p-2.5">
+      <div class="rounded-lg border border-outline-variant bg-surface-container-highest p-2.5"><div class="overview-grid" [class.overview-two-columns]="wideLayout()">
+        <div class="overview-primary space-y-2">
           <section aria-label="Ability modifiers and saving throws" class="grid grid-cols-3 gap-1.5">
             @for (ability of abilities(); track ability.name) {
               <div class="border-2 border-surface rounded-xl p-1.5 bg-surface-container-low text-center shadow-lg">
@@ -96,6 +103,7 @@ import { BackgroundDetailsComponent } from '../background-details.component';
             <span class="font-bold tabular-nums text-primary">{{ passivePerception() }}</span>
           </div>
 
+        </div><div class="overview-secondary space-y-2 mt-2">
         <details open class="overflow-hidden rounded-xl border border-outline-variant bg-surface p-3 text-sm" aria-label="General Stats">
           <summary class="flex min-h-11 cursor-pointer items-center gap-2 border-b border-outline-variant pb-2 font-bold"><app-ui-icon name="info" /> General Stats</summary>
           <div class="mt-3 space-y-3">
@@ -153,8 +161,9 @@ import { BackgroundDetailsComponent } from '../background-details.component';
           <summary class="flex min-h-11 cursor-pointer items-center gap-2 border-b border-outline-variant pb-2 font-bold">Feature Index ({{ features().length }})</summary>
           @for (feature of features(); track feature) { <button type="button" (click)="goToFeature(feature)" class="block min-h-11 text-left text-primary underline">{{ feature.name }}</button> }
         </details>
+        </div></div>
       </div>
     }
   `,
 })
-export class MobileCharacterInfoPageComponent extends CharacterInfoPageComponent {}
+export class MobileCharacterInfoPageComponent extends CharacterInfoPageComponent { readonly wideLayout = input(false); }

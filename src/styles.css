@@ -1132,3 +1132,7 @@ html:has(.app-container.sheet-layout) { scrollbar-gutter: stable; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Sheet navigation always remains a single row; other tab bars retain their existing behavior. */
+.page-tabs.sheet-page-tabs { flex-wrap: nowrap; overflow-x: auto; }
+.page-tabs.sheet-page-tabs > button { flex: 1 0 auto; white-space: nowrap; }

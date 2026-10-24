@@ -63,7 +63,7 @@
     }
   </div>
   </app-list-controls>
-  <div class="sheet-entry-list" [class.sheet-entry-list-two-columns]="listLayout.columns() === 2" [class.sheet-entry-list-three-columns]="listLayout.columns() === 3">
+  <div class="sheet-entry-list" [class.sheet-entry-list-two-columns]="listLayout.displayColumns() === 2" [class.sheet-entry-list-three-columns]="listLayout.displayColumns() === 3">
     @for (monster of visibleMonsters(); track monster.editorId ?? monster) {
       <article [id]="monsterKey(monster)" [class.flash-highlight]="highlightedId() === monsterKey(monster)" class="min-w-0 rounded-lg border border-teal bg-surface-container px-3 py-1.5 sm:py-2">
         <h3><button type="button" (click)="toggleExpanded(monsterKey(monster))" aria-haspopup="dialog" [attr.aria-expanded]="isExpanded(monsterKey(monster))" [attr.aria-controls]="monsterKey(monster) + '-details'" class="flex min-h-8 w-full items-center justify-between gap-2 rounded text-left text-base font-bold sm:gap-3 text-teal sm:text-xl focus-visible:outline-2 focus-visible:outline-primary"><span class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1"><span class="min-w-0 max-w-full truncate" [title]="monster.name || 'Unnamed creature'">{{ monster.name || 'Unnamed creature' }}</span><ng-container [ngTemplateOutlet]="objectTypeTag" [ngTemplateOutletContext]="{ $implicit: monster }" /></span><app-ui-icon class="shrink-0" name="chevron" /></button></h3>

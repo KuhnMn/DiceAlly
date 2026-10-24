@@ -284,7 +284,7 @@ type SpellLevelFilter = 'ALL' | number;
               <h4 class="preparation-level text-lg font-bold text-purple mb-3 border-b-2 border-purple pb-1">
                 {{ spellLevelHeader(levelGroup.level) }}
               </h4>
-              <div class="sheet-entry-list" [class.preparation-list]="spellView() !== 'PREPARED'" [class.sheet-entry-list-two-columns]="listLayout.columns() === 2" [class.sheet-entry-list-three-columns]="listLayout.columns() === 3">
+              <div class="sheet-entry-list" [class.preparation-list]="spellView() !== 'PREPARED'" [class.sheet-entry-list-two-columns]="listLayout.displayColumns() === 2" [class.sheet-entry-list-three-columns]="listLayout.displayColumns() === 3">
                 @for (spell of levelGroup.spells; track spell) {
                   <div class="min-w-0 border-2 border-purple rounded-lg px-3 py-1.5 sm:py-2 bg-surface-container" [attr.id]="'spell-' + (spell.editorId ?? helpers.sourceId(spell.name + '-' + (spell.source ?? '')))" [class.preparation-card]="spellView() !== 'PREPARED'" [class.flash-highlight]="highlightedId() === ('spell-' + (spell.editorId ?? helpers.sourceId(spell.name + '-' + (spell.source ?? ''))))">
                     @if (spellView() !== 'PREPARED') {

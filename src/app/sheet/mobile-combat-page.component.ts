@@ -1,7 +1,7 @@
 import { CombatActionColumnsComponent } from './combat-action-columns.component';
 import { CombatActionComponent } from './combat-action.component';
 import { ConcentrationControlComponent } from './concentration-control.component';
-import { Component } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { CharacterInfoPageComponent } from './character-info-page.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { BasicCombatActionsComponent } from './basic-combat-actions.component';
@@ -9,6 +9,12 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
 @Component({
   selector: 'app-mobile-combat-page',
   imports: [CombatActionColumnsComponent, CombatActionComponent, BasicCombatActionsComponent, UiIconComponent, ConcentrationControlComponent],
+  styles: [`
+    :host { display: block; min-width: 0; }
+    .combat-two-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: start; }
+    .combat-two-columns > div { min-width: 0; margin-top: 0; }
+    .combat-two-columns > div:only-child { grid-column: 1 / -1; }
+  `],
   template: `
     @if (character(); as c) {
           <!-- Combat Actions -->
@@ -29,7 +35,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
               </div>
             </div>
             @if (combatActions().length > 0 || characterData()?.basicActions?.length) {
-              <div class="space-y-3 text-sm ">
+              <div class="combat-groups space-y-3 text-sm" [class.combat-two-columns]="wideLayout()">
                 @for (actionType of ['ACTION', 'BONUS', 'REACTION', 'OTHER']; track actionType) {
                   @if ((groupedCombatActions()[actionType]?.length ?? 0) > 0 || (groupedBasicActions()[actionType]?.length ?? 0) > 0) {
                     <div>
@@ -56,4 +62,4 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
     }
   `,
 })
-export class MobileCombatPageComponent extends CharacterInfoPageComponent {}
+export class MobileCombatPageComponent extends CharacterInfoPageComponent { readonly wideLayout = input(false); }

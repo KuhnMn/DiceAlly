@@ -1,0 +1,18 @@
+:host { --sheet-chrome-height: 0px; }
+.sheet-chrome { position: sticky; top: 0; z-index: 31; }
+.sheet-tabs { position: sticky; top: var(--sheet-chrome-height); z-index: 30; }
+
+:host([data-sheet-mode='phone']) .desktop-actions,
+:host([data-sheet-mode='tablet']) .desktop-actions,
+:host([data-sheet-mode='phone']) .desktop-title,
+:host([data-sheet-mode='tablet']) .desktop-title { display: none; }
+:host([data-sheet-mode='desktop']) .sheet-chrome,
+:host([data-sheet-mode='desktop']) .sheet-tabs { position: static; }
+:host([data-sheet-mode='desktop']) app-mobile-character-header,
+:host([data-sheet-mode='desktop']) header > app-mobile-sheet-actions { display: none; }
+:host(.short-tablet) .sheet-chrome { position: static; }
+:host(.short-tablet) .sheet-tabs { top: 0; }
+:host([data-sheet-mode='tablet']) .sheet-main { margin-block: .5rem; }
+
+:host([data-sheet-mode="phone"]) .sheet-chrome { padding-top: .5rem; }
+:host([data-sheet-mode="phone"]) .sheet-tabs { padding-top: 0; }
