@@ -119,6 +119,12 @@ export class CompendiumComponent implements OnInit, OnDestroy {
         return false;
       });
       if (version !== this.version) return;
+      if (type.id === 'item' && options.get('kind')?.has('baseitem')) {
+        const kinds = [...options.get('kind')!].filter(kind => kind !== 'baseitem');
+        // An empty selection means all kinds, so retain an explicit exclusion even
+        // when this library currently contains only base-item definitions.
+        this.filters = { ...this.filters, kind: kinds.length ? kinds : type.kinds.filter(kind => kind !== 'baseitem') };
+      }
       this.facets.set((Object.keys(FACET_LABELS) as Facet[]).flatMap(key => {
         const values = [...options.get(key) ?? []].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
         return values.length ? [{ key, label: FACET_LABELS[key], values }] : [];

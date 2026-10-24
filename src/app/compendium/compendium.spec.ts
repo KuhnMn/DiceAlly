@@ -134,6 +134,33 @@ describe('Compendium screen', () => {
     fixture.destroy();
   });
 
+  it('excludes base items before pagination by default and lets users include them using Content Kind', async () => {
+    await cache.put(revision.id, mapContent({
+      baseitem: Array.from({ length: 35 }, (_, i) => ({ name: `Base ${i}`, source: 'PHB' })),
+      item: [{ name: 'Rope', source: 'PHB' }, { name: 'Magic Rope', source: 'XDMG' }],
+      itemGroup: [{ name: 'Packs', source: 'PHB' }],
+    }, 'items.json').records);
+    const { fixture, screen } = await setup(); await screen.chooseType('item'); fixture.detectChanges();
+    expect(screen.total()).toBe(3); expect(screen.results().every(record => record.kind !== 'baseitem')).toBe(true);
+    expect(screen.facets().find(facet => facet.key === 'kind')?.values).toContain('baseitem');
+    const baseOption = [...fixture.nativeElement.querySelectorAll('[aria-label="Content Kind"] label')]
+      .find((label: unknown) => (label as HTMLElement).textContent?.trim() === 'Base Item') as HTMLLabelElement;
+    expect(baseOption.querySelector('input')?.checked).toBe(false);
+    baseOption.querySelector('input')!.click(); await screen.search();
+    expect(screen.total()).toBe(38); expect(screen.results()).toHaveLength(30);
+    screen.filters = { kind: ['baseitem'] }; await screen.search(); expect(screen.total()).toBe(35);
+    await screen.chooseType('spell'); await screen.chooseType('item'); expect(screen.total()).toBe(3);
+    fixture.destroy();
+  });
+
+  it('does not interpret a base-item-only library as an unrestricted default selection', async () => {
+    await cache.put(revision.id, mapContent({ baseitem: [{ name: 'Only Base', source: 'PHB' }] }, 'base.json').records);
+    const { fixture, screen } = await setup(); await screen.chooseType('item');
+    expect(screen.total()).toBe(0); expect(screen.filters.kind).not.toContain('baseitem');
+    screen.clearFilters(); await screen.search(); expect(screen.total()).toBe(1);
+    fixture.destroy();
+  });
+
   it('shares home defaults with the creator and copies them into each list without persisting local overrides', async () => {
     const defaults = TestBed.inject(SourceBookFilterService);
     defaults.setSelection(['XPHB']);
