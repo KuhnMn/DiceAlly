@@ -14,6 +14,10 @@ import { SourceBookFilterService } from '../editor/source-book-filter.service';
 import { SourceBookFilterComponent } from '../editor/source-book-filter.component';
 import { By } from '@angular/platform-browser';
 import { CompendiumDetailsComponent } from './compendium-details.component';
+import { CompendiumSourceFilterComponent } from './compendium-source-filter.component';
+import { filterGroupSummary } from './active-filter-chips.component';
+import { materializeContent } from '../content/content-materializer';
+import { ImportDiagnostic } from '../content/content.model';
 
 describe('Compendium catalog', () => {
   it('places Classes first and gives facilities their own category', () => {
@@ -57,7 +61,10 @@ describe('Compendium catalog', () => {
     expect(recordFacets(feat)).toMatchObject({ origin: ['Homebrew'], prerequisite: ['Has Prerequisites'], category: ['O'], level: ['1'] });
     expect(feat).toEqual(before);
     for (const record of records()) expect(CONTENT_TYPES.some(type => (type.kinds as readonly string[]).includes(record.kind))).toBe(true);
-    for (const kind of SOURCE_KINDS) expect(CONTENT_TYPES.some(type => (type.kinds as readonly string[]).includes(kind))).toBe(true);
+    for (const kind of SOURCE_KINDS) {
+      const playableKind = kind === 'race' || kind === 'subrace' ? 'species' : kind;
+      expect(CONTENT_TYPES.some(type => (type.kinds as readonly string[]).includes(playableKind))).toBe(true);
+    }
   });
 });
 
@@ -150,14 +157,66 @@ describe('Compendium screen', () => {
     fixture.destroy();
   });
 
-  it('keeps unavailable default sources visible and removable instead of silently including every book', async () => {
+  it('lists only sources with category entries while keeping unavailable defaults removable without including excluded books', async () => {
     TestBed.inject(SourceBookFilterService).setSelection(['NOT_INSTALLED']);
     const { fixture, screen } = await setup();
     await screen.chooseType('spell');
     expect(screen.total()).toBe(0);
-    expect(screen.facets().find(facet => facet.key === 'source')?.values).toContain('NOT_INSTALLED');
-    screen.toggle('source', 'NOT_INSTALLED'); await screen.search(); expect(screen.total()).toBe(32);
+    expect(screen.facets().find(facet => facet.key === 'source')?.values).toEqual(['PHB', 'XPHB']);
+    fixture.detectChanges();
+    const sourceFilter = fixture.debugElement.query(By.directive(CompendiumSourceFilterComponent)).componentInstance as CompendiumSourceFilterComponent;
+    expect(sourceFilter.visibleBooks()).toEqual(['PHB', 'XPHB']);
+    const chip = fixture.nativeElement.querySelector('[aria-label="Remove Source Book filter"]') as HTMLButtonElement;
+    expect(chip.textContent).toContain('NOT_INSTALLED');
+    chip.click(); await screen.search(); expect(screen.total()).toBe(32);
     expect(TestBed.inject(SourceBookFilterService).selected()).toEqual(['NOT_INSTALLED']);
+    fixture.destroy();
+  });
+
+  it('groups active filters by category, compresses large selections and removes only the chosen group', async () => {
+    const { fixture, screen } = await setup();
+    await screen.chooseType('spell');
+    const books = ['PHB', 'XPHB', 'TCE', 'XGE', 'FTD', 'MPMM'];
+    screen.filters = { source: books, school: ['A', 'V'], level: ['0', '1'] };
+    screen.effects = { damageTypes: ['fire', 'cold'] }; await screen.search(); fixture.detectChanges();
+    const chips = fixture.nativeElement.querySelectorAll('[aria-label="Active filters"] .filter-chip');
+    expect(chips.length).toBe(4);
+    expect(chips[0].textContent).toContain('Source Book: 6 selected');
+    expect(chips[1].textContent).toContain('School: Abjuration, Evocation');
+    const damage = fixture.nativeElement.querySelector('[aria-label="Remove Damage type filter"]') as HTMLButtonElement;
+    expect(damage.textContent).toContain('Fire, Cold'); damage.click(); await screen.search();
+    expect(screen.effects.damageTypes).toBeUndefined(); expect(screen.filters.source).toEqual(books);
+    (fixture.nativeElement.querySelector('[aria-label="Remove School filter"]') as HTMLButtonElement).click(); await screen.search();
+    expect(screen.filters.school).toBeUndefined(); expect(screen.filters.level).toEqual(['0', '1']);
+    expect(filterGroupSummary(['a'.repeat(70)])).toBe('1 selected');
+    expect(filterGroupSummary(['PHB', 'XPHB'])).toBe('PHB, XPHB');
+    fixture.destroy();
+  });
+
+  it('shows playable species once, keeps separate sources and subspecies and avoids duplicate Species filter options', async () => {
+    const raw = mapContent({ race: [
+      { name: 'Dragonborn', source: 'XPHB', speed: 30, size: ['M'], darkvision: 60, entries: ['Dragonborn description.'] },
+      { name: 'Elf', source: 'PHB', speed: 30, size: ['M'], darkvision: 60, entries: ['Base elf description.'] },
+      { name: 'Elf', source: 'XPHB', speed: 30, size: ['M'], entries: ['Modern elf description.'] },
+    ], subrace: [{ name: 'High', source: 'PHB', raceName: 'Elf', raceSource: 'PHB', entries: ['High elf description.'] }] }, 'races.json').records;
+    await cache.put(revision.id, raw);
+    const diagnostics: ImportDiagnostic[] = []; await materializeContent(cache, revision.id, diagnostics);
+    expect(diagnostics.filter(diagnostic => diagnostic.severity === 'error')).toEqual([]);
+    const { fixture, screen } = await setup(); await screen.chooseType('species'); fixture.detectChanges();
+    expect(screen.total()).toBe(4); expect(screen.count(CONTENT_TYPES.find(type => type.id === 'species')!)).toBe(4);
+    expect(screen.results().every(record => record.kind === 'species')).toBe(true);
+    expect(screen.results().filter(record => record.name === 'Elf').map(record => record.publication).sort()).toEqual(['PHB', 'XPHB']);
+    expect(screen.facets().find(facet => facet.key === 'kind')?.values).toEqual(['species', 'subrace']);
+    expect(screen.facets().find(facet => facet.key === 'kind')?.values.map(value => facetLabel('kind', value))).toEqual(['Species', 'Subspecies']);
+    const high = screen.results().find(record => record.name === 'High Elf')!;
+    expect(high.species?.senses.darkvision).toBe(60);
+    await screen.openDetails(high); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.desktop-details').textContent).toContain('Base elf description.');
+    expect(fixture.nativeElement.querySelector('.desktop-details').textContent).toContain('High elf description.');
+    const dragonborn = screen.results().find(record => record.name === 'Dragonborn')!;
+    expect(screen.speciesBadges(dragonborn).join(' ')).toContain('Darkvision');
+    screen.filters = { kind: ['subrace'] }; await screen.search();
+    expect(screen.results().map(record => record.name)).toEqual(['High Elf']);
     fixture.destroy();
   });
 

@@ -38,7 +38,7 @@ export class CompendiumSourceFilterComponent {
   readonly label = input('Source Books');
   readonly selectedChange = output<string[]>();
   readonly query = signal('');
-  readonly visibleBooks = computed(() => [...new Set([...this.books(), ...this.selected(), ...this.defaults()])]
+  readonly visibleBooks = computed(() => [...new Set(this.books())]
     .sort().filter(book => book.toLowerCase().includes(this.query().trim().toLowerCase())));
   useDefaults() { this.selectedChange.emit([...this.defaults()]); }
   toggle(book: string) {

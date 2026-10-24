@@ -13,10 +13,11 @@ import { belongsToClass, ClassFeatureRow, groupProgression, loadProgression } fr
 import { SourceBookFilterService } from '../editor/source-book-filter.service';
 import { CompendiumSourceFilterComponent } from './compendium-source-filter.component';
 import { ClassResourcesComponent } from './class-resources.component';
+import { ActiveFilterChipsComponent } from './active-filter-chips.component';
 
 @Component({
   selector: 'app-class-compendium',
-  imports: [CompendiumSourceFilterComponent, ClassResourcesComponent, RouterLink, LibraryNavigationComponent, ListControlsComponent, UiIconComponent, SheetDetailDialogComponent, CompendiumDetailsComponent],
+  imports: [ActiveFilterChipsComponent, CompendiumSourceFilterComponent, ClassResourcesComponent, RouterLink, LibraryNavigationComponent, ListControlsComponent, UiIconComponent, SheetDetailDialogComponent, CompendiumDetailsComponent],
   templateUrl: './class-compendium.component.html',
   styleUrl: './compendium.component.css',
 })
@@ -50,10 +51,14 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
   readonly subclassBooks = computed(() => [...new Set(this.subclasses().map(record => record.publication))].sort());
   readonly visibleSubclasses = computed(() => this.subclasses().filter(record => this.sourceDefaults.allows(record.publication, this.subclassSources())));
   readonly featureQuery = signal('');
-  readonly sources = computed(() => [...new Set(this.classes().map(record => record.publication))].sort());
+  private readonly subclassPublications = signal<Record<string, string[]>>({});
+  private booksForClass(record: ContentRecord): string[] {
+    return [record.publication, ...this.subclassPublications()[record.homebrewVariant?.originalKey ?? record.key] ?? []];
+  }
+  readonly sources = computed(() => [...new Set(this.classes().flatMap(record => this.booksForClass(record)))].sort());
   readonly visibleClasses = computed(() => {
     const terms = this.query().trim().toLowerCase().split(/\s+/).filter(Boolean);
-    return this.classes().filter(record => this.sourceDefaults.allows(record.publication, this.selectedSources())
+    return this.classes().filter(record => this.booksForClass(record).some(book => this.sourceDefaults.allows(book, this.selectedSources()))
       && terms.every(term => `${record.name} ${record.publication}`.toLowerCase().includes(term)));
   });
   readonly levels = computed(() => groupProgression(this.baseFeatures(), this.subclassFeatures(), this.featureQuery()));
@@ -72,9 +77,18 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
     try {
       const revision = await activeContentRevision(this.cache);
       const records: ContentRecord[] = [];
-      if (revision) await this.cache.searchCategory(revision.id, ['class'], '', 0, 0, record => { records.push(record); return false; });
+      const subclassBooks: Record<string, string[]> = {};
+      if (revision) await this.cache.searchCategory(revision.id, ['class', 'subclass'], '', 0, 0, record => {
+        if (record.kind === 'class') records.push(record);
+        else {
+          const parent = classDefinition(record).parent?.key;
+          if (parent) { const books = subclassBooks[parent] ??= []; if (!books.includes(record.publication)) books.push(record.publication); }
+        }
+        return false;
+      });
       if (this.destroyed || version !== this.version) return;
       this.revision.set(revision ?? null);
+      this.subclassPublications.set(subclassBooks);
       this.classes.set(records.sort((a, b) => a.name.localeCompare(b.name) || a.publication.localeCompare(b.publication)));
     } catch (error) { if (version === this.version) this.error.set(`Could not load classes: ${String(error)}`); }
     finally { if (version === this.version) this.loading.set(false); }

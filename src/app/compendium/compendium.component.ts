@@ -1,3 +1,4 @@
+import { ActiveFilterChipsComponent, ActiveFilterGroup } from './active-filter-chips.component';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -13,7 +14,7 @@ import { UiIconComponent } from '../ui-icon.component';
 import { SheetDetailDialogComponent } from '../sheet/sheet-detail-dialog.component';
 import { CompendiumDetailsComponent } from './compendium-details.component';
 import { SpellEffectFilterComponent } from '../spell-effect-filter.component';
-import { SpellEffectFilter, matchesSpellEffects, spellEffectFilterCount, spellEffectsFromRecord } from '../content/spell-effects';
+import { SPELL_EFFECT_FILTER_GROUPS, SpellEffectFilter, matchesSpellEffects, spellEffectFilterCount, spellEffectsFromRecord } from '../content/spell-effects';
 import { CONTENT_TYPES, ContentType, FACET_LABELS, Facet, Filters, facetLabel, kindLabel, matchesFilters, recordFacets, summary } from './compendium-catalog';
 import { LibraryNavigationComponent } from '../library-navigation.component';
 import { SourceBookFilterComponent } from '../editor/source-book-filter.component';
@@ -23,7 +24,7 @@ import { speciesBadges } from './species-summary';
 
 @Component({
   selector: 'app-compendium',
-  imports: [SourceBookFilterComponent, CompendiumSourceFilterComponent, LibraryNavigationComponent, RouterLink, ListControlsComponent, UiIconComponent, SheetDetailDialogComponent, CompendiumDetailsComponent, SpellEffectFilterComponent],
+  imports: [ActiveFilterChipsComponent, SourceBookFilterComponent, CompendiumSourceFilterComponent, LibraryNavigationComponent, RouterLink, ListControlsComponent, UiIconComponent, SheetDetailDialogComponent, CompendiumDetailsComponent, SpellEffectFilterComponent],
   templateUrl: './compendium.component.html',
   styleUrl: './compendium.component.css',
 })
@@ -63,6 +64,19 @@ export class CompendiumComponent implements OnInit, OnDestroy {
   offset = 0;
   readonly pageSize = 30;
   get filterCount() { return Object.values(this.filters).reduce((sum, values) => sum + (values?.length ?? 0), 0) + spellEffectFilterCount(this.effects); }
+  get activeFilters(): ActiveFilterGroup[] {
+    return [
+      ...(Object.entries(this.filters) as [Facet, string[]][]).map(([key, values]) => ({ key, label: FACET_LABELS[key], values: values.map(value => facetLabel(key, value)) })),
+      ...SPELL_EFFECT_FILTER_GROUPS.map(group => ({ key: `effect:${group.key}`, label: group.label,
+        values: (this.effects[group.key] ?? []).map(value => group.options.find(option => option.value === value)?.label ?? value) })),
+    ].filter(group => group.values.length);
+  }
+  removeFilter(key: string) {
+    if (key.startsWith('effect:')) { this.effects = { ...this.effects }; delete this.effects[key.slice(7) as keyof SpellEffectFilter]; }
+    else { this.filters = { ...this.filters }; delete this.filters[key as Facet]; }
+    if (key === 'source') this.closeDetails();
+    this.scheduleSearch();
+  }
   get page() { return Math.floor(this.offset / this.pageSize) + 1; }
   get pages() { return Math.max(1, Math.ceil(this.total() / this.pageSize)); }
   count(type: ContentType) { return type.id === 'class' ? this.counts()['class'] ?? 0 : type.kinds.reduce((sum, kind) => sum + (this.counts()[kind] ?? 0), 0); }
@@ -96,7 +110,7 @@ export class CompendiumComponent implements OnInit, OnDestroy {
     if (!type || !revision) { this.loading.set(false); return; }
     this.loading.set(true);
     try {
-      const options = new Map<Facet, Set<string>>([['source', new Set(this.filters.source)]]);
+      const options = new Map<Facet, Set<string>>();
       await this.cache.searchCategory(revision.id, type.kinds, '', 0, 0, record => {
         for (const [key, values] of Object.entries(recordFacets(record)) as [Facet, string[]][]) {
           if (!options.has(key)) options.set(key, new Set());

@@ -54,6 +54,26 @@ describe('Class compendium progression', () => {
   beforeEach(() => localStorage.removeItem('ally-creator-source-books'));
   afterEach(() => vi.restoreAllMocks());
 
+  it('offers subclass-only books in the class list and finds only their exact parent editions', async () => {
+    const f = await catalog(); TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    TestBed.inject(SourceBookFilterService).setSelection(['TCE', 'NOT_INSTALLED']);
+    const fixture = TestBed.createComponent(ClassCompendiumComponent), screen = fixture.componentInstance;
+    fixture.detectChanges(); await vi.waitFor(() => expect(screen.loading()).toBe(false));
+    expect(screen.sources()).toEqual(['PHB', 'TCE', 'XGE', 'XPHB']);
+    expect(screen.visibleClasses().map(record => record.publication)).toEqual(['PHB', 'XPHB']);
+    fixture.detectChanges();
+    let control = fixture.debugElement.query(By.directive(CompendiumSourceFilterComponent)).componentInstance as CompendiumSourceFilterComponent;
+    expect(control.visibleBooks()).toEqual(['PHB', 'TCE', 'XGE', 'XPHB']);
+    screen.selectedSources.set(['XGE']);
+    expect(screen.visibleClasses().map(record => record.key)).toEqual([f.find('class', 'Mage').key]);
+    await screen.chooseClass(f.find('class', 'Mage')); fixture.detectChanges();
+    control = fixture.debugElement.query(By.directive(CompendiumSourceFilterComponent)).componentInstance as CompendiumSourceFilterComponent;
+    expect(control.visibleBooks()).toEqual(['TCE', 'XGE']);
+    expect(screen.visibleSubclasses().map(record => record.name)).toEqual(['Alternative School']);
+    expect(TestBed.inject(SourceBookFilterService).selected()).toEqual(['NOT_INSTALLED', 'TCE']);
+    fixture.destroy();
+  });
+
   it('uses exact class references and keeps same-name editions and unrelated features apart', async () => {
     const f = await catalog(), owner = f.find('class', 'Mage');
     const base = await loadProgression(f.cache, f.revision.id, owner);
@@ -116,7 +136,7 @@ describe('Class compendium progression', () => {
     const fixture = TestBed.createComponent(ClassCompendiumComponent), screen = fixture.componentInstance;
     fixture.detectChanges(); await vi.waitFor(() => expect(screen.loading()).toBe(false));
     expect(screen.selectedSources()).toEqual(['PHB', 'TCE']);
-    expect(screen.visibleClasses().map(record => record.publication)).toEqual(['PHB', 'PHB']);
+    expect(screen.visibleClasses().map(record => record.publication)).toEqual(['PHB', 'PHB', 'XPHB']);
     await screen.chooseClass(f.find('class', 'Mage')); fixture.detectChanges();
     expect(screen.subclassSources()).toEqual(['PHB', 'TCE']);
     expect(screen.visibleSubclasses().map(record => record.name)).toEqual(['School']);

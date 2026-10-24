@@ -73,11 +73,7 @@
     @if (query || filterCount) {
       <div class="mb-3 flex flex-wrap gap-1" aria-label="Active filters">
         @if (query) { <button type="button" class="filter-chip" (click)="removeQuery()" [attr.aria-label]="'Remove search ' + query">Search: {{ query }} <app-ui-icon name="close" /></button> }
-        @for (facet of facets(); track facet.key) {
-          @for (value of filters[facet.key] || []; track value) {
-            <button type="button" class="filter-chip" (click)="toggle(facet.key, value)" [attr.aria-label]="'Remove ' + facet.label + ' ' + facetLabel(facet.key, value)">{{ facet.label }}: {{ facetLabel(facet.key, value) }} <app-ui-icon name="close" /></button>
-          }
-        }
+        <app-active-filter-chips [groups]="activeFilters" (removed)="removeFilter($event)" />
       </div>
     }
     <div class="mb-2 flex items-center justify-between gap-2 text-sm" role="status" aria-live="polite">

@@ -7,7 +7,8 @@ export const CONTENT_TYPES = [
   { id: 'spell', label: 'Spells', icon: 'wand', kinds: ['spell'] },
   { id: 'feat', label: 'Feats', icon: 'bookmark', kinds: ['feat'] },
   { id: 'optionalfeature', label: 'Optional Features', icon: 'list-plus', kinds: ['optionalfeature'] },
-  { id: 'species', label: 'Species', icon: 'head', kinds: ['species', 'race', 'subrace'] },
+  // Race/subrace raw records are provenance; their materialized species own the complete playable data.
+  { id: 'species', label: 'Species', icon: 'head', kinds: ['species'] },
   { id: 'background', label: 'Backgrounds', icon: 'file', kinds: ['background'] },
   { id: 'item', label: 'Items & Equipment', icon: 'backpack', kinds: ['item', 'baseitem', 'itemGroup', 'magicvariant'] },
   { id: 'monster', label: 'Monsters', icon: 'swords', kinds: ['monster', 'monsterTemplate'] },
@@ -43,7 +44,8 @@ const SIZE_LABELS: Record<string, string> = { T: 'Tiny', S: 'Small', M: 'Medium'
 /** Facets use the canonical payloads; historical imported records retain their source-shaped fallback. */
 export function recordFacets(record: ContentRecord): Filters {
   const data: JsonObject = { ...record.data, ...record.referenceDefinition };
-  const facets: Filters = { source: [record.publication || 'Unknown'], kind: [record.kind],
+  const kind = record.kind === 'species' && record.derivation?.operation === 'subrace' ? 'subrace' : record.kind;
+  const facets: Filters = { source: [record.publication || 'Unknown'], kind: [kind],
     origin: [record.file.startsWith('homebrew/') ? 'Homebrew' : 'Core Library'] };
   const set = (facet: Facet, value: unknown) => {
     const values = (Array.isArray(value) ? value : [value]).filter((v): v is string | number =>

@@ -26,6 +26,9 @@
         <h2 class="mb-1 text-lg font-semibold">Subclasses</h2>
         <p class="mb-3 text-xs text-on-surface-variant">Select a subclass to add its features to the progression below.</p>
         <app-compendium-source-filter class="mb-3" label="Subclass Source Books" [books]="subclassBooks()" [selected]="subclassSources()" [defaults]="selectedSources()" (selectedChange)="setSubclassSources($event)" />
+        @if (subclassSources().length) {
+          <div class="mb-3 flex flex-wrap gap-1" aria-label="Active subclass filters"><app-active-filter-chips [groups]="[{key: 'source', label: 'Subclass Source Books', values: subclassSources()}]" (removed)="setSubclassSources([])" /></div>
+        }
         <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
           <button type="button" (click)="chooseSubclass(null)" [attr.aria-pressed]="!selectedSubclass()" class="subclass-option" [class.active-subclass]="!selectedSubclass()">Base Class Only</button>
           @for (subclass of visibleSubclasses(); track subclass.key) {
@@ -65,6 +68,9 @@
     <app-list-controls label="Search classes" searchName="class-search" [query]="query()" (queryChange)="query.set($event)" [filterCount]="selectedSources().length" (cleared)="selectedSources.set([])">
       <app-compendium-source-filter [books]="sources()" [selected]="selectedSources()" [defaults]="sourceDefaults.selected()" (selectedChange)="selectedSources.set($event)" />
     </app-list-controls>
+    @if (selectedSources().length) {
+      <div class="mb-3 flex flex-wrap gap-1" aria-label="Active filters"><app-active-filter-chips [groups]="[{key: 'source', label: 'Source Books', values: selectedSources()}]" (removed)="selectedSources.set([])" /></div>
+    }
     <p class="mb-3 text-sm text-on-surface-variant" role="status">{{ visibleClasses().length }} classes</p>
     <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" aria-label="Classes">
       @for (owner of visibleClasses(); track owner.key) {
