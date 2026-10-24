@@ -7,6 +7,7 @@ import { CharacterData } from '../models/character.model';
 import { BasicCombatActionsComponent } from './basic-combat-actions.component';
 import { SwipePagesDirective } from './swipe-pages.directive';
 import { applyHealthAdjustment } from './sheet-health';
+import { captureSwipePane } from './swipe-snapshot';
 
 @Component({
   imports: [SwipePagesDirective, BasicCombatActionsComponent],
@@ -106,6 +107,17 @@ describe('Mobile page swipes', () => {
     expect(pages).toEqual([]);
     fixture.destroy();
     expect(document.querySelectorAll('[data-swipe-snapshot]')).toHaveLength(0);
+  });
+
+  it('clips a scrolled tab snapshot below the shared navigation rather than painting across the header', () => {
+    const { content } = setup();
+    vi.spyOn(content.parentElement!, 'getBoundingClientRect').mockReturnValue({ left: 8, top: -200, bottom: 900, width: 374, height: 1100 } as DOMRect);
+    const picture = captureSwipePane(content.parentElement!, 280)!;
+    try {
+      expect(picture.viewport.style.top).toBe('280px');
+      expect(picture.content.style.top).toBe('-480px');
+      expect(picture.viewport.querySelector('app-scroll-to-top')).toBeNull();
+    } finally { picture.viewport.remove(); }
   });
 
   it('switches pages without animation when reduced motion is preferred', () => {

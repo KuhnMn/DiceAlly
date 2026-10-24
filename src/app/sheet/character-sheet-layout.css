@@ -12,6 +12,11 @@
 :host([data-sheet-mode='desktop']) header > app-mobile-sheet-actions { display: none; }
 :host(.short-tablet) .sheet-chrome { position: static; }
 :host(.short-tablet) .sheet-tabs { top: 0; }
+:host([data-sheet-mode='phone']) .sheet-tab-content,
+:host([data-sheet-mode='tablet']) .sheet-tab-content {
+  min-height: max(0px, calc(100dvh - var(--sheet-chrome-height) - var(--sheet-tabs-height, 0px)));
+}
+:host(.short-tablet) .sheet-tab-content { min-height: max(0px, calc(100dvh - var(--sheet-tabs-height, 0px))); }
 :host([data-sheet-mode='tablet']) .sheet-main { margin-block: .5rem; }
 
 :host([data-sheet-mode="phone"]) .sheet-chrome { padding-top: .5rem; }

@@ -5,9 +5,9 @@ export interface SwipeSnapshot {
 }
 
 /** A short-lived, inert picture of the visible pane. Angular views and form registrations stay untouched. */
-export function captureSwipePane(host: HTMLElement): SwipeSnapshot | undefined {
+export function captureSwipePane(host: HTMLElement, clipTop = 0): SwipeSnapshot | undefined {
   const box = host.getBoundingClientRect();
-  const top = Math.max(0, box.top);
+  const top = Math.max(0, box.top, clipTop);
   const height = Math.min(window.innerHeight, box.bottom) - top;
   if (box.width <= 0 || height <= 0) return;
   const viewport = document.createElement('div');

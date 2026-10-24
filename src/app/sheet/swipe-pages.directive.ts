@@ -16,6 +16,7 @@ import { captureSwipePane, SwipeSnapshot } from './swipe-snapshot';
 export class SwipePagesDirective {
   readonly pageSwipe = output<-1 | 1>();
   readonly swipeMaxWidth = input<number>(SHEET_BREAKPOINTS.tablet);
+  readonly swipeNavigation = input<HTMLElement | null>(null);
   readonly swipePrevious = input(true);
   readonly swipeNext = input(true);
   private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -63,9 +64,12 @@ export class SwipePagesDirective {
   }
   private picture() {
     if (!this.current && !this.reducedMotion()) {
-      this.current = captureSwipePane(this.element.nativeElement);
+      this.current = this.capture();
       if (this.current) this.hideHost();
     }
+  }
+  private capture() {
+    return captureSwipePane(this.element.nativeElement, this.swipeNavigation()?.getBoundingClientRect().bottom ?? 0);
   }
   private animate(picture: SwipeSnapshot, from: number, to: number, duration: number) {
     const content = picture.content;
@@ -132,7 +136,7 @@ export class SwipePagesDirective {
     this.view.detectChanges();
     this.frame = requestAnimationFrame(() => {
       this.frame = 0;
-      this.incoming = captureSwipePane(this.element.nativeElement);
+      this.incoming = this.capture();
       const exit = dx < 0 ? -outgoing.width : outgoing.width;
       const start = Math.max(-outgoing.width, Math.min(outgoing.width, this.offset));
       this.animate(outgoing, start, exit, 220);

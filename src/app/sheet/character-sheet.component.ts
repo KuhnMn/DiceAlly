@@ -46,7 +46,6 @@ import { NotesPageComponent } from './notes-page.component';
   template: `
     <main class="sheet-main max-w-[1200px] mx-auto my-2 sm:my-6 px-2 py-2 sm:p-4">
       @if (characterData()) {
-        <div #navigation></div>
         <div #sheetChrome class="sheet-chrome bg-surface">
         <header class="flex items-center gap-2 min-w-0 mb-2 sm:mb-3">
           <a routerLink="/" aria-label="Back to characters"
@@ -117,6 +116,7 @@ import { NotesPageComponent } from './notes-page.component';
         @if (characterData(); as sheet) { <app-mobile-sheet-status [tablet]="layout.mode() === 'tablet'" [desktop]="!compact()" [sheet]="sheet" [openingEditor]="isOpeningEditor()" (edit)="editCharacter()" [saving]="isSaving()" [dirty]="hasUnsavedChanges()" (save)="quickSave()" (shortRest)="performShortRest()" (longRest)="performLongRest()" /> }
         <ng-container [ngTemplateOutlet]="restReport" />
         </div>
+        <div #tabsOrigin></div>
         <div #pageNavigation class="sheet-tabs bg-surface pt-2 sm:pt-0">
           <nav [appScrollableTabs]="currentPage()" [sheetTabs]="true" class="justify-between mb-3 sm:mb-6 items-stretch" aria-label="Character sheet pages">
             @for (page of pages(); track page.id) {
@@ -128,7 +128,7 @@ import { NotesPageComponent } from './notes-page.component';
             }
           </nav>
         </div>
-        <div #tabContent tabindex="-1" role="region" aria-label="Current character sheet tab" appSwipePages [swipeMaxWidth]="breakpoints.desktop" [swipePrevious]="currentPage() !== pages()[0].id" [swipeNext]="currentPage() !== pages()[pages().length - 1].id" (pageSwipe)="swipePage($event)" class="sheet-tab-content min-w-0">
+        <div #tabContent tabindex="-1" role="region" aria-label="Current character sheet tab" appSwipePages [swipeNavigation]="pageNavigation" [swipeMaxWidth]="breakpoints.desktop" [swipePrevious]="currentPage() !== pages()[0].id" [swipeNext]="currentPage() !== pages()[pages().length - 1].id" (pageSwipe)="swipePage($event)" class="sheet-tab-content min-w-0">
           <app-scroll-to-top [target]="tabContent" [navigation]="pageNavigation" [page]="currentPage()" />
           @if (visitedPages().has(1)) {
             <div [class.hidden]="currentPage() !== 1">
@@ -206,25 +206,43 @@ export class CharacterSheetComponent implements OnDestroy {
     if (target) this.switchPage(target.id);
   }
   readonly visitedPages = signal(new Set([1]));
-  private readonly navigation = viewChild<ElementRef<HTMLElement>>('navigation');
+  private readonly tabs = viewChild<ElementRef<HTMLElement>>('pageNavigation');
+  private readonly tabsOrigin = viewChild<ElementRef<HTMLElement>>('tabsOrigin');
   private previousMode = this.layout.mode();
   private readonly pageScroll = new Map<string, number>();
+  private readonly viewportScroll = new Map<string, number>();
   private scrollKey(page: number) { return `${this.layout.mode()}:${page}`; }
   private scrollFrame = 0;
+  private headerScrollRange() {
+    const origin = this.tabsOrigin()?.nativeElement;
+    const tabs = this.tabs()?.nativeElement;
+    if (!origin || !tabs) return 0;
+    const inset = Number.parseFloat(window.getComputedStyle(tabs).top) || 0;
+    return Math.max(0, origin.getBoundingClientRect().top + window.scrollY - inset);
+  }
   hasUnsavedChanges() { return this.unsavedChangesGuard.hasUnsavedChanges(this.characterData()); }
   switchPage(page: number, restoreScroll = true) {
     if (!this.pages().some(entry => entry.id === page) || page === this.currentPage()) return;
+    let headerScroll = 0, headerPinned = false;
     if (typeof window !== 'undefined') {
-      if (this.compact()) this.pageScroll.set(this.scrollKey(this.currentPage()), window.scrollY);
+      if (this.compact()) {
+        const range = this.headerScrollRange();
+        headerScroll = Math.min(window.scrollY, range);
+        headerPinned = window.scrollY >= range - 1;
+        this.pageScroll.set(this.scrollKey(this.currentPage()), Math.max(0, window.scrollY - range));
+      }
       cancelAnimationFrame(this.scrollFrame);
     }
     this.visitedPages.update(pages => new Set([...pages, page]));
     this.currentPage.set(page);
     if (restoreScroll && typeof window !== 'undefined') {
       this.scrollFrame = requestAnimationFrame(() => {
-        const navigation = this.navigation()?.nativeElement;
-        const tabTop = navigation ? navigation.getBoundingClientRect().top + window.scrollY : 0;
-        const top = this.compact() ? this.pageScroll.get(this.scrollKey(page)) ?? tabTop : 0;
+        // The header belongs to the sheet, never to an individual tab. While it is still
+        // exposed, keep its current position instead of collapsing it for a cached tab offset.
+        const range = this.headerScrollRange();
+        const top = !this.compact() ? 0 : headerPinned
+          ? range + (this.pageScroll.get(this.scrollKey(page)) ?? 0)
+          : Math.min(headerScroll, range);
         window.scrollTo({ top, behavior: 'instant' });
       });
     }
@@ -246,8 +264,8 @@ export class CharacterSheetComponent implements OnDestroy {
       const mode = this.layout.mode();
       const page = untracked(() => this.currentPage());
       if (mode !== this.previousMode && typeof window !== 'undefined') {
-        this.pageScroll.set(`${this.previousMode}:${page}`, window.scrollY);
-        const top = this.pageScroll.get(`${mode}:${page}`);
+        this.viewportScroll.set(this.previousMode, window.scrollY);
+        const top = this.viewportScroll.get(mode);
         if (top !== undefined && !this.element.nativeElement.querySelector('dialog[open], [aria-modal="true"]')) {
           cancelAnimationFrame(this.scrollFrame);
           this.scrollFrame = requestAnimationFrame(() => {
@@ -259,10 +277,14 @@ export class CharacterSheetComponent implements OnDestroy {
     });
     afterRenderEffect(onCleanup => {
       const chrome = this.chrome()?.nativeElement;
-      if (!chrome || typeof ResizeObserver === 'undefined') return;
-      const measure = () => this.element.nativeElement.style.setProperty('--sheet-chrome-height', `${chrome.getBoundingClientRect().height}px`);
+      const tabs = this.tabs()?.nativeElement;
+      if (!chrome || !tabs || typeof ResizeObserver === 'undefined') return;
+      const measure = () => {
+        this.element.nativeElement.style.setProperty('--sheet-chrome-height', `${chrome.getBoundingClientRect().height}px`);
+        this.element.nativeElement.style.setProperty('--sheet-tabs-height', `${tabs.getBoundingClientRect().height}px`);
+      };
       const observer = new ResizeObserver(measure);
-      observer.observe(chrome); measure();
+      observer.observe(chrome); observer.observe(tabs); measure();
       onCleanup(() => observer.disconnect());
     });
     afterRenderEffect(onCleanup => {

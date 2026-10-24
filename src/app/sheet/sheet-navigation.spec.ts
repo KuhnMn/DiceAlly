@@ -119,6 +119,28 @@ describe('Sheet navigation and mobile health integration', () => {
     }
   });
 
+  it('shares header exposure while caching only the content scroll of compact tabs', () => {
+    const { fixture, component } = setup(true);
+    let frame: FrameRequestCallback = () => {};
+    let scrollY = 0;
+    vi.spyOn(window, 'scrollY', 'get').mockImplementation(() => scrollY);
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => { frame = callback; return 1; });
+    const scroll = vi.spyOn(window, 'scrollTo').mockImplementation(options => { scrollY = (options as ScrollToOptions).top ?? 0; });
+    const tabs = fixture.nativeElement.querySelector('.sheet-tabs') as HTMLElement;
+    tabs.style.top = '200px';
+    vi.spyOn(tabs.previousElementSibling!, 'getBoundingClientRect').mockImplementation(() => ({ top: 300 - scrollY } as DOMRect));
+    const open = (page: number) => { component.switchPage(page); fixture.detectChanges(); frame(0); };
+    open(3); expect(scroll).toHaveBeenLastCalledWith({ top: 0, behavior: 'instant' });
+    scrollY = 700;
+    open(4); expect(scrollY).toBe(100); // A new/short tab cannot reveal the header again.
+    open(3); expect(scrollY).toBe(700); // Only the spell content offset is restored.
+    open(4); expect(scrollY).toBe(100);
+    scrollY = 40;
+    open(3); expect(scrollY).toBe(40); // A visible shared header cannot be collapsed by an old tab cache.
+    scrollY = 100;
+    open(6); expect(scrollY).toBe(100);
+  });
+
   it('marks mobile health edits as unsaved and persists the same data through Quick Save', async () => {
     const { fixture, component, store, sheet } = setup();
     const status = fixture.debugElement.query(By.directive(MobileSheetStatusComponent)).componentInstance as MobileSheetStatusComponent;
