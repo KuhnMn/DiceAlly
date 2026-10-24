@@ -34,11 +34,11 @@ import { COMBAT_TYPES, COMBAT_SNAPSHOT_FIELDS } from './combat-actions';
         </div>
         <label class="block"><span class="field-label">To Hit / Saving Throw (Optional)</span><input class="editor-input" name="combat-hit" [(ngModel)]="draft.hitOrDc" placeholder="+5 to hit or DC 14 Dexterity" /></label>
         <label class="block"><span class="field-label">Damage, Healing, or Effect</span><textarea class="editor-input" rows="2" name="combat-effect" [(ngModel)]="draft.damageOrHeal" placeholder="1d8 + 3 Slashing, heal 1d6, or a brief effect…"></textarea></label>
-        <div class="flex justify-end gap-2"><button type="button" class="secondary-button" (click)="cancelled.emit()">Cancel</button><button type="button" class="action-button" [disabled]="!draft.name?.trim()" (click)="save()">{{ sourceUpdate() ? 'Save Update' : 'Save Combat Entry' }}</button></div>
       </div>
+      <div catalog-footer class="flex justify-end gap-2 [&>button]:min-h-11"><button type="button" class="secondary-button" (click)="cancelled.emit()">Cancel</button><button type="button" class="action-button" [disabled]="!draft.name?.trim()" (click)="save()">{{ sourceUpdate() ? 'Save Update' : 'Save Combat Entry' }}</button></div>
     </app-catalog-dialog>
   `,
-  styles: [`.combat-form .editor-input { padding: .375rem .5rem; font-size: .8125rem; } .combat-form .field-label { margin-bottom: .125rem; }`],
+  styles: [`.combat-form .editor-input { padding: .375rem .5rem; font-size: 1rem; } @media (min-width: 640px) { .combat-form .editor-input { font-size: .8125rem; } } .combat-form .field-label { margin-bottom: .125rem; }`],
 })
 export class CombatActionDialogComponent implements OnInit {
   readonly entry = input.required<CombatAction>();

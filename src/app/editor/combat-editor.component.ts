@@ -18,19 +18,38 @@ import { InfoButtonComponent } from '../info-button.component';
       @for (type of types; track type.value) {
         @let group = entries(type.value);
         @if (group.length) {
-          <section class="mt-3 rounded-lg bg-surface-container p-2.5">
-            <h3 class="text-xs font-bold uppercase text-on-surface-variant mb-2">{{ type.label }}</h3>
-            <div class="space-y-2">@for (action of group; track action; let i = $index) {
-              <article class="rounded-lg bg-surface border border-outline-variant p-2.5">
-                <div class="flex flex-wrap items-center gap-2"><div class="flex-1 min-w-32"><p class="font-semibold text-sm">{{ action.name }}</p><p class="text-xs text-on-surface-variant">{{ action.hitOrDc }} @if (action.range) { · {{ action.range }} }</p></div>
-                  <button type="button" class="secondary-button compact-button icon-button" [disabled]="i === 0" [attr.aria-label]="'Move ' + action.name + ' up'" (click)="move(action, -1)"><app-ui-icon name="up" /></button>
-                  <button type="button" class="secondary-button compact-button icon-button" [disabled]="i === group.length - 1" [attr.aria-label]="'Move ' + action.name + ' down'" (click)="move(action, 1)"><app-ui-icon name="down" /></button>
-                  @if (hasSourceUpdate(action)) { <button type="button" class="action-button compact-button" [attr.aria-label]="'Update ' + action.name" (click)="update(action)"><app-ui-icon name="reset" /> Update</button> }
-                  <button type="button" class="secondary-button compact-button" (click)="edit(action)">Edit</button>
-                  <button type="button" class="secondary-button compact-button icon-button" [attr.aria-label]="'Remove ' + action.name" (click)="remove(action)"><app-ui-icon name="close" /></button>
+          <section class="mt-3 min-w-0 rounded-lg bg-surface-container p-2 sm:p-2.5" [attr.aria-label]="type.label">
+            <div class="mb-1.5 flex items-center gap-2"><h3 class="text-xs font-bold uppercase text-on-surface-variant">{{ type.label }}</h3><span class="text-xs tabular-nums text-on-surface-variant">{{ group.length }}</span></div>
+            <div class="space-y-1.5">@for (action of group; track action; let i = $index) {
+              @let sourceUpdateAvailable = hasSourceUpdate(action);
+              <article class="min-w-0 rounded-lg border border-outline-variant bg-surface p-2 sm:p-2.5">
+                <div class="flex min-w-0 items-start gap-1">
+                  <button type="button" class="min-h-10 sm:min-h-7 min-w-0 flex-1 rounded py-1 pr-1 text-left text-sm font-semibold [overflow-wrap:anywhere] hover:text-primary focus-visible:outline-2" [attr.aria-label]="'Edit ' + action.name" aria-haspopup="dialog" [title]="'Edit ' + action.name" (click)="edit(action)">
+                    <span class="line-clamp-2 sm:line-clamp-none">{{ action.name }}<app-ui-icon name="edit" class="ml-1 text-xs text-on-surface-variant" /></span>
+                  </button>
+                  <div class="flex shrink-0 gap-0.5" role="group" [attr.aria-label]="'Manage ' + action.name">
+                    <button type="button" class="secondary-button compact-button icon-button !h-10 !w-9 !min-w-9 sm:!h-8 sm:!w-8 sm:!min-w-8" [disabled]="i === 0" [attr.aria-label]="'Move ' + action.name + ' up'" title="Move up" (click)="move(action, -1)"><app-ui-icon name="up" /></button>
+                    <button type="button" class="secondary-button compact-button icon-button !h-10 !w-9 !min-w-9 sm:!h-8 sm:!w-8 sm:!min-w-8" [disabled]="i === group.length - 1" [attr.aria-label]="'Move ' + action.name + ' down'" title="Move down" (click)="move(action, 1)"><app-ui-icon name="down" /></button>
+                    <button type="button" class="secondary-button compact-button icon-button !h-10 !w-9 !min-w-9 sm:!h-8 sm:!w-8 sm:!min-w-8" [attr.aria-label]="'Remove ' + action.name" title="Remove entry" (click)="remove(action)"><app-ui-icon name="trash" /></button>
+                  </div>
                 </div>
-                <p class="text-sm mt-1 whitespace-pre-line break-words">{{ action.damageOrHeal }}</p>
-                @if (action.linkedResource) { <p class="text-xs text-on-surface-variant mt-2">Source: {{ action.linkedResource.name }} @if (!linked(action)) { (No Longer on This Character) } <button type="button" class="underline ml-2" (click)="unlink(action)">Unlink</button></p> }
+                @if (action.range || action.hitOrDc) {
+                  <p class="mt-0.5 flex flex-wrap gap-x-2 text-xs text-on-surface-variant [overflow-wrap:anywhere]">
+                    @if (action.range) { <span>{{ action.range }}</span> }
+                    @if (action.range && action.hitOrDc) { <span aria-hidden="true">·</span> }
+                    @if (action.hitOrDc) { <span>{{ action.hitOrDc }}</span> }
+                  </p>
+                }
+                @if (action.damageOrHeal) { <p class="mt-1 line-clamp-2 whitespace-pre-line text-xs leading-5 [overflow-wrap:anywhere] sm:line-clamp-none sm:text-sm" [title]="action.damageOrHeal">{{ action.damageOrHeal }}</p> }
+                @if (action.linkedResource || sourceUpdateAvailable) {
+                  <div class="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 border-t border-outline-variant pt-1">
+                    @if (action.linkedResource; as source) {
+                      <div class="min-w-0 flex-1 text-xs text-on-surface-variant"><p class="truncate" [title]="source.name || 'Linked entry'">Source: {{ source.name || 'Linked entry' }}</p>@if (!linked(action)) { <p class="text-error">No Longer on This Character</p> }</div>
+                      <button type="button" class="min-h-9 sm:min-h-6 shrink-0 rounded px-1 text-xs text-on-surface-variant underline" [attr.aria-label]="'Unlink ' + action.name" (click)="unlink(action)">Unlink</button>
+                    }
+                    @if (sourceUpdateAvailable) { <button type="button" class="action-button compact-button !min-h-9 sm:!min-h-6" [attr.aria-label]="'Update ' + action.name" (click)="update(action)"><app-ui-icon name="reset" /> Update</button> }
+                  </div>
+                }
               </article>
             }</div>
           </section>
