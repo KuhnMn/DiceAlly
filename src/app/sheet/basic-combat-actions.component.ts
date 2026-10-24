@@ -9,7 +9,7 @@ import { RuleReferenceComponent } from './rule-reference.component';
   imports: [RuleReferenceComponent],
   template: `
     <details>
-      <summary class="cursor-pointer rounded py-1 text-xs font-bold text-tertiary focus-visible:outline-2 focus-visible:outline-primary">Basic</summary>
+      <summary data-page-swipe class="cursor-pointer rounded py-1 text-xs font-bold text-tertiary focus-visible:outline-2 focus-visible:outline-primary">Basic</summary>
       <div class="mt-1 space-y-1">
         @for (action of actions(); track action.name) {
           <app-rule-reference appearance="combat" [reference]="action">

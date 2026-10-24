@@ -4,12 +4,13 @@ import { By } from '@angular/platform-browser';
 import { vi } from 'vitest';
 import { CharacterHelpersService } from './character-helpers.service';
 import { CharacterData } from '../models/character.model';
+import { BasicCombatActionsComponent } from './basic-combat-actions.component';
 import { SwipePagesDirective } from './swipe-pages.directive';
 import { applyHealthAdjustment } from './sheet-health';
 
 @Component({
-  imports: [SwipePagesDirective],
-  template: `<div appSwipePages [swipePrevious]="previous" [swipeNext]="next" (pageSwipe)="page = page + $event"><p>Page {{page}}</p><div data-horizontal-row><span>Slots</span></div><input /><button>Action</button><dialog><span>Detail text</span></dialog></div>`,
+  imports: [SwipePagesDirective, BasicCombatActionsComponent],
+  template: `<div appSwipePages [swipePrevious]="previous" [swipeNext]="next" (pageSwipe)="page = page + $event"><p>Page {{page}}</p><div data-horizontal-row><span>Slots</span></div><input /><button>Action</button><app-basic-combat-actions [actions]="[]" /><details><summary>Other Section</summary></details><dialog><span>Detail text</span></dialog></div>`,
 })
 class SwipeHost { page = 0; previous = true; next = true; }
 
@@ -132,6 +133,36 @@ describe('Mobile page swipes', () => {
     touch(title, 'touchend', 180, 200);
     card.click();
     expect(clicked).toHaveBeenCalledOnce();
+    expect(pages).toEqual([1]);
+  });
+
+  it('allows diagonal swipes and keeps a recognized horizontal gesture through vertical drift', () => {
+    const { content, pages, touch } = setup();
+    touch(content, 'touchstart', 280, 100);
+    touch(content, 'touchmove', 180, 160);
+    touch(content, 'touchend', 100, 200);
+    expect(pages).toEqual([1]);
+    touch(content, 'touchstart', 100, 100);
+    touch(content, 'touchmove', 135, 105);
+    touch(content, 'touchmove', 200, 240);
+    touch(content, 'touchend', 220, 280);
+    expect(pages).toEqual([1, -1]);
+  });
+
+  it('distinguishes Basic header taps from swipes, including short drags, without enabling other summaries', () => {
+    const { fixture, pages, touch } = setup();
+    const header = fixture.nativeElement.querySelector('app-basic-combat-actions summary') as HTMLElement;
+    const details = header.parentElement as HTMLDetailsElement;
+    touch(header, 'touchstart', 180, 200); touch(header, 'touchend', 180, 200); header.click();
+    expect(details.open).toBe(true); expect(pages).toEqual([]);
+    touch(header, 'touchstart', 280, 200); touch(header, 'touchmove', 180, 245); touch(header, 'touchend', 100, 280); header.click();
+    expect(pages).toEqual([1]); expect(details.open).toBe(true);
+    touch(header, 'touchstart', 280, 200); touch(header, 'touchmove', 240, 202); touch(header, 'touchend', 240, 202); header.click();
+    expect(pages).toEqual([1]); expect(details.open).toBe(true);
+    touch(header, 'touchstart', 180, 200); touch(header, 'touchend', 180, 200); header.click();
+    expect(details.open).toBe(false);
+    const other = fixture.nativeElement.querySelector('summary:not([data-page-swipe])') as HTMLElement;
+    touch(other, 'touchstart', 280, 200); touch(other, 'touchend', 100, 200);
     expect(pages).toEqual([1]);
   });
 

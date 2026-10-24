@@ -25,6 +25,7 @@ export class SwipePagesDirective {
   private frame = 0;
   private timer?: ReturnType<typeof setTimeout>;
   private offset = 0;
+  private horizontal = false;
   private hidden = false;
   private opacity = '';
   private suppressClickUntil = 0;
@@ -72,7 +73,7 @@ export class SwipePagesDirective {
     if (point.clientX < 24 || point.clientX > window.innerWidth - 24) return;
     let target = event.target instanceof HTMLElement ? event.target : null;
     while (target && target !== this.element.nativeElement) {
-      if (target.matches('dialog, input, textarea, select, button:not([data-page-swipe]), a, summary, label, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [role="slider"], [data-horizontal-row]')) return;
+      if (target.matches('dialog, input, textarea, select, button:not([data-page-swipe]), a, summary:not([data-page-swipe]), label, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [role="slider"], [data-horizontal-row]')) return;
       const overflow = getComputedStyle(target).overflowX;
       if (['auto', 'scroll'].includes(overflow) && target.scrollWidth > target.clientWidth) return;
       target = target.parentElement;
@@ -82,10 +83,15 @@ export class SwipePagesDirective {
 
   move(event: TouchEvent) {
     if (!this.origin) return;
-    if (event.touches.length !== 1 || Math.abs(event.touches[0].clientY - this.origin.y) > 35) { this.cancel(); return; }
+    if (event.touches.length !== 1) { this.cancel(); return; }
     const dx = event.touches[0].clientX - this.origin.x;
     const dy = event.touches[0].clientY - this.origin.y;
-    if (Math.abs(dx) < 12 || Math.abs(dx) < Math.abs(dy) * 2) return;
+    if (!this.horizontal) {
+      // Choose an axis once. Vertical scrolling wins early; a horizontal drag may drift vertically thereafter.
+      if (Math.abs(dy) >= 12 && Math.abs(dy) > Math.abs(dx) * 1.2) { this.cancel(); return; }
+      if (Math.abs(dx) < 12 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+      this.horizontal = true;
+    }
     if (event.cancelable) event.preventDefault();
     this.picture();
     this.offset = this.allowed(dx) ? dx : dx * 0.2;
@@ -99,7 +105,7 @@ export class SwipePagesDirective {
     if (event.changedTouches.length !== 1 || window.getSelection()?.toString()) { this.cancel(); return; }
     const point = event.changedTouches[0];
     const dx = point.clientX - origin.x, dy = point.clientY - origin.y;
-    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2 || !this.allowed(dx)) { this.cancel(); return; }
+    if (Math.abs(dx) < 70 || (!this.horizontal && Math.abs(dx) < Math.abs(dy) * 1.4) || !this.allowed(dx)) { this.cancel(); return; }
     this.suppressClickUntil = performance.now() + 500;
     this.picture();
     const outgoing = this.current;
@@ -122,8 +128,8 @@ export class SwipePagesDirective {
 
   cancel() {
     this.origin = undefined;
+    if (this.horizontal) this.suppressClickUntil = performance.now() + 500;
     if (!this.current) { this.reset(); return; }
-    this.suppressClickUntil = performance.now() + 500;
     this.animate(this.current, this.offset, 0, 160);
     this.timer = setTimeout(() => this.reset(), 170);
   }
@@ -137,6 +143,6 @@ export class SwipePagesDirective {
     this.current?.viewport.remove(); this.incoming?.viewport.remove();
     this.current = this.incoming = undefined;
     if (this.hidden) this.element.nativeElement.style.opacity = this.opacity;
-    this.hidden = false; this.offset = 0;
+    this.hidden = false; this.offset = 0; this.horizontal = false;
   }
 }
