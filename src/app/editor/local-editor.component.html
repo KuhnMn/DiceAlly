@@ -61,7 +61,7 @@
   }
   @if (error()) { <p role="alert" class="mb-4 rounded-lg border-2 border-error bg-error-container text-on-error-container p-3">{{ error() }}</p> }
 
-  <form #tabContent id="basic-info" tabindex="-1" [attr.aria-label]="pages[page]" appSwipePages (pageSwipe)="setPage(page + $event)" (ngSubmit)="save()">
+  <form #tabContent id="basic-info" tabindex="-1" [attr.aria-label]="pages[page]" appSwipePages [swipePrevious]="page > 0 && !busy()" [swipeNext]="page < pages.length - 1 && !busy()" (pageSwipe)="setPage(page + $event)" (ngSubmit)="save()">
     <app-scroll-to-top [target]="tabContent" [navigation]="pageNavigation" [page]="page" />
     <fieldset [disabled]="busy()" class="min-w-0 space-y-4">
       @if (pages[page] === 'Basic Info') {

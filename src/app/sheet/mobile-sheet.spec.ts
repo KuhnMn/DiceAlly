@@ -9,9 +9,9 @@ import { applyHealthAdjustment } from './sheet-health';
 
 @Component({
   imports: [SwipePagesDirective],
-  template: `<div appSwipePages><p>Page content</p><div data-horizontal-row><span>Slots</span></div><input /><button>Action</button><dialog><span>Detail text</span></dialog></div>`,
+  template: `<div appSwipePages [swipePrevious]="previous" [swipeNext]="next" (pageSwipe)="page = page + $event"><p>Page {{page}}</p><div data-horizontal-row><span>Slots</span></div><input /><button>Action</button><dialog><span>Detail text</span></dialog></div>`,
 })
-class SwipeHost {}
+class SwipeHost { page = 0; previous = true; next = true; }
 
 describe('Mobile page swipes', () => {
   afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
@@ -42,25 +42,55 @@ describe('Mobile page swipes', () => {
     expect(pages).toEqual([1, -1]);
   });
 
-  it('provides drag feedback and animates the page change without horizontal translation', () => {
+  it('follows the finger, slides the actual next page in, and cleans up inert snapshots', async () => {
     const { fixture, content, pages, touch } = setup();
-    const animation = { cancel: vi.fn(), pause: vi.fn(), currentTime: 0 };
-    const animate = vi.fn(() => animation);
     const host = content.parentElement!;
-    Object.defineProperty(host, 'animate', { configurable: true, value: animate });
+    vi.spyOn(host, 'getBoundingClientRect').mockReturnValue({ left: 8, top: 100, bottom: 800, width: 374, height: 700 } as DOMRect);
     vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false })));
-    touch(content, 'touchstart', 280, 200);
-    touch(content, 'touchmove', 180, 205);
-    expect(animation.pause).toHaveBeenCalled();
-    expect(animation.currentTime).toBeGreaterThan(0);
-    touch(content, 'touchend', 140, 205);
-    expect(pages).toEqual([1]);
-    expect(animate.mock.calls.at(-1)).toEqual([
-      [{ opacity: 0.82, transform: 'scale(0.99)', transformOrigin: 'top center' }, { opacity: 1, transform: 'scale(1)', transformOrigin: 'top center' }],
-      { duration: 200, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
-    ]);
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { frames.push(callback); return frames.length; });
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+    const animate = vi.fn((_frames: Keyframe[], _options?: KeyframeAnimationOptions) => ({ cancel: vi.fn() }));
+    Object.defineProperty(HTMLElement.prototype, 'animate', { configurable: true, value: animate });
+    try {
+      touch(content, 'touchstart', 280, 200);
+      touch(content, 'touchmove', 180, 205);
+      const outgoing = document.querySelector('[data-swipe-snapshot]') as HTMLElement;
+      expect(outgoing.inert).toBe(true);
+      expect(outgoing.getAttribute('aria-hidden')).toBe('true');
+      expect((outgoing.firstElementChild as HTMLElement).style.transform).toBe('translate3d(-100px, 0, 0)');
+      expect(host.style.opacity).toBe('0');
+      expect(pages).toEqual([]);
+      touch(content, 'touchend', 140, 205);
+      expect(pages).toEqual([1]);
+      expect(fixture.componentInstance.page).toBe(1);
+      frames.at(-1)!(0);
+      const snapshots = document.querySelectorAll('[data-swipe-snapshot]');
+      expect(snapshots).toHaveLength(2);
+      expect(snapshots[0].textContent).toContain('Page 0');
+      expect(snapshots[1].textContent).toContain('Page 1');
+      expect(animate).toHaveBeenCalledTimes(2);
+      expect(animate.mock.calls[0][0]).toEqual([{ transform: 'translate3d(-100px, 0, 0)' }, { transform: 'translate3d(-374px, 0, 0)' }]);
+      expect(animate.mock.calls[1][0]).toEqual([{ transform: 'translate3d(274px, 0, 0)' }, { transform: 'translate3d(0px, 0, 0)' }]);
+      fixture.destroy();
+      expect(document.querySelectorAll('[data-swipe-snapshot]')).toHaveLength(0);
+      expect(host.style.opacity).toBe('');
+    } finally { delete (HTMLElement.prototype as { animate?: unknown }).animate; }
+  });
+
+  it('bounces back without changing page when the gesture is short or the next tab is unavailable', () => {
+    const { fixture, content, pages, touch } = setup();
+    const host = content.parentElement!;
+    vi.spyOn(host, 'getBoundingClientRect').mockReturnValue({ left: 8, top: 100, bottom: 800, width: 374, height: 700 } as DOMRect);
+    touch(content, 'touchstart', 280, 200); touch(content, 'touchmove', 230, 200); touch(content, 'touchend', 230, 200);
+    expect(pages).toEqual([]);
+    fixture.componentInstance.next = false; fixture.detectChanges();
+    touch(content, 'touchstart', 280, 200); touch(content, 'touchmove', 180, 200);
+    expect((document.querySelector('[data-swipe-snapshot]')!.firstElementChild as HTMLElement).style.transform).toBe('translate3d(-20px, 0, 0)');
+    touch(content, 'touchend', 100, 200);
+    expect(pages).toEqual([]);
     fixture.destroy();
-    expect(animation.cancel).toHaveBeenCalled();
+    expect(document.querySelectorAll('[data-swipe-snapshot]')).toHaveLength(0);
   });
 
   it('switches pages without animation when reduced motion is preferred', () => {

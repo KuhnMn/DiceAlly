@@ -1,6 +1,7 @@
-import { DestroyRef, Directive, ElementRef, inject, output } from '@angular/core';
+import { ChangeDetectorRef, DestroyRef, Directive, ElementRef, inject, input, output } from '@angular/core';
+import { captureSwipePane, SwipeSnapshot } from './swipe-snapshot';
 
-/** Recognize page swipes without cancelling native vertical or nested horizontal scrolling. */
+/** Finger-following page transitions without disturbing native scrolling, Angular views or form state. */
 @Directive({
   selector: '[appSwipePages]',
   host: {
@@ -8,42 +9,65 @@ import { DestroyRef, Directive, ElementRef, inject, output } from '@angular/core
     '(touchmove)': 'move($event)',
     '(touchend)': 'end($event)',
     '(touchcancel)': 'cancel()',
+    '(window:resize)': 'reset()',
   },
 })
 export class SwipePagesDirective {
   readonly pageSwipe = output<-1 | 1>();
+  readonly swipePrevious = input(true);
+  readonly swipeNext = input(true);
   private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
-  private origin?: { x: number; y: number; time: number };
-  private animation?: Animation;
-  private progress = 0;
+  private readonly view = inject(ChangeDetectorRef);
+  private origin?: { x: number; y: number };
+  private current?: SwipeSnapshot;
+  private incoming?: SwipeSnapshot;
+  private readonly animations: Animation[] = [];
+  private frame = 0;
+  private timer?: ReturnType<typeof setTimeout>;
+  private offset = 0;
+  private hidden = false;
+  private opacity = '';
   private suppressClickUntil = 0;
 
   constructor() {
     const host = this.element.nativeElement;
     const preventSwipeClick = (event: MouseEvent) => {
       if (performance.now() >= this.suppressClickUntil) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
+      event.preventDefault(); event.stopImmediatePropagation();
     };
     host.addEventListener('click', preventSwipeClick, true);
     inject(DestroyRef).onDestroy(() => {
-      this.animation?.cancel();
+      this.reset();
       host.removeEventListener('click', preventSwipeClick, true);
     });
   }
 
-  private animate(frames: Keyframe[], duration: number) {
-    this.animation?.cancel();
-    this.animation = undefined;
-    const host = this.element.nativeElement;
-    if (!host.animate || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-    this.animation = host.animate(frames, { duration, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
+  private reducedMotion() { return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches; }
+  private allowed(dx: number) { return dx < 0 ? this.swipeNext() : this.swipePrevious(); }
+  private hideHost() {
+    if (this.hidden) return;
+    this.opacity = this.element.nativeElement.style.opacity;
+    this.element.nativeElement.style.opacity = '0';
+    this.hidden = true;
+  }
+  private picture() {
+    if (!this.current && !this.reducedMotion()) {
+      this.current = captureSwipePane(this.element.nativeElement);
+      if (this.current) this.hideHost();
+    }
+  }
+  private animate(picture: SwipeSnapshot, from: number, to: number, duration: number) {
+    const content = picture.content;
+    content.style.transform = `translate3d(${to}px, 0, 0)`;
+    if (content.animate) this.animations.push(content.animate([
+      { transform: `translate3d(${from}px, 0, 0)` }, { transform: `translate3d(${to}px, 0, 0)` },
+    ], { duration, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'both' }));
   }
 
   start(event: TouchEvent) {
-    this.cancel();
-    this.suppressClickUntil = 0;
+    this.reset(); this.suppressClickUntil = 0;
     if (event.touches.length !== 1 || window.innerWidth >= 640 || window.getSelection()?.toString()) return;
+    if (document.querySelector('dialog[open], [aria-modal="true"]')) return;
     const point = event.touches[0];
     if (point.clientX < 24 || point.clientX > window.innerWidth - 24) return;
     let target = event.target instanceof HTMLElement ? event.target : null;
@@ -53,43 +77,66 @@ export class SwipePagesDirective {
       if (['auto', 'scroll'].includes(overflow) && target.scrollWidth > target.clientWidth) return;
       target = target.parentElement;
     }
-    this.origin = { x: point.clientX, y: point.clientY, time: event.timeStamp };
+    this.origin = { x: point.clientX, y: point.clientY };
   }
 
   move(event: TouchEvent) {
     if (!this.origin) return;
     if (event.touches.length !== 1 || Math.abs(event.touches[0].clientY - this.origin.y) > 35) { this.cancel(); return; }
-    const dx = Math.abs(event.touches[0].clientX - this.origin.x);
-    const dy = Math.abs(event.touches[0].clientY - this.origin.y);
-    if (dx < 12 || dx < dy * 2) return;
-    // Opacity feedback cannot expand the document or disturb nested scroll positions.
-    if (!this.progress) {
-      this.animate([{ opacity: 1 }, { opacity: 0.82 }], 1000);
-      this.animation?.pause();
-    }
-    this.progress = Math.min(1, dx / 180);
-    if (this.animation) this.animation.currentTime = this.progress * 1000;
+    const dx = event.touches[0].clientX - this.origin.x;
+    const dy = event.touches[0].clientY - this.origin.y;
+    if (Math.abs(dx) < 12 || Math.abs(dx) < Math.abs(dy) * 2) return;
+    if (event.cancelable) event.preventDefault();
+    this.picture();
+    this.offset = this.allowed(dx) ? dx : dx * 0.2;
+    if (this.current) this.current.content.style.transform = `translate3d(${this.offset}px, 0, 0)`;
   }
 
   end(event: TouchEvent) {
     const origin = this.origin;
-    this.cancel();
-    if (!origin || event.changedTouches.length !== 1 || window.getSelection()?.toString()) return;
+    this.origin = undefined;
+    if (!origin) return;
+    if (event.changedTouches.length !== 1 || window.getSelection()?.toString()) { this.cancel(); return; }
     const point = event.changedTouches[0];
-    const dx = point.clientX - origin.x;
-    const dy = point.clientY - origin.y;
-    if (event.timeStamp - origin.time > 900 || Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2) return;
+    const dx = point.clientX - origin.x, dy = point.clientY - origin.y;
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2 || !this.allowed(dx)) { this.cancel(); return; }
     this.suppressClickUntil = performance.now() + 500;
+    this.picture();
+    const outgoing = this.current;
     this.pageSwipe.emit(dx < 0 ? 1 : -1);
-    this.animate([
-      { opacity: 0.82, transform: 'scale(0.99)', transformOrigin: 'top center' },
-      { opacity: 1, transform: 'scale(1)', transformOrigin: 'top center' },
-    ], 200);
+    if (!outgoing || this.reducedMotion()) { this.reset(); return; }
+    // Commit once, then capture the real destination after Angular and the sheet's scroll restoration.
+    this.view.detectChanges();
+    this.frame = requestAnimationFrame(() => {
+      this.frame = 0;
+      this.incoming = captureSwipePane(this.element.nativeElement);
+      const exit = dx < 0 ? -outgoing.width : outgoing.width;
+      const start = Math.max(-outgoing.width, Math.min(outgoing.width, this.offset));
+      this.animate(outgoing, start, exit, 220);
+      if (this.incoming) {
+        this.animate(this.incoming, start + (dx < 0 ? outgoing.width : -outgoing.width), 0, 220);
+      }
+      this.timer = setTimeout(() => this.reset(), 230);
+    });
   }
 
   cancel() {
     this.origin = undefined;
-    if (this.progress) this.animate([{ opacity: 1 - this.progress * 0.18 }, { opacity: 1 }], 140);
-    this.progress = 0;
+    if (!this.current) { this.reset(); return; }
+    this.suppressClickUntil = performance.now() + 500;
+    this.animate(this.current, this.offset, 0, 160);
+    this.timer = setTimeout(() => this.reset(), 170);
+  }
+
+  reset() {
+    this.origin = undefined;
+    if (this.frame) cancelAnimationFrame(this.frame);
+    this.frame = 0; clearTimeout(this.timer); this.timer = undefined;
+    for (const animation of this.animations) animation.cancel();
+    this.animations.length = 0;
+    this.current?.viewport.remove(); this.incoming?.viewport.remove();
+    this.current = this.incoming = undefined;
+    if (this.hidden) this.element.nativeElement.style.opacity = this.opacity;
+    this.hidden = false; this.offset = 0;
   }
 }

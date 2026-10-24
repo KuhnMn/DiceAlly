@@ -129,7 +129,7 @@ import { NotesPageComponent } from './notes-page.component';
             }
           </nav>
         </div>
-        <div #tabContent tabindex="-1" role="region" aria-label="Current character sheet tab" appSwipePages (pageSwipe)="swipePage($event)" class="min-w-0">
+        <div #tabContent tabindex="-1" role="region" aria-label="Current character sheet tab" appSwipePages [swipePrevious]="currentPage() !== pages[0].id" [swipeNext]="currentPage() !== pages[pages.length - 1].id" (pageSwipe)="swipePage($event)" class="min-w-0">
           <app-scroll-to-top [target]="tabContent" [navigation]="pageNavigation" [page]="currentPage()" />
           @if (visitedPages().has(1)) {
             <div [class.hidden]="currentPage() !== 1">
