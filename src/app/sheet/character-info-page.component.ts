@@ -1,3 +1,4 @@
+import { isSheetPageVisible, sheetPageForAnchor } from '../models/sheet-pages';
 import { CombatActionColumnsComponent } from './combat-action-columns.component';
 import { CombatActionComponent } from './combat-action.component';
 import { characterClasses } from '../character-description';
@@ -1033,7 +1034,8 @@ export class CharacterInfoPageComponent {
   }
 
   isActionClickable(action: CombatAction): boolean {
-    return this.getCombatActionAnchorId(action) !== null;
+    const anchor = this.getCombatActionAnchorId(action);
+    return anchor !== null && isSheetPageVisible(this.characterData(), sheetPageForAnchor(anchor));
   }
 
   getCombatActionLinkType(action: CombatAction): 'feature' | 'species' | 'spell' | 'item' | 'monster' | null {
@@ -1051,7 +1053,7 @@ export class CharacterInfoPageComponent {
 
   navigateToCombatAction(action: CombatAction) {
     const anchorId = this.getCombatActionAnchorId(action);
-    if (anchorId) {
+    if (anchorId && this.isActionClickable(action)) {
       this.navigateToFeatures.emit(anchorId);
     }
   }

@@ -34,6 +34,22 @@ function dialogStructure(root: HTMLElement) {
 }
 
 describe('Combat action descriptions', () => {
+  it('still opens linked details but omits navigation to a hidden spell page', () => {
+    const sheet = sheetWithSpell();
+    sheet.sheetSettings = { visiblePages: { spells: false } };
+    const fixture = TestBed.createComponent(MobileCombatPageComponent);
+    fixture.componentRef.setInput('characterData', sheet); fixture.detectChanges();
+    const navigated = vi.fn(); fixture.componentInstance.navigateToFeatures.subscribe(navigated);
+    const row = fixture.nativeElement.querySelector('app-combat-action') as HTMLElement;
+    expect(row.querySelector('button[title="Go to source"]')).toBeNull();
+    row.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"]')!.click(); fixture.detectChanges();
+    expect(row.querySelector('dialog')?.textContent).toContain('The full flame description.');
+    expect(row.querySelector('button[aria-label^="Go to source"]')).toBeNull();
+    fixture.componentInstance.navigateToCombatAction(sheet.combatActions![0]);
+    expect(navigated).not.toHaveBeenCalled();
+    fixture.destroy();
+  });
+
   it.each([CharacterInfoPageComponent, MobileCombatPageComponent])('reads linked descriptions in place and navigates only from an arrow in %s', component => {
     const fixture = TestBed.createComponent(component), sheet = sheetWithSpell(), before = structuredClone(sheet);
     fixture.componentRef.setInput('characterData', sheet); fixture.detectChanges();

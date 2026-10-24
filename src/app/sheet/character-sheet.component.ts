@@ -1,3 +1,4 @@
+import { SHEET_PAGES, isSheetPageVisible, sheetPageForAnchor } from '../models/sheet-pages';
 import { SheetLayoutService, SHEET_BREAKPOINTS, sheetColumnCapacity } from './sheet-layout.service';
 import { MobileCharacterHeaderComponent } from './mobile-character-header.component';
 import { MobileCombatPageComponent } from './mobile-combat-page.component';
@@ -12,7 +13,7 @@ import { CharacterSessionService } from '../characters/character-session.service
 import { ThemePickerComponent } from '../theme-picker.component';
 import { ScrollableTabsDirective } from '../scrollable-tabs.directive';
 import { AppDialogService } from '../services/app-dialog.service';
-import { Component, inject, signal, ElementRef, viewChild, OnDestroy, effect, HostListener, untracked, afterNextRender, afterRenderEffect, DestroyRef } from '@angular/core';
+import { Component, inject, signal, ElementRef, viewChild, OnDestroy, computed, effect, HostListener, untracked, afterNextRender, afterRenderEffect, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { CharacterLibraryService } from '../characters/character-library.service';
@@ -118,7 +119,7 @@ import { NotesPageComponent } from './notes-page.component';
         </div>
         <div #pageNavigation class="sheet-tabs bg-surface pt-2 sm:pt-0">
           <nav [appScrollableTabs]="currentPage()" [sheetTabs]="true" class="justify-between mb-3 sm:mb-6 items-stretch" aria-label="Character sheet pages">
-            @for (page of pages; track page.id) {
+            @for (page of pages(); track page.id) {
               <button type="button" (click)="switchPage(page.id)" [attr.aria-current]="currentPage() === page.id ? 'page' : null"
                 class="px-6 py-3 font-semibold transition-colors flex-auto border-b-4"
                 [class.border-transparent]="currentPage() !== page.id" [class.border-primary]="currentPage() === page.id" [class.text-primary]="currentPage() === page.id" [class.text-on-surface-variant]="currentPage() !== page.id">
@@ -127,7 +128,7 @@ import { NotesPageComponent } from './notes-page.component';
             }
           </nav>
         </div>
-        <div #tabContent tabindex="-1" role="region" aria-label="Current character sheet tab" appSwipePages [swipeMaxWidth]="breakpoints.desktop" [swipePrevious]="currentPage() !== pages[0].id" [swipeNext]="currentPage() !== pages[pages.length - 1].id" (pageSwipe)="swipePage($event)" class="sheet-tab-content min-w-0">
+        <div #tabContent tabindex="-1" role="region" aria-label="Current character sheet tab" appSwipePages [swipeMaxWidth]="breakpoints.desktop" [swipePrevious]="currentPage() !== pages()[0].id" [swipeNext]="currentPage() !== pages()[pages().length - 1].id" (pageSwipe)="swipePage($event)" class="sheet-tab-content min-w-0">
           <app-scroll-to-top [target]="tabContent" [navigation]="pageNavigation" [page]="currentPage()" />
           @if (visitedPages().has(1)) {
             <div [class.hidden]="currentPage() !== 1">
@@ -139,12 +140,12 @@ import { NotesPageComponent } from './notes-page.component';
               }
             </div>
           }
-          @if (visitedPages().has(7)) { <div [class.hidden]="currentPage() !== 7"><app-mobile-combat-page [characterData]="characterData()" (navigateToFeatures)="navigateToFeatures($event)" /></div> }
+          @if (visitedPages().has(7) && isPageVisible(7)) { <div [class.hidden]="currentPage() !== 7"><app-mobile-combat-page [characterData]="characterData()" (navigateToFeatures)="navigateToFeatures($event)" /></div> }
           @if (visitedPages().has(2)) { <div [class.hidden]="currentPage() !== 2"><app-features-page [characterData]="characterData()" /></div> }
-          @if (visitedPages().has(3)) { <div [class.hidden]="currentPage() !== 3"><app-spells-page [characterData]="characterData()" /></div> }
-          @if (visitedPages().has(4)) { <div [class.hidden]="currentPage() !== 4"><app-equipment-page [characterData]="characterData()" /></div> }
-          @if (visitedPages().has(5)) { <div [class.hidden]="currentPage() !== 5"><app-monsters-page [characterData]="characterData()" /></div> }
-          @if (visitedPages().has(6)) { <div [class.hidden]="currentPage() !== 6"><app-notes-page [characterData]="characterData()" /></div> }
+          @if (visitedPages().has(3) && isPageVisible(3)) { <div [class.hidden]="currentPage() !== 3"><app-spells-page [characterData]="characterData()" /></div> }
+          @if (visitedPages().has(4) && isPageVisible(4)) { <div [class.hidden]="currentPage() !== 4"><app-equipment-page [characterData]="characterData()" /></div> }
+          @if (visitedPages().has(5) && isPageVisible(5)) { <div [class.hidden]="currentPage() !== 5"><app-monsters-page [characterData]="characterData()" /></div> }
+          @if (visitedPages().has(6) && isPageVisible(6)) { <div [class.hidden]="currentPage() !== 6"><app-notes-page [characterData]="characterData()" /></div> }
         </div>
       } @else {
         <p>
@@ -197,11 +198,11 @@ export class CharacterSheetComponent implements OnDestroy {
 
   characterData = this.store.characterData;
   currentPage = signal(1);
-  private readonly standardPages = [{ id: 1, label: 'Sheet' }, { id: 2, label: 'Features' }, { id: 3, label: 'Spells' }, { id: 4, label: 'Inventory' }, { id: 5, label: 'Companions' }, { id: 6, label: 'Notes' }];
-  readonly pages = [this.standardPages[0], { id: 7, label: 'Combat' }, ...this.standardPages.slice(1)];
+  readonly pages = computed(() => SHEET_PAGES.filter(page => this.isPageVisible(page.id)));
+  isPageVisible(id: number) { return isSheetPageVisible(this.characterData(), id); }
   swipePage(direction: number) {
-    const index = this.pages.findIndex(page => page.id === this.currentPage());
-    const target = this.pages[index + direction];
+    const index = this.pages().findIndex(page => page.id === this.currentPage());
+    const target = this.pages()[index + direction];
     if (target) this.switchPage(target.id);
   }
   readonly visitedPages = signal(new Set([1]));
@@ -212,7 +213,7 @@ export class CharacterSheetComponent implements OnDestroy {
   private scrollFrame = 0;
   hasUnsavedChanges() { return this.unsavedChangesGuard.hasUnsavedChanges(this.characterData()); }
   switchPage(page: number, restoreScroll = true) {
-    if (!this.pages.some(entry => entry.id === page) || page === this.currentPage()) return;
+    if (!this.pages().some(entry => entry.id === page) || page === this.currentPage()) return;
     if (typeof window !== 'undefined') {
       if (this.compact()) this.pageScroll.set(this.scrollKey(this.currentPage()), window.scrollY);
       cancelAnimationFrame(this.scrollFrame);
@@ -237,6 +238,9 @@ export class CharacterSheetComponent implements OnDestroy {
   saveStatus = signal(false);
 
   constructor() {
+    effect(() => {
+      if (!this.pages().some(page => page.id === this.currentPage())) this.switchPage(1, false);
+    });
     effect(() => { this.compact(); this.syncOverview(); });
     effect(() => {
       const mode = this.layout.mode();
@@ -289,19 +293,8 @@ export class CharacterSheetComponent implements OnDestroy {
   }
 
   navigateToFeatures(targetId: string) {
-    // Determine which page to navigate to based on the anchor ID prefix
-    let page = 2; // Default to Features
-    
-    if (targetId.startsWith('spell-')) {
-      page = 3; // Spells page
-    } else if (targetId.startsWith('item-')) {
-      page = 4; // Inventory page
-    } else if (targetId.startsWith('monster-') || targetId.startsWith('object-')) {
-      page = 5; // Companions page
-    } else if (targetId.startsWith('feature-') || targetId === 'species-section') {
-      page = 2; // Features & Traits page
-    }
-    
+    const page = sheetPageForAnchor(targetId);
+    if (!this.isPageVisible(page)) return;
     this.store.setFeatureScrollTarget(targetId);
     this.switchPage(page, false);
   }

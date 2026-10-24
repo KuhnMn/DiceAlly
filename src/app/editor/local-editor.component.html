@@ -90,6 +90,12 @@
       @if (pages[page] === 'Combat') {
         <app-editor-combat [sheet]="sheet" (edited)="changed()" />
       }
+      @if (pages[page] === 'Notes') {
+        <app-editor-notes [sheet]="sheet" (edited)="changed()" />
+      }
+      @if (pages[page] === 'Sheet Settings') {
+        <app-editor-sheet-settings [sheet]="sheet" (edited)="changed()" />
+      }
       <footer class="flex flex-wrap items-center justify-between gap-3 pt-2 pb-4">
         <p class="text-sm text-on-surface-variant">{{ unsaved ? 'Unsaved changes' : version ? 'Saved on this device' : pages[page] }}</p>
         <div class="flex flex-wrap gap-2 items-center">

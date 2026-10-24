@@ -31,6 +31,8 @@ Viewport height is independent of this contract. For short tablet viewports, app
 
 Recommended: use one stable page list at every width: Sheet, Combat, Features, Spells, Inventory, Companions, Notes. Keep the existing page IDs. Combat is an additive shortcut on desktop; the existing desktop overview and its combat block remain available.
 
+All pages are enabled by default. The editor's Sheet Settings page can hide Combat, Spells, Inventory, Companions and Notes per character, consistently across viewport sizes. Hidden pages are excluded from tabs, swipes and source navigation; their content remains editable in the editor. Linked action descriptions still open in place. Sheet and Features remain available. Visibility settings travel with character saves, exports and sync.
+
 - Never redirect from Combat merely because the window becomes wider.
 - Keep the sheet tab bar on one line with horizontal overflow at every width. On a wide desktop all tabs fit; only overflow causes scrolling. Labels do not wrap and controls do not shrink below readable/tappable sizes.
 - Continue revealing the active tab after selection and resize, without vertically scrolling the document.

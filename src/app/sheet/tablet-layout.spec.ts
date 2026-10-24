@@ -71,7 +71,7 @@ describe('Sheet layouts preserve navigation and character state', () => {
     const before = structuredClone(store.characterData());
     for (const size of ['tablet', 'desktop', 'tablet', 'phone'] as const) {
       mode.set(size); fixture.detectChanges();
-      expect(component.pages.map(page => page.id)).toEqual([1, 7, 2, 3, 4, 5, 6]);
+      expect(component.pages().map(page => page.id)).toEqual([1, 7, 2, 3, 4, 5, 6]);
       expect(component.currentPage()).toBe(7);
       expect(fixture.debugElement.query(By.directive(MobileCombatPageComponent)).componentInstance).toBe(combat);
       expect(group.open).toBe(true);

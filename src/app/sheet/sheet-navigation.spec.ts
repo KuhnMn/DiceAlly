@@ -13,6 +13,29 @@ import { CharacterSessionService } from '../characters/character-session.service
 import { emptyBasicCharacter } from '../editor/basic-info';
 
 describe('Sheet navigation and mobile health integration', () => {
+  it('omits disabled pages, skips them when swiping and rejects source jumps without losing content', () => {
+    const { fixture, component, store, sheet } = setup(true);
+    const settings = { visiblePages: { combat: false, spells: false, inventory: false, companions: false, notes: false } };
+    store.setCharacter({ ...sheet, sheetSettings: settings, notes: [{ id: 1, title: 'Hidden', body: 'Kept' }] });
+    fixture.detectChanges();
+    expect(component.pages().map(page => page.label)).toEqual(['Sheet', 'Features']);
+    expect([...fixture.nativeElement.querySelectorAll('nav[aria-label="Character sheet pages"] button')].map((button: unknown) => (button as HTMLElement).textContent?.trim())).toEqual(['Sheet', 'Features']);
+    component.swipePage(1); fixture.detectChanges(); expect(component.currentPage()).toBe(2);
+    component.swipePage(1); expect(component.currentPage()).toBe(2);
+    for (const id of [3, 4, 5, 6, 7]) { component.switchPage(id); expect(component.currentPage()).toBe(2); }
+    for (const anchor of ['spell-hidden', 'item-hidden', 'monster-hidden', 'object-hidden']) component.navigateToFeatures(anchor);
+    expect(store.featureScrollTarget()).toBeNull();
+    expect(component.currentPage()).toBe(2);
+    component.swipePage(-1); expect(component.currentPage()).toBe(1);
+    expect(store.characterData()?.notes?.[0].body).toBe('Kept');
+    store.setCharacter({ ...store.characterData()!, sheetSettings: { visiblePages: { notes: true } } });
+    component.switchPage(6, false); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-notes-page')).not.toBeNull();
+    store.setCharacter({ ...store.characterData()!, sheetSettings: settings }); fixture.detectChanges();
+    expect(component.currentPage()).toBe(1);
+    expect(fixture.nativeElement.querySelector('app-notes-page')).toBeNull();
+  });
+
   it('keeps rest changes unsaved until an explicit save', async () => {
     const { component, store } = setup(true);
     store.nativeCharacterId.set(store.characterData()!.character!.characterUuid!);
@@ -119,7 +142,7 @@ describe('Sheet navigation and mobile health integration', () => {
   it('places mobile Combat between Sheet and Features and follows that order when swiping', () => {
     const { fixture, component } = setup(true);
     fixture.detectChanges();
-    expect(component.pages.slice(0, 3).map(page => page.label)).toEqual(['Sheet', 'Combat', 'Features']);
+    expect(component.pages().slice(0, 3).map(page => page.label)).toEqual(['Sheet', 'Combat', 'Features']);
     expect(fixture.nativeElement.querySelector('app-mobile-character-header section')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('app-mobile-character-info-page')?.textContent).not.toContain('Combat');
     component.swipePage(1); fixture.detectChanges();
