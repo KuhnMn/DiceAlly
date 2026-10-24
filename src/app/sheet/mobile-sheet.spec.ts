@@ -10,7 +10,7 @@ import { applyHealthAdjustment } from './sheet-health';
 
 @Component({
   imports: [SwipePagesDirective, BasicCombatActionsComponent],
-  template: `<div appSwipePages [swipeMaxWidth]="maxWidth" [swipePrevious]="previous" [swipeNext]="next" (pageSwipe)="page = page + $event"><p>Page {{page}}</p><div data-horizontal-row><span>Slots</span></div><input /><label class="search-label"><span>Search</span><input type="search" /></label><input type="number" /><input type="range" /><input type="date" /><div contenteditable="true">Editable</div><textarea></textarea><select><option>Choice</option></select><label><input type="checkbox" />Checkbox</label><button>Action</button><a href="#destination"><span>Linked entry</span></a><svg><path d="M0 0h10" /></svg><app-basic-combat-actions [actions]="[]" /><details><summary>Other Section</summary></details><dialog><span>Detail text</span></dialog></div>`,
+  template: `<div appSwipePages [swipeMaxWidth]="maxWidth" [swipePrevious]="previous" [swipeNext]="next" (pageSwipe)="page = page + $event"><p>Page {{page}}</p><div data-horizontal-row><span>Slots</span></div><input /><label class="search-label"><span>Search</span><input type="search" /></label><label class="number-label"><span>Value</span><input type="number" /></label><label class="range-label"><span>Range</span><input type="range" /></label><input type="date" /><div contenteditable="true">Editable</div><textarea></textarea><select><option>Choice</option></select><label class="toggle-label"><input type="checkbox" /><span>Checkbox</span></label><input type="radio" /><button>Action</button><a href="#destination"><span>Linked entry</span></a><svg><path d="M0 0h10" /></svg><app-basic-combat-actions [actions]="[]" /><details><summary>Other Section</summary></details><dialog><span>Detail text</span></dialog></div>`,
 })
 class SwipeHost { maxWidth = 640; page = 0; previous = true; next = true; }
 
@@ -120,9 +120,9 @@ describe('Mobile page swipes', () => {
     expect(animate).not.toHaveBeenCalled();
   });
 
-  it('leaves horizontal rows, non-text controls, rich text and dialogs to their native interactions', () => {
+  it('leaves horizontal rows, native pickers, sliders, rich text and dialogs to their native interactions', () => {
     const { fixture, pages, touch } = setup();
-    for (const selector of ['[data-horizontal-row] span', 'input[type=number]', 'input[type=range]', 'input[type=date]', 'select', 'label:not(.search-label)', '[contenteditable]', 'dialog span']) {
+    for (const selector of ['[data-horizontal-row] span', 'input[type=range]', 'input[type=date]', 'select', '.range-label span', '[contenteditable]', 'dialog span']) {
       const target = fixture.nativeElement.querySelector(selector);
       touch(target, 'touchstart', 280, 200); touch(target, 'touchend', 100, 200);
     }
@@ -164,6 +164,34 @@ describe('Mobile page swipes', () => {
       if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) expect(target.value).toBe('Keep this text');
     }
     expect(pages).toEqual([1, 1, 1, 1]);
+  });
+
+  it('starts swipes on numeric fields and their labels while preserving values, focus on taps and vertical scrolling', () => {
+    const { fixture, pages, touch } = setup();
+    const field = fixture.nativeElement.querySelector('input[type=number]') as HTMLInputElement;
+    field.setAttribute('role', 'spinbutton'); field.value = '42'; field.focus();
+    touch(field, 'touchstart', 180, 200); touch(field, 'touchend', 180, 200);
+    expect(document.activeElement).toBe(field);
+    touch(field, 'touchstart', 280, 200);
+    expect(touch(field, 'touchmove', 275, 250).defaultPrevented).toBe(false);
+    touch(field, 'touchend', 100, 260);
+    expect(pages).toEqual([]);
+    for (const target of [field, fixture.nativeElement.querySelector('.number-label span')]) {
+      touch(target, 'touchstart', 280, 200); touch(target, 'touchmove', 180, 210); touch(target, 'touchend', 100, 230);
+    }
+    expect(pages).toEqual([1, 1]); expect(field.value).toBe('42');
+    expect(document.activeElement).not.toBe(field);
+  });
+
+  it.each(['input[type=checkbox]', '.toggle-label span', 'input[type=radio]'])('separates swipes from toggle taps on %s', selector => {
+    const { fixture, pages, touch } = setup();
+    const target = fixture.nativeElement.querySelector(selector) as HTMLElement;
+    const input = (target instanceof HTMLInputElement ? target : target.parentElement!.querySelector('input')) as HTMLInputElement;
+    touch(target, 'touchstart', 280, 200); touch(target, 'touchmove', 180, 210); touch(target, 'touchend', 100, 230);
+    target.click();
+    expect(pages).toEqual([1]); expect(input.checked).toBe(false);
+    touch(target, 'touchstart', 180, 200); touch(target, 'touchend', 180, 200); target.click();
+    expect(input.checked).toBe(true); expect(pages).toEqual([1]);
   });
 
   it('preserves text-field taps, short drags, vertical scrolling, selections and explicit exclusions', () => {

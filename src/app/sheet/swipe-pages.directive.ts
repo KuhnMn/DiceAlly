@@ -48,7 +48,11 @@ export class SwipePagesDirective {
   private reducedMotion() { return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches; }
   private isTextField(element: Element | null): element is HTMLInputElement | HTMLTextAreaElement {
     return element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement &&
-      ['text', 'search', 'email', 'url', 'tel', 'password'].includes(element.type);
+      ['text', 'search', 'email', 'url', 'tel', 'password', 'number'].includes(element.type);
+  }
+  private isSwipeInput(element: Element | null): boolean {
+    return this.isTextField(element) || element instanceof HTMLInputElement &&
+      ['checkbox', 'radio', 'button', 'submit', 'reset'].includes(element.type);
   }
   private allowed(dx: number) { return dx < 0 ? this.swipeNext() : this.swipePrevious(); }
   private hideHost() {
@@ -77,14 +81,14 @@ export class SwipePagesDirective {
     if (document.querySelector('dialog[open], [aria-modal="true"]')) return;
     const point = event.touches[0];
     if (point.clientX < 24 || point.clientX > window.innerWidth - 24) return;
-    // Text fields share tap/swipe detection too; selecting text still keeps native editing gestures.
+    // Fields and toggle labels share tap/swipe detection; text selection keeps native editing gestures.
     let target = event.target instanceof Element ? event.target : null;
     const field = target instanceof HTMLLabelElement ? target.control : target;
     if (this.isTextField(field) && field.selectionStart !== field.selectionEnd) return;
     while (target && target !== this.element.nativeElement) {
-      if (target.matches('dialog, select, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [role="slider"], [role="spinbutton"], [data-horizontal-row], [data-no-page-swipe]')) return;
-      if (target.matches('input, textarea, [role="textbox"], [role="combobox"]') && !this.isTextField(target)) return;
-      if (target instanceof HTMLLabelElement && !this.isTextField(target.control)) return;
+      if (target.matches('dialog, select, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [role="slider"], [data-horizontal-row], [data-no-page-swipe]')) return;
+      if (target.matches('input, textarea, [role="textbox"], [role="combobox"], [role="spinbutton"]') && !this.isSwipeInput(target)) return;
+      if (target instanceof HTMLLabelElement && target.control && !this.isSwipeInput(target.control)) return;
       const overflow = getComputedStyle(target).overflowX;
       if (!this.isTextField(target) && ['auto', 'scroll'].includes(overflow) && target.scrollWidth > target.clientWidth) return;
       target = target.parentElement;
