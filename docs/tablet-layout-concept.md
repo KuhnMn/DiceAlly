@@ -60,7 +60,7 @@ Overview:
 Combat:
 
 - Reuse the existing mobile Combat composition as a shared Combat page, with its current action cards and details/navigation behavior.
-- One column on narrow/short landscape phones; category groups may use two columns on wider tablets when cards retain readable widths. Keep each action name and its stat row intact.
+- Default to one column at every width. The shared list layout buttons allow users to choose two or three columns when sufficient space is available, with the same fallback/restoration behavior as other lists. Keep each action name and its stat row intact.
 - Source links, cast controls, uses, round tracker and concentration use the same character store as the overview.
 
 ## Implementation boundaries
@@ -106,7 +106,7 @@ Run targeted layout/state/navigation tests and browser touch checks. Since the i
 
 ## Implementation and validation
 
-The shared layout service owns the 640/768/1280px viewport boundaries and the short-tablet height query. Overview and Combat column layouts additionally use measured content width. List layouts support two columns at 656px of content width and three at 992px; unavailable choices are disabled. The preferred count is retained independently from the count currently displayed.
+The shared layout service owns the 640/768/1280px viewport boundaries and the short-tablet height query. The overview column layout additionally uses measured content width. Combat uses the shared manual list layout selector and starts with one column. List layouts support two columns at 656px of content width and three at 992px; unavailable choices are disabled. The preferred count is retained independently from the count currently displayed.
 
 Compact and desktop overview instances are created on first use and retained thereafter. Changing the overview family waits while a detail overlay is open. Header/health components keep one instance through rotation; the desktop presentation hides their triggers rather than destroying an open health dialog. Existing tab pages are retained, including spell filters and note drafts. Tablet touch swipes are enabled below the desktop boundary, while the editor retains its existing gesture boundary.
 

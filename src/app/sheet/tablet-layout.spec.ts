@@ -31,6 +31,36 @@ function setup() {
 }
 
 describe('Sheet layouts preserve navigation and character state', () => {
+  it('keeps Combat single-column until selected and retains its choice across navigation and resizing', () => {
+    const { mode, fixture, component } = setup();
+    component.switchPage(7, false); fixture.detectChanges();
+    const combat = fixture.debugElement.query(By.directive(MobileCombatPageComponent));
+    const selector = combat.query(By.directive(SheetListLayoutComponent));
+    const layout = selector.componentInstance as SheetListLayoutComponent;
+    const groups = combat.nativeElement.querySelector('.combat-groups') as HTMLElement;
+    for (const size of ['tablet', 'desktop'] as const) {
+      mode.set(size); fixture.detectChanges();
+      expect(layout.displayColumns()).toBe(1);
+      expect(groups.classList.contains('combat-multiple-columns')).toBe(false);
+    }
+    const buttons = selector.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>;
+    buttons[1].click(); fixture.detectChanges();
+    expect(groups.classList.contains('combat-multiple-columns')).toBe(true);
+    expect(groups.style.getPropertyValue('--combat-columns')).toBe('2');
+    buttons[2].click(); fixture.detectChanges();
+    expect(groups.style.getPropertyValue('--combat-columns')).toBe('3');
+    component.switchPage(1, false); fixture.detectChanges();
+    component.switchPage(7, false); fixture.detectChanges();
+    expect(layout.columns()).toBe(3);
+    mode.set('phone'); layout.maxColumns.set(1); fixture.detectChanges();
+    expect(groups.classList.contains('combat-multiple-columns')).toBe(false);
+    expect(layout.columns()).toBe(3);
+    mode.set('tablet'); layout.maxColumns.set(2); fixture.detectChanges();
+    expect(groups.style.getPropertyValue('--combat-columns')).toBe('2');
+    expect(buttons[2].disabled).toBe(true);
+    fixture.destroy();
+  });
+
   it('keeps Combat and its expanded groups across phone, tablet and desktop sizes', () => {
     const { mode, fixture, component, store } = setup();
     component.switchPage(7, false); fixture.detectChanges();

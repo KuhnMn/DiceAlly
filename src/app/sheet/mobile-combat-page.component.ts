@@ -1,27 +1,29 @@
 import { CombatActionColumnsComponent } from './combat-action-columns.component';
 import { CombatActionComponent } from './combat-action.component';
 import { ConcentrationControlComponent } from './concentration-control.component';
-import { Component, input } from '@angular/core';
+import { Component } from '@angular/core';
 import { CharacterInfoPageComponent } from './character-info-page.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { BasicCombatActionsComponent } from './basic-combat-actions.component';
+import { SheetListLayoutComponent } from './sheet-list-layout.component';
 
 @Component({
   selector: 'app-mobile-combat-page',
-  imports: [CombatActionColumnsComponent, CombatActionComponent, BasicCombatActionsComponent, UiIconComponent, ConcentrationControlComponent],
+  imports: [CombatActionColumnsComponent, CombatActionComponent, BasicCombatActionsComponent, UiIconComponent, ConcentrationControlComponent, SheetListLayoutComponent],
   styles: [`
     :host { display: block; min-width: 0; }
-    .combat-two-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: start; }
-    .combat-two-columns > div { min-width: 0; margin-top: 0; }
-    .combat-two-columns > div:only-child { grid-column: 1 / -1; }
+    .combat-multiple-columns { display: grid; grid-template-columns: repeat(var(--combat-columns), minmax(0, 1fr)); gap: 1rem; align-items: start; }
+    .combat-multiple-columns > div { min-width: 0; margin-top: 0; }
+    .combat-multiple-columns > div:only-child { grid-column: 1 / -1; }
   `],
   template: `
     @if (character(); as c) {
           <!-- Combat Actions -->
           <div class="border-4 border-surface rounded-lg p-4 bg-surface-container-low shadow-lg">
-            <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
-              Combat
-            </h3>
+            <div class="flex items-center gap-2 mb-3 border-b-2 border-outline-variant pb-2">
+              <h3 class="flex-1 text-sm font-bold uppercase text-center">Combat</h3>
+              <app-sheet-list-layout #listLayout />
+            </div>
             <div class="mb-4 flex flex-wrap items-center gap-2" role="group" aria-label="Concentration &amp; Round Tracker">
               <h4 class="w-full text-xs font-semibold tracking-wide text-on-surface-variant">Concentration &amp; Round Tracker</h4>
               @if (characterData(); as sheet) { <app-concentration-control class="min-w-0 flex-1 border-r border-outline-variant pr-3" [sheet]="sheet" /> }
@@ -35,7 +37,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
               </div>
             </div>
             @if (combatActions().length > 0 || characterData()?.basicActions?.length) {
-              <div class="combat-groups space-y-3 text-sm" [class.combat-two-columns]="wideLayout()">
+              <div class="combat-groups space-y-3 text-sm" [class.combat-multiple-columns]="listLayout.displayColumns() > 1" [style.--combat-columns]="listLayout.displayColumns()">
                 @for (actionType of ['ACTION', 'BONUS', 'REACTION', 'OTHER']; track actionType) {
                   @if ((groupedCombatActions()[actionType]?.length ?? 0) > 0 || (groupedBasicActions()[actionType]?.length ?? 0) > 0) {
                     <div>
@@ -62,4 +64,4 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
     }
   `,
 })
-export class MobileCombatPageComponent extends CharacterInfoPageComponent { readonly wideLayout = input(false); }
+export class MobileCombatPageComponent extends CharacterInfoPageComponent {}

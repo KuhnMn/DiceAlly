@@ -139,7 +139,7 @@ import { NotesPageComponent } from './notes-page.component';
               }
             </div>
           }
-          @if (visitedPages().has(7)) { <div [class.hidden]="currentPage() !== 7"><app-mobile-combat-page [wideLayout]="layout.contentColumns() >= 2" [characterData]="characterData()" (navigateToFeatures)="navigateToFeatures($event)" /></div> }
+          @if (visitedPages().has(7)) { <div [class.hidden]="currentPage() !== 7"><app-mobile-combat-page [characterData]="characterData()" (navigateToFeatures)="navigateToFeatures($event)" /></div> }
           @if (visitedPages().has(2)) { <div [class.hidden]="currentPage() !== 2"><app-features-page [characterData]="characterData()" /></div> }
           @if (visitedPages().has(3)) { <div [class.hidden]="currentPage() !== 3"><app-spells-page [characterData]="characterData()" /></div> }
           @if (visitedPages().has(4)) { <div [class.hidden]="currentPage() !== 4"><app-equipment-page [characterData]="characterData()" /></div> }
