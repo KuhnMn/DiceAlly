@@ -10,7 +10,7 @@ import { applyHealthAdjustment } from './sheet-health';
 
 @Component({
   imports: [SwipePagesDirective, BasicCombatActionsComponent],
-  template: `<div appSwipePages [swipePrevious]="previous" [swipeNext]="next" (pageSwipe)="page = page + $event"><p>Page {{page}}</p><div data-horizontal-row><span>Slots</span></div><input /><button>Action</button><app-basic-combat-actions [actions]="[]" /><details><summary>Other Section</summary></details><dialog><span>Detail text</span></dialog></div>`,
+  template: `<div appSwipePages [swipePrevious]="previous" [swipeNext]="next" (pageSwipe)="page = page + $event"><p>Page {{page}}</p><div data-horizontal-row><span>Slots</span></div><input /><textarea></textarea><select><option>Choice</option></select><label><input type="checkbox" />Checkbox</label><button>Action</button><a href="#destination"><span>Linked entry</span></a><svg><path d="M0 0h10" /></svg><app-basic-combat-actions [actions]="[]" /><details><summary>Other Section</summary></details><dialog><span>Detail text</span></dialog></div>`,
 })
 class SwipeHost { page = 0; previous = true; next = true; }
 
@@ -106,19 +106,18 @@ describe('Mobile page swipes', () => {
     expect(animate).not.toHaveBeenCalled();
   });
 
-  it('leaves horizontal rows and interactive controls to their native interactions', () => {
+  it('leaves horizontal rows, editing controls, and explicit opt-outs to their native interactions', () => {
     const { fixture, pages, touch } = setup();
-    for (const selector of ['[data-horizontal-row] span', 'input', 'button', 'dialog span']) {
+    for (const selector of ['[data-horizontal-row] span', 'input', 'textarea', 'select', 'label', 'dialog span']) {
       const target = fixture.nativeElement.querySelector(selector);
       touch(target, 'touchstart', 280, 200); touch(target, 'touchend', 100, 200);
     }
     expect(pages).toEqual([]);
   });
 
-  it('allows combat-card swipes without activating the card and preserves ordinary taps', () => {
+  it('allows unmarked button swipes without activating the button and preserves ordinary taps', () => {
     const { fixture, pages, touch } = setup();
     const card = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
-    card.setAttribute('data-page-swipe', '');
     const title = document.createElement('span');
     card.append(title);
     const clicked = vi.fn();
@@ -136,6 +135,30 @@ describe('Mobile page swipes', () => {
     expect(pages).toEqual([1]);
   });
 
+  it('handles links and SVG icons while preserving taps and explicit gesture exclusions', () => {
+    const { fixture, pages, touch } = setup();
+    const link = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
+    const navigate = vi.fn((event: Event) => event.preventDefault());
+    link.addEventListener('click', navigate);
+    const text = link.querySelector('span')!;
+    touch(text, 'touchstart', 280, 200); touch(text, 'touchmove', 180, 205); touch(text, 'touchend', 100, 220); link.click();
+    expect(pages).toEqual([1]); expect(navigate).not.toHaveBeenCalled();
+    touch(text, 'touchstart', 180, 200); touch(text, 'touchend', 180, 200); link.click();
+    expect(navigate).toHaveBeenCalledOnce();
+    const icon = fixture.nativeElement.querySelector('path');
+    const button = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    button.append(icon.parentElement);
+    button.setAttribute('data-no-page-swipe', '');
+    touch(icon, 'touchstart', 280, 200); touch(icon, 'touchend', 100, 200);
+    expect(pages).toEqual([1]);
+    button.removeAttribute('data-no-page-swipe');
+    touch(icon, 'touchstart', 280, 200); touch(icon, 'touchend', 100, 200);
+    expect(pages).toEqual([1, 1]);
+    button.setAttribute('data-horizontal-row', '');
+    touch(icon, 'touchstart', 280, 200); touch(icon, 'touchend', 100, 200);
+    expect(pages).toEqual([1, 1]);
+  });
+
   it('allows diagonal swipes and keeps a recognized horizontal gesture through vertical drift', () => {
     const { content, pages, touch } = setup();
     touch(content, 'touchstart', 280, 100);
@@ -149,7 +172,7 @@ describe('Mobile page swipes', () => {
     expect(pages).toEqual([1, -1]);
   });
 
-  it('distinguishes Basic header taps from swipes, including short drags, without enabling other summaries', () => {
+  it('distinguishes disclosure header taps from swipes, including short drags', () => {
     const { fixture, pages, touch } = setup();
     const header = fixture.nativeElement.querySelector('app-basic-combat-actions summary') as HTMLElement;
     const details = header.parentElement as HTMLDetailsElement;
@@ -163,7 +186,7 @@ describe('Mobile page swipes', () => {
     expect(details.open).toBe(false);
     const other = fixture.nativeElement.querySelector('summary:not([data-page-swipe])') as HTMLElement;
     touch(other, 'touchstart', 280, 200); touch(other, 'touchend', 100, 200);
-    expect(pages).toEqual([1]);
+    expect(pages).toEqual([1, 1]);
   });
 
   it('rejects vertical scrolling, short gestures, screen edges, and multitouch', () => {

@@ -71,9 +71,11 @@ export class SwipePagesDirective {
     if (document.querySelector('dialog[open], [aria-modal="true"]')) return;
     const point = event.touches[0];
     if (point.clientX < 24 || point.clientX > window.innerWidth - 24) return;
-    let target = event.target instanceof HTMLElement ? event.target : null;
+    // Click-only controls (buttons, links and disclosure headers) share tap/swipe detection.
+    // Editing controls and independently scrolling rows keep their native gestures.
+    let target = event.target instanceof Element ? event.target : null;
     while (target && target !== this.element.nativeElement) {
-      if (target.matches('dialog, input, textarea, select, button:not([data-page-swipe]), a, summary:not([data-page-swipe]), label, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [role="slider"], [data-horizontal-row]')) return;
+      if (target.matches('dialog, input, textarea, select, label, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [role="slider"], [role="textbox"], [role="combobox"], [role="spinbutton"], [data-horizontal-row], [data-no-page-swipe]')) return;
       const overflow = getComputedStyle(target).overflowX;
       if (['auto', 'scroll'].includes(overflow) && target.scrollWidth > target.clientWidth) return;
       target = target.parentElement;
