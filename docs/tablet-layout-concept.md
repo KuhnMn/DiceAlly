@@ -73,7 +73,7 @@ Combat:
 4. Adapt the existing compact header and overview renderers; share calculations and state. Keep ordinary portrait phone and wide desktop presentations as regression references.
 5. Extend tab scroll bookkeeping to tablets. Store offsets by stable page ID and layout family, preserve selected tabs and filter/expansion state, and clamp/restore offsets after relayout. Do not scroll to page top on every width update.
 6. Keep one overlay per open detail/editor. A resize must not instantiate a second dialog or trigger close/discard. Preserve unsaved note drafts and inputs when changing compositions; do not reset the character store or recreate stateful tab pages merely for a breakpoint change.
-7. Extend gestures separately from layout classification. Enable phone-style page swipes for touch-operated tablet layouts, retaining horizontal-row and input exclusions. Account for hybrid devices without relying solely on `(pointer: coarse)`; desktop mouse drag behavior remains unchanged.
+7. Extend gestures separately from layout classification. Enable phone-style page swipes for touch-operated tablet layouts. Text/search fields and textareas support page swipes; selected text, non-text controls, rich text editing and horizontal rows retain their native gestures. Account for hybrid devices without relying solely on `(pointer: coarse)`; desktop mouse drag behavior remains unchanged.
 8. Keep the heavy tablet content within existing lazy sheet boundaries. No new eager route imports or speculative import-validator downloads.
 
 ## Regression and acceptance checks
@@ -93,7 +93,7 @@ At each relevant viewport:
 - Single-row navigation, active tab visible, readable/tappable controls, Combat reachable.
 - At 844×390, only the tabs remain sticky while scrolling, leaving useful content height.
 - Existing source dialogs, prepared-spell navigation, casting, source updates, save/edit/rest and use tracking keep their behavior.
-- Native horizontal trackers and editing controls keep their gestures; touch page swipes work in intended intermediate layouts.
+- Native horizontal trackers, selected text and non-text controls keep their gestures; text fields support horizontal page swipes while preserving taps, short drags and vertical scrolling. Touch page swipes work in intended intermediate layouts.
 - Detail dialogs and their actions fit short viewports and remain usable with the keyboard open.
 
 Resize scenarios are more important than static screenshots:

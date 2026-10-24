@@ -46,6 +46,10 @@ export class SwipePagesDirective {
   }
 
   private reducedMotion() { return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches; }
+  private isTextField(element: Element | null): element is HTMLInputElement | HTMLTextAreaElement {
+    return element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement &&
+      ['text', 'search', 'email', 'url', 'tel', 'password'].includes(element.type);
+  }
   private allowed(dx: number) { return dx < 0 ? this.swipeNext() : this.swipePrevious(); }
   private hideHost() {
     if (this.hidden) return;
@@ -73,13 +77,16 @@ export class SwipePagesDirective {
     if (document.querySelector('dialog[open], [aria-modal="true"]')) return;
     const point = event.touches[0];
     if (point.clientX < 24 || point.clientX > window.innerWidth - 24) return;
-    // Click-only controls (buttons, links and disclosure headers) share tap/swipe detection.
-    // Editing controls and independently scrolling rows keep their native gestures.
+    // Text fields share tap/swipe detection too; selecting text still keeps native editing gestures.
     let target = event.target instanceof Element ? event.target : null;
+    const field = target instanceof HTMLLabelElement ? target.control : target;
+    if (this.isTextField(field) && field.selectionStart !== field.selectionEnd) return;
     while (target && target !== this.element.nativeElement) {
-      if (target.matches('dialog, input, textarea, select, label, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [role="slider"], [role="textbox"], [role="combobox"], [role="spinbutton"], [data-horizontal-row], [data-no-page-swipe]')) return;
+      if (target.matches('dialog, select, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [role="slider"], [role="spinbutton"], [data-horizontal-row], [data-no-page-swipe]')) return;
+      if (target.matches('input, textarea, [role="textbox"], [role="combobox"]') && !this.isTextField(target)) return;
+      if (target instanceof HTMLLabelElement && !this.isTextField(target.control)) return;
       const overflow = getComputedStyle(target).overflowX;
-      if (['auto', 'scroll'].includes(overflow) && target.scrollWidth > target.clientWidth) return;
+      if (!this.isTextField(target) && ['auto', 'scroll'].includes(overflow) && target.scrollWidth > target.clientWidth) return;
       target = target.parentElement;
     }
     this.origin = { x: point.clientX, y: point.clientY };
@@ -113,6 +120,8 @@ export class SwipePagesDirective {
     this.suppressClickUntil = performance.now() + 500;
     this.picture();
     const outgoing = this.current;
+    const active = document.activeElement;
+    if (this.isTextField(active) && this.element.nativeElement.contains(active)) active.blur();
     this.pageSwipe.emit(dx < 0 ? 1 : -1);
     if (!outgoing || this.reducedMotion()) { this.reset(); return; }
     // Commit once, then capture the real destination after Angular and the sheet's scroll restoration.

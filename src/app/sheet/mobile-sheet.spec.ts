@@ -10,7 +10,7 @@ import { applyHealthAdjustment } from './sheet-health';
 
 @Component({
   imports: [SwipePagesDirective, BasicCombatActionsComponent],
-  template: `<div appSwipePages [swipeMaxWidth]="maxWidth" [swipePrevious]="previous" [swipeNext]="next" (pageSwipe)="page = page + $event"><p>Page {{page}}</p><div data-horizontal-row><span>Slots</span></div><input /><textarea></textarea><select><option>Choice</option></select><label><input type="checkbox" />Checkbox</label><button>Action</button><a href="#destination"><span>Linked entry</span></a><svg><path d="M0 0h10" /></svg><app-basic-combat-actions [actions]="[]" /><details><summary>Other Section</summary></details><dialog><span>Detail text</span></dialog></div>`,
+  template: `<div appSwipePages [swipeMaxWidth]="maxWidth" [swipePrevious]="previous" [swipeNext]="next" (pageSwipe)="page = page + $event"><p>Page {{page}}</p><div data-horizontal-row><span>Slots</span></div><input /><label class="search-label"><span>Search</span><input type="search" /></label><input type="number" /><input type="range" /><input type="date" /><div contenteditable="true">Editable</div><textarea></textarea><select><option>Choice</option></select><label><input type="checkbox" />Checkbox</label><button>Action</button><a href="#destination"><span>Linked entry</span></a><svg><path d="M0 0h10" /></svg><app-basic-combat-actions [actions]="[]" /><details><summary>Other Section</summary></details><dialog><span>Detail text</span></dialog></div>`,
 })
 class SwipeHost { maxWidth = 640; page = 0; previous = true; next = true; }
 
@@ -25,13 +25,14 @@ describe('Mobile page swipes', () => {
     const pages: number[] = [];
     directive.pageSwipe.subscribe(page => pages.push(page));
     const touch = (target: HTMLElement, type: string, x: number, y: number, multiple = false) => {
-      const event = new Event(type, { bubbles: true });
+      const event = new Event(type, { bubbles: true, cancelable: true });
       const points = [{ clientX: x, clientY: y }];
       Object.defineProperties(event, {
         touches: { value: type === 'touchend' ? [] : multiple ? [...points, ...points] : points },
         changedTouches: { value: points },
       });
       target.dispatchEvent(event);
+      return event;
     };
     return { fixture, pages, touch, content: fixture.nativeElement.querySelector('p') as HTMLElement };
   }
@@ -119,9 +120,9 @@ describe('Mobile page swipes', () => {
     expect(animate).not.toHaveBeenCalled();
   });
 
-  it('leaves horizontal rows, editing controls, and explicit opt-outs to their native interactions', () => {
+  it('leaves horizontal rows, non-text controls, rich text and dialogs to their native interactions', () => {
     const { fixture, pages, touch } = setup();
-    for (const selector of ['[data-horizontal-row] span', 'input', 'textarea', 'select', 'label', 'dialog span']) {
+    for (const selector of ['[data-horizontal-row] span', 'input[type=number]', 'input[type=range]', 'input[type=date]', 'select', 'label:not(.search-label)', '[contenteditable]', 'dialog span']) {
       const target = fixture.nativeElement.querySelector(selector);
       touch(target, 'touchstart', 280, 200); touch(target, 'touchend', 100, 200);
     }
@@ -145,6 +146,55 @@ describe('Mobile page swipes', () => {
     touch(title, 'touchend', 180, 200);
     card.click();
     expect(clicked).toHaveBeenCalledOnce();
+    expect(pages).toEqual([1]);
+  });
+
+  it('starts page swipes on text/search fields, their labels and textareas without changing their values', () => {
+    const { fixture, pages, touch } = setup();
+    for (const selector of ['input', 'input[type=search]', '.search-label span', 'textarea']) {
+      const target = fixture.nativeElement.querySelector(selector) as HTMLElement;
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+        target.value = 'Keep this text'; target.setSelectionRange(0, 0); target.focus();
+      }
+      touch(target, 'touchstart', 280, 200);
+      const move = touch(target, 'touchmove', 180, 210);
+      expect(move.defaultPrevented).toBe(true);
+      touch(target, 'touchend', 100, 230);
+      expect(document.activeElement).not.toBe(target);
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) expect(target.value).toBe('Keep this text');
+    }
+    expect(pages).toEqual([1, 1, 1, 1]);
+  });
+
+  it('preserves text-field taps, short drags, vertical scrolling, selections and explicit exclusions', () => {
+    const { fixture, pages, touch } = setup();
+    const field = fixture.nativeElement.querySelector('input[type=search]') as HTMLInputElement;
+    field.value = 'Keep my search'; field.setSelectionRange(0, 0); field.focus();
+    touch(field, 'touchstart', 180, 200); touch(field, 'touchend', 180, 200);
+    expect(document.activeElement).toBe(field);
+    touch(field, 'touchstart', 280, 200); touch(field, 'touchmove', 240, 200); touch(field, 'touchend', 240, 200);
+    expect(document.activeElement).toBe(field);
+    touch(field, 'touchstart', 280, 200);
+    expect(touch(field, 'touchmove', 275, 250).defaultPrevented).toBe(false);
+    touch(field, 'touchend', 100, 260);
+    field.setSelectionRange(0, 4);
+    touch(field, 'touchstart', 280, 200); touch(field, 'touchend', 100, 200);
+    expect(field.selectionStart).toBe(0); expect(field.selectionEnd).toBe(4);
+    field.setSelectionRange(0, 0); field.parentElement!.setAttribute('data-no-page-swipe', '');
+    touch(field, 'touchstart', 280, 200); touch(field, 'touchend', 100, 200);
+    expect(pages).toEqual([]); expect(field.value).toBe('Keep my search');
+  });
+
+  it('allows swipes on long input values while preserving native horizontal row exclusions', () => {
+    const { fixture, pages, touch } = setup();
+    const field = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    field.value = 'A very long search query '.repeat(20); field.setSelectionRange(0, 0);
+    field.style.overflowX = 'auto';
+    Object.defineProperties(field, { scrollWidth: { value: 1000 }, clientWidth: { value: 200 } });
+    touch(field, 'touchstart', 280, 200); touch(field, 'touchend', 100, 200);
+    expect(pages).toEqual([1]);
+    fixture.nativeElement.querySelector('[data-horizontal-row]').append(field);
+    touch(field, 'touchstart', 280, 200); touch(field, 'touchend', 100, 200);
     expect(pages).toEqual([1]);
   });
 
