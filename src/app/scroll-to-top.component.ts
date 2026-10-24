@@ -67,7 +67,9 @@ export class ScrollToTopComponent implements AfterViewInit, OnDestroy {
 
   private navigationOffset() {
     const navigation = this.navigation(), box = navigation.getBoundingClientRect();
-    return this.window?.getComputedStyle(navigation).position === 'sticky' && box.top <= 1
+    const style = this.window?.getComputedStyle(navigation);
+    const stickyTop = Number.parseFloat(style?.top ?? '') || 0;
+    return style?.position === 'sticky' && box.top <= stickyTop + 1
       ? Math.max(0, box.bottom) : 0;
   }
 

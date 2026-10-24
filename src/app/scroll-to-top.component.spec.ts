@@ -3,16 +3,17 @@ import { ScrollToTopComponent } from './scroll-to-top.component';
 
 describe('Current-tab scroll to top', () => {
   const rectangle = (top: number, bottom: number) => ({ top, bottom, height: bottom - top, left: 0, right: 320, width: 320, x: 0, y: top, toJSON() {} });
-  function setup(sticky = true) {
+  function setup(sticky = true, inset = 0) {
     let frame: FrameRequestCallback | undefined;
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => { frame = callback; return 1; });
     const cancel = vi.spyOn(window, 'cancelAnimationFrame');
     const target = document.createElement('div'), navigation = document.createElement('nav');
     target.tabIndex = -1; document.body.append(target, navigation);
     navigation.style.position = sticky ? 'sticky' : 'static';
+    navigation.style.top = `${inset}px`;
     let targetTop = 100;
     vi.spyOn(target, 'getBoundingClientRect').mockImplementation(() => rectangle(targetTop, targetTop + 1200));
-    vi.spyOn(navigation, 'getBoundingClientRect').mockReturnValue(rectangle(0, 64));
+    vi.spyOn(navigation, 'getBoundingClientRect').mockReturnValue(rectangle(inset, inset + 64));
     const fixture = TestBed.createComponent(ScrollToTopComponent);
     fixture.componentRef.setInput('target', target); fixture.componentRef.setInput('navigation', navigation); fixture.componentRef.setInput('page', 'Spells');
     fixture.detectChanges();
@@ -40,6 +41,20 @@ describe('Current-tab scroll to top', () => {
     scroll(-200); fixture.nativeElement.querySelector('button').click();
     expect(scrollTo).toHaveBeenCalledWith({ top: 424, behavior: reduced ? 'instant' : 'smooth' });
     expect(document.activeElement).toBe(target);
+  });
+
+  it('positions below navigation pinned beneath a mobile header and scrolls back without covering the tab', () => {
+    const { fixture, target, scroll } = setup(true, 224);
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })));
+    vi.spyOn(window, 'scrollY', 'get').mockReturnValue(700);
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    scroll(-200);
+    const button = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    expect(button.style.top).toBe('300px');
+    button.click();
+    expect(scrollTo).toHaveBeenCalledWith({ top: 200, behavior: 'instant' });
+    expect(document.activeElement).toBe(target);
+    scroll(300); expect(fixture.nativeElement.querySelector('button')).toBeNull();
   });
 
   it('remeasures when the active tab changes, handles desktop navigation and cancels pending work on removal', () => {
