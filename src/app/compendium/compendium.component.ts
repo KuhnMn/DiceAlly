@@ -1,4 +1,5 @@
 import { ActiveFilterChipsComponent, ActiveFilterGroup } from './active-filter-chips.component';
+import { sourceChipValues, sourceFilterCount } from './compendium-sources';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -63,10 +64,13 @@ export class CompendiumComponent implements OnInit, OnDestroy {
   sort: 'name' | 'level' | 'source' = 'name';
   offset = 0;
   readonly pageSize = 30;
-  get filterCount() { return Object.values(this.filters).reduce((sum, values) => sum + (values?.length ?? 0), 0) + spellEffectFilterCount(this.effects); }
+  private get sourceBooks() { return this.facets().find(facet => facet.key === 'source')?.values ?? []; }
+  get filterCount() { return Object.entries(this.filters).reduce((sum, [key, values]) => sum + (key === 'source'
+    ? sourceFilterCount(values ?? [], this.sourceBooks) : values?.length ?? 0), 0) + spellEffectFilterCount(this.effects); }
   get activeFilters(): ActiveFilterGroup[] {
     return [
-      ...(Object.entries(this.filters) as [Facet, string[]][]).map(([key, values]) => ({ key, label: FACET_LABELS[key], values: values.map(value => facetLabel(key, value)) })),
+      ...(Object.entries(this.filters) as [Facet, string[]][]).map(([key, values]) => ({ key, label: FACET_LABELS[key], values: key === 'source'
+        ? sourceChipValues(values, this.sourceBooks) : values.map(value => facetLabel(key, value)) })),
       ...SPELL_EFFECT_FILTER_GROUPS.map(group => ({ key: `effect:${group.key}`, label: group.label,
         values: (this.effects[group.key] ?? []).map(value => group.options.find(option => option.value === value)?.label ?? value) })),
     ].filter(group => group.values.length);

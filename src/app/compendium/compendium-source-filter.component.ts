@@ -1,5 +1,6 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { UiIconComponent } from '../ui-icon.component';
+import { relevantSources } from './compendium-sources';
 
 /** Controlled selection: a list owns its copy and never writes shared defaults. */
 @Component({
@@ -9,7 +10,7 @@ import { UiIconComponent } from '../ui-icon.component';
   template: `
     <details class="min-w-0 rounded-lg border border-outline-variant bg-surface-container">
       <summary class="flex min-h-11 cursor-pointer items-center justify-between gap-2 px-3 text-sm font-semibold">
-        <span>{{ label() }}</span><span class="inline-flex items-center gap-1 text-xs text-primary">{{ selected().length ? selected().length + ' selected' : 'All Books' }} <app-ui-icon name="chevron-down" /></span>
+        <span>{{ label() }}</span><span class="inline-flex items-center gap-1 text-xs text-primary">{{ selected().length ? selectedBooks().length + ' selected' : 'All Books' }} <app-ui-icon name="chevron-down" /></span>
       </summary>
       <div class="space-y-2 border-t border-outline-variant p-2">
         <p class="text-xs text-on-surface-variant">Applies only here and in subviews. No selection includes all books.</p>
@@ -38,10 +39,12 @@ export class CompendiumSourceFilterComponent {
   readonly label = input('Source Books');
   readonly selectedChange = output<string[]>();
   readonly query = signal('');
+  readonly selectedBooks = computed(() => relevantSources(this.selected(), this.books()));
   readonly visibleBooks = computed(() => [...new Set(this.books())]
     .sort().filter(book => book.toLowerCase().includes(this.query().trim().toLowerCase())));
   useDefaults() { this.selectedChange.emit([...this.defaults()]); }
   toggle(book: string) {
-    this.selectedChange.emit(this.selected().includes(book) ? this.selected().filter(value => value !== book) : [...this.selected(), book]);
+    const selected = this.selectedBooks();
+    this.selectedChange.emit(selected.includes(book) ? selected.filter(value => value !== book) : [...selected, book]);
   }
 }

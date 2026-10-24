@@ -14,10 +14,12 @@ import { SourceBookFilterService } from '../editor/source-book-filter.service';
 import { CompendiumSourceFilterComponent } from './compendium-source-filter.component';
 import { ClassResourcesComponent } from './class-resources.component';
 import { ActiveFilterChipsComponent } from './active-filter-chips.component';
+import { sourceChipValues, sourceFilterCount } from './compendium-sources';
+import { ClassProficienciesComponent } from './class-proficiencies.component';
 
 @Component({
   selector: 'app-class-compendium',
-  imports: [ActiveFilterChipsComponent, CompendiumSourceFilterComponent, ClassResourcesComponent, RouterLink, LibraryNavigationComponent, ListControlsComponent, UiIconComponent, SheetDetailDialogComponent, CompendiumDetailsComponent],
+  imports: [ClassProficienciesComponent, ActiveFilterChipsComponent, CompendiumSourceFilterComponent, ClassResourcesComponent, RouterLink, LibraryNavigationComponent, ListControlsComponent, UiIconComponent, SheetDetailDialogComponent, CompendiumDetailsComponent],
   templateUrl: './class-compendium.component.html',
   styleUrl: './compendium.component.css',
 })
@@ -53,6 +55,9 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
     return [record.publication, ...this.subclassPublications()[record.homebrewVariant?.originalKey ?? record.key] ?? []];
   }
   readonly sources = computed(() => [...new Set(this.classes().flatMap(record => this.booksForClass(record)))].sort());
+  readonly sourceCount = computed(() => sourceFilterCount(this.selectedSources(), this.sources()));
+  readonly sourceChips = computed(() => sourceChipValues(this.selectedSources(), this.sources()));
+  readonly subclassSourceChips = computed(() => sourceChipValues(this.subclassSources(), this.subclassBooks()));
   readonly visibleClasses = computed(() => {
     const terms = this.query().trim().toLowerCase().split(/\s+/).filter(Boolean);
     return this.classes().filter(record => this.booksForClass(record).some(book => this.sourceDefaults.allows(book, this.selectedSources()))
@@ -64,8 +69,7 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
     const record = this.selectedClass();
     if (!record) return '';
     const definition = classDefinition(record);
-    return [definition.hitDice ? `${definition.hitDice.number}d${definition.hitDice.faces} Hit Dice` : '',
-      definition.savingThrows.length ? `${definition.savingThrows.map(value => value.toUpperCase()).join(', ')} Saves` : ''].filter(Boolean).join(' · ');
+    return definition.hitDice ? `${definition.hitDice.number}d${definition.hitDice.faces} Hit Dice` : '';
   });
   async ngOnInit() { await this.reload(); }
   async reload() {

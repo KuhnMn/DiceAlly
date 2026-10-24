@@ -21,6 +21,7 @@
       @if (owner.file.startsWith('homebrew/')) { <p class="mt-1 text-xs text-on-surface-variant">Homebrew</p> }
       <app-compendium-details [record]="owner" [revision]="revision()!" [overview]="true" />
     </section>
+    <app-class-proficiencies [owner]="owner" />
     @if (progressionLoading()) { <p role="status" class="py-4">Loading subclasses and class features…</p> }
     @else {
       <section class="mb-4" aria-label="Subclasses">
@@ -28,7 +29,7 @@
         <p class="mb-2 text-xs text-on-surface-variant">Select a subclass to add its features to the progression below.</p>
         <app-compendium-source-filter class="mb-3" label="Subclass Source Books" [books]="subclassBooks()" [selected]="subclassSources()" [defaults]="selectedSources()" (selectedChange)="setSubclassSources($event)" />
         @if (subclassSources().length) {
-          <div class="mb-3 flex flex-wrap gap-1" aria-label="Active subclass filters"><app-active-filter-chips [groups]="[{key: 'source', label: 'Subclass Source Books', values: subclassSources()}]" (removed)="setSubclassSources([])" /></div>
+          <div class="mb-3 flex flex-wrap gap-1" aria-label="Active subclass filters"><app-active-filter-chips [groups]="[{key: 'source', label: 'Subclass Source Books', values: subclassSourceChips()}]" (removed)="setSubclassSources([])" /></div>
         }
         <label class="block sm:hidden"><span class="sr-only">Subclass</span>
           <select aria-label="Subclass" class="min-h-11 w-full min-w-0 rounded-lg border border-outline-variant bg-surface-container px-2 text-base text-on-surface"
@@ -77,13 +78,14 @@
           @if (!subclassLoading() && !progressionError()) { <p class="rounded-xl bg-surface-container p-4 text-sm text-on-surface-variant">{{ featureQuery() ? 'No features match your search.' : 'No class features are available in this library.' }}</p> }
         }
       </section>
+      <app-class-proficiencies [owner]="owner" [multiclass]="true" />
     }
   } @else {
-    <app-list-controls label="Search classes" searchName="class-search" [query]="query()" (queryChange)="query.set($event)" [filterCount]="selectedSources().length" (cleared)="selectedSources.set([])">
+    <app-list-controls label="Search classes" searchName="class-search" [query]="query()" (queryChange)="query.set($event)" [filterCount]="sourceCount()" (cleared)="selectedSources.set([])">
       <app-compendium-source-filter [books]="sources()" [selected]="selectedSources()" [defaults]="sourceDefaults.selected()" (selectedChange)="selectedSources.set($event)" />
     </app-list-controls>
     @if (selectedSources().length) {
-      <div class="mb-3 flex flex-wrap gap-1" aria-label="Active filters"><app-active-filter-chips [groups]="[{key: 'source', label: 'Source Books', values: selectedSources()}]" (removed)="selectedSources.set([])" /></div>
+      <div class="mb-3 flex flex-wrap gap-1" aria-label="Active filters"><app-active-filter-chips [groups]="[{key: 'source', label: 'Source Books', values: sourceChips()}]" (removed)="selectedSources.set([])" /></div>
     }
     <p class="mb-3 text-sm text-on-surface-variant" role="status">{{ visibleClasses().length }} classes</p>
     <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" aria-label="Classes">

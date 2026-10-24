@@ -97,6 +97,21 @@ describe('Compendium source progression tables', () => {
 });
 
 describe('Class resource presentation', () => {
+  it('shares the compact preview and preserves all nine slot values, zeroes and subclass resources at the selected level', () => {
+    const record = owner({ classTableGroups: [{ title: 'Spell Slots per Spell Level', colLabels: ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'], rowsSpellProgression: [[2, 0, 0, 0, 0, 0, 0, 0, 0], [3, 0, 0, 0, 0, 0, 0, 0, 0]] }] });
+    const fixture = TestBed.createComponent(ClassResourcesComponent);
+    fixture.componentRef.setInput('owner', record);
+    fixture.componentRef.setInput('subclass', subclass({ subclassTableGroups: [{ title: 'School Points', colLabels: ['Points'], rows: [[2], [3]] }] })); fixture.detectChanges();
+    const preview = fixture.nativeElement.querySelector('[aria-label="Resources at preview level"]') as HTMLElement;
+    expect([...preview.querySelectorAll('.slot-values dd')].map(cell => cell.textContent?.trim())).toEqual(['2', '0', '0', '0', '0', '0', '0', '0', '0']);
+    const select = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
+    select.value = '2'; select.dispatchEvent(new Event('change')); fixture.detectChanges();
+    expect(preview.querySelector('.slot-values dd')?.textContent).toContain('3');
+    expect(preview.querySelector('[aria-label="School School Points"] dd')?.textContent).toContain('3');
+    fixture.componentRef.setInput('subclass', null); fixture.detectChanges(); expect(preview.textContent).not.toContain('School Points');
+    expect(fixture.nativeElement.querySelectorAll('table').length).toBe(1);
+    fixture.destroy();
+  });
   it('groups spell requirements into compact lists without merging grant kinds, alternatives or frequencies', () => {
     const record = owner({ additionalSpells: [{ expanded: { s1: ['shield|PHB', 'magic missile|PHB'], s2: ['misty step|PHB'] } }] });
     const selected = subclass({ additionalSpells: [

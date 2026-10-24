@@ -194,9 +194,25 @@ describe('Compendium screen', () => {
     const sourceFilter = fixture.debugElement.query(By.directive(CompendiumSourceFilterComponent)).componentInstance as CompendiumSourceFilterComponent;
     expect(sourceFilter.visibleBooks()).toEqual(['PHB', 'XPHB']);
     const chip = fixture.nativeElement.querySelector('[aria-label="Remove Source Book filter"]') as HTMLButtonElement;
-    expect(chip.textContent).toContain('NOT_INSTALLED');
+    expect(chip.textContent).toContain('No matching source books');
     chip.click(); await screen.search(); expect(screen.total()).toBe(32);
     expect(TestBed.inject(SourceBookFilterService).selected()).toEqual(['NOT_INSTALLED']);
+    fixture.destroy();
+  });
+
+  it('counts only available selections in the source summary, badge and chip and drops hidden defaults when a checkbox changes', async () => {
+    const defaults = TestBed.inject(SourceBookFilterService);
+    const books = ['PHB', 'XPHB', ...Array.from({ length: 45 }, (_, i) => `OTHER${i}`)]; defaults.setSelection(books);
+    const { fixture, screen } = await setup(); await screen.chooseType('spell'); fixture.detectChanges();
+    const control = fixture.debugElement.query(By.directive(CompendiumSourceFilterComponent)).componentInstance as CompendiumSourceFilterComponent;
+    expect(control.selectedBooks()).toEqual(['PHB', 'XPHB']); expect(screen.filterCount).toBe(2);
+    expect(fixture.nativeElement.querySelector('app-compendium-source-filter summary').textContent).toContain('2 selected');
+    expect(fixture.nativeElement.querySelector('[aria-label="Remove Source Book filter"]').textContent).toContain('PHB, XPHB');
+    control.query.set('XPHB'); expect(control.visibleBooks()).toEqual(['XPHB']); expect(control.selectedBooks()).toHaveLength(2);
+    control.toggle('PHB'); await screen.search(); fixture.detectChanges();
+    expect(screen.filters.source).toEqual(['XPHB']); expect(screen.filterCount).toBe(1); expect(screen.total()).toBe(16);
+    control.toggle('XPHB'); await screen.search(); expect(screen.filters.source).toEqual([]); expect(screen.total()).toBe(32);
+    expect(defaults.selected()).toHaveLength(47);
     fixture.destroy();
   });
 
@@ -208,7 +224,7 @@ describe('Compendium screen', () => {
     screen.effects = { damageTypes: ['fire', 'cold'] }; await screen.search(); fixture.detectChanges();
     const chips = fixture.nativeElement.querySelectorAll('[aria-label="Active filters"] .filter-chip');
     expect(chips.length).toBe(4);
-    expect(chips[0].textContent).toContain('Source Book: 6 selected');
+    expect(chips[0].textContent).toContain('Source Book: PHB, XPHB');
     expect(chips[1].textContent).toContain('School: Abjuration, Evocation');
     const damage = fixture.nativeElement.querySelector('[aria-label="Remove Damage type filter"]') as HTMLButtonElement;
     expect(damage.textContent).toContain('Fire, Cold'); damage.click(); await screen.search();

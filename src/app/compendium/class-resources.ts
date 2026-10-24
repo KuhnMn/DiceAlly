@@ -11,6 +11,7 @@ type FixedSpellRank = keyof NonNullable<ClassCasting['spellsKnownProgressionFixe
 export interface ResourceTable {
   id: string; title: string; owner: string; publication: string; subclass: boolean;
   labels: string[]; rows: SourceEntries[]; note?: string;
+  spellSlots?: boolean;
 }
 export interface CastingNote { owner: string; label: string; text: string; }
 export interface GrantedSpellGroup { id: string; listId: string; owner: string; title: string; requirement: string; requirementShort: string; frequency: string; entries: SourceEntries; expanded: boolean; }
@@ -57,7 +58,7 @@ function ownerTables(owner: ContentRecord, selected: ContentRecord | null, subcl
   const tables: ResourceTable[] = (groups ?? []).filter(group => tableApplies(group, selected)).map((group, index) => ({
     id: `${owner.key}:source:${index}`, title: group.title || (subclass ? 'Subclass Resources' : 'Class Resources'),
     owner: owner.name, publication: owner.publication, subclass, labels: [...group.colLabels],
-    rows: ('rows' in group ? group.rows : group.rowsSpellProgression) as SourceEntries[],
+    rows: ('rows' in group ? group.rows : group.rowsSpellProgression) as SourceEntries[], spellSlots: 'rowsSpellProgression' in group,
   }));
   const casting = classDefinition(owner).casting;
   const columns: { label: string; values: (number | string)[] }[] = [];
