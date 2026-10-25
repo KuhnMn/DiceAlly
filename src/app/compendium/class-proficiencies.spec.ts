@@ -10,7 +10,7 @@ function owner(data: Record<string, unknown> = {}) {
 
 describe('Class proficiency and multiclass reference information', () => {
   it('reads canonical proficiencies and preserves fixed grants, optional weapons and alternative choices', () => {
-    const record = owner({ primaryAbility: [{ int: true }, { wis: true, cha: true }], proficiency: ['int', 'wis'],
+    const record = owner({ hd: { number: 1, faces: 6 }, primaryAbility: [{ int: true }, { wis: true, cha: true }], proficiency: ['int', 'wis'],
       startingProficiencies: {
         armor: [{ proficiency: 'light', full: 'Light armor while trained' }], weapons: ['simple', { proficiency: 'rapier|PHB', optional: true }],
         toolProficiencies: [{ choose: { from: ['anyArtisansTool', 'flute'], count: 1 } }],
@@ -19,6 +19,7 @@ describe('Class proficiency and multiclass reference information', () => {
     const before = structuredClone(record), info = classProficiencies(record);
     expect(record.data['startingProficiencies']).toBeUndefined();
     expect(info.proficiencies).toEqual([
+      { label: 'Hit Die', entries: ['1d6'] },
       { label: 'Primary Ability', entries: ['Intelligence OR Wisdom AND Charisma'] },
       { label: 'Saving Throws', entries: ['Intelligence, Wisdom'] },
       { label: 'Armor', entries: ['Light armor while trained'] },

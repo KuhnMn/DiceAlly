@@ -9,8 +9,8 @@ import { classProficiencies } from './class-proficiencies';
   host: { class: 'block min-w-0' },
   template: `
     @if (info().requirements.length || info().proficiencies.length || info().entries.length) {
-      <section class="mb-4 min-w-0" [attr.aria-label]="multiclass() ? 'Multiclassing' : 'Class proficiencies'">
-        <h2 class="mb-2 text-base font-semibold sm:text-lg">{{ multiclass() ? 'Multiclassing' : 'Proficiencies' }}</h2>
+      <section class="mb-4 min-w-0" [attr.aria-label]="multiclass() ? 'Multiclassing' : 'Class Basics'">
+        <h2 class="mb-2 text-base font-semibold sm:text-lg">{{ multiclass() ? 'Multiclassing' : 'Class Basics' }}</h2>
         <div class="rounded-lg border border-outline-variant bg-surface-container px-2.5 py-1">
           <dl class="divide-y divide-outline-variant">
             @for (row of info().requirements; track row.label) {

@@ -92,5 +92,6 @@ export function classProficiencies(record: ContentRecord, multiclass = false): C
   const proficiencies = proficiencyRows(definition.proficiencies.starting);
   if (definition.savingThrows.length) proficiencies.unshift({ label: 'Saving Throws', entries: [definition.savingThrows.map(spellSaveLabel).join(', ')] });
   if (definition.primaryAbilities.length) proficiencies.unshift({ label: 'Primary Ability', entries: [definition.primaryAbilities.map(option => option.map(spellSaveLabel).join(' AND ')).join(' OR ')] });
+  if (definition.hitDice) proficiencies.unshift({ label: 'Hit Die', entries: [`${definition.hitDice.number}d${definition.hitDice.faces}`] });
   return { requirements: requirementsRows(data.requirements, data.requirementsSpecial), proficiencies, entries: [] };
 }

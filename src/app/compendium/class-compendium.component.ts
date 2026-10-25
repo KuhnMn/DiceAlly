@@ -65,12 +65,6 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
   });
   readonly levels = computed(() => groupProgression(this.baseFeatures(), this.subclassFeatures(), this.featureQuery()));
   readonly missingCount = computed(() => this.missingBase().length + this.missingSubclass().length);
-  readonly classSummary = computed(() => {
-    const record = this.selectedClass();
-    if (!record) return '';
-    const definition = classDefinition(record);
-    return definition.hitDice ? `${definition.hitDice.number}d${definition.hitDice.faces} Hit Dice` : '';
-  });
   async ngOnInit() { await this.reload(); }
   async reload() {
     const version = ++this.version;

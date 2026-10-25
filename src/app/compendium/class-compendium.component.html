@@ -16,7 +16,7 @@
     <section class="mb-4 rounded-xl border border-outline-variant bg-surface-container p-3 sm:p-4" aria-label="Selected class">
       <button type="button" class="mb-2 inline-flex min-h-11 items-center gap-1 text-sm text-primary" (click)="showAllClasses()"><app-ui-icon name="left" /> All Classes</button>
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <div><h2 class="text-xl font-bold">{{ owner.name }} <span class="text-sm font-normal text-on-surface-variant">{{ owner.publication }}</span></h2><p class="mt-1 text-sm text-on-surface-variant">{{ classSummary() }}</p></div>
+        <div><h2 class="text-xl font-bold">{{ owner.name }} <span class="text-sm font-normal text-on-surface-variant">{{ owner.publication }}</span></h2></div>
       </div>
       @if (owner.file.startsWith('homebrew/')) { <p class="mt-1 text-xs text-on-surface-variant">Homebrew</p> }
       <app-compendium-details [record]="owner" [revision]="revision()!" [overview]="true" />
