@@ -1,3 +1,4 @@
+import { ensureBrowseSummary, readBrowseSummary } from '../content/content-browse-summary';
 import { ScrollToTopComponent } from '../scroll-to-top.component';
 import { ActiveFilterChipsComponent, ActiveFilterGroup } from './active-filter-chips.component';
 import { sourceChipValues, sourceFilterCount } from './compendium-sources';
@@ -41,6 +42,8 @@ export class CompendiumComponent implements OnInit, OnDestroy {
   private timer?: ReturnType<typeof setTimeout>;
   private destroyed = false;
   readonly types = CONTENT_TYPES;
+  readonly countsLoading = signal(true);
+  readonly countsError = signal('');
   readonly counts = signal<Record<string, number>>({});
   readonly revision = signal<ImportRevision | null>(null);
   readonly type = signal<ContentType | null>(null);
@@ -102,17 +105,27 @@ export class CompendiumComponent implements OnInit, OnDestroy {
     this.loading.set(true); this.error.set('');
     try {
       const revision = await activeContentRevision(this.cache);
-      const counts: Record<string, number> = {};
-      // Only the category overview needs whole-library counts. Lists use indexed category reads.
-      if (revision && !this.type() && !this.invalidType()) await this.cache.visit(revision.id, async record => { counts[record.kind] = (counts[record.kind] ?? 0) + 1; });
       if (this.destroyed) return false;
-      this.revision.set(revision ?? null); this.counts.set(counts);
+      this.revision.set(revision ?? null); this.counts.set({});
       return true;
     } catch (error) { if (!this.destroyed) this.error.set(`Could not read the content library: ${String(error)}`); }
     finally { if (!this.destroyed) this.loading.set(false); }
     return false;
   }
   async reload() { if (await this.loadLibrary() && !this.destroyed) await this.chooseType(this.route.snapshot.paramMap.get('type')); }
+  async loadCounts() {
+    const revision = this.revision();
+    this.countsError.set(''); this.countsLoading.set(!!revision);
+    if (!revision) return;
+    try {
+      const summary = await ensureBrowseSummary(this.cache, revision.id);
+      if (!this.destroyed && this.revision()?.id === revision.id) this.counts.set(summary.counts);
+    } catch {
+      if (!this.destroyed && this.revision()?.id === revision.id) this.countsError.set('Category counts are unavailable. You can still open every category.');
+    } finally {
+      if (!this.destroyed && this.revision()?.id === revision.id) this.countsLoading.set(false);
+    }
+  }
   private showCategory(id: string | null) {
     const type = this.types.find(type => type.id === id) ?? null;
     this.type.set(type); this.invalidType.set(!!id && !type);
@@ -128,15 +141,20 @@ export class CompendiumComponent implements OnInit, OnDestroy {
     this.effects = {}; this.sort = 'name'; this.offset = 0;
     this.closeDetails(); this.results.set([]); this.total.set(0); this.facets.set([]);
     const revision = this.revision();
-    if (!type || !revision) { this.loading.set(false); return; }
+    if (!type || !revision) { this.loading.set(false); if (!type) void this.loadCounts(); return; }
     this.loading.set(true);
     try {
       const options = new Map<Facet, Set<string>>();
-      await this.cache.searchCategory(revision.id, type.kinds, '', 0, 0, record => {
-        for (const [key, values] of Object.entries(recordFacets(record)) as [Facet, string[]][]) {
+      const summary = await readBrowseSummary(this.cache, revision.id);
+      const addOptions = (fields: Filters) => {
+        for (const [key, values] of Object.entries(fields) as [Facet, string[]][]) {
           if (!options.has(key)) options.set(key, new Set());
           values.forEach(value => options.get(key)!.add(value));
         }
+      };
+      if (summary) for (const kind of type.kinds) addOptions(summary.facets[kind] ?? {});
+      else await this.cache.searchCategory(revision.id, type.kinds, '', 0, 0, record => {
+        addOptions(recordFacets(record));
         return false;
       });
       if (version !== this.version) return;

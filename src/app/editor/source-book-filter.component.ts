@@ -1,3 +1,4 @@
+import { ensureBrowseSummary } from '../content/content-browse-summary';
 import { rankSearchResults } from '../search-ranking';
 import { UiIconComponent } from '../ui-icon.component';
 import { Component, OnInit, inject, input, signal } from '@angular/core';
@@ -34,9 +35,7 @@ export class SourceBookFilterComponent implements OnInit {
     this.loading.set(true); this.error.set('');
     try {
       const revision = await activeContentRevision(this.cache);
-      const books = new Set<string>();
-      if (revision) await this.cache.visit(revision.id, async record => { if (record.publication) books.add(record.publication); });
-      this.books.set([...books].sort());
+      this.books.set(revision ? (await ensureBrowseSummary(this.cache, revision.id)).sources : []);
     } catch (error) { this.error.set(String(error)); }
     finally { this.loading.set(false); }
   }

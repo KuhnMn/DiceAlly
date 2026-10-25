@@ -1,3 +1,4 @@
+import { readBrowseSummary } from '../content/content-browse-summary';
 import { ScrollToTopComponent } from '../scroll-to-top.component';
 import { Component, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -73,8 +74,9 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
     try {
       const revision = await activeContentRevision(this.cache);
       const records: ContentRecord[] = [];
-      const subclassBooks: Record<string, string[]> = {};
-      if (revision) await this.cache.searchCategory(revision.id, ['class', 'subclass'], '', 0, 0, record => {
+      const summary = revision ? await readBrowseSummary(this.cache, revision.id) : undefined;
+      const subclassBooks: Record<string, string[]> = summary?.subclassSources ?? {};
+      if (revision) await this.cache.searchCategory(revision.id, summary ? ['class'] : ['class', 'subclass'], '', 0, 0, record => {
         if (record.kind === 'class') records.push(record);
         else {
           const parent = classDefinition(record).parent?.key;

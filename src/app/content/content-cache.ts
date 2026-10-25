@@ -1,6 +1,7 @@
 import { itemTypeCode } from './item.model';
 import { compareSearchMatches } from '../search-ranking';
 import { ContentRecord, ContentSource, ImportRevision, sourceIdentity } from './content.model';
+import type { ContentBrowseSummary } from './content-browse-summary';
 
 export interface ContentCache {
   stage(revision: ImportRevision): Promise<void>;
@@ -9,6 +10,8 @@ export interface ContentCache {
   visit(revisionId: string, visitor: (record: ContentRecord) => Promise<void>): Promise<void>;
   activate(revision: ImportRevision, signal?: AbortSignal): Promise<void>;
   discard(revisionId: string): Promise<void>;
+  getBrowseSummary?(revisionId: string): Promise<ContentBrowseSummary | undefined>;
+  saveBrowseSummary?(revisionId: string, summary: ContentBrowseSummary): Promise<void>;
 }
 export interface RevisionRemovalProgress {
   phase: 'checking' | 'deleting' | 'complete';
@@ -67,7 +70,7 @@ export class IndexedDbContentCache implements ContentCache {
   private db(): Promise<IDBDatabase> {
     return this.connection ??= new Promise((resolve, reject) => {
       // Retire pre-lock connections before recovery can remove their staging data.
-      const opening = indexedDB.open('ally-content-v1', 3);
+      const opening = indexedDB.open('ally-content-v1', 4);
       opening.onupgradeneeded = () => {
         const db = opening.result;
         if (!db.objectStoreNames.contains('records')) {
@@ -78,6 +81,7 @@ export class IndexedDbContentCache implements ContentCache {
           db.createObjectStore('active', { keyPath: 'key' });
         }
         if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'namespace' });
+        if (!db.objectStoreNames.contains('browse-summaries')) db.createObjectStore('browse-summaries', { keyPath: 'revisionId' });
       };
       opening.onsuccess = () => {
         opening.result.onversionchange = () => { opening.result.close(); this.connection = undefined; };
@@ -94,9 +98,23 @@ export class IndexedDbContentCache implements ContentCache {
     await done;
   }
   async put(revisionId: string, records: ContentRecord[]): Promise<void> {
-    const tx = (await this.db()).transaction('records', 'readwrite');
+    const tx = (await this.db()).transaction(['records', 'browse-summaries'], 'readwrite');
     const done = complete(tx);
     for (const record of records) tx.objectStore('records').put({ ...record, revisionId });
+    // Keep summaries correct for explicit record replacements as well as new imports.
+    tx.objectStore('browse-summaries').delete(revisionId);
+    await done;
+  }
+  async getBrowseSummary(revisionId: string): Promise<ContentBrowseSummary | undefined> {
+    const tx = (await this.db()).transaction('browse-summaries');
+    return request(tx.objectStore('browse-summaries').get(revisionId));
+  }
+  async saveBrowseSummary(revisionId: string, summary: ContentBrowseSummary): Promise<void> {
+    const tx = (await this.db()).transaction(['revisions', 'browse-summaries'], 'readwrite');
+    const done = complete(tx);
+    // Cleanup may have removed a legacy revision while its background scan was running.
+    const revision = await request<ImportRevision | undefined>(tx.objectStore('revisions').get(revisionId));
+    if (revision) tx.objectStore('browse-summaries').put({ ...summary, revisionId });
     await done;
   }
   async get(revisionId: string, key: string): Promise<ContentRecord | undefined> {
@@ -217,7 +235,7 @@ export class IndexedDbContentCache implements ContentCache {
   }
   private async remove(revisionId: string, namespace?: string, stagingOnly = false, progress?: (value: RevisionRemovalProgress) => void): Promise<void> {
     progress?.({ phase: 'checking', records: 0 });
-    const tx = (await this.db()).transaction(['records', 'revisions', 'active'], 'readwrite');
+    const tx = (await this.db()).transaction(['records', 'revisions', 'active', 'browse-summaries'], 'readwrite');
     const done = complete(tx);
     const [revision, pointers] = await Promise.all([
       request<ImportRevision | undefined>(tx.objectStore('revisions').get(revisionId)),
@@ -236,6 +254,7 @@ export class IndexedDbContentCache implements ContentCache {
     // so this range includes the whole revision without loading any record bodies.
     records.delete(IDBKeyRange.bound([revisionId], [revisionId, []], false, true));
     tx.objectStore('revisions').delete(revisionId);
+    tx.objectStore('browse-summaries').delete(revisionId);
     await done;
     progress?.({ phase: 'complete', records: count });
   }

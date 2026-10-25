@@ -1,3 +1,4 @@
+import { ensureBrowseSummary } from '../content/content-browse-summary';
 import 'fake-indexeddb/auto';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
@@ -100,11 +101,12 @@ describe('Compendium screen', () => {
   });
   afterEach(() => { vi.restoreAllMocks(); });
 
-  async function setup() {
+  async function setup(waitForCounts = true) {
     const fixture = TestBed.createComponent(CompendiumComponent);
     fixture.detectChanges();
     // IndexedDB work is not covered by Angular's stability promise.
     await vi.waitFor(() => expect(fixture.componentInstance.loading()).toBe(false));
+    if (waitForCounts && !fixture.componentInstance.type()) await vi.waitFor(() => expect(fixture.componentInstance.countsLoading()).toBe(false));
     return { fixture, screen: fixture.componentInstance };
   }
 
@@ -130,6 +132,7 @@ describe('Compendium screen', () => {
   it('starts with category tiles and loads only the selected category with pagination', async () => {
     const { fixture, screen } = await setup();
     expect(screen.type()).toBeNull();
+    await vi.waitFor(() => expect(screen.countsLoading()).toBe(false));
     expect(screen.count(CONTENT_TYPES.find(type => type.id === 'spell')!)).toBe(32);
     expect(screen.results()).toEqual([]);
     await screen.chooseType('spell');
@@ -138,6 +141,36 @@ describe('Compendium screen', () => {
     expect(screen.results().map(record => record.name)).toEqual(['Spell 30', 'Spell 31']);
     await screen.chooseType('feat');
     expect(screen.total()).toBe(1); expect(screen.offset).toBe(0); expect(screen.results()[0].name).toBe('Alert');
+    fixture.destroy();
+  });
+
+  it('keeps tiles usable while old-library counts are still loading', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => release = resolve);
+    const original = IndexedDbContentCache.prototype.visit;
+    vi.spyOn(IndexedDbContentCache.prototype, 'visit').mockImplementation(async function (this: IndexedDbContentCache, id, visitor) {
+      await gate; return original.call(this, id, visitor);
+    });
+    const { fixture, screen } = await setup(false);
+    fixture.detectChanges();
+    expect(screen.countsLoading()).toBe(true);
+    expect(fixture.nativeElement.querySelectorAll('.category-card').length).toBe(CONTENT_TYPES.length);
+    await screen.chooseType('spell');
+    expect(screen.results()).toHaveLength(30); expect(screen.loading()).toBe(false);
+    release();
+    await vi.waitFor(() => expect(screen.countsLoading()).toBe(false));
+    fixture.destroy();
+  });
+
+  it('uses cached facets and reads only the selected category for results', async () => {
+    await ensureBrowseSummary(cache, revision.id);
+    params.next(convertToParamMap({ type: 'spell' }));
+    const read = vi.spyOn(IndexedDbContentCache.prototype, 'searchCategory');
+    const visit = vi.spyOn(IndexedDbContentCache.prototype, 'visit');
+    const { fixture, screen } = await setup();
+    expect(screen.total()).toBe(32);
+    expect(screen.facets().find(facet => facet.key === 'source')?.values).toEqual(['PHB', 'XPHB']);
+    expect(read).toHaveBeenCalledTimes(1); expect(visit).not.toHaveBeenCalled();
     fixture.destroy();
   });
 

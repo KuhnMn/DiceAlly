@@ -1,3 +1,4 @@
+import { BrowseSummaryBuilder } from './content-browse-summary';
 import { canonicalReferenceRecord, isReferenceKind, referenceSourceData } from './reference-record-adapter';
 import { canonicalMonsterRecord, monsterSourceData } from './monster-adapter';
 import { canonicalItemRecord, itemSourceData } from './item-adapter';
@@ -117,6 +118,7 @@ export async function finalizeContentImport(cache: ContentCache, revision: Impor
       issue.severity = 'warning';
     }
   }
+  let browsing: BrowseSummaryBuilder | undefined = new BrowseSummaryBuilder(revision.id);
   let mappedBytes = 0;
   let count = 0;
   await cache.visit(revision.id, async record => {
@@ -125,12 +127,22 @@ export async function finalizeContentImport(cache: ContentCache, revision: Impor
       try { assertSpeciesDefinition(record.species); }
       catch (error) { diagnostics.push({ severity: 'error', file: record.file, record: record.key, message: String(error) }); }
     }
+    try { browsing?.add(record); }
+    catch (error) {
+      browsing = undefined;
+      diagnostics.push({ severity: 'warning', file: record.file, message: `Browsing metadata could not be prepared: ${String(error)}` });
+    }
     count++;
     mappedBytes += new TextEncoder().encode(JSON.stringify(record)).byteLength;
   });
   revision.metrics = { bytes, records: count, elapsedMs: Math.round(performance.now() - options.started), mappedBytes };
   if (diagnostics.some(issue => issue.severity === 'error')) {
     throw new ContentImportError('Content validation failed. The previous cache is still active.', diagnostics, revision);
+  }
+  signal?.throwIfAborted();
+  if (browsing) {
+    try { await cache.saveBrowseSummary?.(revision.id, browsing.build()); }
+    catch (error) { diagnostics.push({ severity: 'warning', file: '', message: `Browsing metadata could not be saved: ${String(error)}` }); }
   }
   signal?.throwIfAborted();
   revision.status = 'ready';
