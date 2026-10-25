@@ -40,9 +40,11 @@ import { facilityTypeLabel } from '../models/bastion';
       </div>
     </section>
     @if (detail(); as facility) {
-      <app-sheet-detail-dialog [title]="facility.name" [headingTags]="dialogHeadingTags" (closed)="detail.set(null)">
-        <ng-template #dialogHeadingTags><ng-container [ngTemplateOutlet]="facilityTags" [ngTemplateOutletContext]="{$implicit: facility}" /></ng-template>
-        @if (facility.source) { <div><span class="inline-block max-w-full truncate rounded bg-surface-container-highest px-2 py-0.5 text-xs text-on-surface" [title]="facility.source">{{ facility.source }}</span></div> }
+      <app-sheet-detail-dialog [title]="facility.name" (closed)="detail.set(null)">
+        <div class="flex flex-wrap items-center gap-2">
+          <ng-container [ngTemplateOutlet]="facilityTags" [ngTemplateOutletContext]="{$implicit: facility}" />
+          @if (facility.source) { <span class="inline-block max-w-full truncate rounded bg-surface-container-highest px-2 py-0.5 text-xs text-on-surface" [title]="facility.source">{{ facility.source }}</span> }
+        </div>
         <app-facility-details [facility]="facility" [showMetadata]="false" />
         <app-feature-notes [notes]="facility.notes" (notesChanged)="updateNotes(facility, $event)" />
       </app-sheet-detail-dialog>
