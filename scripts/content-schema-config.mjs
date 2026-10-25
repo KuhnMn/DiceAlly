@@ -5,7 +5,7 @@ export const schemaFiles = [
   'bestiary/template.json', 'feats.json', 'optionalfeatures.json', 'races.json',
   'backgrounds.json', 'items-base.json', 'items.json', 'magicvariants.json',
   'conditionsdiseases.json', 'variantrules.json', 'tables.json', 'actions.json',
-  'bastions.json', 'objects.json', 'senses.json', 'skills.json', 'vehicles.json',
+  'bastions.json', 'objects.json', 'senses.json', 'skills.json', 'vehicles.json', 'rewards.json',
 ];
 
 export const kindSchemas = {
@@ -18,7 +18,7 @@ export const kindSchemas = {
   itemProperty: 'items-base.json', itemMastery: 'items-base.json', itemEntry: 'items-base.json',
   monster: 'bestiary/bestiary.json', monsterTemplate: 'bestiary/template.json',
   condition: 'conditionsdiseases.json', disease: 'conditionsdiseases.json', status: 'conditionsdiseases.json',
-  variantrule: 'variantrules.json', table: 'tables.json', action: 'actions.json',
+  variantrule: 'variantrules.json', table: 'tables.json', reward: 'rewards.json', action: 'actions.json',
   facility: 'bastions.json', object: 'objects.json', sense: 'senses.json',
   skill: 'skills.json', vehicle: 'vehicles.json',
 };

@@ -5,6 +5,7 @@ export const OPTIONAL_SHEET_PAGES = [
   { id: 3, key: 'spells', label: 'Spells' },
   { id: 4, key: 'inventory', label: 'Inventory' },
   { id: 5, key: 'companions', label: 'Companions' },
+  { id: 8, key: 'bastions', label: 'Bastions' },
   { id: 6, key: 'notes', label: 'Notes' },
 ] as const;
 

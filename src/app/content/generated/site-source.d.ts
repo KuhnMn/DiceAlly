@@ -26,12 +26,13 @@ export interface SiteSourceByKind {
   "status": S296_conditionsdiseases_items;
   "variantrule": S297_variantrules_items;
   "table": S298_tables_items;
-  "action": S300_actions_items;
-  "facility": S301_bastions_items;
-  "object": S304_objects_items;
-  "sense": S305_senses_items;
-  "skill": S306_skills_items;
-  "vehicle": S307_vehicles_items;
+  "reward": S300_rewards_items;
+  "action": S301_actions_items;
+  "facility": S302_bastions_items;
+  "object": S305_objects_items;
+  "sense": S306_senses_items;
+  "skill": S307_skills_items;
+  "vehicle": S308_vehicles_items;
 }
 
 export type S0_class_class_items = S1_class_class_class;
@@ -634,18 +635,20 @@ export type S298_tables_items = S299_tables_table;
 
 export type S299_tables_table = ({ "name": string; "source": S3_util_source; "page"?: S6_util_page; "data"?: { [key: string]: unknown; }; "type"?: "table" & string; "legacy"?: S92_util_legacy; "otherSources"?: S5_util_otherSources; "referenceSources"?: S7_util_referenceSources; "chapter"?: { "name"?: string; "ordinal"?: { "type": ("chapter" | "appendix" | "part" | "episode" | "level" | "section") & string; "identifier": (number | string); }; "index"?: number; [key: string]: unknown; }; "srd"?: S17_util_srd; "srd52"?: S17_util_srd; "basicRules"?: S18_util_basicRules; "basicRules2024"?: S18_util_basicRules; "caption"?: string; "isStriped"?: boolean; "isNameGenerator"?: boolean; "style"?: string; "colLabels"?: (S27_entry__entryTableColLabelItem)[]; "colLabelRows"?: ((S27_entry__entryTableColLabelItem)[])[]; "colStyles"?: (string)[]; "rowLabels"?: (string)[]; "rowStyles"?: (string)[]; "rows": (((S14_entry_root)[] | S29_entry_entryTableRow))[]; "footnotes"?: (S14_entry_root)[]; } | { "name": string; "source": S3_util_source; "page"?: S6_util_page; "data"?: { [key: string]: unknown; }; "type"?: "tableGroup" & string; "legacy"?: S92_util_legacy; "otherSources"?: S5_util_otherSources; "referenceSources"?: S7_util_referenceSources; "chapter"?: { "name"?: string; "ordinal"?: { "type": ("chapter" | "appendix" | "part" | "episode" | "level" | "section") & string; "identifier": (number | string); }; "index"?: number; [key: string]: unknown; }; "srd"?: S17_util_srd; "srd52"?: S17_util_srd; "basicRules"?: S18_util_basicRules; "basicRules2024"?: S18_util_basicRules; "caption"?: string; "isStriped"?: boolean; "isNameGenerator"?: boolean; "style"?: string; "colLabels"?: (S27_entry__entryTableColLabelItem)[]; "colLabelRows"?: ((S27_entry__entryTableColLabelItem)[])[]; "colStyles"?: (string)[]; "rowLabels"?: (string)[]; "rowStyles"?: (string)[]; "rows"?: (((S14_entry_root)[] | S29_entry_entryTableRow))[]; "footnotes"?: (S14_entry_root)[]; "tables": (S203_tables_tableData)[]; } | { "name"?: string; "source"?: S3_util_source; "page"?: S6_util_page; "data"?: { [key: string]: unknown; }; "type"?: ("table" | "tableGroup") & string; "legacy"?: S92_util_legacy; "otherSources"?: S5_util_otherSources; "referenceSources"?: S7_util_referenceSources; "chapter"?: { "name"?: string; "ordinal"?: { "type": ("chapter" | "appendix" | "part" | "episode" | "level" | "section") & string; "identifier": (number | string); }; "index"?: number; [key: string]: unknown; }; "srd"?: S17_util_srd; "srd52"?: S17_util_srd; "basicRules"?: S18_util_basicRules; "basicRules2024"?: S18_util_basicRules; "caption"?: string; "isStriped"?: boolean; "isNameGenerator"?: boolean; "style"?: string; "colLabels"?: (S27_entry__entryTableColLabelItem)[]; "colLabelRows"?: ((S27_entry__entryTableColLabelItem)[])[]; "colStyles"?: (string)[]; "rowLabels"?: (string)[]; "rowStyles"?: (string)[]; "rows"?: (((S14_entry_root)[] | S29_entry_entryTableRow))[]; "footnotes"?: (S14_entry_root)[]; "_copy": S99_util_copy_copyBlock_copy_generic; });
 
-export type S300_actions_items = S109_actions_action;
+export type S300_rewards_items = S202_rewards_reward;
 
-export type S301_bastions_items = S302_bastions_facility;
+export type S301_actions_items = S109_actions_action;
 
-export type S302_bastions_facility = ({ "name": string; "alias"?: S2_util_alias; "source": S3_util_source; "otherSources"?: S5_util_otherSources; "referenceSources"?: S7_util_referenceSources; "page"?: S6_util_page; "reprintedAs"?: S10_util_reprintedAs; "facilityType": ("basic" | "special") & string; "level"?: number; "prerequisite"?: S146_util_prerequisite; "space"?: (S303_bastions__space)[]; "hirelings"?: (({ "exact": number; "space"?: S303_bastions__space; } | { "min": number; "max"?: number; "space"?: S303_bastions__space; }))[]; "orders"?: (("craft" | "empower" | "harvest" | "maintain" | "recruit" | "research" | "trade") & string)[]; "entries": (S14_entry_root)[]; "hasFluff"?: boolean; "hasFluffImages"?: boolean; "srd"?: S17_util_srd; "srd52"?: S17_util_srd; "basicRules"?: S18_util_basicRules; "basicRules2024"?: S18_util_basicRules; } | { "name"?: string; "alias"?: S2_util_alias; "source"?: S3_util_source; "otherSources"?: S5_util_otherSources; "referenceSources"?: S7_util_referenceSources; "page"?: S6_util_page; "reprintedAs"?: S10_util_reprintedAs; "facilityType"?: ("basic" | "special") & string; "level"?: number; "prerequisite"?: S146_util_prerequisite; "space"?: (S303_bastions__space)[]; "hirelings"?: (({ "exact": number; "space"?: S303_bastions__space; } | { "min": number; "max"?: number; "space"?: S303_bastions__space; }))[]; "orders"?: (("craft" | "empower" | "harvest" | "maintain" | "recruit" | "research" | "trade") & string)[]; "entries"?: (S14_entry_root)[]; "hasFluff"?: boolean; "hasFluffImages"?: boolean; "srd"?: S17_util_srd; "srd52"?: S17_util_srd; "basicRules"?: S18_util_basicRules; "basicRules2024"?: S18_util_basicRules; "_copy": S99_util_copy_copyBlock_copy_generic; });
+export type S302_bastions_items = S303_bastions_facility;
 
-export type S303_bastions__space = ("cramped" | "roomy" | "vast") & string;
+export type S303_bastions_facility = ({ "name": string; "alias"?: S2_util_alias; "source": S3_util_source; "otherSources"?: S5_util_otherSources; "referenceSources"?: S7_util_referenceSources; "page"?: S6_util_page; "reprintedAs"?: S10_util_reprintedAs; "facilityType": ("basic" | "special") & string; "level"?: number; "prerequisite"?: S146_util_prerequisite; "space"?: (S304_bastions__space)[]; "hirelings"?: (({ "exact": number; "space"?: S304_bastions__space; } | { "min": number; "max"?: number; "space"?: S304_bastions__space; }))[]; "orders"?: (("craft" | "empower" | "harvest" | "maintain" | "recruit" | "research" | "trade") & string)[]; "entries": (S14_entry_root)[]; "hasFluff"?: boolean; "hasFluffImages"?: boolean; "srd"?: S17_util_srd; "srd52"?: S17_util_srd; "basicRules"?: S18_util_basicRules; "basicRules2024"?: S18_util_basicRules; } | { "name"?: string; "alias"?: S2_util_alias; "source"?: S3_util_source; "otherSources"?: S5_util_otherSources; "referenceSources"?: S7_util_referenceSources; "page"?: S6_util_page; "reprintedAs"?: S10_util_reprintedAs; "facilityType"?: ("basic" | "special") & string; "level"?: number; "prerequisite"?: S146_util_prerequisite; "space"?: (S304_bastions__space)[]; "hirelings"?: (({ "exact": number; "space"?: S304_bastions__space; } | { "min": number; "max"?: number; "space"?: S304_bastions__space; }))[]; "orders"?: (("craft" | "empower" | "harvest" | "maintain" | "recruit" | "research" | "trade") & string)[]; "entries"?: (S14_entry_root)[]; "hasFluff"?: boolean; "hasFluffImages"?: boolean; "srd"?: S17_util_srd; "srd52"?: S17_util_srd; "basicRules"?: S18_util_basicRules; "basicRules2024"?: S18_util_basicRules; "_copy": S99_util_copy_copyBlock_copy_generic; });
 
-export type S304_objects_items = S190_objects_object;
+export type S304_bastions__space = ("cramped" | "roomy" | "vast") & string;
 
-export type S305_senses_items = S228_senses_sense;
+export type S305_objects_items = S190_objects_object;
 
-export type S306_skills_items = S227_skills_skill;
+export type S306_senses_items = S228_senses_sense;
 
-export type S307_vehicles_items = S212_vehicles_vehicle;
+export type S307_skills_items = S227_skills_skill;
+
+export type S308_vehicles_items = S212_vehicles_vehicle;

@@ -24,6 +24,7 @@ export const objects: SchemaValidator;
 export const senses: SchemaValidator;
 export const skills: SchemaValidator;
 export const vehicles: SchemaValidator;
+export const rewards: SchemaValidator;
 export const reference_object: SchemaValidator;
 export const reference_condition: SchemaValidator;
 export const reference_status: SchemaValidator;

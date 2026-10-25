@@ -146,7 +146,7 @@ describe('Basic Info editor', () => {
   it('groups the editor into content pages with notes and sheet settings', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
     const editor = fixture.componentInstance;
-    expect(fixture.nativeElement.querySelectorAll('nav[aria-label="Character editor pages"] button')).toHaveLength(11);
+    expect(fixture.nativeElement.querySelectorAll('nav[aria-label="Character editor pages"] button')).toHaveLength(12);
     expect(fixture.nativeElement.querySelector('#new-hit-dice-total')).not.toBeNull();
     editor.setPage(2); fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('#skill-PERCEPTION')).not.toBeNull();

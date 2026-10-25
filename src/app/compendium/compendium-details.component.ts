@@ -136,6 +136,9 @@ export class CompendiumDetailsComponent {
     const sections = [{ title: '', entries: item && Array.isArray(item.item['entries']) ? item.item['entries'] as SourceEntries : contentEntries(sourceRecord) },
       { title: 'At Higher Levels', entries: contentEntries(sourceRecord, 'entriesHigherLevel') },
       { title: 'Template', entries: contentEntries(sourceRecord, 'entriesTemplate') }];
+    if (record.kind === 'reward' && sourceRecord.data['abilityEntry'] != null) {
+      sections.unshift({ title: 'Ability', entries: [sourceRecord.data['abilityEntry']] as SourceEntries });
+    }
     // Species traits, reference actions and recipe descriptions use the same entry tree.
     for (const [field, title] of [['additionalEntries', 'Additional Details'], ['trait', 'Traits'], ['action', 'Actions'],
       ['bonus', 'Bonus Actions'], ['reaction', 'Reactions'], ['legendary', 'Legendary Actions'], ['actionEntries', 'Actions']] as const) {

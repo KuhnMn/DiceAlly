@@ -1,3 +1,4 @@
+import { facilitySnapshot } from './facility-selection';
 import type { BasicActionCache } from '../content/basic-action-descriptions';
 import { ContentRecord, ImportRevision, JsonObject, entityKey } from '../content/content.model';
 import { characterOptionSourceData } from '../content/character-option-adapter';
@@ -112,6 +113,12 @@ export async function refreshCharacterDescriptions(
     if (!record) continue;
     object.entity = createObjectEntry(record, revision).entity;
     updated(object, record);
+  }
+  for (const facility of result.sheet.bastion?.facilities ?? []) {
+    const record = await find(facility, ['facility']);
+    if (!record) continue;
+    facility.entity = facilitySnapshot(record);
+    updated(facility, record);
   }
   result.refreshed += await prepareCharacterReferenceDescriptions(result.sheet, cache, revision, true);
   // No recalculation: wizard baselines, manual character fields and combat overrides remain untouched.

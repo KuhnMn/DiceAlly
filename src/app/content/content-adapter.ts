@@ -8,8 +8,20 @@ import { SOURCE_KINDS } from './generated/schema-registry';
 export const CONTENT_KINDS = SOURCE_KINDS;
 
 export function mapContent(value: unknown, file: string): { records: ContentRecord[]; diagnostics: ImportDiagnostic[] } {
-  const root = object(value);
-  if (!root) throw new Error(`${file}: expected a JSON object.`);
+  const input = object(value);
+  if (!input) throw new Error(`${file}: expected a JSON object.`);
+  const root = { ...input };
+  // Generated tables and homebrew can contain named groups in a separate root array.
+  // Browse them as tables while preserving all children and the original input.
+  if (root['tableGroup'] !== undefined) {
+    if (!Array.isArray(root['tableGroup'])) throw new Error(`${file}: tableGroup must be an array.`);
+    if (root['table'] !== undefined && !Array.isArray(root['table'])) throw new Error(`${file}: table must be an array.`);
+    root['table'] = [...(root['table'] as unknown[] ?? []), ...root['tableGroup'].map(value => {
+      const group = object(value); if (!group) throw new Error(`${file}: invalid tableGroup record.`);
+      return { ...group, type: 'tableGroup' };
+    })];
+    delete root['tableGroup'];
+  }
   const records: ContentRecord[] = [];
   const diagnostics: ImportDiagnostic[] = [];
   for (const [kind, values] of Object.entries(root)) {

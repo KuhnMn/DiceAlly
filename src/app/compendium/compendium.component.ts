@@ -108,7 +108,10 @@ export class CompendiumComponent implements OnInit, OnDestroy {
     const version = ++this.version;
     const type = this.types.find(type => type.id === id) ?? null;
     this.type.set(type); this.invalidType.set(!!id && !type);
-    this.query = ''; this.filters = { source: [...this.sourceDefaults.selected()] }; this.effects = {}; this.sort = 'name'; this.offset = 0;
+    const requested = this.route.snapshot.queryParamMap;
+    this.query = requested?.get('q') ?? '';
+    this.filters = { source: requested?.get('source') ? [requested.get('source')!] : [...this.sourceDefaults.selected()] };
+    this.effects = {}; this.sort = 'name'; this.offset = 0;
     this.closeDetails(); this.results.set([]); this.total.set(0); this.facets.set([]);
     const revision = this.revision();
     if (!type || !revision) { this.loading.set(false); return; }
@@ -133,6 +136,8 @@ export class CompendiumComponent implements OnInit, OnDestroy {
         const values = [...options.get(key) ?? []].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
         return values.length ? [{ key, label: FACET_LABELS[key], values }] : [];
       }));
+      const requestedSource = requested?.get('source');
+      if (requestedSource) this.filters.source = [[...options.get('source') ?? []].find(source => source.toLowerCase() === requestedSource.toLowerCase()) ?? requestedSource];
       await this.search();
     } catch (error) { if (version === this.version) { this.error.set(`Could not load this category: ${String(error)}`); this.loading.set(false); } }
   }

@@ -42,7 +42,7 @@ describe('Spell Slots editor', () => {
   it('offers slots inside Feature Sources when casting sources or existing slots exist', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
     const editor = fixture.componentInstance;
-    expect(editor.pages).toEqual(['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Species & Features', 'Spells', 'Items', 'Companions', 'Combat', 'Notes', 'Sheet Settings']);
+    expect(editor.pages).toEqual(['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Species & Features', 'Spells', 'Items', 'Companions', 'Combat', 'Notes', 'Sheet Settings', 'Bastions']);
     expect(editor.hasCastingSources).toBe(false);
     editor.character.featureSources = [{ name: 'Wizard', isSpellcastingSource: true }];
     expect(editor.hasCastingSources).toBe(true);

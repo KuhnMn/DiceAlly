@@ -6,7 +6,7 @@ export const ROOT_FILES = [
   'feats.json', 'conditionsdiseases.json', 'items-base.json', 'optionalfeatures.json',
   'races.json', 'backgrounds.json', 'variantrules.json', 'tables.json', 'items.json', 'magicvariants.json',
   'generated/gendata-variantrules.json', 'generated/gendata-tables.json', 'spells/sources.json',
-  'actions.json', 'bastions.json', 'objects.json', 'senses.json', 'skills.json', 'vehicles.json',
+  'actions.json', 'bastions.json', 'objects.json', 'senses.json', 'skills.json', 'vehicles.json', 'rewards.json',
 ];
 
 /** Worker-side discovery; ordinary revision checks do not load source validators. */

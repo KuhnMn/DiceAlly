@@ -15,6 +15,7 @@ export const CONTENT_TYPES = [
   { id: 'rules', label: 'Rules & Conditions', icon: 'info', kinds: ['condition', 'disease', 'status', 'variantrule', 'action', 'sense', 'skill'] },
   { id: 'table', label: 'Tables', icon: 'layout-list', kinds: ['table'] },
   { id: 'facility', label: 'Bastion Facilities', icon: 'layout-columns', kinds: ['facility'] },
+  { id: 'reward', label: 'Charms & Rewards', icon: 'sparkles', kinds: ['reward'] },
   { id: 'world', label: 'Objects & Vehicles', icon: 'stack', kinds: ['object', 'vehicle'] },
   { id: 'reference', label: 'Equipment References', icon: 'list', kinds: ['itemType', 'itemProperty', 'itemMastery', 'itemEntry'] },
   { id: 'feature', label: 'Class Features', icon: 'sparkles', kinds: ['classFeature', 'subclassFeature'] },
@@ -52,6 +53,7 @@ export function recordFacets(record: ContentRecord): Filters {
       (typeof v === 'string' && !!v.trim()) || typeof v === 'number').map(String);
     if (values.length) facets[facet] = [...new Set(values)];
   };
+  if (record.kind === 'reward') set('category', data['type']);
   const definition = record.classDefinition;
   const option = record.characterOption;
   const acquisition = featureFilterValues({ ...data, prerequisite: option?.prerequisites ?? data['prerequisite'],

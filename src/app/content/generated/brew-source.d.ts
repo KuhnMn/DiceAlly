@@ -26,12 +26,13 @@ export interface BrewSourceByKind {
   "status": S348_conditionsdiseases_items;
   "variantrule": S349_variantrules_items;
   "table": S350_tables_items;
-  "action": S352_actions_items;
-  "facility": S353_bastions_items;
-  "object": S356_objects_items;
-  "sense": S357_senses_items;
-  "skill": S358_skills_items;
-  "vehicle": S359_vehicles_items;
+  "reward": S352_rewards_items;
+  "action": S353_actions_items;
+  "facility": S354_bastions_items;
+  "object": S357_objects_items;
+  "sense": S358_senses_items;
+  "skill": S359_skills_items;
+  "vehicle": S360_vehicles_items;
 }
 
 export type S0_class_class_items = S1_class_class_class;
@@ -738,18 +739,20 @@ export type S350_tables_items = S351_tables_table;
 
 export type S351_tables_table = ({ "name": string; "source": S3_util_source; "page"?: S7_util_page; "data"?: { [key: string]: unknown; }; "type"?: "table" & string; "legacy"?: S100_util_legacy; "otherSources"?: S6_util_otherSources; "referenceSources"?: S8_util_referenceSources; "chapter"?: { "name"?: string; "ordinal"?: { "type": ("chapter" | "appendix" | "part" | "episode" | "level" | "section") & string; "identifier": (number | string); }; "index"?: number; [key: string]: unknown; }; "parentEntity"?: { "prop": string; "uid": string; }; "foundryImg"?: S108_util_foundry_foundryImg; "caption"?: string; "isStriped"?: boolean; "isNameGenerator"?: boolean; "style"?: string; "colLabels"?: (S26_entry__entryTableColLabelItem)[]; "colLabelRows"?: ((S26_entry__entryTableColLabelItem)[])[]; "colStyles"?: (string)[]; "rowLabels"?: (string)[]; "rowStyles"?: (string)[]; "rows": (((S15_entry_root)[] | S28_entry_entryTableRow))[]; "footnotes"?: (S15_entry_root)[]; "intro"?: (S15_entry_root)[]; "outro"?: (S15_entry_root)[]; } | { "name": string; "source": S3_util_source; "page"?: S7_util_page; "data"?: { [key: string]: unknown; }; "type"?: "tableGroup" & string; "legacy"?: S100_util_legacy; "otherSources"?: S6_util_otherSources; "referenceSources"?: S8_util_referenceSources; "chapter"?: { "name"?: string; "ordinal"?: { "type": ("chapter" | "appendix" | "part" | "episode" | "level" | "section") & string; "identifier": (number | string); }; "index"?: number; [key: string]: unknown; }; "parentEntity"?: { "prop": string; "uid": string; }; "foundryImg"?: S108_util_foundry_foundryImg; "caption"?: string; "isStriped"?: boolean; "isNameGenerator"?: boolean; "style"?: string; "colLabels"?: (S26_entry__entryTableColLabelItem)[]; "colLabelRows"?: ((S26_entry__entryTableColLabelItem)[])[]; "colStyles"?: (string)[]; "rowLabels"?: (string)[]; "rowStyles"?: (string)[]; "rows"?: (((S15_entry_root)[] | S28_entry_entryTableRow))[]; "footnotes"?: (S15_entry_root)[]; "intro"?: (S15_entry_root)[]; "outro"?: (S15_entry_root)[]; "tables": (S252_tables_tableData)[]; } | { "name"?: string; "source"?: S3_util_source; "page"?: S7_util_page; "data"?: { [key: string]: unknown; }; "type"?: ("table" | "tableGroup") & string; "legacy"?: S100_util_legacy; "otherSources"?: S6_util_otherSources; "referenceSources"?: S8_util_referenceSources; "chapter"?: { "name"?: string; "ordinal"?: { "type": ("chapter" | "appendix" | "part" | "episode" | "level" | "section") & string; "identifier": (number | string); }; "index"?: number; [key: string]: unknown; }; "parentEntity"?: { "prop": string; "uid": string; }; "foundryImg"?: S108_util_foundry_foundryImg; "caption"?: string; "isStriped"?: boolean; "isNameGenerator"?: boolean; "style"?: string; "colLabels"?: (S26_entry__entryTableColLabelItem)[]; "colLabelRows"?: ((S26_entry__entryTableColLabelItem)[])[]; "colStyles"?: (string)[]; "rowLabels"?: (string)[]; "rowStyles"?: (string)[]; "rows"?: (((S15_entry_root)[] | S28_entry_entryTableRow))[]; "footnotes"?: (S15_entry_root)[]; "intro"?: (S15_entry_root)[]; "outro"?: (S15_entry_root)[]; "_copy": S113_util_copy_copyBlock_copy_generic; });
 
-export type S352_actions_items = S153_actions_action;
+export type S352_rewards_items = S251_rewards_reward;
 
-export type S353_bastions_items = S354_bastions_facility;
+export type S353_actions_items = S153_actions_action;
 
-export type S354_bastions_facility = ({ "name": string; "alias"?: S2_util_alias; "source": S3_util_source; "otherSources"?: S6_util_otherSources; "referenceSources"?: S8_util_referenceSources; "page"?: S7_util_page; "reprintedAs"?: S11_util_reprintedAs; "facilityType": string; "level"?: number; "prerequisite"?: S193_util_prerequisite; "space"?: (S355_bastions__space)[]; "hirelings"?: (({ "exact": number; "space"?: S355_bastions__space; } | { "min": number; "max"?: number; "space"?: S355_bastions__space; }))[]; "orders"?: (string)[]; "entries": (S15_entry_root)[]; "hasFluff"?: boolean; "hasFluffImages"?: boolean; "fluff"?: S107_util_fluffObject; } | { "name"?: string; "alias"?: S2_util_alias; "source"?: S3_util_source; "otherSources"?: S6_util_otherSources; "referenceSources"?: S8_util_referenceSources; "page"?: S7_util_page; "reprintedAs"?: S11_util_reprintedAs; "facilityType"?: string; "level"?: number; "prerequisite"?: S193_util_prerequisite; "space"?: (S355_bastions__space)[]; "hirelings"?: (({ "exact": number; "space"?: S355_bastions__space; } | { "min": number; "max"?: number; "space"?: S355_bastions__space; }))[]; "orders"?: (string)[]; "entries"?: (S15_entry_root)[]; "hasFluff"?: boolean; "hasFluffImages"?: boolean; "fluff"?: S107_util_fluffObject; "_copy": S113_util_copy_copyBlock_copy_generic; });
+export type S354_bastions_items = S355_bastions_facility;
 
-export type S355_bastions__space = string;
+export type S355_bastions_facility = ({ "name": string; "alias"?: S2_util_alias; "source": S3_util_source; "otherSources"?: S6_util_otherSources; "referenceSources"?: S8_util_referenceSources; "page"?: S7_util_page; "reprintedAs"?: S11_util_reprintedAs; "facilityType": string; "level"?: number; "prerequisite"?: S193_util_prerequisite; "space"?: (S356_bastions__space)[]; "hirelings"?: (({ "exact": number; "space"?: S356_bastions__space; } | { "min": number; "max"?: number; "space"?: S356_bastions__space; }))[]; "orders"?: (string)[]; "entries": (S15_entry_root)[]; "hasFluff"?: boolean; "hasFluffImages"?: boolean; "fluff"?: S107_util_fluffObject; } | { "name"?: string; "alias"?: S2_util_alias; "source"?: S3_util_source; "otherSources"?: S6_util_otherSources; "referenceSources"?: S8_util_referenceSources; "page"?: S7_util_page; "reprintedAs"?: S11_util_reprintedAs; "facilityType"?: string; "level"?: number; "prerequisite"?: S193_util_prerequisite; "space"?: (S356_bastions__space)[]; "hirelings"?: (({ "exact": number; "space"?: S356_bastions__space; } | { "min": number; "max"?: number; "space"?: S356_bastions__space; }))[]; "orders"?: (string)[]; "entries"?: (S15_entry_root)[]; "hasFluff"?: boolean; "hasFluffImages"?: boolean; "fluff"?: S107_util_fluffObject; "_copy": S113_util_copy_copyBlock_copy_generic; });
 
-export type S356_objects_items = S238_objects_object;
+export type S356_bastions__space = string;
 
-export type S357_senses_items = S277_senses_sense;
+export type S357_objects_items = S238_objects_object;
 
-export type S358_skills_items = S276_skills_skill;
+export type S358_senses_items = S277_senses_sense;
 
-export type S359_vehicles_items = S261_vehicles_vehicle;
+export type S359_skills_items = S276_skills_skill;
+
+export type S360_vehicles_items = S261_vehicles_vehicle;

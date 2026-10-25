@@ -31,12 +31,12 @@ describe('Character sheet page settings', () => {
     editor.setPage(editor.pages.indexOf('Sheet Settings')); fixture.detectChanges();
     const settings = fixture.debugElement.query(By.directive(SheetSettingsEditorComponent));
     const checkboxes = settings.nativeElement.querySelectorAll('input') as NodeListOf<HTMLInputElement>;
-    expect(checkboxes.length).toBe(5);
+    expect(checkboxes.length).toBe(6);
     for (const checkbox of checkboxes) { expect(checkbox.checked).toBe(true); checkbox.click(); }
     fixture.detectChanges();
     expect(editor.unsaved).toBe(true);
     for (const page of OPTIONAL_SHEET_PAGES) expect(editor.sheet.sheetSettings?.visiblePages?.[page.key]).toBe(false);
-    for (const [page, selector] of [['Combat', 'app-editor-combat'], ['Spells', 'app-editor-spells'], ['Items', 'app-editor-items'], ['Companions', 'app-editor-monsters'], ['Notes', 'app-editor-notes']]) {
+    for (const [page, selector] of [['Combat', 'app-editor-combat'], ['Spells', 'app-editor-spells'], ['Items', 'app-editor-items'], ['Companions', 'app-editor-monsters'], ['Bastions', 'app-editor-bastions'], ['Notes', 'app-editor-notes']]) {
       editor.setPage(editor.pages.indexOf(page)); fixture.detectChanges();
       expect(fixture.nativeElement.querySelector(selector)).not.toBeNull();
     }

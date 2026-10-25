@@ -15,6 +15,7 @@ const TAGS: Record<string, { kind: string; source: string }> = {
   condition: { kind: 'condition', source: 'PHB' }, status: { kind: 'status', source: 'PHB' },
   variantrule: { kind: 'variantrule', source: 'DMG' },
   table: { kind: 'table', source: 'DMG' }, class: { kind: 'class', source: 'PHB' },
+  reward: { kind: 'reward', source: 'DMG' }, facility: { kind: 'facility', source: 'XDMG' },
 };
 function aliasKey(kind: string, name: string, publication: string): string {
   return JSON.stringify([kind, normalize(name), normalize(publication)]);
@@ -33,6 +34,13 @@ export class ContentReferenceIndex {
     this.editions.set(record.key, baseSource ? referenceEdition(baseSource) ?? referenceEdition('', record.data['edition'])
       : referenceEdition(record.publication, record.data['edition']));
     this.alias(record.kind, record.name, record.publication, record.key);
+    if (record.kind === 'table') {
+      const table = tablePresentation(record);
+      // Generated names carry section prefixes; book references use the printed caption.
+      for (const caption of [table.caption, ...(table.tables ?? []).map(child => child.caption)]) {
+        if (caption) this.alias('table', caption, record.publication, record.key);
+      }
+    }
     if (record.homebrewVariant) this.alias(record.kind, string(record.data['name']), record.publication, record.key);
     if (record.kind === 'magicvariant') this.alias('item', record.name, record.publication, record.key);
     if (record.kind === 'item' && record.derivation?.operation === 'magicvariant') {
@@ -171,8 +179,19 @@ export function linkContent(record: ContentRecord, index: ContentReferenceIndex)
       const tag = match[1]; const token = match[2];
       if (tag === 'classFeature' || tag === 'subclassFeature') reference(tag, token, path);
       else if (TAGS[tag]) uid(TAGS[tag].kind, token, TAGS[tag].source, `entry-${tag}`, path, 'description', false);
+      else if (tag === 'book') {
+        const [label, source, , section] = token.split('|');
+        // Book tags may point at an exact generated table; prose chapters are not guessed.
+        for (const name of [...new Set([section, label].filter(Boolean))]) {
+          const resolved = index.resolve('table', name, source);
+          if (resolved.status === 'resolved') add({ ...resolved, role: 'entry-table', path, scope: 'description', required: false, reference: token });
+        }
+      }
     }
   };
+  if (Array.isArray(record.data['seeAlsoFacility'])) record.data['seeAlsoFacility'].forEach((value, position) => {
+    if (typeof value === 'string') uid('facility', value, 'XDMG', 'related-facility', `seeAlsoFacility[${position}]`, 'description', false);
+  });
   const node: Parameters<typeof visitEntryTree>[3] = (entry, path) => {
     switch (entry.type) {
       case 'refClassFeature': reference('classFeature', entry.classFeature, path); break;

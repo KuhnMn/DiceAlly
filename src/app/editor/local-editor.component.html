@@ -93,6 +93,9 @@
       @if (pages[page] === 'Notes') {
         <app-editor-notes [sheet]="sheet" (edited)="changed()" />
       }
+      @if (pages[page] === 'Bastions') {
+        <app-editor-bastions [sheet]="sheet" (edited)="changed()" />
+      }
       @if (pages[page] === 'Sheet Settings') {
         <app-editor-sheet-settings [sheet]="sheet" (edited)="changed()" />
       }

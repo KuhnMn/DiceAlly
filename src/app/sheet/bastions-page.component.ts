@@ -1,0 +1,54 @@
+import { Component, computed, input, signal } from '@angular/core';
+import type { ExportedCharacter, FeatureNotes } from '../models/character.model';
+import type { FacilityEntry } from '../models/bastion';
+import { compareSearchMatches } from '../search-ranking';
+import { ListControlsComponent } from '../list-controls.component';
+import { UiIconComponent } from '../ui-icon.component';
+import { SheetListLayoutComponent } from './sheet-list-layout.component';
+import { SheetDetailDialogComponent } from './sheet-detail-dialog.component';
+import { FeatureNotesComponent } from './feature-notes.component';
+import { BastionPlanComponent } from './bastion-plan.component';
+import { FacilityDetailsComponent } from './facility-details.component';
+import { facilityTypeLabel } from '../models/bastion';
+
+@Component({
+  selector: 'app-bastions-page',
+  imports: [ListControlsComponent, UiIconComponent, SheetListLayoutComponent, SheetDetailDialogComponent,
+    FeatureNotesComponent, BastionPlanComponent, FacilityDetailsComponent],
+  host: { class: 'block min-w-0' },
+  template: `
+    <section class="rounded-lg border-2 border-outline bg-surface-container-highest p-3 shadow-lg sm:p-5">
+      <header class="mb-3 flex items-center justify-between gap-2"><h2 class="text-xl font-bold sm:text-3xl">Bastions</h2><app-sheet-list-layout #layout /></header>
+      <app-bastion-plan [value]="characterData()?.bastion?.planUrl" />
+      <h3 class="mb-2 text-lg font-bold">Facilities</h3>
+      <app-list-controls label="Search facilities" [query]="query()" (queryChange)="query.set($event)" [hasFilters]="false" />
+      <div class="grid items-start gap-3" [style.grid-template-columns]="'repeat(' + layout.displayColumns() + ', minmax(0, 1fr))'">
+        @for (facility of selected(); track facility.editorId) {
+          <article class="min-w-0 rounded-lg border-2 border-outline-variant bg-surface-container px-3 py-2 sm:p-4">
+            <button type="button" class="flex min-h-11 w-full min-w-0 items-center justify-between gap-2 text-left" aria-haspopup="dialog" (click)="detail.set(facility)">
+              <span class="min-w-0 truncate text-lg font-bold text-primary" [title]="facility.name">{{ facility.name }}</span><app-ui-icon name="chevron" class="shrink-0 text-primary" />
+            </button>
+            <div class="flex flex-wrap gap-x-2 gap-y-1 text-xs text-on-surface-variant"><span>{{ typeLabel(facility.entity) }}</span>@if (facility.entity.level != null) { <span>Level {{ facility.entity.level }}</span> }<span>{{ facility.source }}</span></div>
+            <app-feature-notes [notes]="facility.notes" (notesChanged)="updateNotes(facility, $event)" />
+          </article>
+        } @empty { <p class="text-sm text-on-surface-variant">{{ query() ? 'No facilities match your search.' : 'No facilities yet. Add facilities in the editor.' }}</p> }
+      </div>
+    </section>
+    @if (detail(); as facility) {
+      <app-sheet-detail-dialog [title]="facility.name" (closed)="detail.set(null)">
+        <app-facility-details [facility]="facility" />
+        <app-feature-notes [notes]="facility.notes" (notesChanged)="updateNotes(facility, $event)" />
+      </app-sheet-detail-dialog>
+    }
+  `,
+})
+export class BastionsPageComponent {
+  readonly characterData = input<ExportedCharacter | null>(null);
+  readonly query = signal('');
+  readonly detail = signal<FacilityEntry | null>(null);
+  readonly typeLabel = facilityTypeLabel;
+  readonly selected = computed(() => [...this.characterData()?.bastion?.facilities ?? []]
+    .filter(entry => entry.name.toLowerCase().includes(this.query().trim().toLowerCase()))
+    .sort((a, b) => compareSearchMatches(a.name, b.name, this.query())));
+  updateNotes(facility: FacilityEntry, notes: FeatureNotes[]) { facility.notes = notes; }
+}

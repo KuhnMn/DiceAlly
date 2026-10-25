@@ -1,3 +1,4 @@
+import { BastionsEditorComponent } from './bastions-editor.component';
 import { BasicInfoEditorComponent } from './basic-info-editor.component';
 import { SheetSettingsEditorComponent } from './sheet-settings-editor.component';
 import { NotesEditorComponent } from './notes-editor.component';
@@ -44,7 +45,7 @@ import { defaultWalkingSpeed, primaryWalkingSpeed } from '../models/character-sp
 
 @Component({
   selector: 'app-local-editor',
-  imports: [SheetSettingsEditorComponent, NotesEditorComponent, ScrollToTopComponent, SwipePagesDirective, CombatEditorComponent, CharacterUpdateNoticeComponent, UiIconComponent, ThemePickerComponent, MobileSheetActionsComponent, ScrollableTabsDirective, FormsModule, RouterLink, BasicInfoEditorComponent, AbilityScoresEditorComponent, ProficienciesEditorComponent, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, ClassWizardComponent, SpeciesEditorComponent, ItemsEditorComponent, MonstersEditorComponent],
+  imports: [BastionsEditorComponent, SheetSettingsEditorComponent, NotesEditorComponent, ScrollToTopComponent, SwipePagesDirective, CombatEditorComponent, CharacterUpdateNoticeComponent, UiIconComponent, ThemePickerComponent, MobileSheetActionsComponent, ScrollableTabsDirective, FormsModule, RouterLink, BasicInfoEditorComponent, AbilityScoresEditorComponent, ProficienciesEditorComponent, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, ClassWizardComponent, SpeciesEditorComponent, ItemsEditorComponent, MonstersEditorComponent],
   templateUrl: './local-editor.component.html',
   styleUrl: './editor.css',
 })
@@ -70,7 +71,7 @@ export class LocalEditorComponent implements OnInit {
   readonly descriptionRefreshSkipped = signal<{ name: string; reason: string }[]>([]);
   readonly message = signal('');
   readonly error = signal('');
-  readonly pages = ['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Species & Features', 'Spells', 'Items', 'Companions', 'Combat', 'Notes', 'Sheet Settings'];
+  readonly pages = ['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Species & Features', 'Spells', 'Items', 'Companions', 'Combat', 'Notes', 'Sheet Settings', 'Bastions'];
   get hasCastingSources() { return this.character.featureSources?.some(source => source.isSpellcastingSource && source.name?.trim()) ?? false; }
   get hasSpellSlots() { return Object.values(this.character.spellSlots ?? {}).some(slots => slots.length > 0); }
   page = 0;

@@ -22,6 +22,7 @@ import { HorizontalRowDirective } from '../sheet/horizontal-row.directive';
 export class EntryAnnotationsComponent extends EntryAnnotationsEditor {
   readonly entry = input.required<AnnotatedEntry>();
   readonly annotationsEnabled = input(true);
+  readonly showUses = input(true);
   activePanel: 'uses' | 'notes' | null = null;
   togglePanel(panel: 'uses' | 'notes') { this.activePanel = this.activePanel === panel ? null : panel; }
   override addUses(entry: AnnotatedEntry) { super.addUses(entry); this.activePanel = 'uses'; }

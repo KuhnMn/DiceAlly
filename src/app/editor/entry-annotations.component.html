@@ -1,10 +1,13 @@
 <div class="min-w-0">
   <div appHorizontalRow role="group" aria-label="Entry tools" class="flex flex-wrap items-center gap-1.5">
-    <button type="button" class="annotation-button disabled:opacity-50" [disabled]="!annotationsEnabled()" [title]="annotationsEnabled() ? 'Edit use trackers' : 'Prepare this spell to edit uses'" [attr.aria-expanded]="activePanel === 'uses' && annotationsEnabled()" [attr.aria-pressed]="activePanel === 'uses'" [attr.aria-controls]="'uses-panel-' + i" [class.bg-secondary-container]="activePanel === 'uses'" (click)="togglePanel('uses')"><app-ui-icon name="tally" /> Uses @if (entry().uses?.length) { <span>({{ entry().uses?.length }})</span> }</button>
+    @if (showUses()) {
+      <button type="button" class="annotation-button disabled:opacity-50" [disabled]="!annotationsEnabled()" [title]="annotationsEnabled() ? 'Edit use trackers' : 'Prepare this spell to edit uses'" [attr.aria-expanded]="activePanel === 'uses' && annotationsEnabled()" [attr.aria-pressed]="activePanel === 'uses'" [attr.aria-controls]="'uses-panel-' + i" [class.bg-secondary-container]="activePanel === 'uses'" (click)="togglePanel('uses')"><app-ui-icon name="tally" /> Uses @if (entry().uses?.length) { <span>({{ entry().uses?.length }})</span> }</button>
+    }
     <button type="button" class="annotation-button disabled:opacity-50" [disabled]="!annotationsEnabled()" [title]="annotationsEnabled() ? 'Edit notes' : 'Prepare this spell to edit notes'" [attr.aria-expanded]="activePanel === 'notes' && annotationsEnabled()" [attr.aria-pressed]="activePanel === 'notes'" [attr.aria-controls]="'notes-panel-' + i" [class.bg-secondary-container]="activePanel === 'notes'" (click)="togglePanel('notes')"><app-ui-icon name="file" /> Notes @if (entry().notes?.length) { <span>({{ entry().notes?.length }})</span> }</button>
     <ng-content select="[annotation-combat]" />
     <ng-content select="[annotation-description]" />
   </div>
+  @if (showUses()) {
   <section class="annotation-panel" [hidden]="activePanel !== 'uses' || !annotationsEnabled()" [id]="'uses-panel-' + i" aria-label="Uses editor">
     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
       <h3 class="font-semibold">Uses</h3>
@@ -44,6 +47,7 @@
       }
     </div>
   </section>
+  }
   <section class="annotation-panel" [hidden]="activePanel !== 'notes' || !annotationsEnabled()" [id]="'notes-panel-' + i" aria-label="Notes editor">
     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
       <h3 class="font-semibold">Notes</h3>

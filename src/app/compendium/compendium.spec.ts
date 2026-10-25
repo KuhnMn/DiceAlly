@@ -20,6 +20,11 @@ import { materializeContent } from '../content/content-materializer';
 import { ImportDiagnostic } from '../content/content.model';
 
 describe('Compendium catalog', () => {
+  it('exposes charms and rewards with their source-defined types', () => {
+    const reward = mapContent({reward: [{name: 'Blasphemous Charm', source: 'RHW', type: 'Charm', entries: ['A magical charm.']}]}, 'rewards.json').records[0];
+    expect(CONTENT_TYPES.find(type => type.id === 'reward')?.kinds).toEqual(['reward']);
+    expect(recordFacets(reward).category).toEqual(['Charm']);
+  });
   it('places Classes first and gives facilities their own category', () => {
     expect(CONTENT_TYPES[0].id).toBe('class');
     expect(CONTENT_TYPES.filter(type => (type.kinds as readonly string[]).includes('facility')).map(type => type.id)).toEqual(['facility']);
@@ -309,6 +314,18 @@ describe('Compendium screen', () => {
     fixture.destroy();
   });
 
+  it('opens reference searches with the linked publication instead of unrelated shared defaults', async () => {
+    const reward = mapContent({reward: [{name: 'Blasphemous Charm', source: 'RHW', type: 'Charm', entries: ['Read the reward.']}]}, 'rewards.json').records[0];
+    await cache.put(revision.id, [reward]);
+    TestBed.inject(SourceBookFilterService).setSelection(['XPHB']);
+    const route = TestBed.inject(ActivatedRoute);
+    Object.defineProperty(route.snapshot, 'queryParamMap', {value: convertToParamMap({q: 'Blasphemous Charm', source: 'rhw'})});
+    const { fixture, screen } = await setup();
+    await screen.chooseType('reward'); fixture.detectChanges();
+    expect(screen.query).toBe('Blasphemous Charm'); expect(screen.filters.source).toEqual(['RHW']);
+    expect(screen.results().map(row => row.key)).toEqual([reward.key]);
+    expect(TestBed.inject(SourceBookFilterService).selected()).toEqual(['XPHB']);
+  });
   it('renders canonical reference descriptions and tables using the shared entry renderer', () => {
     const fixture = TestBed.createComponent(CompendiumDetailsComponent);
     const record: ContentRecord = { key: 'condition', kind: 'condition', name: 'Test Condition', publication: 'TEST', file: 'conditions.json', links: [], data: {},

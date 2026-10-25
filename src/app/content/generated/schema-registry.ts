@@ -25,6 +25,7 @@ export const SOURCE_KINDS = [
   "status",
   "variantrule",
   "table",
+  "reward",
   "action",
   "facility",
   "object",
@@ -57,6 +58,7 @@ export const CORE_FILE_VALIDATORS = {
   "senses.json": "senses",
   "skills.json": "skills",
   "vehicles.json": "vehicles",
+  "rewards.json": "rewards",
   "generated/gendata-variantrules.json": "variantrules",
   "generated/gendata-tables.json": "generated_tables"
 } as const;

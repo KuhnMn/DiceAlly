@@ -874,6 +874,7 @@ export interface Note {
 export type ConditionName = string;
 
 export interface ExportedCharacter {
+  bastion?: import('./bastion').CharacterBastion;
   sheetSettings?: import('./sheet-pages').SheetSettings;
   basicActions?: import('./character-references').BasicActionDescription[];
   referenceDescriptions?: import('./character-references').CharacterReferenceDescriptions;

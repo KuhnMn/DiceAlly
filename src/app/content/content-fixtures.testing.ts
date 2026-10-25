@@ -41,6 +41,7 @@ export function coreDocumentFixture(file: string, override?: JsonObject): JsonOb
     'magicvariants.json': { magicvariant: [{ name: 'Fixture Variant', requires: [{ weapon: true }], inherits: { source: 'TEST', rarity: 'common' } }] },
     'actions.json': { action: [{ ...named, page: 1 }] },
     'bastions.json': { facility: [{ ...named, facilityType: 'basic' }] },
+    'rewards.json': { reward: [{ ...named, type: 'Charm' }] },
     'objects.json': { object: [{ ...named, size: ['M'], objectType: 'GEN', ac: 10, hp: 10 }] },
     'senses.json': { sense: [named] }, 'skills.json': { skill: [{ ...named, ability: 'wis' }] },
     'vehicles.json': { vehicle: [{ ...named, vehicleType: 'OBJECT', size: ['L'], terrain: ['land'] }], vehicleUpgrade: [{ ...named, upgradeType: ['SHP:H'] }] },

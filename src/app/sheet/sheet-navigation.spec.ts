@@ -15,7 +15,7 @@ import { emptyBasicCharacter } from '../editor/basic-info';
 describe('Sheet navigation and mobile health integration', () => {
   it('omits disabled pages, skips them when swiping and rejects source jumps without losing content', () => {
     const { fixture, component, store, sheet } = setup(true);
-    const settings = { visiblePages: { combat: false, spells: false, inventory: false, companions: false, notes: false } };
+    const settings = { visiblePages: { combat: false, spells: false, inventory: false, companions: false, bastions: false, notes: false } };
     store.setCharacter({ ...sheet, sheetSettings: settings, notes: [{ id: 1, title: 'Hidden', body: 'Kept' }] });
     fixture.detectChanges();
     expect(component.pages().map(page => page.label)).toEqual(['Sheet', 'Features']);
