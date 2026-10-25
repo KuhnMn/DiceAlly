@@ -15,6 +15,18 @@ describe('Pinned source schema boundary', () => {
     expect(() => coreSchemaName('other/spells.json')).toThrow('No pinned content schema');
   });
 
+  it('accepts current spell targeting tags ALT and WLT while rejecting unknown tags', async () => {
+    const value = coreDocumentFixture('spells/spells-aag.json', { spell: [{ name: 'Air Bubble', source: 'AAG', miscTags: ['SGT', 'WLT', 'ALT'] }] });
+    const before = structuredClone(value);
+    await validateCoreDocument(value, 'spells/spells-aag.json');
+    await validateHomebrewDocument(homebrewDocumentFixture({ spell: value['spell'] }), 'targeting-brew.json');
+    expect(value).toEqual(before);
+    const invalid = coreDocumentFixture('spells/spells-aag.json', { spell: [{ name: 'Air Bubble', source: 'AAG', miscTags: ['UNKNOWN_TARGETING_TAG'] }] });
+    await expect(validateCoreDocument(invalid, 'spells/spells-aag.json')).rejects.toMatchObject({ diagnostics: expect.arrayContaining([
+      expect.objectContaining({ path: '/spell/0/miscTags/0', code: 'schema-invalid' }),
+    ]) });
+  });
+
   it('accepts documented weighted abilities and conditional movement without mutating them', async () => {
     const value = coreDocumentFixture('races.json', { race: [{ name: 'Synthetic', source: 'TEST',
       ability: [{ choose: { weighted: { from: ['str', 'dex', 'con'], weights: [2, 1] } }, max: 22, hidden: true }],

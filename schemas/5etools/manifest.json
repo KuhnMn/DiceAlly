@@ -1,7 +1,7 @@
 {
   "repository": "git+https://github.com/TheGiddyLimit/5etools-utils.git",
-  "commit": "69490c8ef4c3dc83f4714bfec3a187e70cd25a7b",
-  "packageVersion": "0.17.23",
+  "commit": "f2d995e92069a64f4e617b64e48e55d40f64a157",
+  "packageVersion": "0.17.24",
   "license": "MIT",
   "profiles": {
     "site": {
@@ -130,8 +130,8 @@
         "sha256": "c25e30dac18545581291edd7ec6aa11ea1df42122816c2cdea47d959f7b3b786"
       },
       "spells/spells.json": {
-        "version": "1.9.28",
-        "sha256": "e47b6a85bda98d8761a723616f6724cf1de14e9f999ea974d8527deea3b25df0"
+        "version": "1.9.29",
+        "sha256": "c084c73a89759d029f5c7e1b654da0227da0018a713b3d85c6cc240ad2ca560d"
       },
       "tables.json": {
         "version": "1.2.0",
@@ -499,8 +499,8 @@
         "sha256": "c25e30dac18545581291edd7ec6aa11ea1df42122816c2cdea47d959f7b3b786"
       },
       "spells/spells.json": {
-        "version": "1.9.28",
-        "sha256": "41be58613129b3510d69a51e9869726b5f535a6d2d3e1281cc733aa1b816b8c1"
+        "version": "1.9.29",
+        "sha256": "b0fa2e4e7392a210f88038a91f63e5f7bd983d5476cc9e885a4dad7fe7822887"
       },
       "tables.json": {
         "version": "1.2.0",

@@ -1,4 +1,4 @@
 // Generated from the pinned schema manifest.
-export const CONTENT_SCHEMA_COMMIT = '69490c8ef4c3dc83f4714bfec3a187e70cd25a7b';
-export const CONTENT_SCHEMA_PACKAGE_VERSION = '0.17.23';
-export const CONTENT_SCHEMA_ID = '1b9d484ec2ccf94652eb0277578aa269d31c1b440e4ef9a089fef9037db2b26f';
+export const CONTENT_SCHEMA_COMMIT = 'f2d995e92069a64f4e617b64e48e55d40f64a157';
+export const CONTENT_SCHEMA_PACKAGE_VERSION = '0.17.24';
+export const CONTENT_SCHEMA_ID = '1f98a0381ad38159984a0f584f0b23f0747ca59ad09a981e28fc15d958e56bab';
