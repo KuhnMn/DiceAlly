@@ -116,11 +116,11 @@
 
   @if (diagnostics().length) {
     <details class="editor-card mb-4" [open]="hasImportErrors()">
-      <summary class="text-sm font-semibold cursor-pointer">Import Diagnostics ({{ diagnostics().length }})</summary>
+      <summary class="text-sm font-semibold cursor-pointer">Import Diagnostics ({{ diagnostics().length }}) · {{ hasImportErrors() ? 'Errors' : 'Warnings' }}</summary>
       <p class="text-xs text-on-surface-variant mt-3">Showing the first 100. A failed import leaves the installed library unchanged.</p>
       <div class="content-records mt-2">
         @for (d of visibleDiagnostics(); track $index) {
-          <p class="text-xs py-2 border-b border-outline-variant" [class.text-error]="d.severity === 'error'">{{ d.severity }} · {{ d.file }} · {{ d.message }}</p>
+          <p class="text-xs py-2 border-b border-outline-variant [overflow-wrap:anywhere]" [class.text-error]="d.severity === 'error'">{{ d.severity }} · {{ d.file }}@if (d.path) { · {{ d.path }} } · {{ d.message }}</p>
         }
       </div>
     </details>

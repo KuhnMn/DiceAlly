@@ -43,6 +43,15 @@ function document(name = 'Homebrew Spell') {
 
 describe('Explicit single-file homebrew imports', () => {
   beforeAll(async () => validateHomebrewDocument(homebrewDocumentFixture({}), 'fixture.json'), 30000);
+  it('installs future spell metadata with visible warnings and preserves it when replaying homebrew', async () => {
+    const f = await fixture();
+    const file = await readHomebrewFile({spell: [{name: 'Future Spell', source: 'TESTBREW', miscTags: ['HL', 'FUTURE_TAG']}]}, 'future-tags.json');
+    const revision = await importHomebrew(f.cache, {...f, file, bytes: 1});
+    expect(revision.diagnostics).toContainEqual(expect.objectContaining({severity: 'warning', code: 'schema-metadata', file: 'future-tags.json'}));
+    const entries = await f.cache.searchCategory(revision.id, ['spell'], 'Future Spell');
+    expect(entries.records[0].data['miscTags']).toEqual(['HL', 'FUTURE_TAG']);
+    expect(file.document['spell']).toMatchObject([{miscTags: ['HL', 'FUTURE_TAG']}]);
+  });
   it('keeps switch weapons searchable and freezes their form templates and Vicious variants into snapshots', async () => {
     const f = await fixture();
     const forms = ['{@item Pike|XPHB}, {@item Spear|XPHB}', '{@item Battleaxe|XPHB}, {@item Glaive|XPHB}'];

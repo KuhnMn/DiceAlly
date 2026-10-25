@@ -12,7 +12,7 @@ export interface SpellEffectFields {
   spellAttack?: string[] | null;
   areaTags?: string[] | null;
   conditionInflict?: SourceSpell['conditionInflict'] | null;
-  miscTags?: SourceSpell['miscTags'] | null;
+  miscTags?: string[] | null;
   scalingLevelDice?: SourceSpell['scalingLevelDice'] | null;
 }
 

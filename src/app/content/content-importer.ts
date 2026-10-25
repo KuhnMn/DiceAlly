@@ -45,7 +45,7 @@ export async function importContent(cache: ContentCache, options: ImportOptions,
       report('download', index, discovery.files.length, file);
       const result = await fetcher(rawUrl(source, commit, file), signal);
       bytes += result.bytes;
-      await validateCoreDocument(result.value, file);
+      diagnostics.push(...await validateCoreDocument(result.value, file));
       if (file === 'spells/sources.json') { overlay = result.value; continue; }
       const mapped = mapContent(result.value, file);
       diagnostics.push(...mapped.diagnostics);
@@ -76,7 +76,7 @@ export async function importContent(cache: ContentCache, options: ImportOptions,
       report('download', discovery.files.length, discovery.files.length + 1, file);
       const result = await fetcher(rawUrl(source, commit, file), signal);
       bytes += result.bytes;
-      await validateCoreDocument(result.value, file);
+      diagnostics.push(...await validateCoreDocument(result.value, file));
       const mapped = mapContent(result.value, file);
       diagnostics.push(...mapped.diagnostics);
       const seen = new Set<string>();

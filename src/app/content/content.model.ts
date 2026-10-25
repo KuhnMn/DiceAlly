@@ -39,7 +39,7 @@ export interface ContentRecord {
 }
 export interface ImportDiagnostic {
   severity: 'error' | 'warning';
-  code?: 'schema-invalid' | 'unsupported-category';
+  code?: 'schema-invalid' | 'schema-metadata' | 'unsupported-category';
   phase?: 'validate' | 'map';
   /** JSON Pointer into the source document, distinct from a record's identity. */
   path?: string;

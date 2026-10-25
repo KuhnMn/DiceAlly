@@ -36,6 +36,17 @@ describe('Content importer', () => {
     await validateCoreDocument(coreDocumentFixture('feats.json'), 'feats.json');
     await validateHomebrewDocument(homebrewDocumentFixture({}), 'fixture.json');
   }, 30000);
+  it('activates imports with metadata warnings and retains unknown tags in stored spell snapshots', async () => {
+    const cache = new MemoryCache();
+    const revision = await importContent(cache, {namespace: 'future-tags', source: DEFAULT_CONTENT_SOURCE}, fixture({
+      'spells/spells-test.json': {spell: [{name: 'Fixture Spell', source: 'TEST', miscTags: ['HL', 'FUTURE_TAG']}]},
+    }));
+    expect(cache.active).toBe(revision.id);
+    expect(revision.diagnostics).toContainEqual(expect.objectContaining({severity: 'warning', code: 'schema-metadata', file: 'spells/spells-test.json', path: '/spell/0/miscTags'}));
+    expect(revision.diagnostics.some(issue => issue.severity === 'error')).toBe(false);
+    const spell = await cache.get(revision.id, entityKey('spell', {name: 'Fixture Spell', source: 'TEST'}));
+    expect(spell?.data['miscTags']).toEqual(['HL', 'FUTURE_TAG']);
+  });
   it('persists the agreed reference categories and reports excluded roots', async () => {
     const cache = new MemoryCache();
     const revision = await importContent(cache, { namespace: 'reference-content', source: DEFAULT_CONTENT_SOURCE }, fixture());

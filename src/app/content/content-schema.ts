@@ -5,6 +5,7 @@ import type { SchemaValidator } from './generated/site-validators.mjs';
 import type { SiteSourceByKind } from './generated/site-source';
 import { ImportDiagnostic } from './content.model';
 import { CORE_FILE_VALIDATORS } from './generated/schema-registry';
+import { metadataWarningCandidate } from './content-metadata-warnings';
 
 export type SourceKind = keyof SiteSourceByKind;
 export type SchemaProfile = 'site' | 'brew';
@@ -33,28 +34,36 @@ async function validators(profile: SchemaProfile): Promise<Validators> {
 
 export class ContentSchemaError extends Error {
   constructor(readonly diagnostics: ImportDiagnostic[]) {
-    const first = diagnostics[0];
+    const first = diagnostics.find(issue => issue.severity === 'error') ?? diagnostics[0];
     super(`Content validation failed for ${first.file} at ${first.path || '/'}: ${first.message}`);
   }
 }
 
-async function validate(value: unknown, file: string, profile: SchemaProfile, name: string): Promise<void> {
+async function validate(value: unknown, file: string, profile: SchemaProfile, name: string): Promise<ImportDiagnostic[]> {
   const validate = (await validators(profile))[name];
   if (!validate) throw new Error(`Missing generated validator ${profile}/${name}.`);
-  if (validate(value)) return;
-  throw new ContentSchemaError((validate.errors ?? []).map(error => ({
-    severity: 'error', code: 'schema-invalid', phase: 'validate', file,
-    path: error.instancePath, schemaPath: error.schemaPath,
-    message: `${error.message ?? error.keyword} (${JSON.stringify(error.params)})`,
-  })));
+  const warnings: ImportDiagnostic[] = [];
+  let candidate = value;
+  while (!validate(candidate)) {
+    const errors = [...validate.errors ?? []];
+    const softened = metadataWarningCandidate(candidate, errors, file);
+    if (softened) { warnings.push(...softened.diagnostics); candidate = softened.value; continue; }
+    throw new ContentSchemaError([...warnings, ...errors.map(error => ({
+      severity: 'error' as const, code: 'schema-invalid' as const, phase: 'validate' as const, file,
+      path: error.instancePath, schemaPath: error.schemaPath,
+      message: `${error.message ?? error.keyword} (${JSON.stringify(error.params)})`,
+    }))]);
+  }
+  return warnings;
 }
 
-export async function validateCoreDocument(value: unknown, file: string): Promise<void> {
-  await validate(value, file, 'site', coreSchemaName(file));
+/** Return nonblocking metadata warnings; never modify source input or relax rule/shape errors. */
+export async function validateCoreDocument(value: unknown, file: string): Promise<ImportDiagnostic[]> {
+  return validate(value, file, 'site', coreSchemaName(file));
 }
 
-export async function validateHomebrewDocument(value: unknown, file: string): Promise<void> {
-  await validate(value, file, 'brew', 'homebrew');
+export async function validateHomebrewDocument(value: unknown, file: string): Promise<ImportDiagnostic[]> {
+  return validate(value, file, 'brew', 'homebrew');
 }
 
 /** Validate a complete record after inheritance against its exact pinned source profile. */

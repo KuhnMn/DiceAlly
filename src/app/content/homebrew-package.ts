@@ -49,7 +49,7 @@ export async function stageHomebrewFiles(cache: ContentCache, revision: ImportRe
   for (const file of files) {
     signal?.throwIfAborted();
     const path = `homebrew/${file.id}.json`;
-    await validateHomebrewDocument(file.document, file.name);
+    revision.diagnostics.push(...await validateHomebrewDocument(file.document, file.name));
     const mapped = mapContent(file.document, path);
     if (!mapped.records.length) throw new Error(`${file.name}: no supported content found.`);
     revision.diagnostics.push(...mapped.diagnostics);

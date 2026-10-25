@@ -19,6 +19,17 @@ describe('Inactive revision cleanup feedback', () => {
     return { fixture, component: fixture.componentInstance };
   }
 
+  it('shows nonblocking warnings with their file and source field path', async () => {
+    const {fixture, component} = await setup();
+    component.diagnostics.set([{severity: 'warning', code: 'schema-metadata', file: 'spells/test.json', path: '/spell/0/miscTags', message: 'Unknown optional metadata tag. Stored unchanged.'}]);
+    fixture.detectChanges();
+    expect(component.hasImportErrors()).toBe(false);
+    const details = [...fixture.nativeElement.querySelectorAll('details')].find((element: unknown) => (element as HTMLElement).textContent?.includes('Import Diagnostics')) as HTMLDetailsElement;
+    expect(details.querySelector('summary')?.textContent).toContain('Warnings');
+    expect(details.textContent).toContain('/spell/0/miscTags'); expect(details.textContent).toContain('spells/test.json');
+    expect(details.querySelector('.text-error')).toBeNull();
+  });
+
   it('shows cleanup phases and record count, then clears the activity after completion', async () => {
     let progress!: (value: RevisionRemovalProgress) => void;
     let finish!: () => void;

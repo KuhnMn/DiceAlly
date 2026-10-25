@@ -15,16 +15,56 @@ describe('Pinned source schema boundary', () => {
     expect(() => coreSchemaName('other/spells.json')).toThrow('No pinned content schema');
   });
 
-  it('accepts current spell targeting tags ALT and WLT while rejecting unknown tags', async () => {
+  it('accepts current spell targeting tags and warns on future optional metadata', async () => {
     const value = coreDocumentFixture('spells/spells-aag.json', { spell: [{ name: 'Air Bubble', source: 'AAG', miscTags: ['SGT', 'WLT', 'ALT'] }] });
     const before = structuredClone(value);
     await validateCoreDocument(value, 'spells/spells-aag.json');
     await validateHomebrewDocument(homebrewDocumentFixture({ spell: value['spell'] }), 'targeting-brew.json');
     expect(value).toEqual(before);
-    const invalid = coreDocumentFixture('spells/spells-aag.json', { spell: [{ name: 'Air Bubble', source: 'AAG', miscTags: ['UNKNOWN_TARGETING_TAG'] }] });
-    await expect(validateCoreDocument(invalid, 'spells/spells-aag.json')).rejects.toMatchObject({ diagnostics: expect.arrayContaining([
-      expect.objectContaining({ path: '/spell/0/miscTags/0', code: 'schema-invalid' }),
+    const future = coreDocumentFixture('spells/spells-aag.json', { spell: [{ name: 'Air Bubble', source: 'AAG', miscTags: ['UNKNOWN_TARGETING_TAG'] }] });
+    const original = structuredClone(future);
+    await expect(validateCoreDocument(future, 'spells/spells-aag.json')).resolves.toEqual([
+      expect.objectContaining({ severity: 'warning', path: '/spell/0/miscTags', code: 'schema-metadata' }),
+    ]);
+    expect(future).toEqual(original);
+  });
+
+  it('collects warnings for several records and fields without changing known or unknown metadata', async () => {
+    const value = coreDocumentFixture('spells/future.json', { spell: [
+      { name: 'First', source: 'TEST', miscTags: ['HL', 'FUTURE'], areaTags: ['S', 'FUTURE_AREA'] },
+      { name: 'Second', source: 'TEST', miscTags: ['FUTURE_2'] },
+    ] });
+    const before = structuredClone(value), warnings = await validateCoreDocument(value, 'spells/future.json');
+    expect(warnings.map(issue => issue.path).sort()).toEqual(['/spell/0/areaTags', '/spell/0/miscTags', '/spell/1/miscTags']);
+    expect(warnings.every(issue => issue.severity === 'warning')).toBe(true);
+    expect(value).toEqual(before);
+    const brew = homebrewDocumentFixture(value);
+    expect((await validateHomebrewDocument(brew, 'future-brew.json')).length).toBe(3);
+  });
+
+  it('warns on descriptive monster indexes while keeping creature mechanics strict', async () => {
+    const monster = { name: 'Future Monster', source: 'TEST', environment: ['forest', 'FUTURE_ENV'],
+      traitTags: ['Amphibious', 'FUTURE_TRAIT'], actionTags: ['Multiattack', 'FUTURE_ACTION'], languageTags: ['C', 'FUTURE_LANGUAGE'],
+      senseTags: ['D', 'FUTURE_SENSE'], spellcastingTags: ['I', 'FUTURE_CASTING'], damageTags: ['B', 'FUTURE_DAMAGE'] };
+    const value = coreDocumentFixture('bestiary/test.json', {monster: [monster]}), before = structuredClone(value);
+    const warnings = await validateCoreDocument(value, 'bestiary/test.json');
+    expect(warnings).toHaveLength(7); expect(warnings.every(issue => issue.code === 'schema-metadata')).toBe(true);
+    expect(value).toEqual(before);
+    const invalid = coreDocumentFixture('bestiary/test.json', {monster: [{...monster, size: ['FUTURE_SIZE']}]});
+    await expect(validateCoreDocument(invalid, 'bestiary/test.json')).rejects.toThrow('Content validation failed');
+  });
+
+  it('keeps malformed tag arrays, rendering errors and mechanical enums blocking even alongside unknown metadata', async () => {
+    for (const tags of [['FUTURE', 'FUTURE'], ['FUTURE', 42], 'FUTURE', []]) {
+      const value = coreDocumentFixture('spells/future.json', { spell: [{ name: 'Invalid', source: 'TEST', miscTags: tags }] });
+      await expect(validateCoreDocument(value, 'spells/future.json')).rejects.toThrow('Content validation failed');
+    }
+    const malformed = coreDocumentFixture('spells/future.json', { spell: [{ name: 'Invalid', source: 'TEST', miscTags: ['FUTURE'], entries: [{ type: 'table', rows: 'broken' }] }] });
+    await expect(validateCoreDocument(malformed, 'spells/future.json')).rejects.toMatchObject({ diagnostics: expect.arrayContaining([
+      expect.objectContaining({ severity: 'error', code: 'schema-invalid' }),
     ]) });
+    const school = coreDocumentFixture('spells/future.json', { spell: [{ name: 'Invalid School', source: 'TEST', school: 'FUTURE_SCHOOL', miscTags: ['FUTURE'] }] });
+    await expect(validateCoreDocument(school, 'spells/future.json')).rejects.toThrow('Content validation failed');
   });
 
   it('accepts documented weighted abilities and conditional movement without mutating them', async () => {
