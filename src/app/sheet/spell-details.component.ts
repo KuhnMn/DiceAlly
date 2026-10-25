@@ -10,9 +10,18 @@ import type { SpellCastingStats } from '../content/spell-effects';
 @Component({
   selector: 'app-spell-details',
   imports: [EntryRendererComponent, SpellEffectSummaryComponent],
+  host: { class: 'block min-w-0' },
+  styles: [`
+    :host { container-type: inline-size; }
+    .spell-metadata { grid-template-columns: minmax(0, 1fr); }
+    .spell-metadata > div { min-width: 0; overflow-wrap: anywhere; }
+    @container (min-width: 18rem) {
+      .spell-metadata { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  `],
   template: `
     @if (details(); as value) {
-      <dl class="grid gap-3 rounded-lg bg-surface-container p-3 text-sm sm:grid-cols-2">
+      <dl class="spell-metadata grid gap-3 rounded-lg bg-surface-container p-3 text-sm">
         @if (value.castingTimes.length) {
           <div><dt class="font-semibold text-on-surface-variant">Casting Time</dt><dd class="space-y-1">
             @for (time of value.castingTimes; track $index) {
