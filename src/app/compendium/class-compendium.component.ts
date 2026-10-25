@@ -1,3 +1,4 @@
+import { ScrollToTopComponent } from '../scroll-to-top.component';
 import { Component, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { IndexedDbContentCache } from '../content/content-cache';
@@ -19,7 +20,7 @@ import { ClassProficienciesComponent } from './class-proficiencies.component';
 
 @Component({
   selector: 'app-class-compendium',
-  imports: [ClassProficienciesComponent, ActiveFilterChipsComponent, CompendiumSourceFilterComponent, ClassResourcesComponent, RouterLink, LibraryNavigationComponent, ListControlsComponent, UiIconComponent, SheetDetailDialogComponent, CompendiumDetailsComponent],
+  imports: [ScrollToTopComponent, ClassProficienciesComponent, ActiveFilterChipsComponent, CompendiumSourceFilterComponent, ClassResourcesComponent, RouterLink, LibraryNavigationComponent, ListControlsComponent, UiIconComponent, SheetDetailDialogComponent, CompendiumDetailsComponent],
   templateUrl: './class-compendium.component.html',
   styleUrl: './compendium.component.css',
 })

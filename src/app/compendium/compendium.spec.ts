@@ -108,6 +108,25 @@ describe('Compendium screen', () => {
     return { fixture, screen: fixture.componentInstance };
   }
 
+  it('shows the requested category before library loading and keeps the latest navigation without scanning all records', async () => {
+    let release!: (value: typeof revision.source) => void;
+    const gate = new Promise<typeof revision.source>(resolve => release = resolve);
+    vi.spyOn(IndexedDbContentCache.prototype, 'savedSource').mockReturnValue(gate);
+    const visit = vi.spyOn(IndexedDbContentCache.prototype, 'visit');
+    params.next(convertToParamMap({type: 'spell'}));
+    const fixture = TestBed.createComponent(CompendiumComponent); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('h1').textContent).toBe('Spells');
+    expect(fixture.nativeElement.querySelector('[aria-label="Compendium categories"]')).toBeNull();
+    expect(fixture.componentInstance.loading()).toBe(true);
+    params.next(convertToParamMap({type: 'feat'})); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('h1').textContent).toBe('Feats');
+    release(revision.source);
+    await vi.waitFor(() => expect(fixture.componentInstance.loading()).toBe(false));
+    expect(fixture.componentInstance.type()?.id).toBe('feat');
+    expect(fixture.componentInstance.results().map(entry => entry.name)).toEqual(['Alert']);
+    expect(visit).not.toHaveBeenCalled();
+  });
+
   it('starts with category tiles and loads only the selected category with pagination', async () => {
     const { fixture, screen } = await setup();
     expect(screen.type()).toBeNull();

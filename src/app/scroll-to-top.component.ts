@@ -9,7 +9,7 @@ import { UiIconComponent } from './ui-icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (visible()) {
-      <button type="button" [style.top.px]="buttonTop()" aria-label="Back to top of current tab" title="Back to top" (click)="scrollToTop()"><app-ui-icon name="up" /></button>
+      <button type="button" [style.top.px]="buttonTop()" [attr.aria-label]="label()" title="Back to top" (click)="scrollToTop()"><app-ui-icon name="up" /></button>
     }
   `,
   styles: [`
@@ -27,6 +27,7 @@ export class ScrollToTopComponent implements AfterViewInit, OnDestroy {
   readonly target = input.required<HTMLElement>();
   readonly navigation = input.required<HTMLElement>();
   readonly page = input.required<string | number>();
+  readonly label = input('Back to top of current tab');
   readonly visible = signal(false);
   readonly buttonTop = signal(12);
   private readonly document = inject(DOCUMENT);

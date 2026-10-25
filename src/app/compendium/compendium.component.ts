@@ -1,3 +1,4 @@
+import { ScrollToTopComponent } from '../scroll-to-top.component';
 import { ActiveFilterChipsComponent, ActiveFilterGroup } from './active-filter-chips.component';
 import { sourceChipValues, sourceFilterCount } from './compendium-sources';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
@@ -25,7 +26,7 @@ import { speciesBadges } from './species-summary';
 
 @Component({
   selector: 'app-compendium',
-  imports: [ActiveFilterChipsComponent, SourceBookFilterComponent, CompendiumSourceFilterComponent, LibraryNavigationComponent, RouterLink, ListControlsComponent, UiIconComponent, SheetDetailDialogComponent, CompendiumDetailsComponent, SpellEffectFilterComponent],
+  imports: [ScrollToTopComponent, ActiveFilterChipsComponent, SourceBookFilterComponent, CompendiumSourceFilterComponent, LibraryNavigationComponent, RouterLink, ListControlsComponent, UiIconComponent, SheetDetailDialogComponent, CompendiumDetailsComponent, SpellEffectFilterComponent],
   templateUrl: './compendium.component.html',
   styleUrl: './compendium.component.css',
 })
@@ -86,15 +87,24 @@ export class CompendiumComponent implements OnInit, OnDestroy {
   count(type: ContentType) { return type.id === 'class' ? this.counts()['class'] ?? 0 : type.kinds.reduce((sum, kind) => sum + (this.counts()[kind] ?? 0), 0); }
 
   async ngOnInit() {
-    await this.loadLibrary();
-    if (!this.destroyed) this.subscription = this.route.paramMap.subscribe(params => { void this.chooseType(params.get('type')); });
+    let ready = false, category: string | null = null;
+    // Reflect navigation before IndexedDB work, so a list never shows clickable home tiles.
+    this.subscription = this.route.paramMap.subscribe(params => {
+      category = params.get('type');
+      this.showCategory(category);
+      if (ready) void this.chooseType(category);
+    });
+    const loaded = await this.loadLibrary();
+    ready = true;
+    if (loaded && !this.destroyed) await this.chooseType(category);
   }
   async loadLibrary() {
     this.loading.set(true); this.error.set('');
     try {
       const revision = await activeContentRevision(this.cache);
       const counts: Record<string, number> = {};
-      if (revision) await this.cache.visit(revision.id, async record => { counts[record.kind] = (counts[record.kind] ?? 0) + 1; });
+      // Only the category overview needs whole-library counts. Lists use indexed category reads.
+      if (revision && !this.type() && !this.invalidType()) await this.cache.visit(revision.id, async record => { counts[record.kind] = (counts[record.kind] ?? 0) + 1; });
       if (this.destroyed) return false;
       this.revision.set(revision ?? null); this.counts.set(counts);
       return true;
@@ -103,11 +113,15 @@ export class CompendiumComponent implements OnInit, OnDestroy {
     return false;
   }
   async reload() { if (await this.loadLibrary() && !this.destroyed) await this.chooseType(this.route.snapshot.paramMap.get('type')); }
+  private showCategory(id: string | null) {
+    const type = this.types.find(type => type.id === id) ?? null;
+    this.type.set(type); this.invalidType.set(!!id && !type);
+    return type;
+  }
   async chooseType(id: string | null) {
     clearTimeout(this.timer);
     const version = ++this.version;
-    const type = this.types.find(type => type.id === id) ?? null;
-    this.type.set(type); this.invalidType.set(!!id && !type);
+    const type = this.showCategory(id);
     const requested = this.route.snapshot.queryParamMap;
     this.query = requested?.get('q') ?? '';
     this.filters = { source: requested?.get('source') ? [requested.get('source')!] : [...this.sourceDefaults.selected()] };

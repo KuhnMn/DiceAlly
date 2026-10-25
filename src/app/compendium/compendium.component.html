@@ -1,6 +1,7 @@
-<main class="mx-auto max-w-7xl p-2 text-on-surface sm:p-5">
+<main #pageContent tabindex="-1" class="mx-auto max-w-7xl p-2 text-on-surface sm:p-5">
+  <app-scroll-to-top [target]="pageContent" [navigation]="pageHeader" [page]="type()?.id || 'categories'" label="Back to top of Compendium" />
   <app-library-navigation />
-  <header class="mb-4 flex flex-wrap items-center justify-between gap-3">
+  <header #pageHeader class="mb-4 flex flex-wrap items-center justify-between gap-3">
     <div class="min-w-0">
       <a [routerLink]="type() || invalidType() ? '/compendium' : '/'" class="inline-flex min-h-11 items-center gap-1 text-sm text-primary">
         <app-ui-icon name="left" /> {{ type() || invalidType() ? 'All Categories' : 'Characters' }}

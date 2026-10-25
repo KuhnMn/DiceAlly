@@ -1,6 +1,7 @@
-<main class="mx-auto max-w-5xl p-2 text-on-surface sm:p-5">
+<main #pageContent tabindex="-1" class="mx-auto max-w-5xl p-2 text-on-surface sm:p-5">
+  <app-scroll-to-top [target]="pageContent" [navigation]="pageHeader" [page]="selectedClass()?.key || 'classes'" label="Back to top of Compendium" />
   <app-library-navigation />
-  <header class="mb-4 flex flex-wrap items-center justify-between gap-3">
+  <header #pageHeader class="mb-4 flex flex-wrap items-center justify-between gap-3">
     <div>
       <a routerLink="/compendium" class="inline-flex min-h-11 items-center gap-1 text-sm text-primary"><app-ui-icon name="left" /> All Categories</a>
       <h1 class="text-2xl font-bold sm:text-3xl">Classes</h1>
