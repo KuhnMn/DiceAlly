@@ -40,6 +40,7 @@ describe('Bastion facility editor', () => {
     const source = record(); editor.add(source); editor.add(source);
     const [first, second] = sheet.bastion!.facilities!;
     expect(first.editorId).not.toBe(second.editorId);
+    expect(first.notes).toEqual([]); expect(second.notes).toEqual([]);
     first.entity.entries.push('Private instance description');
     expect(second.entity.entries).not.toContain('Private instance description');
     expect(source.referenceDefinition.entries).not.toContain('Private instance description');
@@ -47,6 +48,7 @@ describe('Bastion facility editor', () => {
     expect(fixture.nativeElement.querySelector('[aria-label="Uses editor"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('app-combat-bookmark')).toBeNull();
     const annotations = fixture.debugElement.query(By.directive(EntryAnnotationsComponent)).componentInstance as EntryAnnotationsComponent;
+    annotations.addNote(first);
     annotations.setNoteEntry(first.notes![0], 0, 'Research the old tower');
     editor.setPlan(' https://example.com/bastion.png ');
     const repo = new IndexedDbCharacterRepository('bastions-' + crypto.randomUUID());
@@ -84,10 +86,10 @@ describe('Bastion facility editor', () => {
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
     const editor = fixture.componentInstance;
     editor.customName = ' Hidden Workshop '; editor.customDescription = 'A quiet room.'; editor.customType = 'special'; editor.customLevel = 9; editor.addCustom();
-    const custom = editor.facilities[0]; expect(custom.entity).toMatchObject({ name: 'Hidden Workshop', facilityType: 'special', level: 9, entries: ['A quiet room.'] });
+    const custom = editor.facilities[0]; expect(custom.notes).toEqual([]); expect(custom.entity).toMatchObject({ name: 'Hidden Workshop', facilityType: 'special', level: 9, entries: ['A quiet room.'] });
     expect(custom).not.toHaveProperty('uses'); expect(custom).not.toHaveProperty('contentReference');
     const facility = createFacilityEntry(record(), revision); sheet.bastion!.facilities!.push(facility);
-    facility.notes![0].notes = ['Keep these notes']; editor.setPlan('https://example.com/map.png');
+    facility.notes = [{tag: 'Projects', notes: ['Keep these notes']}]; editor.setPlan('https://example.com/map.png');
     const fresh = record(); fresh.referenceDefinition.entries = ['Updated source text'];
     const result = await refreshCharacterDescriptions(sheet, { get: async (_id, key) => key === fresh.key ? fresh : undefined }, revision);
     expect(result.sheet.bastion!.facilities![1].entity.entries).toEqual(['Updated source text']);

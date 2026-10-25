@@ -24,14 +24,15 @@ controls into a component preserves the original card layout.
 
 The other pages are already separate components: `other-proficiencies` (general
 proficiencies and feature sources), `spell-slots`, `species-editor`,
-`features-editor`, `spells-editor`, `items-editor`, `monsters-editor` and
+`features-editor`, `spells-editor`, `items-editor`, `monsters-editor`,
 `combat-editor` and `bastions-editor`. They receive the sheet and emit `edited` after changing it.
 
 Bastions stores independent facility snapshots, note groups and an optional external
 plan image URL under `sheet.bastion`. It reuses the catalog, entry rows and notes
 editor with use trackers disabled. Facilities can repeat with separate identities.
-The viewer uses the same facility details and plan preview. Reward and table links
-open source-scoped Compendium searches; their contents require an up-to-date import.
+Facilities start without note groups; users add them through the notes editor.
+The viewer uses the same facility details and plan preview. Related rewards and
+tables are accessible in the Compendium and require an up-to-date content import.
 
 Reusable UI lives beside the pages: `editor-list-header`, `entry-annotations`,
 `feature-source-picker`, the catalog and confirmation dialogs, and combat

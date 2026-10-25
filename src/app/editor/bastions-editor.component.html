@@ -1,4 +1,4 @@
-<section class="editor-card">
+<section class="editor-card mb-4">
   <h2>Bastion Plan</h2>
   <label class="block mb-3"><span class="field-label">Plan Image URL (Optional)</span><input class="editor-input !text-base" type="url" placeholder="https://…" [value]="sheet().bastion?.planUrl || ''" (input)="setPlan($any($event.target).value)" /></label>
   <app-bastion-plan [value]="sheet().bastion?.planUrl" />

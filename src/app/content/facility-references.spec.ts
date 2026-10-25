@@ -1,10 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
 import { mapContent } from './content-adapter';
 import { ContentReferenceIndex, linkContent } from './content-linker';
 import { validateCoreDocument, validateHomebrewDocument } from './content-schema';
 import { homebrewDocumentFixture } from './content-fixtures.testing';
-import { facilityReferences } from './facility-references';
 import { FacilityDetailsComponent } from '../sheet/facility-details.component';
 import { BastionDefinition } from './bastion.model';
 
@@ -39,16 +37,11 @@ describe('Bastion reward and table references', () => {
     expect(linkContent(altar, index).links.some(link => link.reference?.startsWith('chapter 3'))).toBe(false);
   });
 
-  it('offers exact Compendium searches for referenced charms and tables without replacing the character tab', () => {
-    TestBed.configureTestingModule({ providers: [provideRouter([])] });
-    expect(facilityReferences(facility)).toEqual([
-      { category: 'reward', name: 'Blasphemous Charm', source: 'RHW' },
-      { category: 'table', name: 'Bastion Hauntings', source: 'RHW' },
-      { category: 'table', name: 'Mounts and Vehicles; Mounts and Other Animals', source: 'XPHB' },
-    ]);
+  it('keeps related-entry navigation out of the shared editor and viewer details', () => {
     const fixture = TestBed.createComponent(FacilityDetailsComponent);
-    fixture.componentRef.setInput('facility', { editorId: 'altar', name: facility.name, source: facility.source, entity: facility }); fixture.detectChanges();
-    const links = fixture.nativeElement.querySelectorAll('nav a') as NodeListOf<HTMLAnchorElement>;
-    expect(links.length).toBe(3); expect(links[0].href).toContain('/compendium/reward?q=Blasphemous%20Charm&source=RHW'); expect(links[0].target).toBe('_blank');
+    fixture.componentRef.setInput('facility', {editorId: 'altar', name: facility.name, source: facility.source, entity: facility}); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('nav')).toBeNull();
+    expect(fixture.nativeElement.querySelector('a')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Blasphemous Charm');
   });
 });

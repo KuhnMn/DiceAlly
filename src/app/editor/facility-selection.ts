@@ -13,5 +13,5 @@ export function facilitySnapshot(record: ContentRecord): BastionDefinition {
 export function createFacilityEntry(record: ContentRecord, revision: ImportRevision): FacilityEntry {
   return { editorId: newEditorId(), name: record.name, source: record.publication,
     contentReference: contentReference(record, revision), entity: facilitySnapshot(record), userAdded: true,
-    notes: [{ tag: 'Notes', notes: [], isEditable: true }] };
+    notes: [] };
 }

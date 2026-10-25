@@ -164,6 +164,8 @@ describe('Basic Info editor', () => {
     editor.setPage(7); fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('app-editor-monsters')).not.toBeNull();
     editor.setPage(8); fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('app-editor-bastions')).not.toBeNull();
+    editor.setPage(9); fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('app-editor-combat')).not.toBeNull();
     const pages = [...editor.pages];
     editor.character.featureSources = [{ name: 'Wizard', isSpellcastingSource: true }];

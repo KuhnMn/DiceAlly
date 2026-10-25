@@ -120,7 +120,7 @@ export class BastionsEditorComponent implements OnInit, OnDestroy {
     const entry: FacilityEntry = { editorId: newEditorId(), name, source: 'Custom', userAdded: true,
       entity: { version: 1, name, source: 'Custom', facilityType: this.customType, ...(level != null ? { level } : {}),
         entries: this.customDescription.trim() ? [this.customDescription.trim()] : [] },
-      notes: [{ tag: 'Notes', notes: [], isEditable: true }] };
+      notes: [] };
     ((this.sheet().bastion ??= {}).facilities ??= []).push(entry);
     this.expanded.add(entry); this.catalogAdded++; this.customName = ''; this.customDescription = ''; this.customLevel = null; this.change();
   }

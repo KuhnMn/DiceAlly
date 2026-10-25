@@ -71,7 +71,7 @@ export class LocalEditorComponent implements OnInit {
   readonly descriptionRefreshSkipped = signal<{ name: string; reason: string }[]>([]);
   readonly message = signal('');
   readonly error = signal('');
-  readonly pages = ['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Species & Features', 'Spells', 'Items', 'Companions', 'Combat', 'Notes', 'Sheet Settings', 'Bastions'];
+  readonly pages = ['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Species & Features', 'Spells', 'Items', 'Companions', 'Bastions', 'Combat', 'Notes', 'Sheet Settings'];
   get hasCastingSources() { return this.character.featureSources?.some(source => source.isSpellcastingSource && source.name?.trim()) ?? false; }
   get hasSpellSlots() { return Object.values(this.character.spellSlots ?? {}).some(slots => slots.length > 0); }
   page = 0;
