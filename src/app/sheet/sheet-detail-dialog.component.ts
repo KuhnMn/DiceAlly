@@ -13,8 +13,11 @@ let nextDialogId = 0;
     <dialog #dialog (close)="dismiss()" (click)="backdrop($event)" (keydown.escape)="$event.stopPropagation()" [attr.aria-labelledby]="titleId"
       class="fixed inset-0 m-auto box-border max-h-[92dvh] w-[calc(100vw_-_1rem)] min-w-0 max-w-[min(48rem,calc(100vw_-_1rem))] overflow-hidden whitespace-normal rounded-2xl border border-outline-variant bg-surface p-0 text-on-surface shadow-xl open:flex open:flex-col backdrop:bg-black/60">
       <header class="z-10 flex shrink-0 items-center justify-between gap-3 border-b border-outline-variant bg-surface px-4 py-2 sm:px-6">
-        <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
-          <h2 [id]="titleId" class="min-w-0 text-xl font-bold [overflow-wrap:anywhere]">{{ title() }}</h2>
+        <div class="flex min-w-0 items-center gap-x-3 gap-y-2" [class.flex-wrap]="!headingTags()">
+          <h2 [id]="titleId" class="min-w-0 text-xl font-bold [overflow-wrap:anywhere]" [class.truncate]="!!headingTags()" [attr.title]="headingTags() ? title() : null">{{ title() }}</h2>
+          @if (headingTags()) {
+            <div class="flex shrink-0 items-center gap-1"><ng-container [ngTemplateOutlet]="headingTags()" /></div>
+          }
           @if (tags()) {
             <div class="hidden flex-wrap items-center gap-2 md:flex"><ng-container [ngTemplateOutlet]="tags()" /></div>
           }
@@ -33,6 +36,7 @@ let nextDialogId = 0;
 export class SheetDetailDialogComponent implements OnDestroy {
   readonly titleId = `sheet-detail-title-${nextDialogId++}`;
   readonly title = input.required<string>();
+  readonly headingTags = input<TemplateRef<unknown> | null>(null);
   readonly tags = input<TemplateRef<unknown> | null>(null);
   readonly closed = output<void>();
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');

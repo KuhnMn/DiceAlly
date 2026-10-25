@@ -1,4 +1,5 @@
 import { Component, computed, input, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import type { ExportedCharacter, FeatureNotes } from '../models/character.model';
 import type { FacilityEntry } from '../models/bastion';
 import { compareSearchMatches } from '../search-ranking';
@@ -13,10 +14,14 @@ import { facilityTypeLabel } from '../models/bastion';
 
 @Component({
   selector: 'app-bastions-page',
-  imports: [ListControlsComponent, UiIconComponent, SheetListLayoutComponent, SheetDetailDialogComponent,
+  imports: [NgTemplateOutlet, ListControlsComponent, UiIconComponent, SheetListLayoutComponent, SheetDetailDialogComponent,
     FeatureNotesComponent, BastionPlanComponent, FacilityDetailsComponent],
   host: { class: 'block min-w-0' },
   template: `
+    <ng-template #facilityTags let-facility>
+      @if (facility.entity.level != null) { <span class="rounded bg-teal-container px-2 py-0.5 text-xs font-normal text-on-teal-container">Level {{ facility.entity.level }}</span> }
+      <span class="rounded bg-secondary-container px-2 py-0.5 text-xs font-normal text-on-secondary-container">{{ typeLabel(facility.entity) }}</span>
+    </ng-template>
     <section class="rounded-lg border-2 border-outline bg-surface-container-highest p-3 shadow-lg sm:p-5">
       <header class="mb-3 flex items-center justify-between gap-2"><h2 class="text-xl font-bold sm:text-3xl">Bastions</h2><app-sheet-list-layout #layout /></header>
       <app-bastion-plan [value]="characterData()?.bastion?.planUrl" />
@@ -26,17 +31,19 @@ import { facilityTypeLabel } from '../models/bastion';
         @for (facility of selected(); track facility.editorId) {
           <article class="min-w-0 rounded-lg border-2 border-outline-variant bg-surface-container px-3 py-2 sm:p-4">
             <button type="button" class="flex min-h-11 w-full min-w-0 items-center justify-between gap-2 text-left" aria-haspopup="dialog" (click)="detail.set(facility)">
-              <span class="min-w-0 truncate text-lg font-bold text-primary" [title]="facility.name">{{ facility.name }}</span><app-ui-icon name="chevron" class="shrink-0 text-primary" />
+              <span class="sheet-entry-heading text-lg font-bold text-primary"><span class="min-w-0 truncate" [title]="facility.name">{{ facility.name }}</span><span class="sheet-entry-heading-tags"><ng-container [ngTemplateOutlet]="facilityTags" [ngTemplateOutletContext]="{$implicit: facility}" /></span></span><app-ui-icon name="chevron" class="shrink-0 text-primary" />
             </button>
-            <div class="flex flex-wrap gap-x-2 gap-y-1 text-xs text-on-surface-variant"><span>{{ typeLabel(facility.entity) }}</span>@if (facility.entity.level != null) { <span>Level {{ facility.entity.level }}</span> }<span>{{ facility.source }}</span></div>
+            @if (facility.source) { <span class="inline-block max-w-full truncate rounded bg-surface-container-highest px-2 py-0.5 text-xs text-on-surface" [title]="facility.source">{{ facility.source }}</span> }
             <app-feature-notes [notes]="facility.notes" (notesChanged)="updateNotes(facility, $event)" />
           </article>
         } @empty { <p class="text-sm text-on-surface-variant">{{ query() ? 'No facilities match your search.' : 'No facilities yet. Add facilities in the editor.' }}</p> }
       </div>
     </section>
     @if (detail(); as facility) {
-      <app-sheet-detail-dialog [title]="facility.name" (closed)="detail.set(null)">
-        <app-facility-details [facility]="facility" />
+      <app-sheet-detail-dialog [title]="facility.name" [headingTags]="dialogHeadingTags" (closed)="detail.set(null)">
+        <ng-template #dialogHeadingTags><ng-container [ngTemplateOutlet]="facilityTags" [ngTemplateOutletContext]="{$implicit: facility}" /></ng-template>
+        @if (facility.source) { <div><span class="inline-block max-w-full truncate rounded bg-surface-container-highest px-2 py-0.5 text-xs text-on-surface" [title]="facility.source">{{ facility.source }}</span></div> }
+        <app-facility-details [facility]="facility" [showMetadata]="false" />
         <app-feature-notes [notes]="facility.notes" (notesChanged)="updateNotes(facility, $event)" />
       </app-sheet-detail-dialog>
     }
