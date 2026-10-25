@@ -15,7 +15,7 @@ import { UiIconComponent } from '../ui-icon.component';
           <input #acInput type="number" inputmode="numeric" [(ngModel)]="acOverrideInput" (keydown)="handleAcKeydown($event)" (blur)="saveAcOverride()" aria-label="Armor class override" class="w-12 min-w-0 border-b border-primary bg-transparent text-center text-lg font-bold text-primary outline-none" />
         </label>
       } @else {
-        <button type="button" (click)="startEditingAc()" aria-label="Set armor class override" [title]="armorClassInfo().source + ' — click to override'" class="block rounded-lg focus-visible:outline-2 focus-visible:outline-primary"><app-sheet-stat-badge label="AC" [value]="armorClassInfo().ac" /></button>
+        <button type="button" (click)="startEditingAc()" aria-label="Set armor class override" [title]="armorClassInfo().source + ' — click to override'" class="block rounded-lg focus-visible:outline-2 focus-visible:outline-primary"><app-sheet-stat-badge label="AC" [value]="armorClassInfo().ac" [overridden]="acOverride() !== null" /></button>
         @if (acOverride() !== null) {
           <button type="button" (click)="resetAcOverride()" aria-label="Reset armor class override" title="Reset AC" class="absolute z-20 -right-2 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-teal text-sm text-on-teal"><app-ui-icon name="close" /></button>
         }

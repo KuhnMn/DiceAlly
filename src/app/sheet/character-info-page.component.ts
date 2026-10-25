@@ -212,15 +212,13 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
                   [(ngModel)]="acOverrideInput"
                   (keydown)="handleAcKeydown($event)"
                   (blur)="saveAcOverride()"
-                  class="w-16 text-center text-2xl font-bold bg-transparent border-b-2 border-primary outline-none"
-                                  [class.text-teal]="acOverride() !== null"
-                [class.text-primary]="acOverride() == null"
+                  class="w-16 text-center text-2xl font-bold bg-transparent border-b-2 border-primary text-primary outline-none"
                   autofocus
                 />
               } @else {
                 <div class="text-2xl font-bold "
                 [class.text-teal]="acOverride() !== null"
-                [class.text-primary]="acOverride() == null"
+                [class.text-on-surface]="acOverride() == null"
                 >{{ armorClassInfo().ac }}</div>
               }
               <div class="stat-tooltip">{{ armorClassInfo().source }}</div>

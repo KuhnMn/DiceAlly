@@ -6,7 +6,7 @@ import { Component, input } from '@angular/core';
   template: `
     <div class="relative flex h-15 w-13 flex-col items-center justify-center" [class.text-primary]="tone() === 'primary'" [class.text-rose]="tone() === 'rose'" [class.text-teal]="tone() === 'teal'" [attr.aria-label]="label() + ' ' + value()">
       <svg aria-hidden="true" viewBox="0 0 56 64" class="absolute inset-0 h-full w-full" fill="none" stroke="currentColor" stroke-width="2.5"><path [attr.d]="paths[shape()]" /></svg>
-      <span class="relative text-lg font-bold leading-tight text-on-surface">{{ value() }}</span>
+      <span class="relative text-lg font-bold leading-tight" [class.text-teal]="overridden()" [class.text-on-surface]="!overridden()">{{ value() }}</span>
       <span class="relative inline-flex items-center gap-1 text-[10px] font-semibold">@if (proficient()) { <span class="text-primary" title="Proficient" aria-label="Proficient">●</span> }{{ label() }}</span>
     </div>
   `,
@@ -21,6 +21,7 @@ export class SheetStatBadgeComponent {
   readonly value = input.required<string | number>();
   readonly label = input.required<string>();
   readonly proficient = input(false);
+  readonly overridden = input(false);
   readonly tone = input<'primary' | 'rose' | 'teal'>('primary');
   readonly shape = input<keyof typeof this.paths>('shield');
 }
