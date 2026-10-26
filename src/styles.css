@@ -1072,6 +1072,24 @@ html:has(.app-container.sheet-layout) { scrollbar-gutter: stable; }
   }
 }
 
+.page-back-button {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: .5rem 1rem;
+  border: 0;
+  border-radius: .5rem;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  font-size: .875rem;
+  font-weight: 500;
+  transition: background-color .15s, color .15s;
+}
+.page-back-button:hover { background: var(--md-sys-color-surface-container-highest); }
+.page-back-button:focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 3px; }
+
 /* Tracker groups scroll on mobile and fit at most four columns in their container. */
 .feature-uses-row {
   display: flex;
@@ -1091,7 +1109,7 @@ html:has(.app-container.sheet-layout) { scrollbar-gutter: stable; }
 @media (min-width: 640px) {
   .feature-uses-row {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, max(14rem, calc((100% - 1.5rem) / 4))), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, max(14rem, calc((100% - 1.5rem) / 4))), 1fr));
     overflow: visible;
     padding-bottom: 0;
   }

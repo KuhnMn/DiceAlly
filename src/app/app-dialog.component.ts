@@ -1,4 +1,4 @@
-import { Component, HostListener, OnDestroy, OnInit, inject, input } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, afterNextRender, inject, input, viewChild } from '@angular/core';
 import { A11yModule } from '@angular/cdk/a11y';
 import { AppDialogRequest, AppDialogService } from './services/app-dialog.service';
 import { DialogScrollLockService } from './editor/dialog-scroll-lock.service';
@@ -8,7 +8,7 @@ import { DialogScrollLockService } from './editor/dialog-scroll-lock.service';
   imports: [A11yModule],
   styleUrl: './editor/editor.css',
   template: `
-    <div class="fixed inset-0 bg-black/55 z-[1200] grid place-items-center p-4" (click)="dismiss()">
+    <dialog #modal class="fixed inset-0 m-0 h-full max-h-none w-full max-w-none border-0 bg-transparent p-4 text-on-surface open:grid place-items-center backdrop:bg-black/55" (click)="dismiss()" (cancel)="escape($event)">
       <section role="alertdialog" aria-modal="true" aria-labelledby="app-dialog-title" aria-describedby="app-dialog-message"
         cdkTrapFocus [cdkTrapFocusAutoCapture]="true" (click)="$event.stopPropagation()"
         class="w-full max-w-md rounded-lg border-2 border-outline-variant bg-surface-container p-4 shadow-xl">
@@ -21,21 +21,25 @@ import { DialogScrollLockService } from './editor/dialog-scroll-lock.service';
           @if (request().cancellable || request().secondaryLabel) {
             <button type="button" class="secondary-button" [attr.cdkFocusInitial]="request().secondaryLabel ? null : ''" (click)="dialogs.finish(false)">{{ request().secondaryLabel || 'Cancel' }}</button>
           }
-          <button type="button" class="action-button" [attr.cdkFocusInitial]="request().secondaryLabel ? '' : null" (click)="dialogs.finish(true)">{{ request().confirmLabel }}</button>
+          <button type="button" class="action-button" [attr.autofocus]="request().secondaryLabel ? '' : null" [attr.cdkFocusInitial]="request().secondaryLabel ? '' : null" (click)="dialogs.finish(true)">{{ request().confirmLabel }}</button>
         </footer>
       </section>
-    </div>
+    </dialog>
   `,
 })
 export class AppDialogComponent implements OnInit, OnDestroy {
   readonly request = input.required<AppDialogRequest>();
   readonly dialogs = inject(AppDialogService);
   private readonly scrollLock = inject(DialogScrollLockService);
+  private readonly modal = viewChild.required<ElementRef<HTMLDialogElement>>('modal');
+  constructor() {
+    afterNextRender(() => this.modal().nativeElement.showModal());
+  }
   ngOnInit() { this.scrollLock.lock(); }
-  ngOnDestroy() { this.scrollLock.unlock(); }
+  ngOnDestroy() { this.modal().nativeElement.close(); this.scrollLock.unlock(); }
   select(event: Event) { (event.target as HTMLTextAreaElement).select(); }
   dismiss() { this.dialogs.finish(!this.request().cancellable); }
-  @HostListener('document:keydown.escape', ['$event']) escape(event: Event) {
+  escape(event: Event) {
     event.preventDefault(); event.stopPropagation(); this.dismiss();
   }
 }

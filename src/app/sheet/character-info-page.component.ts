@@ -8,7 +8,7 @@ import { ConcentrationService } from '../services/concentration.service';
 import { CharacterStore } from '../stores/character.store';
 import { SheetProficienciesComponent } from './sheet-proficiencies.component';
 import { AdvantageBadgeComponent } from './advantage-badge.component';
-import { applyHealthAdjustment } from './sheet-health';
+import { applyHealthAdjustment, validHealthAmount } from './sheet-health';
 import { resolveCombatResource } from '../editor/combat-actions';
 import { UiIconComponent } from '../ui-icon.component';
 import { Component, inject, computed, input, effect, output, signal } from '@angular/core';
@@ -176,13 +176,13 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
               class="border-4 border-surface w-24 h-24 rounded-full aspect-square p-2 bg-surface-container-low text-center flex flex-col items-center justify-center shadow-lg"
             >
               <div class="text-xs text-on-surface-variant uppercase font-semibold">Proficiency</div>
-              <div class="text-3xl font-bold text-tertiary">{{ helpers.formatSigned(proficiencyBonus()) }}</div>
+              <div class="text-2xl font-bold text-tertiary">{{ helpers.formatSigned(proficiencyBonus()) }}</div>
             </div>
             <div
               class="border-4 border-surface w-24 h-24 rounded-full aspect-square p-2 bg-surface-container-low text-center flex flex-col items-center justify-center shadow-lg"
             >
               <div class="text-xs text-on-surface-variant uppercase font-semibold">Passive Per.</div>
-              <div class="text-3xl font-bold text-primary">{{ passivePerception() }}</div>
+              <div class="text-2xl font-bold text-primary">{{ passivePerception() }}</div>
             </div>
           </div>
 
@@ -266,6 +266,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
               </div>
                             <div class="mt-2 flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs text-on-surface-variant">
                 <div>Base: {{ character()?.maxHp ?? 0 }}</div>
+                <div class="flex shrink-0 items-center gap-2">
                 <label class="flex items-center gap-2">
                   <span>Override</span>
                   <input
@@ -281,12 +282,15 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
                 </label>
                 <button
                   type="button"
-                  class="transition-colors px-2 py-1 border border-outline-variant rounded-md text-on-surface-variant hover:bg-surface-container"
+                  class="flex h-7 w-7 shrink-0 items-center justify-center transition-colors border border-outline-variant rounded-md text-on-surface-variant hover:bg-surface-container"
                   [class.border-teal]="character()?.maxHpOverride !== null"
                   (click)="clearMaxHpOverride()"
+                  aria-label="Clear maximum HP override"
+                  title="Clear maximum HP override"
                 >
-                  Clear
+                  <app-ui-icon name="close" />
                 </button>
+                </div>
               </div>
 
               <div class="mt-4">
@@ -300,12 +304,14 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
                   min="0"
                 />
                 <button
+                  type="button"
                   (click)="updateTempHp('0')"
-                  class="transition-colors px-2 py-1 border border-outline-variant rounded-md text-on-surface-variant hover:bg-surface-container"
+                  class="flex h-7 w-7 shrink-0 items-center justify-center transition-colors border border-outline-variant rounded-md text-on-surface-variant hover:bg-surface-container"
                   [class.border-green]="character()?.tempHp !== null && character()?.tempHp !== 0"
                   title="Clear temp HP"
+                  aria-label="Clear temporary HP"
                 >
-                  Clear
+                  <app-ui-icon name="close" />
                 </button>
                 </div>
               </div>
@@ -325,21 +331,24 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
                     <button
                       type="button"
                       (click)="applyDamageFromAdjustment()"
-                      class="px-3 py-2 rounded-md border border-outline-variant bg-error-container text-on-error-container font-semibold hover:opacity-90 transition-colors"
+                      [disabled]="!hasHpAdjustment()"
+                      class="px-3 py-2 rounded-md border border-outline-variant bg-error-container text-on-error-container font-semibold hover:opacity-90 transition-colors disabled:opacity-40"
                     >
                       Deal Damage
                     </button>
                     <button
                       type="button"
                       (click)="healFromAdjustment()"
-                      class="px-3 py-2 rounded-md border border-outline-variant bg-primary-container text-on-primary-container font-semibold hover:opacity-90 transition-colors"
+                      [disabled]="!hasHpAdjustment()"
+                      class="px-3 py-2 rounded-md border border-outline-variant bg-primary-container text-on-primary-container font-semibold hover:opacity-90 transition-colors disabled:opacity-40"
                     >
                       Heal
                     </button>
                     <button
                       type="button"
                       (click)="setTempHpFromAdjustment()"
-                      class="px-3 py-2 rounded-md border border-outline-variant bg-secondary-container text-on-secondary-container font-semibold hover:opacity-90 transition-colors"
+                      [disabled]="!hasHpAdjustment()"
+                      class="px-3 py-2 rounded-md border border-outline-variant bg-secondary-container text-on-secondary-container font-semibold hover:opacity-90 transition-colors disabled:opacity-40"
                     >
                       Set Temp HP
                     </button>
@@ -797,7 +806,10 @@ export class CharacterInfoPageComponent {
     char.tempHp = Number.isFinite(numValue) ? numValue : 0;
   }
 
+  hasHpAdjustment() { return validHealthAmount(this.hpAdjustmentInput()); }
+
   applyDamageFromAdjustment() {
+    if (!this.hasHpAdjustment()) return;
     const char = this.character();
     if (char) {
       applyHealthAdjustment(char, 'damage', this.getHpAdjustmentAmount());
@@ -807,11 +819,13 @@ export class CharacterInfoPageComponent {
     this.clearHpAdjustmentInput();
   }
   healFromAdjustment() {
+    if (!this.hasHpAdjustment()) return;
     const char = this.character();
     if (char) applyHealthAdjustment(char, 'heal', this.getHpAdjustmentAmount());
     this.clearHpAdjustmentInput();
   }
   setTempHpFromAdjustment() {
+    if (!this.hasHpAdjustment()) return;
     const char = this.character();
     if (char) applyHealthAdjustment(char, 'temp', this.getHpAdjustmentAmount());
     this.clearHpAdjustmentInput();

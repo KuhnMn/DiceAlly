@@ -7,6 +7,7 @@ import { UiIconComponent } from '../ui-icon.component';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { MonsterPresentation } from './monster-presentation';
 import { FeatureUsesComponent } from './feature-uses.component';
+import { CompanionHealthActionsComponent } from './companion-health-actions.component';
 import { FeatureNotesComponent } from './feature-notes.component';
 import { Component, computed, input, output, TemplateRef, signal, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -22,7 +23,7 @@ import { ObjectStatBlockComponent } from './object-stat-block.component';
 
 @Component({
   selector: 'app-monsters-page',
-  imports: [CompanionStatBlockComponent, ObjectStatBlockComponent, ListControlsComponent, SheetListLayoutComponent, SheetDetailDialogComponent, HorizontalRowDirective, UiIconComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [CompanionHealthActionsComponent, CompanionStatBlockComponent, ObjectStatBlockComponent, ListControlsComponent, SheetListLayoutComponent, SheetDetailDialogComponent, HorizontalRowDirective, UiIconComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: monster-flash 1.6s ease-out;

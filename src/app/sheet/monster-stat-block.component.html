@@ -1,31 +1,43 @@
 @let monster = value();
 @if (monster.entity) {
   @if (showSummary()) {
-                                              <!-- Size, Type, Alignment -->
-                <div class="text-sm text-on-surface pb-2">
+                <!-- Size, Type, Alignment -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 my-4">
+                  @if (monster.entity.size?.length || monster.entity.type?.type || monster.entity.alignment?.length || monster.entity.cr) {
+                  <div class="col-span-full p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high" aria-label="Creature overview">
+                    <dl class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                   @if (monster.entity.size && monster.entity.size.length > 0) {
-                    <span>
+                    <div class="min-w-0"><dt class="text-xs text-on-surface-variant uppercase font-bold tracking-wide">Size</dt><dd class="font-semibold">
                       @for (size of monster.entity.size; track size) {
                         <span>{{ getSizeText(size) }}</span>
                         @if (!$last) {
                           <span>, </span>
                         }
                       }
-                    </span>
+                    </dd></div>
                   }
                   @if (monster.entity.type && monster.entity.type.type) {
-                    <span> {{ monster.entity.type.type | capitalizeFirst}}</span>
+                    <div class="min-w-0"><dt class="text-xs text-on-surface-variant uppercase font-bold tracking-wide">Creature Type</dt><dd class="font-semibold">{{ monster.entity.type.type | capitalizeFirst }}</dd></div>
                   }
                   @if (monster.entity.alignment && monster.entity.alignment.length > 0) {
-                    <span>, 
+                    <div class="min-w-0"><dt class="text-xs text-on-surface-variant uppercase font-bold tracking-wide">Alignment</dt><dd class="font-semibold">
                       @for (align of monster.entity.alignment; track align) {
                         <span>{{ align }}</span>
                       }
-                    </span>
+                    </dd></div>
                   }
-                </div>
-                <!-- AC, Speed, Initiative, CR -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 my-4">
+                  @if (monster.entity.cr) {
+                    <div class="min-w-0" aria-label="Challenge Rating">
+                      <dt class="text-xs text-on-surface-variant uppercase font-bold tracking-wide">CR</dt>
+                      <dd class="font-semibold text-tertiary">{{ typeof monster.entity.cr === 'string' ? monster.entity.cr : monster.entity.cr.cr }}
+                        <span class="text-xs">(PB +{{ getProficiencyBonusFromCR(typeof monster.entity.cr === 'string' ? monster.entity.cr : monster.entity.cr.cr) }})</span>
+                      </dd>
+                    </div>
+                  }
+                    </dl>
+                  </div>
+                  }
+                <!-- AC, HP, Initiative, Speed -->
                   @if (monster.entity.ac && monster.entity.ac.length > 0) {
                     <div class="p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high">
                       <div class="text-xs text-on-surface-variant uppercase font-bold tracking-wide">AC</div>
@@ -50,14 +62,6 @@
                     <div class="p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high">
                       <div class="text-xs text-on-surface-variant uppercase font-bold tracking-wide">Speed</div>
                       <div class="text-xl font-bold text-on-surface-container-high">{{ formatSpeeds(monster.entity.speed) }}</div>
-                    </div>
-                  }
-                  @if (monster.entity.cr) {
-                    <div class="p-3 border-2 border-surface shadow-lg rounded-md bg-surface-container-high">
-                      <div class="text-xs text-on-surface-variant uppercase font-bold tracking-wide">CR</div>
-                      <div class="text-2xl font-bold text-tertiary">{{ typeof monster.entity.cr === 'string' ? monster.entity.cr : monster.entity.cr.cr }} 
-                        <span class="text-xl">(PB +{{ getProficiencyBonusFromCR(typeof monster.entity.cr === 'string' ? monster.entity.cr : monster.entity.cr.cr) }})</span>
-                      </div>
                     </div>
                   }
                 </div>

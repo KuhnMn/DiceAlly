@@ -4,6 +4,20 @@ import { MonsterPresentation } from './monster-presentation';
 import { MonsterEntity } from '../models/character.model';
 
 describe('Shared monster stat block', () => {
+  it.each([false, true])('groups size, creature type, alignment and CR in one full-width card with compact=%s', compact => {
+    const fixture = TestBed.createComponent(MonsterStatBlockComponent);
+    fixture.componentRef.setInput('value', { name: 'Test monster', entity: { size: ['M'], type: { type: 'humanoid' }, alignment: ['N'], cr: '15' } });
+    fixture.componentRef.setInput('compact', compact); fixture.detectChanges();
+    const overview = fixture.nativeElement.querySelector('[aria-label="Creature overview"]') as HTMLElement;
+    expect(overview.classList.contains('col-span-full')).toBe(true);
+    expect([...overview.querySelectorAll('dt')].map(label => label.textContent)).toEqual(['Size', 'Creature Type', 'Alignment', 'CR']);
+    expect(overview.textContent).toContain('Medium');
+    expect(overview.textContent).toContain('Humanoid');
+    expect(overview.querySelector('[aria-label="Challenge Rating"]')?.textContent).toContain('15');
+    expect(fixture.nativeElement.querySelectorAll('[aria-label="Challenge Rating"]')).toHaveLength(1);
+    fixture.destroy();
+  });
+
   it('links standard sense help while preserving ranges, qualifiers and custom senses', () => {
     const fixture = TestBed.createComponent(MonsterStatBlockComponent);
     const senses = ['darkvision 120 ft. (through magical darkness)', 'Blindsight 10 ft. (blind beyond this radius)', 'Tremorsense 60 ft.', 'Custom Sense 30 ft.'];

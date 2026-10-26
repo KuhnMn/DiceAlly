@@ -8,7 +8,7 @@ import { UiIconComponent } from '../ui-icon.component';
   host: { class: 'block min-w-0' },
   imports: [RecoveryIndicatorComponent, UiIconComponent],
   template: `
-    <div class="feature-uses h-full rounded-lg border border-outline-variant bg-surface-variant px-2 py-1 sm:py-2">
+    <div class="feature-uses h-full rounded-lg border border-outline-variant bg-surface-variant px-2 py-1">
       @if (uses()) {
         <div class="flex items-center justify-between gap-1 sm:gap-2">
           <span class="min-w-0 break-words text-sm font-semibold">{{ tag() }}</span>
@@ -17,11 +17,11 @@ import { UiIconComponent } from '../ui-icon.component';
           </div>
         </div>
         @if (totalCount() > 0) {
-          <div class="mt-1 h-1 overflow-hidden rounded-full bg-surface-container-low sm:mb-1" role="progressbar" [attr.aria-label]="tag() + ' uses spent'" aria-valuemin="0" [attr.aria-valuemax]="totalCount()" [attr.aria-valuenow]="usedCount()"><div class="h-full bg-primary transition-[width] duration-300 ease-out motion-reduce:transition-none" [style.width.%]="progressPercent()"></div></div>
+          <div class="mt-1 h-1 overflow-hidden rounded-full bg-surface-container-low" role="progressbar" [attr.aria-label]="tag() + ' uses spent'" aria-valuemin="0" [attr.aria-valuemax]="totalCount()" [attr.aria-valuenow]="usedCount()"><div class="h-full bg-primary transition-[width] duration-300 ease-out motion-reduce:transition-none" [style.width.%]="progressPercent()"></div></div>
           @if (totalCount() <= 5) {
             <div class="flex flex-wrap gap-0">
               @for (index of availableUses(); track index) {
-                <label class="flex min-h-8 min-w-10 cursor-pointer items-center justify-center gap-1 sm:min-h-9">
+                <label class="flex min-h-8 min-w-10 cursor-pointer items-center justify-center gap-1">
                   <input type="checkbox" [checked]="index < usedCount()" (change)="toggleUse(index)" [attr.aria-label]="tag() + ' use ' + (index + 1) + ' spent'" class="h-4 w-4 accent-primary" />
                   <span class="text-xs text-on-surface-variant">{{ index + 1 }}</span>
                 </label>

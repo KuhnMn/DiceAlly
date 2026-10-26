@@ -11,7 +11,7 @@ import { ExportedCharacter } from '../models/character.model';
 import { CharacterHelpersService } from './character-helpers.service';
 import { ConditionsComponent } from './conditions.component';
 import { UiIconComponent } from '../ui-icon.component';
-import { applyHealthAdjustment, HealthAction } from './sheet-health';
+import { applyHealthAdjustment, HealthAction, validHealthAmount } from './sheet-health';
 import { DialogScrollLockService } from '../editor/dialog-scroll-lock.service';
 
 @Component({
@@ -44,7 +44,7 @@ import { DialogScrollLockService } from '../editor/dialog-scroll-lock.service';
         <div class="min-w-0 space-y-1 self-end">
           <button type="button" (click)="openHealth()" class="min-h-18 w-full min-w-0 rounded-xl bg-surface-container-high px-2 py-2 text-center" [attr.aria-label]="'Adjust health and conditions: ' + (character.currentHp ?? 0) + ' of ' + maxHp() + ' HP, ' + temporaryHp() + ' temporary HP'">
             <div class="text-xs font-semibold text-on-surface-variant">Health</div>
-            <div class="mt-0.5 text-base font-bold tabular-nums">{{ character.currentHp ?? 0 }} / {{ maxHp() }}</div>
+            <div class="mt-0.5 text-base font-bold tabular-nums">{{ character.currentHp ?? 0 }} / {{ maxHp() }}@if (temporaryHp() > 0) { <span class="ml-1 inline-block whitespace-nowrap text-green">+{{ temporaryHp() }}</span> }</div>
             <div class="mt-1.5 flex h-1.5 overflow-hidden rounded-full bg-surface" aria-hidden="true"><div class="h-full shrink-0 bg-rose transition-[width] duration-300" [style.width.%]="healthPercent()"></div><div class="h-full shrink-0 bg-green transition-[width] duration-300" [style.width.%]="temporaryHealthPercent()"></div></div>
           </button>
           <div class="flex items-center gap-1">
@@ -63,12 +63,20 @@ import { DialogScrollLockService } from '../editor/dialog-scroll-lock.service';
       <dialog #healthDialog (close)="releaseScroll()" (click)="closeOnBackdrop($event)" class="fixed inset-x-0 bottom-0 top-auto m-0 max-h-[85dvh] w-full max-w-none overflow-hidden rounded-t-2xl border border-outline-variant bg-surface p-0 text-on-surface open:flex open:flex-col backdrop:bg-black/50 sm:inset-0 sm:m-auto sm:max-w-md sm:rounded-2xl" aria-labelledby="mobile-health-title">
         <div class="flex shrink-0 items-center justify-between gap-2 border-b border-outline-variant px-4 py-2"><h2 id="mobile-health-title" class="text-lg font-bold">Health, Hit Dice & Conditions</h2><button type="button" (click)="healthDialog.close()" class="flex min-h-11 min-w-11 items-center justify-center rounded-lg bg-surface-container" aria-label="Close health panel"><app-ui-icon name="close" /></button></div>
         <div data-health-content class="min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain p-4">
-        <div class="mb-4 text-2xl font-bold" aria-live="polite">{{ character.currentHp ?? 0 }} / {{ maxHp() }} HP <span class="text-sm font-normal">{{ character.tempHp ?? 0 }} temp</span></div>
+        <div class="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1">
+          <div class="text-2xl font-bold" aria-live="polite">{{ character.currentHp ?? 0 }} / {{ maxHp() }} HP</div>
+          @if (temporaryHp() > 0) {
+          <div class="inline-flex items-center gap-1">
+            <span class="text-base font-medium text-green" aria-live="polite">{{ temporaryHp() }} temp</span>
+            <button type="button" (click)="clearTempHp()" aria-label="Clear temporary HP" title="Clear temporary HP" class="inline-flex shrink-0 items-center justify-center rounded-md px-2 py-1 text-base leading-none text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="close" /></button>
+          </div>
+          }
+        </div>
         <label class="block text-sm font-semibold">Amount<input type="number" inputmode="numeric" min="0" [value]="amount()" (input)="amount.set($any($event.target).value)" class="mt-1 block min-h-11 w-full rounded-lg border border-outline bg-surface-container px-3 py-2 text-base" /></label>
         <div class="my-3 grid grid-cols-3 gap-2">
-          <button type="button" (click)="adjust('damage')" class="min-h-11 rounded-lg bg-error-container px-2 py-2 text-sm font-semibold text-on-error-container">Damage</button>
-          <button type="button" (click)="adjust('heal')" class="min-h-11 rounded-lg bg-primary-container px-2 py-2 text-sm font-semibold text-on-primary-container">Heal</button>
-          <button type="button" (click)="adjust('temp')" class="min-h-11 rounded-lg bg-secondary-container px-2 py-2 text-sm font-semibold text-on-secondary-container">Set temp HP</button>
+          <button type="button" (click)="adjust('damage')" [disabled]="!hasHpAdjustment()" class="min-h-11 rounded-lg bg-error-container px-2 py-2 text-sm font-semibold text-on-error-container disabled:opacity-40">Damage</button>
+          <button type="button" (click)="adjust('heal')" [disabled]="!hasHpAdjustment()" class="min-h-11 rounded-lg bg-primary-container px-2 py-2 text-sm font-semibold text-on-primary-container disabled:opacity-40">Heal</button>
+          <button type="button" (click)="adjust('temp')" [disabled]="!hasHpAdjustment()" class="min-h-11 rounded-lg bg-secondary-container px-2 py-2 text-sm font-semibold text-on-secondary-container disabled:opacity-40">Set temp HP</button>
         </div>
         <p class="mb-4 text-xs text-on-surface-variant" role="status">{{ dirty() ? feedback() || 'Save the sheet to keep your changes.' : 'Changes are saved.' }}</p>
         <app-sheet-health-details [characterData]="sheet()" />
@@ -143,10 +151,18 @@ export class MobileSheetStatusComponent implements OnDestroy {
     const bounds = dialog.getBoundingClientRect();
     if (event.clientY < bounds.top || event.clientY > bounds.bottom || event.clientX < bounds.left || event.clientX > bounds.right) dialog.close();
   }
+  hasHpAdjustment() { return validHealthAmount(this.amount()); }
+  clearTempHp() {
+    const character = this.sheet().character;
+    if (!character) return;
+    applyHealthAdjustment(character, 'temp', 0);
+    this.store.setCharacter({ ...this.sheet() });
+    this.feedback.set('Temporary HP cleared. Save the sheet to keep your changes.');
+  }
   adjust(action: HealthAction) {
     const character = this.sheet().character;
     const amount = Number(this.amount());
-    if (!character || !this.amount().trim() || !Number.isFinite(amount) || amount < 0) return;
+    if (!character || !this.hasHpAdjustment()) return;
     applyHealthAdjustment(character, action, amount);
     this.store.setCharacter({ ...this.sheet() });
     if (action === 'damage') void this.concentration.remindAfterDamage(this.sheet(), amount);

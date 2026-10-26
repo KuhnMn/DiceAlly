@@ -15,6 +15,31 @@ import { AppDialogService } from '../services/app-dialog.service';
 import { RestService } from '../services/rest.service';
 
 describe('Usability state protection', () => {
+  it.each(['desktop', 'mobile'])('disables %s HP actions until an amount is entered and again after applying it', layout => {
+    const sheet = emptyBasicCharacter();
+    Object.assign(sheet.character!, { maxHp: 20, currentHp: 10, tempHp: 9 });
+    const fixture = layout === 'desktop' ? TestBed.createComponent(CharacterInfoPageComponent) : TestBed.createComponent(MobileSheetStatusComponent);
+    fixture.componentRef.setInput(layout === 'desktop' ? 'characterData' : 'sheet', sheet); fixture.detectChanges();
+    const page = fixture.componentInstance;
+    const amount = page instanceof CharacterInfoPageComponent ? page.hpAdjustmentInput : page.amount;
+    const buttons = [...fixture.nativeElement.querySelectorAll('button')].filter((button: HTMLButtonElement) => ['Deal Damage', 'Damage', 'Heal', 'Set Temp HP', 'Set temp HP'].includes(button.textContent!.trim())) as HTMLButtonElement[];
+    expect(buttons).toHaveLength(3);
+    expect(buttons.every(button => button.disabled)).toBe(true);
+    if (page instanceof CharacterInfoPageComponent) page.setTempHpFromAdjustment(); else page.adjust('temp');
+    expect(sheet.character!.tempHp).toBe(9);
+    for (const value of [' ', '-1', 'invalid']) {
+      amount.set(value); fixture.detectChanges();
+      expect(buttons.every(button => button.disabled)).toBe(true);
+    }
+    amount.set('0'); fixture.detectChanges();
+    expect(buttons.every(button => !button.disabled)).toBe(true);
+    amount.set('5'); fixture.detectChanges(); buttons[2].click(); fixture.detectChanges();
+    expect(sheet.character!.tempHp).toBe(5);
+    expect(amount()).toBe('');
+    expect(buttons.every(button => button.disabled)).toBe(true);
+    fixture.destroy();
+  });
+
   it('detects changed weapon bonuses and refreshes while retaining custom text and identity', () => {
     const sheet = emptyBasicCharacter();
     sheet.character!.abilityScores = { strength: 14 };

@@ -131,9 +131,17 @@ describe('Companion list presentation', () => {
     expect(component.monsters()[0].editorId).toBe('companion');
     expect(monsters[0].editorId).toBe('reference');
     expect(component.getEffectiveMonsterMaxHP(monsters[1])).toBe(20);
+    const quickActions = fixture.nativeElement.querySelector('article app-companion-health-actions') as HTMLElement;
+    expect(quickActions.classList.contains('hidden')).toBe(true);
+    expect(quickActions.classList.contains('xl:block')).toBe(true);
+    expect(quickActions.parentElement?.querySelector('input[aria-label="Wolf current HP"]')).not.toBeNull();
     fixture.nativeElement.querySelector('article h3 button').click(); fixture.detectChanges();
     expect(component.isExpanded('monster-companion')).toBe(true);
     expect(component.isExpanded('monster-reference')).toBe(false);
+    const detailActions = fixture.nativeElement.querySelector('app-sheet-detail-dialog app-companion-health-actions') as HTMLElement;
+    expect(detailActions.classList.contains('w-full')).toBe(true);
+    expect(detailActions.classList.contains('hidden')).toBe(false);
+    expect(detailActions.previousElementSibling?.querySelector('input[aria-label="Wolf current HP"]')).not.toBeNull();
     component.monsterFilter.set('reference'); fixture.detectChanges();
     expect(component.visibleMonsters().map(monster => monster.editorId)).toEqual(['reference']);
   });

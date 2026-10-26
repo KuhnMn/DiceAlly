@@ -17,8 +17,8 @@ import { LibraryNavigationComponent } from '../library-navigation.component';
   selector: 'app-import',
   imports: [LibraryNavigationComponent, UiIconComponent, CommonModule, FormsModule, RouterLink, ExportOptionsModalComponent, RemoveEntryDialogComponent],
   template: `
-    <main class="home-screen max-w-[1000px] mx-auto my-8 p-4">
-      <app-library-navigation />
+    <app-library-navigation />
+    <main class="home-screen max-w-[1000px] mx-auto mb-8 p-4">
       <section aria-label="Explore your library" class="library-shortcuts mb-6 grid gap-3 sm:grid-cols-2">
         <a routerLink="/compendium" class="flex min-w-0 items-start gap-3 rounded-xl border border-outline-variant bg-primary-container p-4 text-on-primary-container hover:brightness-110 focus-visible:outline-2 focus-visible:outline-primary">
           <app-ui-icon name="book" class="mt-1 shrink-0 text-2xl" />

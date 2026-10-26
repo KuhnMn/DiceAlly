@@ -2,8 +2,12 @@ import { CharacterData } from '../models/character.model';
 
 export type HealthAction = 'damage' | 'heal' | 'temp';
 
-/** Shared by the full sheet and mobile health panel. */
-export function applyHealthAdjustment(character: CharacterData, action: HealthAction, amount: number): void {
+export function validHealthAmount(value: string): boolean {
+  return !!value.trim() && Number.isFinite(Number(value)) && Number(value) >= 0;
+}
+
+/** Shared by character and companion health controls. */
+export function applyHealthAdjustment(character: Pick<CharacterData, 'currentHp' | 'tempHp' | 'maxHp' | 'maxHpOverride'>, action: HealthAction, amount: number): void {
   if (!Number.isFinite(amount) || amount < 0) return;
   amount = Math.floor(amount);
   if (amount === 0 && action !== 'temp') return;

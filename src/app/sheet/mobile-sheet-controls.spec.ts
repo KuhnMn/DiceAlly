@@ -5,6 +5,23 @@ import { MobileSheetStatusComponent } from './mobile-sheet-status.component';
 import { walkingSpeedEntry } from '../models/character-speed';
 
 describe('Mobile sheet controls', () => {
+  it('clears temporary HP from the health popup without changing HP or the pending adjustment', () => {
+    const fixture = TestBed.createComponent(MobileSheetStatusComponent);
+    const character = { currentHp: 91, maxHp: 94, tempHp: 5 };
+    fixture.componentRef.setInput('sheet', { character }); fixture.detectChanges();
+    fixture.componentInstance.amount.set('12');
+    const clear = fixture.nativeElement.querySelector('dialog button[aria-label="Clear temporary HP"]') as HTMLButtonElement;
+    expect(clear.disabled).toBe(false);
+    clear.click(); fixture.detectChanges();
+    expect(character.tempHp).toBe(0);
+    expect(character.currentHp).toBe(91);
+    expect(fixture.componentInstance.amount()).toBe('12');
+    expect(fixture.nativeElement.querySelector('dialog button[aria-label="Clear temporary HP"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('dialog').textContent).not.toContain('0 temp');
+    expect(fixture.nativeElement.querySelector('button[aria-label^="Adjust health"]').textContent).not.toContain('+5');
+    fixture.destroy();
+  });
+
   it('opens other movement speeds on tap and dismisses them outside or with Escape', () => {
     const fixture = TestBed.createComponent(MobileSheetStatusComponent);
     fixture.componentRef.setInput('sheet', { character: { speeds: [walkingSpeedEntry(),

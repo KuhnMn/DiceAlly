@@ -1,5 +1,7 @@
 import { readBrowseSummary } from '../content/content-browse-summary';
 import { ScrollToTopComponent } from '../scroll-to-top.component';
+import { loadRelatedEntries } from './related-entries';
+import { EntryHistory } from './entry-history';
 import { Component, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { IndexedDbContentCache } from '../content/content-cache';
@@ -46,6 +48,10 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
   readonly error = signal('');
   readonly progressionError = signal('');
   readonly detail = signal<ContentRecord | null>(null);
+  readonly related = signal<ContentRecord[]>([]);
+  readonly detailLoading = signal(false);
+  readonly detailError = signal('');
+  private detailVersion = 0;
   readonly query = signal('');
   readonly selectedSources = signal([...this.sourceDefaults.selected()]);
   readonly subclassSources = signal([...this.selectedSources()]);
@@ -141,7 +147,31 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
     finally { if (version === this.subclassVersion) this.subclassLoading.set(false); }
   }
   selectSubclass(key: string) { return this.chooseSubclass(this.visibleSubclasses().find(record => record.key === key) ?? null); }
-  openDetails(record: ContentRecord) { this.detail.set(record); }
-  closeDetails() { this.detail.set(null); }
-  ngOnDestroy() { this.destroyed = true; ++this.version; ++this.subclassVersion; }
+  readonly detailHistory = new EntryHistory();
+  openRelated(record: ContentRecord) {
+    const current = this.detail();
+    if (current && current.key !== record.key) this.detailHistory.push(current);
+    return this.openDetails(record, true);
+  }
+  async backDetails() {
+    const previous = this.detailHistory.pop();
+    if (previous) await this.openDetails(previous, true);
+  }
+  async openDetails(record: ContentRecord, keepHistory = false) {
+    if (!keepHistory) this.detailHistory.clear();
+    const version = ++this.detailVersion;
+    this.detail.set(record); this.related.set([]); this.detailError.set(''); this.detailLoading.set(true);
+    const revision = this.revision();
+    if (!revision) { this.detailLoading.set(false); return; }
+    try {
+      const related = await loadRelatedEntries(this.cache, revision.id, record, () => version === this.detailVersion);
+      if (version === this.detailVersion) this.related.set(related);
+    } catch (error) {
+      if (version === this.detailVersion) this.detailError.set(`Related entries could not be loaded: ${String(error)}`);
+    } finally { if (version === this.detailVersion) this.detailLoading.set(false); }
+  }
+  closeDetails() {
+    ++this.detailVersion; this.detailHistory.clear(); this.detail.set(null); this.related.set([]); this.detailLoading.set(false); this.detailError.set('');
+  }
+  ngOnDestroy() { this.destroyed = true; ++this.version; ++this.subclassVersion; ++this.detailVersion; }
 }

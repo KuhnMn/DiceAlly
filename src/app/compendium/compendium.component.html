@@ -1,13 +1,15 @@
-<main #pageContent tabindex="-1" class="mx-auto max-w-7xl p-2 text-on-surface sm:p-5">
+<app-library-navigation />
+<main #pageContent tabindex="-1" class="mx-auto mb-6 max-w-7xl p-4 text-on-surface">
   <app-scroll-to-top [target]="pageContent" [navigation]="pageHeader" [page]="type()?.id || 'categories'" label="Back to top of Compendium" />
-  <app-library-navigation />
   <header #pageHeader class="mb-4 flex flex-wrap items-center justify-between gap-3">
-    <div class="min-w-0">
-      <a [routerLink]="type() || invalidType() ? '/compendium' : '/'" class="inline-flex min-h-11 items-center gap-1 text-sm text-primary">
-        <app-ui-icon name="left" /> {{ type() || invalidType() ? 'All Categories' : 'Characters' }}
+    <div class="flex min-w-0 items-start gap-3">
+      <a [routerLink]="type() || invalidType() ? '/compendium' : '/'" class="page-back-button" [attr.aria-label]="type() || invalidType() ? 'Back to all categories' : 'Back to characters'" [title]="type() || invalidType() ? 'Back to All Categories' : 'Back to Characters'">
+        <app-ui-icon name="left" />
       </a>
-      <h1 class="text-2xl font-bold sm:text-3xl">{{ type()?.label || 'Compendium' }}</h1>
-      <p class="mt-1 text-sm text-on-surface-variant">{{ type() ? 'Browse your installed library. Select an entry to read its details.' : 'Choose the kind of content you want to explore.' }}</p>
+      <div class="min-w-0">
+        <h1 class="text-2xl font-bold sm:text-3xl">{{ type()?.label || 'Compendium' }}</h1>
+        <p class="mt-1 text-sm text-on-surface-variant">{{ type() ? 'Browse your installed library. Select an entry to read its details.' : 'Choose the kind of content you want to explore.' }}</p>
+      </div>
     </div>
     <div class="flex items-center gap-2 text-sm">
       <button type="button" (click)="reload()" [disabled]="loading()" class="compendium-button" aria-label="Refresh compendium"><app-ui-icon name="reset" /><span class="hidden sm:inline">Refresh</span></button>
@@ -96,11 +98,6 @@
                 <h2 class="font-semibold [overflow-wrap:anywhere]">{{ entry.name }}</h2>
                 <p class="mt-0.5 text-xs text-on-surface-variant">{{ kindLabel(entry.kind) }} · {{ entry.publication }}@if (entry.file.startsWith('homebrew/')) { · Homebrew }</p>
                 @if (summary(entry); as text) { <p class="mt-1 text-xs text-on-surface-variant [overflow-wrap:anywhere]">{{ text }}</p> }
-                @if (speciesBadges(entry).length) {
-                  <div class="mt-2 flex flex-wrap gap-1">
-                    @for (badge of speciesBadges(entry); track badge) { <span class="rounded-md bg-secondary-container px-2 py-1 text-xs text-on-secondary-container">{{ badge }}</span> }
-                  </div>
-                }
               </div>
               <app-ui-icon name="chevron" class="shrink-0 text-primary" />
             </button>
@@ -121,8 +118,14 @@
       </section>
       <aside class="desktop-details" aria-label="Entry details">
         @if (!mobile() && selected(); as entry) {
-          <header class="mb-3 flex items-start justify-between gap-2"><h2 class="text-xl font-bold [overflow-wrap:anywhere]">{{ entry.name }}</h2><button type="button" (click)="closeDetails()" class="compendium-button" aria-label="Close entry details"><app-ui-icon name="close" /></button></header>
-          <app-compendium-details [record]="entry" [revision]="revision()!" [related]="related()" [itemView]="itemView()" (opened)="openDetails($event)" />
+          <header class="mb-3 flex items-start gap-3">
+            @if (detailHistory.previous(); as previous) {
+              <button type="button" (click)="backDetails()" class="page-back-button" [attr.aria-label]="'Back to ' + previous.name" [title]="'Back to ' + previous.name"><app-ui-icon name="left" /></button>
+            }
+            <h2 class="min-w-0 flex-1 text-xl font-bold [overflow-wrap:anywhere]">{{ entry.name }}</h2>
+            <button type="button" (click)="closeDetails()" class="compendium-button" aria-label="Close entry details"><app-ui-icon name="close" /></button>
+          </header>
+          <app-compendium-details [record]="entry" [revision]="revision()!" [related]="related()" [itemView]="itemView()" (opened)="openRelated($event)" />
           @if (detailLoading()) { <p role="status" class="mt-3 text-sm">Loading related entries…</p> }
           @if (detailError()) { <p role="alert" class="mt-3 text-sm">{{ detailError() }}</p> }
         } @else {
@@ -132,8 +135,8 @@
     </div>
     @if (mobile() && selected(); as entry) {
       <div class="mobile-details">
-        <app-sheet-detail-dialog [title]="entry.name" (closed)="closeDetails()">
-          <app-compendium-details [record]="entry" [revision]="revision()!" [related]="related()" [itemView]="itemView()" (opened)="openDetails($event)" />
+        <app-sheet-detail-dialog [title]="entry.name" [backLabel]="detailHistory.previous() ? 'Back to ' + detailHistory.previous()!.name : ''" (back)="backDetails()" (closed)="closeDetails()">
+          <app-compendium-details [record]="entry" [revision]="revision()!" [related]="related()" [itemView]="itemView()" (opened)="openRelated($event)" />
           @if (detailLoading()) { <p role="status" class="mt-3 text-sm">Loading related entries…</p> }
           @if (detailError()) { <p role="alert" class="mt-3 text-sm">{{ detailError() }}</p> }
         </app-sheet-detail-dialog>

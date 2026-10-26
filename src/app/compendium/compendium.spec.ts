@@ -313,8 +313,8 @@ describe('Compendium screen', () => {
     await screen.openDetails(high); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.desktop-details').textContent).toContain('Base elf description.');
     expect(fixture.nativeElement.querySelector('.desktop-details').textContent).toContain('High elf description.');
-    const dragonborn = screen.results().find(record => record.name === 'Dragonborn')!;
-    expect(screen.speciesBadges(dragonborn).join(' ')).toContain('Darkvision');
+    const dragonborn = [...fixture.nativeElement.querySelectorAll('.result-row')].find((row: any) => row.textContent.includes('Dragonborn')) as HTMLElement;
+    expect(dragonborn.textContent).not.toContain('Darkvision');
     screen.filters = { kind: ['subrace'] }; await screen.search();
     expect(screen.results().map(record => record.name)).toEqual(['High Elf']);
     fixture.destroy();
@@ -378,6 +378,18 @@ describe('Compendium screen', () => {
     expect(screen.results().map(row => row.key)).toEqual([reward.key]);
     expect(TestBed.inject(SourceBookFilterService).selected()).toEqual(['XPHB']);
   });
+  it('shows monster identity and CR in the stat block without duplicating the metadata', () => {
+    const fixture = TestBed.createComponent(CompendiumDetailsComponent);
+    const record = mapContent({ monster: [{ name: 'Test monster', source: 'XMM', size: ['M'], type: 'humanoid', alignment: ['N'], cr: '15' }] }, 'monsters.json').records[0];
+    fixture.componentRef.setInput('record', record); fixture.componentRef.setInput('revision', revision); fixture.detectChanges();
+    const labels = fixture.componentInstance.metadata().map(field => field.label);
+    for (const label of ['Size', 'Creature Type', 'Challenge Rating']) expect(labels).not.toContain(label);
+    const overview = fixture.nativeElement.querySelector('[aria-label="Creature overview"]');
+    expect(overview.textContent).toContain('Medium'); expect(overview.textContent).toContain('Humanoid');
+    expect(overview.querySelector('[aria-label="Challenge Rating"]').textContent).toContain('15');
+    fixture.destroy();
+  });
+
   it('renders canonical reference descriptions and tables using the shared entry renderer', () => {
     const fixture = TestBed.createComponent(CompendiumDetailsComponent);
     const record: ContentRecord = { key: 'condition', kind: 'condition', name: 'Test Condition', publication: 'TEST', file: 'conditions.json', links: [], data: {},
@@ -407,6 +419,29 @@ describe('Compendium screen', () => {
     fixture.detectChanges(); expect(fixture.nativeElement.querySelector('[aria-label="Prerequisites"]').textContent).toContain('Expertise in a skill');
     fixture.componentRef.setInput('record', { ...record, referenceDefinition: undefined, data: {} }); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[aria-label="Prerequisites"]')).toBeNull();
+    fixture.destroy();
+  });
+
+  it.each([false, true])('returns through related entry history with mobile=%s and resets on a new selection', async mobile => {
+    const { fixture, screen } = await setup();
+    await screen.chooseType('spell');
+    breakpoint.next({ matches: mobile, breakpoints: {} });
+    await screen.openDetails(data[0]);
+    await screen.openRelated(data[1]);
+    await screen.openRelated(data[2]); fixture.detectChanges();
+    const back = fixture.nativeElement.querySelector(`button[aria-label="Back to ${data[1].name}"]`) as HTMLButtonElement;
+    expect(back).not.toBeNull(); back.click();
+    await vi.waitFor(() => expect(screen.detailLoading()).toBe(false));
+    expect(screen.selected()?.key).toBe(data[1].key);
+    expect(screen.detailHistory.previous()?.key).toBe(data[0].key);
+    await screen.backDetails(); fixture.detectChanges();
+    expect(screen.selected()?.key).toBe(data[0].key);
+    expect(screen.detailHistory.previous()).toBeUndefined();
+    await screen.openRelated(data[1]);
+    await screen.openDetails(data[2]);
+    expect(screen.detailHistory.previous()).toBeUndefined();
+    await screen.openRelated(data[0]); screen.closeDetails();
+    expect(screen.detailHistory.previous()).toBeUndefined();
     fixture.destroy();
   });
 

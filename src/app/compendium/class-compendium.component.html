@@ -1,11 +1,13 @@
-<main #pageContent tabindex="-1" class="mx-auto max-w-5xl p-2 text-on-surface sm:p-5">
+<app-library-navigation />
+<main #pageContent tabindex="-1" class="mx-auto mb-6 max-w-7xl p-4 text-on-surface">
   <app-scroll-to-top [target]="pageContent" [navigation]="pageHeader" [page]="selectedClass()?.key || 'classes'" label="Back to top of Compendium" />
-  <app-library-navigation />
   <header #pageHeader class="mb-4 flex flex-wrap items-center justify-between gap-3">
-    <div>
-      <a routerLink="/compendium" class="inline-flex min-h-11 items-center gap-1 text-sm text-primary"><app-ui-icon name="left" /> All Categories</a>
-      <h1 class="text-2xl font-bold sm:text-3xl">Classes</h1>
-      <p class="mt-1 text-sm text-on-surface-variant">Choose a class, explore its subclasses and follow its features level by level.</p>
+    <div class="flex min-w-0 items-start gap-3">
+      <a routerLink="/compendium" class="page-back-button" aria-label="Back to all categories" title="Back to All Categories"><app-ui-icon name="left" /></a>
+      <div class="min-w-0">
+        <h1 class="text-2xl font-bold sm:text-3xl">Classes</h1>
+        <p class="mt-1 text-sm text-on-surface-variant">Choose a class, explore its subclasses and follow its features level by level.</p>
+      </div>
     </div>
     <button type="button" class="compendium-button" [disabled]="loading()" (click)="reload()" aria-label="Refresh classes"><app-ui-icon name="reset" /> Refresh</button>
   </header>
@@ -15,9 +17,9 @@
     <section class="rounded-xl bg-surface-container p-5"><h2 class="font-semibold">No Library Installed</h2><a routerLink="/content" class="compendium-button mt-3">Import Game Data</a></section>
   } @else if (selectedClass(); as owner) {
     <section class="mb-4 rounded-xl border border-outline-variant bg-surface-container p-3 sm:p-4" aria-label="Selected class">
-      <button type="button" class="mb-2 inline-flex min-h-11 items-center gap-1 text-sm text-primary" (click)="showAllClasses()"><app-ui-icon name="left" /> All Classes</button>
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div><h2 class="text-xl font-bold">{{ owner.name }} <span class="text-sm font-normal text-on-surface-variant">{{ owner.publication }}</span></h2></div>
+      <div class="flex items-start gap-3">
+        <button type="button" class="page-back-button" (click)="showAllClasses()" aria-label="Back to all classes" title="Back to All Classes"><app-ui-icon name="left" /></button>
+        <div class="min-w-0"><h2 class="text-xl font-bold">{{ owner.name }} <span class="text-sm font-normal text-on-surface-variant">{{ owner.publication }}</span></h2></div>
       </div>
       @if (owner.file.startsWith('homebrew/')) { <p class="mt-1 text-xs text-on-surface-variant">Homebrew</p> }
       <app-compendium-details [record]="owner" [revision]="revision()!" [overview]="true" />
@@ -98,8 +100,10 @@
     </div>
   }
   @if (detail(); as entry) {
-    <app-sheet-detail-dialog [title]="entry.name" (closed)="closeDetails()">
-      <app-compendium-details [record]="entry" [revision]="revision()!" />
+    <app-sheet-detail-dialog [title]="entry.name" [backLabel]="detailHistory.previous() ? 'Back to ' + detailHistory.previous()!.name : ''" (back)="backDetails()" (closed)="closeDetails()">
+      <app-compendium-details [record]="entry" [revision]="revision()!" [related]="related()" (opened)="openRelated($event)" />
+      @if (detailLoading()) { <p role="status" class="mt-3 text-sm">Loading related entries…</p> }
+      @if (detailError()) { <p role="alert" class="mt-3 text-sm">{{ detailError() }}</p> }
     </app-sheet-detail-dialog>
   }
 </main>

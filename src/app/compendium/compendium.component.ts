@@ -1,5 +1,7 @@
 import { ensureBrowseSummary, readBrowseSummary } from '../content/content-browse-summary';
 import { ScrollToTopComponent } from '../scroll-to-top.component';
+import { loadRelatedEntries } from './related-entries';
+import { EntryHistory } from './entry-history';
 import { ActiveFilterChipsComponent, ActiveFilterGroup } from './active-filter-chips.component';
 import { sourceChipValues, sourceFilterCount } from './compendium-sources';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
@@ -23,7 +25,6 @@ import { LibraryNavigationComponent } from '../library-navigation.component';
 import { SourceBookFilterComponent } from '../editor/source-book-filter.component';
 import { SourceBookFilterService } from '../editor/source-book-filter.service';
 import { CompendiumSourceFilterComponent } from './compendium-source-filter.component';
-import { speciesBadges } from './species-summary';
 
 @Component({
   selector: 'app-compendium',
@@ -59,7 +60,6 @@ export class CompendiumComponent implements OnInit, OnDestroy {
   readonly detailLoading = signal(false);
   readonly facetLabel = facetLabel;
   readonly summary = summary;
-  readonly speciesBadges = speciesBadges;
   readonly kindLabel = kindLabel;
   readonly facets = signal<{ key: Facet; label: string; values: string[] }[]>([]);
   query = '';
@@ -208,7 +208,18 @@ export class CompendiumComponent implements OnInit, OnDestroy {
     this.offset = Math.max(0, this.offset + direction * this.pageSize);
     await this.search();
   }
-  async openDetails(record: ContentRecord) {
+  readonly detailHistory = new EntryHistory();
+  openRelated(record: ContentRecord) {
+    const current = this.selected();
+    if (current && current.key !== record.key) this.detailHistory.push(current);
+    return this.openDetails(record, true);
+  }
+  async backDetails() {
+    const previous = this.detailHistory.pop();
+    if (previous) await this.openDetails(previous, true);
+  }
+  async openDetails(record: ContentRecord, keepHistory = false) {
+    if (!keepHistory) this.detailHistory.clear();
     const version = ++this.detailVersion;
     this.selected.set(record); this.related.set([]); this.itemView.set(null); this.detailError.set(''); this.detailLoading.set(true);
     const revision = this.revision();
@@ -219,20 +230,11 @@ export class CompendiumComponent implements OnInit, OnDestroy {
         if (version !== this.detailVersion) return;
         this.itemView.set(view);
       }
-      const keys = [...new Set([...(record.classDefinition?.features.map(feature => feature.key) ?? []),
-        ...record.links.filter(link => link.scope !== 'provenance' && link.status !== 'missing').map(link => link.target)])]
-        .filter(key => key !== record.key);
-      const related: ContentRecord[] = [];
-      // Bound concurrent reads; retain only linked entries, never the full content corpus.
-      for (let start = 0; start < keys.length; start += 20) {
-        if (version !== this.detailVersion) return;
-        const records = await Promise.all(keys.slice(start, start + 20).map(key => this.cache.get(revision.id, key)));
-        related.push(...records.filter((value): value is ContentRecord => !!value));
-      }
+      const related = await loadRelatedEntries(this.cache, revision.id, record, () => version === this.detailVersion);
       if (version === this.detailVersion) this.related.set(related);
     } catch (error) { if (version === this.detailVersion) this.detailError.set(`Related entries could not be loaded: ${String(error)}`); }
     finally { if (version === this.detailVersion) this.detailLoading.set(false); }
   }
-  closeDetails() { ++this.detailVersion; this.selected.set(null); this.related.set([]); this.itemView.set(null); this.detailLoading.set(false); this.detailError.set(''); }
+  closeDetails() { ++this.detailVersion; this.detailHistory.clear(); this.selected.set(null); this.related.set([]); this.itemView.set(null); this.detailLoading.set(false); this.detailError.set(''); }
   ngOnDestroy() { this.destroyed = true; ++this.version; ++this.detailVersion; clearTimeout(this.timer); this.subscription?.unsubscribe(); }
 }

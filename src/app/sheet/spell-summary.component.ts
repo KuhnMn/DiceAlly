@@ -13,6 +13,10 @@ import { HorizontalRowDirective } from './horizontal-row.directive';
     .summary-field > span:first-child { flex-shrink: 0; white-space: nowrap; }
     .summary-value { position: relative; min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; white-space: normal; }
     .summary-value.is-truncated::after { content: '...'; position: absolute; right: 0; bottom: 0; padding-left: .15em; background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface); font-weight: 900; letter-spacing: .04em; pointer-events: none; }
+    @media (min-width: 1280px) {
+      .summary-field { flex-wrap: wrap; align-content: start; }
+      .summary-field > :not(:first-child) { flex-shrink: 0; max-width: 100%; }
+    }
     @media (max-width: 1279px) {
       .summary-row { display: flex; flex-wrap: nowrap; width: 100%; align-items: center; overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: .25rem; }
       .summary-field { flex-shrink: 0; max-width: 12rem; white-space: nowrap; }

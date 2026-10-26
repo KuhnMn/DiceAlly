@@ -12,23 +12,28 @@ import { ItemView } from '../content/item-resolver';
 import { formatSpeciesMovement } from '../content/species-adapter';
 import { ObjectStatBlockComponent } from '../sheet/object-stat-block.component';
 import { ObjectCompanion } from '../models/companions';
-import { speciesBadges } from './species-summary';
 import { FACET_LABELS, Facet, facetLabel, kindLabel, recordFacets } from './compendium-catalog';
 
 /** Read-only compendium projection: the sheet's renderers without character mutations. */
 @Component({
   selector: 'app-compendium-details',
+  host: { '[class.compact-reference]': 'compactReference()' },
+  styles: [`
+    :host { display: block; min-width: 0; }
+    :host(.compact-reference) { font-size: .875rem; line-height: 1.4; }
+    :host(.compact-reference) .mb-3, :host(.compact-reference) .mb-4 { margin-bottom: .5rem; }
+    :host(.compact-reference) .mt-4, :host(.compact-reference) .mt-5 { margin-top: .75rem; }
+    :host(.compact-reference) .p-3 { padding: .5rem; }
+    :host(.compact-reference) .gap-x-4 { column-gap: .75rem; }
+    :host(.compact-reference) .gap-3 { gap: .5rem; }
+    :host(.compact-reference) .text-base { font-size: .875rem; line-height: 1.4; }
+  `],
   imports: [EntryRendererComponent, SpellDetailsComponent, MonsterStatBlockComponent, ObjectStatBlockComponent, PrerequisiteDetailsComponent],
   template: `
     @if (!overview()) {
     <p class="mb-3 text-sm text-on-surface-variant">{{ kindLabel(record().kind) }} · {{ record().publication }}
       @if (sourceData()['page']; as page) { · Page {{ page }} }
     </p>
-    @if (speciesBadges(record()).length) {
-      <div class="mb-3 flex flex-wrap gap-1.5" aria-label="Species traits">
-        @for (badge of speciesBadges(record()); track badge) { <span class="rounded-lg bg-secondary-container px-2 py-1 text-sm text-on-secondary-container">{{ badge }}</span> }
-      </div>
-    }
     <dl class="mb-4 grid grid-cols-2 gap-x-4 gap-y-2 rounded-xl bg-surface-container p-3 text-sm">
       @for (field of metadata(); track field.label) {
         <div class="min-w-0"><dt class="text-xs text-on-surface-variant">{{ field.label }}</dt><dd class="font-medium [overflow-wrap:anywhere]">{{ field.value }}</dd></div>
@@ -45,14 +50,14 @@ import { FACET_LABELS, Facet, facetLabel, kindLabel, recordFacets } from './comp
     }
     @if (spell(); as spell) { <app-spell-details [spell]="spell" /> }
     @if (monster(); as monster) {
-      <app-monster-stat-block [value]="monster" />
+      <app-monster-stat-block [value]="monster" [compact]="true" />
     } @else if (object(); as object) {
-      <app-object-stat-block [value]="object" />
+      <app-object-stat-block [value]="object" [compact]="true" />
     } @else {
       @for (section of sections(); track section.title) {
         <section class="min-w-0" [class.mt-4]="!overview()" [class.mt-2]="overview()">
           @if (section.title) { <h3 class="mb-2 text-base font-semibold">{{ section.title }}</h3> }
-          <app-entry-renderer [entries]="section.entries" />
+          <app-entry-renderer [entries]="section.entries" [compact]="compactReference()" />
         </section>
       }
       @if (!sections().length && !overview()) { <p class="mt-3 text-sm text-on-surface-variant">No description is included in this entry.</p> }
@@ -73,13 +78,13 @@ import { FACET_LABELS, Facet, facetLabel, kindLabel, recordFacets } from './comp
 export class CompendiumDetailsComponent {
   /** Class/subclass descriptions live beside their existing summary and resource information. */
   readonly overview = input(false);
+  readonly compactReference = computed(() => ['monster', 'vehicle', 'object'].includes(this.record().kind));
   readonly record = input.required<ContentRecord>();
   readonly revision = input.required<ImportRevision>();
   readonly related = input<ContentRecord[]>([]);
   readonly itemView = input<ItemView | null>(null);
   readonly opened = output<ContentRecord>();
   readonly kindLabel = kindLabel;
-  readonly speciesBadges = speciesBadges;
   readonly sourceData = computed<JsonObject>(() => ({ ...this.record().data, ...this.record().referenceDefinition }));
   readonly spell = computed(() => this.record().kind === 'spell' ? spellSnapshot(this.record()) : null);
   readonly monster = computed(() => this.record().kind === 'monster' ? createMonsterEntry(this.record(), this.revision()) : null);
@@ -119,7 +124,8 @@ export class CompendiumDetailsComponent {
     return rows;
   });
   readonly metadata = computed(() => Object.entries(recordFacets(this.record()))
-    .filter(([key]) => key !== 'source' && key !== 'kind')
+    .filter(([key]) => key !== 'source' && key !== 'kind'
+      && !(this.record().kind === 'monster' && ['size', 'creature', 'cr'].includes(key)))
     .map(([key, values]) => ({ label: FACET_LABELS[key as Facet], value: values!.map(value => facetLabel(key as Facet, value)).join(', ') })));
   readonly sections = computed(() => {
     const record = this.record();

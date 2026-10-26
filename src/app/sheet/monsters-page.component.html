@@ -22,6 +22,7 @@
               }
             </div>
           </div>
+          <app-companion-health-actions class="block w-full" [companion]="monster" [maximum]="getEffectiveMonsterMaxHP(monster)" />
         }
           <div [id]="monsterKey(monster) + '-details'" class="mt-3 space-y-3 border-t border-outline-variant pt-3">
             @if (monster.entity || health(monster).enabled) {
@@ -69,7 +70,10 @@
         <h3><button type="button" (click)="toggleExpanded(monsterKey(monster))" aria-haspopup="dialog" [attr.aria-expanded]="isExpanded(monsterKey(monster))" [attr.aria-controls]="monsterKey(monster) + '-details'" class="flex min-h-8 w-full items-center justify-between gap-2 rounded text-left text-base font-bold sm:gap-3 text-teal sm:text-xl focus-visible:outline-2 focus-visible:outline-primary"><span class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1"><span class="min-w-0 max-w-full truncate" [title]="monster.name || 'Unnamed creature'">{{ monster.name || 'Unnamed creature' }}</span><ng-container [ngTemplateOutlet]="objectTypeTag" [ngTemplateOutletContext]="{ $implicit: monster }" /></span><app-ui-icon class="shrink-0" name="chevron" /></button></h3>
         @if (health(monster).enabled) {
           <div class="my-1 flex flex-wrap items-stretch gap-1.5 sm:my-2 sm:gap-2">
-            <label class="flex min-h-11 min-w-0 flex-auto items-center gap-2 rounded-lg border-2 border-primary bg-primary-container px-2 py-1 text-sm font-semibold sm:px-3 sm:py-2 text-on-primary-container">HP <input type="number" inputmode="numeric" min="0" [max]="getEffectiveMonsterMaxHP(monster)" [value]="health(monster).current ?? getEffectiveMonsterMaxHP(monster)" (input)="updateMonsterHP(monster, $any($event.target).value)" [attr.aria-label]="monster.name + ' current HP'" class="min-h-10 w-16 rounded sm:min-h-11 border border-outline-variant bg-surface px-2 text-base text-on-surface" /><span class="whitespace-nowrap">/ {{ getEffectiveMonsterMaxHP(monster) }}</span></label>
+            <div class="flex min-h-11 min-w-0 flex-auto flex-wrap items-center gap-3 rounded-lg border-2 border-primary bg-primary-container px-2 py-1 text-sm font-semibold sm:px-3 sm:py-2 text-on-primary-container">
+              <label class="flex min-h-11 items-center gap-2">HP <input type="number" inputmode="numeric" min="0" [max]="getEffectiveMonsterMaxHP(monster)" [value]="health(monster).current ?? getEffectiveMonsterMaxHP(monster)" (input)="updateMonsterHP(monster, $any($event.target).value)" [attr.aria-label]="monster.name + ' current HP'" class="min-h-10 w-16 rounded sm:min-h-11 border border-outline-variant bg-surface px-2 text-base text-on-surface" /><span class="whitespace-nowrap">/ {{ getEffectiveMonsterMaxHP(monster) }}</span></label>
+              <app-companion-health-actions class="hidden min-w-0 flex-1 xl:block" [embedded]="true" [companion]="monster" [maximum]="getEffectiveMonsterMaxHP(monster)" />
+            </div>
             <div class="flex min-h-11 items-center gap-1 rounded-lg border-2 border-green bg-surface-container-high px-2 py-1 text-sm font-semibold sm:px-3 sm:py-2">
               <label class="flex items-center gap-2">Temp <input type="number" inputmode="numeric" min="0" [value]="health(monster).temporary ?? 0" (input)="updateMonsterTempHP(monster, $any($event.target).value)" [attr.aria-label]="monster.name + ' temporary HP'" class="min-h-10 w-16 rounded sm:min-h-11 border-2 border-green bg-surface px-2 text-base text-on-surface" /></label>
               @if ((health(monster).temporary ?? 0) > 0) {

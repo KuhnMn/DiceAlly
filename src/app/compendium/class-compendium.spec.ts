@@ -13,7 +13,6 @@ import { CompendiumDetailsComponent } from './compendium-details.component';
 import { SourceBookFilterService } from '../editor/source-book-filter.service';
 import { CompendiumSourceFilterComponent } from './compendium-source-filter.component';
 import { By } from '@angular/platform-browser';
-import { speciesBadges } from './species-summary';
 
 async function catalog() {
   const source = { ...DEFAULT_CONTENT_SOURCE, owner: `class-browser-${crypto.randomUUID()}` };
@@ -130,7 +129,7 @@ describe('Class compendium progression', () => {
     expect(screen.baseFeatures()).toHaveLength(2); fixture.destroy();
   });
 
-  it('shows class and selected subclass descriptions inline, keeps mobile selection filterable and omits related-entry reads', async () => {
+  it('keeps class overviews inline and shows navigable related entries only in feature details', async () => {
     const f = await catalog(); TestBed.configureTestingModule({ providers: [provideRouter([])] });
     const owner = f.find('class', 'Mage'), school = f.find('subclass', 'School', 'TCE');
     owner.data['entries'] = ['Inline class introduction.']; school.data['entries'] = ['Inline subclass introduction.'];
@@ -150,14 +149,46 @@ describe('Class compendium progression', () => {
     const feature = f.find('classFeature', 'Gift');
     feature.links = [{ role: 'related', target: f.find('classFeature', 'Greater Gift').key }];
     const get = vi.spyOn(IndexedDbContentCache.prototype, 'get');
-    screen.openDetails(feature); fixture.detectChanges();
     expect(get).not.toHaveBeenCalled();
-    expect(fixture.nativeElement.querySelector('app-sheet-detail-dialog').textContent).toContain('Gift description.');
     expect(fixture.nativeElement.textContent).not.toContain('Related Entries');
+    await screen.openDetails(feature); fixture.detectChanges();
+    expect(get).toHaveBeenCalledWith(f.revision.id, f.find('classFeature', 'Greater Gift').key);
+    expect(fixture.nativeElement.querySelector('app-sheet-detail-dialog').textContent).toContain('Gift description.');
+    const dialog = fixture.nativeElement.querySelector('app-sheet-detail-dialog') as HTMLElement;
+    expect(dialog.textContent).toContain('Related Entries');
+    const related = [...dialog.querySelectorAll('button')].find(button => button.textContent?.includes('Greater Gift'))!;
+    related.click();
+    await vi.waitFor(() => expect(screen.detailLoading()).toBe(false)); fixture.detectChanges();
+    expect(screen.detail()?.key).toBe(f.find('classFeature', 'Greater Gift').key);
+    expect(fixture.nativeElement.querySelector('app-sheet-detail-dialog').textContent).toContain('Greater gift description.');
+    const back = fixture.nativeElement.querySelector('button[aria-label="Back to Gift"]') as HTMLButtonElement;
+    expect(back).not.toBeNull(); back.click();
+    await vi.waitFor(() => expect(screen.detailLoading()).toBe(false)); fixture.detectChanges();
+    expect(screen.detail()?.key).toBe(feature.key);
+    expect(fixture.nativeElement.querySelector('button[aria-label="Back to Gift"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label="Selected class"]').textContent).not.toContain('Related Entries');
+    expect(fixture.nativeElement.querySelector('[aria-label="Selected subclass description"]').textContent).not.toContain('Related Entries');
     screen.closeDetails(); screen.setSubclassSources(['XGE']); fixture.detectChanges();
     expect(screen.selectedSubclass()).toBeNull();
     expect(fixture.nativeElement.querySelector('[aria-label="Selected subclass description"]')).toBeNull();
     expect(screen.baseFeatures()).toHaveLength(2);
+    fixture.destroy();
+  });
+
+  it('discards related entries that finish loading after the feature dialog closes', async () => {
+    const f = await catalog(); TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(ClassCompendiumComponent), screen = fixture.componentInstance;
+    fixture.detectChanges(); await vi.waitFor(() => expect(screen.loading()).toBe(false));
+    const feature = f.find('classFeature', 'Gift'), related = f.find('classFeature', 'Greater Gift');
+    feature.links = [{ role: 'related', target: related.key }];
+    let resolve!: (record: ContentRecord) => void;
+    vi.spyOn(IndexedDbContentCache.prototype, 'get').mockImplementationOnce(() => new Promise<ContentRecord>(done => { resolve = done; }));
+    const loading = screen.openDetails(feature);
+    expect(screen.detailLoading()).toBe(true);
+    screen.closeDetails(); resolve(related); await loading;
+    expect(screen.detail()).toBeNull();
+    expect(screen.related()).toEqual([]);
+    expect(screen.detailLoading()).toBe(false);
     fixture.destroy();
   });
 
@@ -216,20 +247,15 @@ describe('Class compendium progression', () => {
   });
 });
 
-describe('Species reference badges', () => {
+describe('Species reference presentation', () => {
   const species = (source: string, darkvision?: number) => canonicalSpeciesRecord({ key: `species-${source}`, kind: 'species', name: 'Dragonborn', publication: source,
     file: 'species.json', links: [], data: { name: 'Dragonborn', source, size: ['M'], speed: 30, ...(darkvision ? { darkvision } : {}),
       resist: ['fire'], creatureTypes: ['humanoid'], entries: ['Species description.'] } });
 
-  it('shows canonical darkvision and resistances without inventing senses for another edition', () => {
-    expect(speciesBadges(species('XPHB', 60))).toEqual(['Darkvision 60 ft.', 'Fire · Resistance', 'Humanoid']);
-    expect(speciesBadges(species('PHB')).some(badge => badge.startsWith('Darkvision'))).toBe(false);
-  });
-
-  it('shows species trait tags in the shared detail view', () => {
+  it('shows species descriptions without viewer trait badges in compendium details', () => {
     const fixture = TestBed.createComponent(CompendiumDetailsComponent);
     fixture.componentRef.setInput('record', species('XPHB', 60)); fixture.componentRef.setInput('revision', { id: 'test' }); fixture.detectChanges();
-    const badges = fixture.nativeElement.querySelector('[aria-label="Species traits"]').textContent;
-    expect(badges).toContain('Darkvision 60 ft.'); expect(badges).toContain('Fire · Resistance'); fixture.destroy();
+    expect(fixture.nativeElement.querySelector('[aria-label="Species traits"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Species description.'); fixture.destroy();
   });
 });
