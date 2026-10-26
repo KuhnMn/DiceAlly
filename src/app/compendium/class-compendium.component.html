@@ -9,8 +9,9 @@
         <p class="mt-1 text-sm text-on-surface-variant">Choose a class, explore its subclasses and follow its features level by level.</p>
       </div>
     </div>
-    <button type="button" class="compendium-button" [disabled]="loading()" (click)="reload()" aria-label="Refresh classes"><app-ui-icon name="reset" /> Refresh</button>
+    <app-compendium-search class="ml-auto w-40 max-w-full shrink-0 sm:w-64" [compact]="true" [revision]="revision()" [sources]="selectedSources()" />
   </header>
+  @if (navigationError()) { <p role="alert" class="mb-4 rounded-lg bg-surface-container p-3 text-sm">{{ navigationError() }}</p> }
   @if (error()) { <p role="alert" class="mb-4 rounded-xl bg-surface-container p-4">{{ error() }}</p> }
   @if (loading()) { <p role="status">Reading your classes…</p> }
   @else if (!revision()) {
@@ -32,7 +33,7 @@
         <p class="mb-2 text-xs text-on-surface-variant">Select a subclass to add its features to the progression below.</p>
         <app-compendium-source-filter class="mb-3" label="Subclass Source Books" [books]="subclassBooks()" [selected]="subclassSources()" [defaults]="selectedSources()" (selectedChange)="setSubclassSources($event)" />
         @if (subclassSources().length) {
-          <div class="mb-3 flex flex-wrap gap-1" aria-label="Active subclass filters"><app-active-filter-chips [groups]="[{key: 'source', label: 'Subclass Source Books', values: subclassSourceChips()}]" (removed)="setSubclassSources([])" /></div>
+          <div class="mb-3 flex flex-wrap gap-1.5" aria-label="Active subclass filters"><app-active-filter-chips [groups]="[{key: 'source', label: 'Subclass Source Books', values: subclassSourceChips()}]" (removed)="setSubclassSources([])" /></div>
         }
         <label class="block sm:hidden"><span class="sr-only">Subclass</span>
           <select aria-label="Subclass" class="min-h-11 w-full min-w-0 rounded-lg border border-outline-variant bg-surface-container px-2 text-base text-on-surface"
@@ -88,7 +89,7 @@
       <app-compendium-source-filter [books]="sources()" [selected]="selectedSources()" [defaults]="sourceDefaults.selected()" (selectedChange)="selectedSources.set($event)" />
     </app-list-controls>
     @if (selectedSources().length) {
-      <div class="mb-3 flex flex-wrap gap-1" aria-label="Active filters"><app-active-filter-chips [groups]="[{key: 'source', label: 'Source Books', values: sourceChips()}]" (removed)="selectedSources.set([])" /></div>
+      <div class="mb-3 flex flex-wrap gap-1.5" aria-label="Active filters"><app-active-filter-chips [groups]="[{key: 'source', label: 'Source Books', values: sourceChips()}]" (removed)="selectedSources.set([])" /></div>
     }
     <p class="mb-3 text-sm text-on-surface-variant" role="status">{{ visibleClasses().length }} classes</p>
     <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" aria-label="Classes">

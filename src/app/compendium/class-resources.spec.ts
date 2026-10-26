@@ -97,6 +97,38 @@ describe('Compendium source progression tables', () => {
 });
 
 describe('Class resource presentation', () => {
+  it('aligns all resource and casting groups in one desktop table without losing shorter progressions or notes', () => {
+    const fixture = TestBed.createComponent(ClassResourcesComponent);
+    fixture.componentRef.setInput('owner', owner({
+      spellsKnownProgressionFixed: [6, ...series(2).slice(1)],
+      classTableGroups: [
+        { title: 'Class Resources', colLabels: ['Uses'], rows: [[0], [2]] },
+        { title: 'Spell Slots', colLabels: ['1st', '2nd'], rowsSpellProgression: [[2, 0], [3, 0], [4, 2]] },
+      ],
+    }));
+    fixture.componentRef.setInput('subclass', subclass({ subclassTableGroups: [
+      { title: 'School Points', colLabels: ['Points'], rows: [[1], [2], [3], [4]] },
+    ] }));
+    fixture.detectChanges();
+    const table = fixture.nativeElement.querySelector('table') as HTMLTableElement;
+    expect(fixture.nativeElement.querySelectorAll('table')).toHaveLength(1);
+    expect([...table.querySelectorAll('th[scope="colgroup"]')].map(header => header.getAttribute('colspan'))).toEqual(['1', '2', '1', '1']);
+    expect(table.tHead!.rows[0].textContent).toContain('Spellcasting Progression');
+    expect(table.tHead!.rows[0].textContent).toContain('School Points');
+    const rows = table.tBodies[0].rows;
+    expect(rows).toHaveLength(20);
+    expect([...rows[0].cells].map(cell => cell.textContent?.trim())).toEqual(['1', '0', '2', '0', '6', '1']);
+    expect([...rows[3].cells].map(cell => cell.textContent?.trim())).toEqual(['4', '—', '—', '—', '2', '4']);
+    expect(fixture.nativeElement.querySelector('[aria-label="Progression by level"]').textContent).toContain('not the total');
+    fixture.componentInstance.levelChanged('4'); fixture.detectChanges();
+    expect(table.querySelectorAll('tr.preview-level')).toHaveLength(1);
+    expect(table.querySelector('tr.preview-level th')?.textContent).toBe('4');
+    fixture.componentRef.setInput('subclass', null); fixture.detectChanges();
+    expect(table.tBodies[0].rows).toHaveLength(20);
+    expect(table.textContent).not.toContain('School Points');
+    fixture.destroy();
+  });
+
   it('shares the compact preview and preserves all nine slot values, zeroes and subclass resources at the selected level', () => {
     const record = owner({ classTableGroups: [{ title: 'Spell Slots per Spell Level', colLabels: ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'], rowsSpellProgression: [[2, 0, 0, 0, 0, 0, 0, 0, 0], [3, 0, 0, 0, 0, 0, 0, 0, 0]] }] });
     const fixture = TestBed.createComponent(ClassResourcesComponent);

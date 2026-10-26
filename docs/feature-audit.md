@@ -56,6 +56,8 @@ Die Aufwände sind relative Größen, keine Zusage in Tagen. „Klein“ bedeute
 
 ## Neue Funktionen, die zum Umfang passen
 
+Zusätzlich umgesetzt: Eine kompakte Compendium-weite Suche im Seitenkopf mit Quellenfiltern, paginierten Dropdown-Ergebnissen und direkten Links zur passenden Kategorie samt geöffnetem Eintrag. Die größere Suche der aktuellen Kategorie bleibt davon getrennt. Subclass-Ergebnisse öffnen die genaue Parent-Klasse und aktivieren die Subclass. Die Quellenauswahl wird im Link mitgeführt, ohne die gemeinsamen Standardfilter zu verändern.
+
 Diese Funktionen brauchen zusätzliches UI oder eigenen Zustand; die Content-Daten allein liefern sie nicht.
 
 1. **Favoriten im Compendium und im Charakterbogen.** Wenige angeheftete Spells, Features oder Regeln reduzieren Suchwege. Bibliotheksfavoriten und Charakterfavoriten getrennt halten; Identität an Quelle und Content-Key binden. Aufwand: mittel.

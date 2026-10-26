@@ -11,14 +11,14 @@ export const CONTENT_TYPES = [
   // Race/subrace raw records are provenance; their materialized species own the complete playable data.
   { id: 'species', label: 'Species', icon: 'head', kinds: ['species'] },
   { id: 'background', label: 'Backgrounds', icon: 'file', kinds: ['background'] },
-  { id: 'item', label: 'Items & Equipment', icon: 'backpack', kinds: ['item', 'baseitem', 'itemGroup', 'magicvariant'] },
+  { id: 'item', label: 'Items & Equipment', icon: 'backpack', kinds: ['item', 'itemGroup', 'magicvariant'] },
   { id: 'monster', label: 'Monsters', icon: 'swords', kinds: ['monster', 'monsterTemplate'] },
   { id: 'rules', label: 'Rules & Conditions', icon: 'info', kinds: ['condition', 'disease', 'status', 'variantrule', 'action', 'sense', 'skill'] },
   { id: 'table', label: 'Tables', icon: 'layout-list', kinds: ['table'] },
   { id: 'facility', label: 'Bastion Facilities', icon: 'layout-columns', kinds: ['facility'] },
   { id: 'reward', label: 'Charms & Rewards', icon: 'sparkles', kinds: ['reward'] },
   { id: 'world', label: 'Objects & Vehicles', icon: 'stack', kinds: ['object', 'vehicle'] },
-  { id: 'reference', label: 'Equipment References', icon: 'list', kinds: ['itemType', 'itemProperty', 'itemMastery', 'itemEntry'] },
+  { id: 'reference', label: 'Equipment References', icon: 'list', kinds: ['baseitem', 'itemType', 'itemProperty', 'itemMastery', 'itemEntry'] },
   { id: 'feature', label: 'Class Features', icon: 'sparkles', kinds: ['classFeature', 'subclassFeature'] },
 ] as const;
 export type ContentType = typeof CONTENT_TYPES[number];

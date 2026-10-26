@@ -11,11 +11,9 @@
         <p class="mt-1 text-sm text-on-surface-variant">{{ type() ? 'Browse your installed library. Select an entry to read its details.' : 'Choose the kind of content you want to explore.' }}</p>
       </div>
     </div>
-    <div class="flex items-center gap-2 text-sm">
-      <button type="button" (click)="reload()" [disabled]="loading()" class="compendium-button" aria-label="Refresh compendium"><app-ui-icon name="reset" /><span class="hidden sm:inline">Refresh</span></button>
-      <a routerLink="/content" class="compendium-button"><app-ui-icon name="book" /> Manage Game Data</a>
-    </div>
+    <app-compendium-search class="ml-auto w-40 max-w-full shrink-0 sm:w-64" [compact]="true" [revision]="revision()" [sources]="type() ? filters.source || [] : sourceDefaults.selected()" />
   </header>
+  @if (navigationError()) { <p role="alert" class="mb-4 rounded-lg bg-surface-container p-3 text-sm">{{ navigationError() }}</p> }
 
   @if (error()) {
     <div role="alert" class="mb-4 rounded-xl border border-outline-variant bg-surface-container p-4">
@@ -75,7 +73,7 @@
       <p class="mt-2 text-xs text-on-surface-variant">Matches any selection in each filter; combines different filters. Prerequisites are reference information, not a character eligibility check.</p>
     </app-list-controls>
     @if (query || filterCount) {
-      <div class="mb-3 flex flex-wrap gap-1" aria-label="Active filters">
+      <div class="mb-3 flex flex-wrap gap-1.5" aria-label="Active filters">
         @if (query) { <button type="button" class="filter-chip" (click)="removeQuery()" [attr.aria-label]="'Remove search ' + query">Search: {{ query }} <app-ui-icon name="close" /></button> }
         <app-active-filter-chips [groups]="activeFilters" (removed)="removeFilter($event)" />
       </div>

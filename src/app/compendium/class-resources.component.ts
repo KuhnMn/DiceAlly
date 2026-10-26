@@ -13,6 +13,7 @@ import { classCastingNotes, classGrantedSpells, classResourceTables, groupGrante
     th { font-weight: 600; background: var(--md-sys-color-surface-container-high); }
     .level-cell { position: sticky; left: 0; z-index: 1; min-width: 3.5rem; background: var(--md-sys-color-surface-container); }
     thead .level-cell { z-index: 2; background: var(--md-sys-color-surface-container-high); }
+    .resource-group { border-left: 1px solid var(--md-sys-color-outline-variant); }
     tr.preview-level td, tr.preview-level th { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
     .table-scroll:focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 2px; }
     .slot-values { display: grid; grid-template-columns: repeat(var(--slot-columns), minmax(0, 1fr)); gap: .35rem .5rem; }
@@ -24,6 +25,7 @@ export class ClassResourcesComponent {
   readonly subclass = input<ContentRecord | null>(null);
   readonly selectedLevel = signal(1);
   readonly tables = computed(() => classResourceTables(this.owner(), this.subclass()));
+  readonly tableLevels = computed(() => Array.from({ length: Math.max(0, ...this.tables().map(table => table.rows.length)) }, (_, index) => index + 1));
   readonly notes = computed(() => classCastingNotes(this.owner(), this.subclass()));
   readonly noteGroups = computed(() => {
     const groups = new Map<string, ReturnType<typeof classCastingNotes>>();

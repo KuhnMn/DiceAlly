@@ -42,32 +42,47 @@
       }
     </div>
   }
-  @for (table of tables(); track table.id) {
-    <section class="mb-4 hidden min-w-0 overflow-hidden rounded-xl border border-outline-variant bg-surface-container lg:block" [attr.aria-label]="table.owner + ' ' + table.title">
-      <header class="border-b border-outline-variant bg-surface-container-high px-3 py-2">
-        <div class="flex flex-wrap items-center justify-between gap-1"><h3 class="text-sm font-semibold">{{ table.title }}</h3>
-          @if (table.subclass) { <span class="rounded bg-secondary-container px-2 py-1 text-xs text-on-secondary-container">Subclass</span> }
-        </div>
-        <p class="mt-1 text-xs text-on-surface-variant">{{ table.owner }} · {{ table.publication }}</p>
-      </header>
-      <div class="table-scroll hidden max-w-full overflow-x-auto lg:block" tabindex="0" role="region" [attr.aria-label]="table.owner + ' ' + table.title + ' by level'">
+  @if (tables().length) {
+    <section class="mb-4 hidden min-w-0 overflow-hidden rounded-xl border border-outline-variant bg-surface-container lg:block" aria-label="Progression by level">
+      <div class="table-scroll max-w-full overflow-x-auto" tabindex="0" role="region" aria-label="Class and subclass resources by level">
         <table class="w-full text-sm">
-          <caption class="sr-only">{{ table.owner }} · {{ table.title }}</caption>
-          <thead><tr><th class="level-cell" scope="col">Level</th>
-            @for (label of table.labels; track $index) { <th scope="col"><app-entry-renderer [entry]="{text: label}" [inline]="true" /></th> }
-          </tr></thead>
+          <caption class="sr-only">Class and subclass progression, resources and spell slots by level</caption>
+          <thead>
+            <tr>
+              <th class="level-cell" scope="col" rowspan="2">Level</th>
+              @for (table of tables(); track table.id) {
+                <th class="resource-group" scope="colgroup" [attr.colspan]="table.labels.length">
+                  <span class="block">{{ table.title }}</span>
+                  <span class="mt-0.5 block text-xs font-normal text-on-surface-variant">{{ table.owner }} &middot; {{ table.publication }}@if (table.subclass) { &middot; Subclass }</span>
+                </th>
+              }
+            </tr>
+            <tr>
+              @for (table of tables(); track table.id) {
+                @for (label of table.labels; track $index; let first = $first) {
+                  <th scope="col" [class.resource-group]="first"><app-entry-renderer [entry]="{text: label}" [inline]="true" /></th>
+                }
+              }
+            </tr>
+          </thead>
           <tbody>
-            @for (row of table.rows; track $index; let level = $index) {
-              <tr [class.preview-level]="selectedLevel() === level + 1"><th class="level-cell" scope="row">{{ level + 1 }}</th>
-                @for (label of table.labels; track $index; let column = $index) { <td><app-entry-renderer [entry]="cell(table, level, column)" [compact]="true" /></td> }
+            @for (level of tableLevels(); track level) {
+              <tr [class.preview-level]="selectedLevel() === level"><th class="level-cell" scope="row">{{ level }}</th>
+                @for (table of tables(); track table.id) {
+                  @for (label of table.labels; track $index; let column = $index; let first = $first) {
+                    <td [class.resource-group]="first"><app-entry-renderer [entry]="cell(table, level - 1, column)" [compact]="true" /></td>
+                  }
+                }
               </tr>
             }
           </tbody>
         </table>
       </div>
-      @if (table.note) { <p class="border-t border-outline-variant px-3 py-2 text-xs text-on-surface-variant">{{ table.note }}</p> }
+      @for (table of tables(); track table.id) {
+        @if (table.note) { <p class="border-t border-outline-variant px-3 py-2 text-xs text-on-surface-variant"><span class="font-semibold">{{ table.owner }} &middot; {{ table.title }}:</span> {{ table.note }}</p> }
+      }
     </section>
-  } @empty {
+  } @else {
     <p class="mb-4 rounded-xl bg-surface-container p-3 text-sm text-on-surface-variant">This entry does not include a progression table.</p>
   }
   @if (grantLists().length) {

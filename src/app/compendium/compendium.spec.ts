@@ -113,6 +113,37 @@ describe('Compendium screen', () => {
     return { fixture, screen: fixture.componentInstance };
   }
 
+  it.each([false, true])('opens global search results directly and handles another entry in the same category with mobile=%s', async mobile => {
+    params.next(convertToParamMap({ type: 'spell' }));
+    const queries = new BehaviorSubject(convertToParamMap({ entry: data[0].key, books: '[]', q: data[0].name }));
+    const snapshot = { paramMap: params.value, queryParamMap: queries.value };
+    TestBed.overrideProvider(ActivatedRoute, { useValue: { paramMap: params, queryParamMap: queries, snapshot } });
+    TestBed.inject(SourceBookFilterService).setSelection(['XPHB']);
+    breakpoint.next({ matches: mobile, breakpoints: {} });
+    const { fixture, screen } = await setup();
+    await vi.waitFor(() => expect(screen.selected()?.key).toBe(data[0].key)); fixture.detectChanges();
+    expect(screen.filters.source).toEqual([]);
+    expect(fixture.nativeElement.querySelector(mobile ? 'app-sheet-detail-dialog' : '.desktop-details').textContent).toContain(data[0].name);
+    snapshot.queryParamMap = convertToParamMap({ entry: data[1].key, books: '["XPHB"]', q: data[1].name }); queries.next(snapshot.queryParamMap);
+    await vi.waitFor(() => expect(screen.selected()?.key).toBe(data[1].key)); fixture.detectChanges();
+    expect(screen.filters.source).toEqual(['XPHB']); expect(screen.sourceDefaults.selected()).toEqual(['XPHB']);
+    snapshot.queryParamMap = convertToParamMap({ entry: data[0].key, books: '["XPHB"]' }); queries.next(snapshot.queryParamMap);
+    await vi.waitFor(() => expect(screen.navigationError()).toContain('excluded by Source Books'));
+    expect(screen.selected()).toBeNull();
+    fixture.destroy();
+  });
+
+  it('opens a searched base item in Equipment References without restricting content kinds', async () => {
+    const item: ContentRecord = { key: 'baseitem-rope', kind: 'baseitem', name: 'Rope', publication: 'XPHB', file: 'items-base.json', data: { entries: ['A coiled rope.'] }, links: [] };
+    await cache.put(revision.id, [item]);
+    params.next(convertToParamMap({ type: 'reference' }));
+    TestBed.overrideProvider(ActivatedRoute, { useValue: { paramMap: params, snapshot: { paramMap: params.value, queryParamMap: convertToParamMap({ entry: item.key, books: '["XPHB"]', q: item.name }) } } });
+    const { fixture, screen } = await setup();
+    await vi.waitFor(() => expect(screen.selected()?.key).toBe(item.key));
+    expect(screen.filters.kind ?? []).toEqual([]); expect(screen.results().map(record => record.key)).toContain(item.key);
+    fixture.destroy();
+  });
+
   it('shows the requested category before library loading and keeps the latest navigation without scanning all records', async () => {
     let release!: (value: typeof revision.source) => void;
     const gate = new Promise<typeof revision.source>(resolve => release = resolve);
@@ -194,30 +225,33 @@ describe('Compendium screen', () => {
     fixture.destroy();
   });
 
-  it('excludes base items before pagination by default and lets users include them using Content Kind', async () => {
+  it('shows all item kinds by default and keeps base items exclusively in Equipment References', async () => {
     await cache.put(revision.id, mapContent({
       baseitem: Array.from({ length: 35 }, (_, i) => ({ name: `Base ${i}`, source: 'PHB' })),
       item: [{ name: 'Rope', source: 'PHB' }, { name: 'Magic Rope', source: 'XDMG' }],
       itemGroup: [{ name: 'Packs', source: 'PHB' }],
+      magicvariant: [{ name: 'Magic Weapon', source: 'XDMG' }],
+      itemProperty: [{ name: 'Light', abbreviation: 'L', source: 'PHB', entries: ['Light.'] }],
     }, 'items.json').records);
     const { fixture, screen } = await setup(); await screen.chooseType('item'); fixture.detectChanges();
-    expect(screen.total()).toBe(3); expect(screen.results().every(record => record.kind !== 'baseitem')).toBe(true);
+    expect(screen.total()).toBe(4); expect(screen.results().every(record => record.kind !== 'baseitem')).toBe(true);
+    expect(screen.filters.kind ?? []).toEqual([]);
+    expect(screen.facets().find(facet => facet.key === 'kind')?.values).not.toContain('baseitem');
+    screen.clearFilters(); await screen.search(); expect(screen.total()).toBe(4);
+    await screen.chooseType('reference');
+    expect(screen.total()).toBe(36); expect(screen.results()).toHaveLength(30);
     expect(screen.facets().find(facet => facet.key === 'kind')?.values).toContain('baseitem');
-    const baseOption = [...fixture.nativeElement.querySelectorAll('[aria-label="Content Kind"] label')]
-      .find((label: unknown) => (label as HTMLElement).textContent?.trim() === 'Base Item') as HTMLLabelElement;
-    expect(baseOption.querySelector('input')?.checked).toBe(false);
-    baseOption.querySelector('input')!.click(); await screen.search();
-    expect(screen.total()).toBe(38); expect(screen.results()).toHaveLength(30);
     screen.filters = { kind: ['baseitem'] }; await screen.search(); expect(screen.total()).toBe(35);
-    await screen.chooseType('spell'); await screen.chooseType('item'); expect(screen.total()).toBe(3);
+    await screen.chooseType('spell'); await screen.chooseType('item'); expect(screen.total()).toBe(4);
     fixture.destroy();
   });
 
-  it('does not interpret a base-item-only library as an unrestricted default selection', async () => {
+  it('lists base-item-only libraries under Equipment References even after clearing item filters', async () => {
     await cache.put(revision.id, mapContent({ baseitem: [{ name: 'Only Base', source: 'PHB' }] }, 'base.json').records);
     const { fixture, screen } = await setup(); await screen.chooseType('item');
-    expect(screen.total()).toBe(0); expect(screen.filters.kind).not.toContain('baseitem');
-    screen.clearFilters(); await screen.search(); expect(screen.total()).toBe(1);
+    expect(screen.total()).toBe(0); expect(screen.filters.kind ?? []).toEqual([]);
+    screen.clearFilters(); await screen.search(); expect(screen.total()).toBe(0);
+    await screen.chooseType('reference'); expect(screen.total()).toBe(1);
     fixture.destroy();
   });
 

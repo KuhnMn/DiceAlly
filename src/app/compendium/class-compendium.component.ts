@@ -3,7 +3,10 @@ import { ScrollToTopComponent } from '../scroll-to-top.component';
 import { loadRelatedEntries } from './related-entries';
 import { EntryHistory } from './entry-history';
 import { Component, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { CompendiumSearchComponent } from './compendium-search.component';
+import { requestedSourceBooks } from './compendium-navigation';
 import { IndexedDbContentCache } from '../content/content-cache';
 import { ContentRecord, ImportRevision } from '../content/content.model';
 import { classDefinition } from '../content/class-adapter';
@@ -23,13 +26,17 @@ import { ClassProficienciesComponent } from './class-proficiencies.component';
 
 @Component({
   selector: 'app-class-compendium',
-  imports: [ScrollToTopComponent, ClassProficienciesComponent, ActiveFilterChipsComponent, CompendiumSourceFilterComponent, ClassResourcesComponent, RouterLink, LibraryNavigationComponent, ListControlsComponent, UiIconComponent, SheetDetailDialogComponent, CompendiumDetailsComponent],
+  imports: [CompendiumSearchComponent, ScrollToTopComponent, ClassProficienciesComponent, ActiveFilterChipsComponent, CompendiumSourceFilterComponent, ClassResourcesComponent, RouterLink, LibraryNavigationComponent, ListControlsComponent, UiIconComponent, SheetDetailDialogComponent, CompendiumDetailsComponent],
   templateUrl: './class-compendium.component.html',
   styleUrl: './compendium.component.css',
 })
 export class ClassCompendiumComponent implements OnInit, OnDestroy {
   readonly sourceDefaults = inject(SourceBookFilterService);
   private readonly cache = new IndexedDbContentCache();
+  private readonly route = inject(ActivatedRoute);
+  private routeSubscription?: Subscription;
+  private navigationVersion = 0;
+  readonly navigationError = signal('');
   private version = 0;
   private subclassVersion = 0;
   private destroyed = false;
@@ -73,7 +80,12 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
   });
   readonly levels = computed(() => groupProgression(this.baseFeatures(), this.subclassFeatures(), this.featureQuery()));
   readonly missingCount = computed(() => this.missingBase().length + this.missingSubclass().length);
-  async ngOnInit() { await this.reload(); }
+  async ngOnInit() {
+    this.routeSubscription = this.route.queryParamMap.subscribe(() => {
+      if (this.revision() && !this.loading()) void this.openRequestedEntry();
+    });
+    await this.reload();
+  }
   async reload() {
     const version = ++this.version;
     this.resetClass(); this.loading.set(true); this.error.set('');
@@ -94,8 +106,36 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
       this.revision.set(revision ?? null);
       this.subclassPublications.set(subclassBooks);
       this.classes.set(records.sort((a, b) => a.name.localeCompare(b.name) || a.publication.localeCompare(b.publication)));
+      this.loading.set(false);
+      await this.openRequestedEntry();
     } catch (error) { if (version === this.version) this.error.set(`Could not load classes: ${String(error)}`); }
     finally { if (version === this.version) this.loading.set(false); }
+  }
+  private async openRequestedEntry() {
+    const navigation = ++this.navigationVersion, version = this.version;
+    const requested = this.route.snapshot.queryParamMap, key = requested.get('entry'), revision = this.revision();
+    this.navigationError.set('');
+    if (!key || !revision) return;
+    const current = () => navigation === this.navigationVersion && !this.destroyed;
+    try {
+      const entry = await this.cache.get(revision.id, key);
+      if (!current() || version !== this.version) return;
+      const sources = requestedSourceBooks(requested) ?? [...this.sourceDefaults.selected()];
+      this.selectedSources.set(sources);
+      if (!entry || !['class', 'subclass'].includes(entry.kind) || !this.sourceDefaults.allows(entry.publication, sources)) {
+        ++this.version; this.resetClass();
+        this.navigationError.set('The requested class or subclass is unavailable or excluded by Source Books.'); return;
+      }
+      const parentKey = entry.kind === 'class' ? entry.key : classDefinition(entry).parent?.key;
+      const variants = this.classes().filter(record => record.homebrewVariant?.originalKey === parentKey);
+      const owner = this.classes().find(record => record.key === parentKey) ?? (variants.length === 1 ? variants[0] : undefined);
+      if (!owner) { ++this.version; this.resetClass(); this.navigationError.set('The parent class for this entry is not installed.'); return; }
+      await this.chooseClass(owner);
+      if (!current() || this.selectedClass()?.key !== owner.key) return;
+      if (entry.kind === 'subclass') await this.chooseSubclass(this.subclasses().find(record => record.key === entry.key) ?? null);
+    } catch {
+      if (current() && version === this.version) { ++this.version; this.resetClass(); this.navigationError.set('Could not open the requested class or subclass.'); }
+    }
   }
   resetClass() {
     ++this.subclassVersion; this.closeDetails(); this.selectedClass.set(null); this.selectedSubclass.set(null);
@@ -173,5 +213,5 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
   closeDetails() {
     ++this.detailVersion; this.detailHistory.clear(); this.detail.set(null); this.related.set([]); this.detailLoading.set(false); this.detailError.set('');
   }
-  ngOnDestroy() { this.destroyed = true; ++this.version; ++this.subclassVersion; ++this.detailVersion; }
+  ngOnDestroy() { this.destroyed = true; ++this.version; ++this.subclassVersion; ++this.detailVersion; ++this.navigationVersion; this.routeSubscription?.unsubscribe(); }
 }

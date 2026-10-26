@@ -24,11 +24,13 @@ import { CONTENT_TYPES, ContentType, FACET_LABELS, Facet, Filters, facetLabel, k
 import { LibraryNavigationComponent } from '../library-navigation.component';
 import { SourceBookFilterComponent } from '../editor/source-book-filter.component';
 import { SourceBookFilterService } from '../editor/source-book-filter.service';
+import { CompendiumSearchComponent } from './compendium-search.component';
+import { requestedSourceBooks } from './compendium-navigation';
 import { CompendiumSourceFilterComponent } from './compendium-source-filter.component';
 
 @Component({
   selector: 'app-compendium',
-  imports: [ScrollToTopComponent, ActiveFilterChipsComponent, SourceBookFilterComponent, CompendiumSourceFilterComponent, LibraryNavigationComponent, RouterLink, ListControlsComponent, UiIconComponent, SheetDetailDialogComponent, CompendiumDetailsComponent, SpellEffectFilterComponent],
+  imports: [CompendiumSearchComponent, ScrollToTopComponent, ActiveFilterChipsComponent, SourceBookFilterComponent, CompendiumSourceFilterComponent, LibraryNavigationComponent, RouterLink, ListControlsComponent, UiIconComponent, SheetDetailDialogComponent, CompendiumDetailsComponent, SpellEffectFilterComponent],
   templateUrl: './compendium.component.html',
   styleUrl: './compendium.component.css',
 })
@@ -40,6 +42,8 @@ export class CompendiumComponent implements OnInit, OnDestroy {
   private subscription?: Subscription;
   private version = 0;
   private detailVersion = 0;
+  private navigationVersion = 0;
+  readonly navigationError = signal('');
   private timer?: ReturnType<typeof setTimeout>;
   private destroyed = false;
   readonly types = CONTENT_TYPES;
@@ -97,6 +101,9 @@ export class CompendiumComponent implements OnInit, OnDestroy {
       this.showCategory(category);
       if (ready) void this.chooseType(category);
     });
+    if (this.route.queryParamMap) this.subscription.add(this.route.queryParamMap.subscribe(() => {
+      if (ready) void this.chooseType(this.route.snapshot.paramMap.get('type'));
+    }));
     const loaded = await this.loadLibrary();
     ready = true;
     if (loaded && !this.destroyed) await this.chooseType(category);
@@ -134,10 +141,13 @@ export class CompendiumComponent implements OnInit, OnDestroy {
   async chooseType(id: string | null) {
     clearTimeout(this.timer);
     const version = ++this.version;
+    const navigation = ++this.navigationVersion;
+    this.navigationError.set('');
     const type = this.showCategory(id);
     const requested = this.route.snapshot.queryParamMap;
     this.query = requested?.get('q') ?? '';
-    this.filters = { source: requested?.get('source') ? [requested.get('source')!] : [...this.sourceDefaults.selected()] };
+    const requestedBooks = requestedSourceBooks(requested);
+    this.filters = { source: requestedBooks ?? (requested?.get('source') ? [requested.get('source')!] : [...this.sourceDefaults.selected()]) };
     this.effects = {}; this.sort = 'name'; this.offset = 0;
     this.closeDetails(); this.results.set([]); this.total.set(0); this.facets.set([]);
     const revision = this.revision();
@@ -158,19 +168,27 @@ export class CompendiumComponent implements OnInit, OnDestroy {
         return false;
       });
       if (version !== this.version) return;
-      if (type.id === 'item' && options.get('kind')?.has('baseitem')) {
-        const kinds = [...options.get('kind')!].filter(kind => kind !== 'baseitem');
-        // An empty selection means all kinds, so retain an explicit exclusion even
-        // when this library currently contains only base-item definitions.
-        this.filters = { ...this.filters, kind: kinds.length ? kinds : type.kinds.filter(kind => kind !== 'baseitem') };
-      }
       this.facets.set((Object.keys(FACET_LABELS) as Facet[]).flatMap(key => {
         const values = [...options.get(key) ?? []].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
         return values.length ? [{ key, label: FACET_LABELS[key], values }] : [];
       }));
       const requestedSource = requested?.get('source');
-      if (requestedSource) this.filters.source = [[...options.get('source') ?? []].find(source => source.toLowerCase() === requestedSource.toLowerCase()) ?? requestedSource];
+      if (requestedSource && requestedBooks === null) this.filters.source = [[...options.get('source') ?? []].find(source => source.toLowerCase() === requestedSource.toLowerCase()) ?? requestedSource];
       await this.search();
+      const entry = requested?.get('entry');
+      if (entry && navigation === this.navigationVersion && !this.destroyed) {
+        try {
+          const record = await this.cache.get(revision.id, entry);
+          if (navigation !== this.navigationVersion || this.destroyed) return;
+          if (!record || !(type.kinds as readonly string[]).includes(record.kind) || !this.sourceDefaults.allows(record.publication, this.filters.source ?? [])) {
+            this.navigationError.set('The requested entry is unavailable in this category or excluded by Source Books.');
+          } else {
+            if (navigation === this.navigationVersion && !this.destroyed) await this.openDetails(record);
+          }
+        } catch {
+          if (navigation === this.navigationVersion && !this.destroyed) this.navigationError.set('Could not open the requested entry.');
+        }
+      }
     } catch (error) { if (version === this.version) { this.error.set(`Could not load this category: ${String(error)}`); this.loading.set(false); } }
   }
   scheduleSearch() {
@@ -236,5 +254,5 @@ export class CompendiumComponent implements OnInit, OnDestroy {
     finally { if (version === this.detailVersion) this.detailLoading.set(false); }
   }
   closeDetails() { ++this.detailVersion; this.detailHistory.clear(); this.selected.set(null); this.related.set([]); this.itemView.set(null); this.detailLoading.set(false); this.detailError.set(''); }
-  ngOnDestroy() { this.destroyed = true; ++this.version; ++this.detailVersion; clearTimeout(this.timer); this.subscription?.unsubscribe(); }
+  ngOnDestroy() { this.destroyed = true; ++this.version; ++this.detailVersion; ++this.navigationVersion; clearTimeout(this.timer); this.subscription?.unsubscribe(); }
 }

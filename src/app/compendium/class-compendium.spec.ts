@@ -1,6 +1,10 @@
 import 'fake-indexeddb/auto';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
+import { RouterTestingHarness } from '@angular/router/testing';
+import { CompendiumComponent } from './compendium.component';
+import { CompendiumSearchComponent } from './compendium-search.component';
 import { vi } from 'vitest';
 import { mapContent } from '../content/content-adapter';
 import { canonicalClassRecord } from '../content/class-adapter';
@@ -52,6 +56,51 @@ async function catalog() {
 describe('Class compendium progression', () => {
   beforeEach(() => localStorage.removeItem('ally-creator-source-books'));
   afterEach(() => vi.restoreAllMocks());
+
+  it('navigates from a global subclass search result to its exact class with that subclass active', async () => {
+    const f = await catalog(), school = f.find('subclass', 'School', 'TCE');
+    TestBed.configureTestingModule({ providers: [provideRouter([
+      { path: 'compendium', component: CompendiumComponent },
+      { path: 'compendium/class', component: ClassCompendiumComponent },
+      { path: 'compendium/:type', component: CompendiumComponent },
+    ])] });
+    TestBed.inject(SourceBookFilterService).setSelection(['TCE']);
+    const harness = await RouterTestingHarness.create('/compendium');
+    const home = harness.routeDebugElement!.componentInstance as CompendiumComponent;
+    await vi.waitFor(() => expect(home.revision()?.id).toBe(f.revision.id)); harness.detectChanges();
+    const search = harness.routeDebugElement!.query(By.directive(CompendiumSearchComponent)).componentInstance as CompendiumSearchComponent;
+    search.setQuery('School'); harness.detectChanges(); await search.search(); harness.detectChanges();
+    const link = [...harness.routeNativeElement!.querySelectorAll('app-compendium-search a')].find(anchor => new URL((anchor as HTMLAnchorElement).href).searchParams.get('entry') === school.key) as HTMLAnchorElement;
+    expect(link).toBeDefined(); link.click();
+    await vi.waitFor(() => expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(ClassCompendiumComponent));
+    const screen = harness.routeDebugElement!.componentInstance as ClassCompendiumComponent;
+    await vi.waitFor(() => expect(screen.selectedSubclass()?.key).toBe(school.key));
+    expect(screen.selectedClass()?.key).toBe(f.find('class', 'Mage').key);
+    expect(screen.selectedSources()).toEqual(['TCE']);
+  });
+
+  it('opens the exact parent class and activates a searched subclass, including a parent outside the selected books', async () => {
+    const f = await catalog(), school = f.find('subclass', 'School', 'TCE'), modern = f.find('subclass', 'Modern School', 'TCE');
+    const queries = new BehaviorSubject(convertToParamMap({ entry: school.key, books: '["TCE"]' }));
+    const snapshot = { queryParamMap: queries.value };
+    TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: ActivatedRoute, useValue: { queryParamMap: queries, snapshot } }] });
+    TestBed.inject(SourceBookFilterService).setSelection(['XPHB']);
+    const fixture = TestBed.createComponent(ClassCompendiumComponent), screen = fixture.componentInstance; fixture.detectChanges();
+    await vi.waitFor(() => expect(screen.selectedSubclass()?.key).toBe(school.key));
+    await vi.waitFor(() => expect(screen.subclassLoading()).toBe(false)); fixture.detectChanges();
+    expect(screen.loading()).toBe(false); expect(screen.selectedClass()?.key).toBe(f.find('class', 'Mage').key);
+    expect(screen.selectedSources()).toEqual(['TCE']); expect(screen.subclassSources()).toEqual(['TCE']);
+    expect(screen.subclassFeatures().map(row => row.record.name)).toEqual(['School Gift']);
+    expect(fixture.nativeElement.querySelector('[aria-label="Selected subclass description"]').textContent).toContain('School');
+    snapshot.queryParamMap = convertToParamMap({ entry: modern.key, books: '["TCE"]' }); queries.next(snapshot.queryParamMap);
+    await vi.waitFor(() => expect(screen.selectedSubclass()?.key).toBe(modern.key));
+    expect(screen.selectedClass()?.key).toBe(f.find('class', 'Mage', 'XPHB').key);
+    expect(screen.sourceDefaults.selected()).toEqual(['XPHB']);
+    snapshot.queryParamMap = convertToParamMap({ entry: school.key, books: '["XPHB"]' }); queries.next(snapshot.queryParamMap);
+    await vi.waitFor(() => expect(screen.navigationError()).toContain('excluded by Source Books'));
+    expect(screen.selectedClass()).toBeNull(); expect(screen.selectedSubclass()).toBeNull();
+    fixture.destroy();
+  });
 
   it('offers subclass-only books in the class list and finds only their exact parent editions', async () => {
     const f = await catalog(); TestBed.configureTestingModule({ providers: [provideRouter([])] });
