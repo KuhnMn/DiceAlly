@@ -6,7 +6,9 @@
 <section class="editor-card feature-editor">
   <app-editor-list-header title="Facilities" [count]="facilities.length" controlsId="added-facilities" [(visible)]="listVisible" (add)="openCatalog()" />
   <div id="added-facilities" [hidden]="!listVisible">
-    <app-list-controls label="Search facilities" searchName="selected-facility-search" [(query)]="listSearch" [hasFilters]="false" />
+    <app-list-controls label="Search facilities" searchName="selected-facility-search" [(query)]="listSearch" [filterCount]="filterCount(listFilters)" (cleared)="clearListFilters()">
+      <app-facility-filters [value]="listFilters" [levels]="listLevels" (changed)="listFilters = $event" />
+    </app-list-controls>
     <div class="rounded-lg bg-surface-container">
       @for (facility of selected; track facility.editorId) {
         <app-editor-entry-row [name]="facility.name" [expanded]="expanded.has(facility)" [notesCount]="facility.notes?.length || 0" (detailsRequested)="toggle(facility)" (removeRequested)="remove(facility)">
@@ -40,12 +42,9 @@
           <button type="button" class="action-button" [disabled]="!customName.trim()" (click)="addCustom()">Add</button>
         </div>
       </details>
-      <app-list-controls label="Search facilities" searchName="facility-search" [query]="search" (queryChange)="search = $event; searchChanged()" [filterCount]="(type === 'ALL' ? 0 : 1) + (level ? 1 : 0)" (cleared)="clearFilters()">
+      <app-list-controls label="Search facilities" searchName="facility-search" [query]="search" (queryChange)="search = $event; searchChanged()" [filterCount]="filterCount({type, level, order})" (cleared)="clearFilters()">
         <button list-toolbar-action type="button" class="flex h-11 w-8 items-center justify-center rounded-lg text-on-surface-variant" aria-label="Refresh facility catalog" [disabled]="catalog.loading()" (click)="refreshContent()"><app-ui-icon name="reset" /></button>
-        <div class="grid grid-cols-2 gap-2">
-          <label><span class="field-label">Type</span><select class="editor-input" name="facility-type" [(ngModel)]="type" (ngModelChange)="searchChanged()"><option value="ALL">All Types</option><option value="basic">Basic</option><option value="special">Special</option></select></label>
-          <label><span class="field-label">Level</span><select class="editor-input" name="facility-level" [(ngModel)]="level" (ngModelChange)="searchChanged()"><option value="">All Levels</option>@for (level of catalogLevels; track level) { <option [value]="level">Level {{ level }}</option> }</select></label>
-        </div>
+        <app-facility-filters [value]="{type, level, order}" [levels]="catalogLevels" (changed)="setCatalogFilters($event)" />
       </app-list-controls>
       @if (catalog.message()) { <p role="status" class="mb-2 text-sm text-on-surface-variant">{{ catalog.message() }} <a routerLink="/content" class="text-primary underline">Content Imports</a></p> }
       @if (catalog.loading()) { <p role="status" class="text-sm text-on-surface-variant">Searching…</p> }

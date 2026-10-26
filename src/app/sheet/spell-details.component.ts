@@ -36,7 +36,21 @@ import type { SpellCastingStats } from '../content/spell-effects';
         }
         @if (spell()?.range; as range) { <div><dt class="font-semibold text-on-surface-variant">Range</dt><dd>{{ helpers.spellRangeLabel(range) }}</dd></div> }
         @if (value.components; as components) {
-          <div><dt class="font-semibold text-on-surface-variant">Components</dt><dd><app-entry-renderer [entry]="{text: components.summaryText}" [compact]="true" /></dd></div>
+          <div><dt class="font-semibold text-on-surface-variant">Components</dt><dd>
+            <div class="mt-1 flex flex-wrap gap-1">
+              @for (badge of componentBadges(); track badge.label) {
+                <span class="rounded bg-secondary-container px-1.5 py-0.5 text-xs text-on-secondary-container" [title]="badge.description">{{ badge.label }}</span>
+              }
+              @if (!componentBadges().length) { <span>None</span> }
+            </div>
+            @if (components.material; as material) {
+              @if (material.descriptionText) { <div class="mt-2 border-l-2 border-outline-variant pl-2 text-xs text-on-surface-variant"><app-entry-renderer [entry]="{text: material.descriptionText}" [compact]="true" /></div> }
+              <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+                @if (material.costInCopperPieces != null) { <span><strong>Material Cost:</strong> {{ material.costInCopperPieces / 100 }} gp</span> }
+                @if (consumptionLabel(); as label) { <span class="rounded bg-tertiary-container px-1.5 py-0.5 text-on-tertiary-container">{{ label }}</span> }
+              </div>
+            }
+          </dd></div>
         }
         @if (value.durations.length) {
           <div><dt class="font-semibold text-on-surface-variant">Duration</dt><dd class="space-y-1">
@@ -59,5 +73,18 @@ export class SpellDetailsComponent {
     return spell ? prepareSpellDetails(spell) : null;
   });
   readonly durationText = spellDurationText;
+  readonly componentBadges = computed(() => {
+    const value = this.details()?.components;
+    return [
+      ...(value?.requiresVerbal ? [{ label: 'V', description: 'Verbal' }] : []),
+      ...(value?.requiresSomatic ? [{ label: 'S', description: 'Somatic' }] : []),
+      ...(value?.material ? [{ label: 'M', description: 'Material' }] : []),
+      ...(value?.requiresRoyalty ? [{ label: 'R', description: 'Royalty' }] : []),
+    ];
+  });
+  readonly consumptionLabel = computed(() => {
+    const consumption = this.details()?.components?.material?.consumption;
+    return consumption === 'consumed' ? 'Consumed' : consumption === 'notConsumed' ? 'Not Consumed' : consumption === 'optional' ? 'Optionally Consumed' : '';
+  });
   readonly helpers = inject(CharacterHelpersService);
 }

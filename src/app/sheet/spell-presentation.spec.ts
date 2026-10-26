@@ -67,6 +67,9 @@ describe('Prepared spell details', () => {
       expect(text).toContain(expected);
     }
     expect(text).not.toContain('{@');
+    expect(text).toContain('Material Cost: 1000 gp');
+    expect(text).toContain('Consumed');
+    expect(text).not.toContain('Requires a feature');
     const labels = Array.from(fixture.nativeElement.querySelectorAll('dt'), label => (label as HTMLElement).textContent);
     expect(labels).toEqual(['Casting Time', 'Components', 'Duration']);
     expect(fixture.nativeElement.querySelector('dd').textContent).toContain('or');

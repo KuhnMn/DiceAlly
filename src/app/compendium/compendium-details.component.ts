@@ -13,6 +13,8 @@ import { formatSpeciesMovement } from '../content/species-adapter';
 import { ObjectStatBlockComponent } from '../sheet/object-stat-block.component';
 import { ObjectCompanion } from '../models/companions';
 import { FACET_LABELS, Facet, facetLabel, kindLabel, recordFacets } from './compendium-catalog';
+import { FacilityInformationComponent } from '../sheet/facility-information.component';
+import { facilitySnapshot } from '../editor/facility-selection';
 
 /** Read-only compendium projection: the sheet's renderers without character mutations. */
 @Component({
@@ -28,7 +30,7 @@ import { FACET_LABELS, Facet, facetLabel, kindLabel, recordFacets } from './comp
     :host(.compact-reference) .gap-3 { gap: .5rem; }
     :host(.compact-reference) .text-base { font-size: .875rem; line-height: 1.4; }
   `],
-  imports: [EntryRendererComponent, SpellDetailsComponent, MonsterStatBlockComponent, ObjectStatBlockComponent, PrerequisiteDetailsComponent],
+  imports: [EntryRendererComponent, SpellDetailsComponent, MonsterStatBlockComponent, ObjectStatBlockComponent, PrerequisiteDetailsComponent, FacilityInformationComponent],
   template: `
     @if (!overview()) {
     <p class="mb-3 text-sm text-on-surface-variant">{{ kindLabel(record().kind) }} · {{ record().publication }}
@@ -41,6 +43,7 @@ import { FACET_LABELS, Facet, facetLabel, kindLabel, recordFacets } from './comp
     </dl>
     }
     <app-prerequisite-details [prerequisites]="prerequisites()" />
+    @if (facility(); as facility) { <app-facility-information [definition]="facility" /> }
     @if (!overview() && statistics().length) {
       <dl class="mb-4 grid grid-cols-2 gap-3 text-sm">
         @for (stat of statistics(); track stat.label) {
@@ -78,6 +81,7 @@ import { FACET_LABELS, Facet, facetLabel, kindLabel, recordFacets } from './comp
 export class CompendiumDetailsComponent {
   /** Class/subclass descriptions live beside their existing summary and resource information. */
   readonly overview = input(false);
+  readonly facility = computed(() => this.record().kind === 'facility' ? facilitySnapshot(this.record()) : null);
   readonly compactReference = computed(() => ['monster', 'vehicle', 'object'].includes(this.record().kind));
   readonly record = input.required<ContentRecord>();
   readonly revision = input.required<ImportRevision>();
@@ -124,7 +128,7 @@ export class CompendiumDetailsComponent {
     return rows;
   });
   readonly metadata = computed(() => Object.entries(recordFacets(this.record()))
-    .filter(([key]) => key !== 'source' && key !== 'kind'
+    .filter(([key]) => key !== 'source' && key !== 'kind' && key !== 'facilityOrder'
       && !(this.record().kind === 'monster' && ['size', 'creature', 'cr'].includes(key)))
     .map(([key, values]) => ({ label: FACET_LABELS[key as Facet], value: values!.map(value => facetLabel(key as Facet, value)).join(', ') })));
   readonly sections = computed(() => {

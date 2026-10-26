@@ -23,14 +23,36 @@ const revision: ImportRevision = { id: 'bastions-test', namespace: 'development-
   status: 'ready', createdAt: new Date().toISOString(), files: [], diagnostics: [], metrics: { bytes: 0, records: 1, mappedBytes: 0, elapsedMs: 0 } };
 function record(name = 'Arcane Study', book = 'XDMG', level = 5) {
   const source: BastionSource = { name, source: book, facilityType: 'special', level,
+    orders: ['research'], space: ['roomy', 'vast'], hirelings: [{ exact: 1, space: 'roomy' }, { min: 2, space: 'vast' }],
     prerequisite: [{ spellcasting: true }], entries: ['Study spells in your bastion.'] };
   return { ...mapContent({ facility: [source] }, 'bastions.json').records[0], data: {}, referenceDefinition: { ...adaptBastionDefinition(source), kind: 'facility' as const } };
 }
 
 describe('Bastion facility editor', () => {
+  afterEach(() => vi.restoreAllMocks());
   beforeEach(() => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
     TestBed.inject(SourceBookFilterService).setSelection([]);
+  });
+
+  it('filters both saved and catalog facilities by order and preserves staffing alternatives in previews', async () => {
+    const sheet = emptyBasicCharacter(), fixture = TestBed.createComponent(BastionsEditorComponent);
+    fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
+    const editor = fixture.componentInstance; editor.catalog.revision.set(revision);
+    const source = record(); editor.add(source); editor.toggle(editor.facilities[0]); fixture.detectChanges();
+    editor.listFilters = { type: 'special', level: '5', order: 'research' }; expect(editor.selected).toHaveLength(1);
+    editor.listFilters = { ...editor.listFilters, order: 'trade' }; expect(editor.selected).toHaveLength(0);
+    editor.clearListFilters(); expect(editor.selected).toHaveLength(1);
+    // The catalog query uses the same schema fields as the saved-list filter.
+    const search = vi.spyOn(IndexedDbContentCache.prototype, 'searchCategory').mockImplementation(async (_id, _kinds, _query, _offset, _limit, includes) => {
+      const rows = includes && !includes(source) ? [] : [source]; return { records: rows, total: rows.length };
+    });
+    editor.order = 'trade'; await editor.nextPage(0); expect(editor.catalog.results()).toHaveLength(0);
+    editor.order = 'research'; await editor.nextPage(0); expect(editor.catalog.results()).toHaveLength(1);
+    expect(search).toHaveBeenCalled();
+    const preview = editor.catalogEntry(source);
+    expect(preview.entity.hirelings).toEqual([{ exact: 1, space: 'roomy' }, { min: 2, space: 'vast' }]);
+    fixture.destroy();
   });
 
   it('adds independent offline snapshots, edits notes without uses or Combat, and persists plan and instances through saves and cloud export', async () => {

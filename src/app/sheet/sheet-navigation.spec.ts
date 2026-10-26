@@ -145,7 +145,7 @@ describe('Sheet navigation and mobile health integration', () => {
     const { fixture, component, store, sheet } = setup();
     const status = fixture.debugElement.query(By.directive(MobileSheetStatusComponent)).componentInstance as MobileSheetStatusComponent;
     expect(component.hasUnsavedChanges()).toBe(false);
-    status.amount.set('8');
+    status.amount.set('8'); fixture.detectChanges();
     const damage = [...fixture.nativeElement.querySelectorAll('app-mobile-sheet-status button')].find((button: any) => button.textContent.trim() === 'Damage') as HTMLButtonElement;
     damage.click(); fixture.detectChanges();
     expect(sheet.character!.currentHp).toBe(12);
@@ -157,7 +157,7 @@ describe('Sheet navigation and mobile health integration', () => {
     expect(store.nativeSave).toHaveBeenCalledWith(expect.objectContaining({ character: expect.objectContaining({ currentHp: 12 }) }));
     expect(component.hasUnsavedChanges()).toBe(false);
     expect(desktopSave.textContent).toContain('Saved');
-    status.amount.set('1'); damage.click(); fixture.detectChanges();
+    status.amount.set('1'); fixture.detectChanges(); damage.click(); fixture.detectChanges();
     expect(desktopSave.textContent).toContain('Save changes');
   });
 

@@ -94,12 +94,10 @@ type SpellLevelFilter = 'ALL' | number;
                           </div>
                         }
                         @if (spell.entity?.entriesHigherLevel?.length) {
-                          <div class="mt-3 border-t border-outline-variant pt-3">
-                            <div class="text-sm font-semibold text-on-surface">At Higher Levels</div>
-                            @for (higher of spell.entity?.entriesHigherLevel ?? []; track $index) {
-                              <app-entry-renderer [entries]="higherLevelEntries(higher)"></app-entry-renderer>
-                            }
-                          </div>
+                          <section class="mt-3 border-t border-outline-variant pt-3" aria-label="Higher-level casting" [class.rounded-lg]="castControl.upcasting()" [class.bg-primary-container]="castControl.upcasting()" [class.text-on-primary-container]="castControl.upcasting()" [class.p-3]="castControl.upcasting()">
+                            <h3 class="text-sm font-semibold">At Higher Levels@if (castControl.upcasting()) { · Level {{ castControl.level() }} }</h3>
+                            @for (higher of spell.entity?.entriesHigherLevel ?? []; track $index) { <app-entry-renderer [entries]="higherLevelEntries(higher)" /> }
+                          </section>
                         }
 
                       </div>
@@ -119,7 +117,7 @@ type SpellLevelFilter = 'ALL' | number;
                           [notes]="spell.notes"
                           (notesChanged)="updateSpellNotes(spell, $event)"
                         />
-                      <app-spell-cast-control [spell]="spell" [sheet]="characterData()!" />
+                      <app-spell-cast-control #castControl [spell]="spell" [sheet]="characterData()!" />
                       <ng-container [ngTemplateOutlet]="detailNavigation()" />
 </app-sheet-detail-dialog>
 </ng-template>
@@ -380,6 +378,7 @@ type SpellLevelFilter = 'ALL' | number;
   `,
 })
 export class SpellsPageComponent {
+  readonly higherLevelEntries = higherLevelEntries;
   /** Render the same source dialog in place, without mounting the catalog or consuming navigation. */
   readonly detailEntry = input<SpellEntryFull | null>(null);
   readonly detailNavigation = input<TemplateRef<unknown> | null>(null);
@@ -389,7 +388,6 @@ export class SpellsPageComponent {
     else this.toggleExpanded(id);
   }
 
-  readonly higherLevelEntries = higherLevelEntries;
 
 
   characterData = input.required<ExportedCharacter | null>();

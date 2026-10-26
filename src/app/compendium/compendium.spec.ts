@@ -34,12 +34,15 @@ describe('Compendium catalog', () => {
 
   it('reads canonical facility types and levels and keeps unlisted levels distinct from zero', () => {
     const special: ContentRecord = { key: 'study', kind: 'facility', name: 'Arcane Study', publication: 'TEST', file: 'bastions.json', links: [], data: {},
-      referenceDefinition: { version: 1, kind: 'facility', name: 'Arcane Study', source: 'TEST', facilityType: 'special', level: 5, entries: [] } };
+      referenceDefinition: { version: 1, kind: 'facility', name: 'Arcane Study', source: 'TEST', facilityType: 'special', level: 5, orders: ['research'], entries: [] } };
     const basic: ContentRecord = { ...special, key: 'bedroom', name: 'Bedroom', referenceDefinition: undefined, data: { facilityType: 'basic' } };
     expect(recordFacets(special)).toMatchObject({ facilityType: ['special'], facilityLevel: ['5'] });
     expect(recordFacets(basic)).toMatchObject({ facilityType: ['basic'], facilityLevel: ['unspecified'] });
     expect(recordFacets(special).level).toBeUndefined();
     expect(matchesFilters(special, { facilityType: ['special'], facilityLevel: ['5'] })).toBe(true);
+    expect(matchesFilters(special, { facilityOrder: ['research'] })).toBe(true);
+    expect(matchesFilters(special, { facilityOrder: ['trade'] })).toBe(false);
+    expect(facetLabel('facilityOrder', 'research')).toBe('Research');
     expect(matchesFilters(basic, { facilityType: ['basic'], facilityLevel: ['5'] })).toBe(false);
     expect(facetLabel('facilityLevel', '0')).toBe('Level 0');
     expect(facetLabel('facilityLevel', 'unspecified')).toBe('No Level Listed');

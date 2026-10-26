@@ -3,10 +3,11 @@ import type { FacilityEntry } from '../models/bastion';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { PrerequisiteDetailsComponent } from './prerequisite-details.component';
 import { facilityTypeLabel } from '../models/bastion';
+import { FacilityInformationComponent } from './facility-information.component';
 
 @Component({
   selector: 'app-facility-details',
-  imports: [EntryRendererComponent, PrerequisiteDetailsComponent],
+  imports: [EntryRendererComponent, PrerequisiteDetailsComponent, FacilityInformationComponent],
   host: { class: 'block min-w-0' },
   template: `
     @if (showMetadata()) {
@@ -17,6 +18,7 @@ import { facilityTypeLabel } from '../models/bastion';
     </div>
     }
     <app-prerequisite-details [prerequisites]="facility().entity.prerequisite" />
+    <app-facility-information [definition]="facility().entity" />
     <app-entry-renderer [entries]="facility().entity.entries" />
   `,
 })

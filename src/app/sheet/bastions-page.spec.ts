@@ -5,7 +5,7 @@ import { emptyBasicCharacter } from '../editor/basic-info';
 import { BastionsPageComponent } from './bastions-page.component';
 import { BastionPlanComponent } from './bastion-plan.component';
 import { FeatureNotesComponent } from './feature-notes.component';
-import { bastionPlanUrl } from '../models/bastion';
+import { bastionPlanUrl, facilityHirelingOptions } from '../models/bastion';
 import { FacilityEntry } from '../models/bastion';
 
 function facility(): FacilityEntry {
@@ -15,6 +15,27 @@ function facility(): FacilityEntry {
 
 describe('Bastion viewer and plan', () => {
   beforeEach(() => TestBed.configureTestingModule({ providers: [provideRouter([])] }));
+  it('shows schema alternatives without summing them and filters facilities by order, type and level', () => {
+    const sheet = emptyBasicCharacter(), entry = facility();
+    Object.assign(entry.entity, { orders: ['research', 'empower'], space: ['roomy', 'vast'], hirelings: [{ exact: 0, space: 'roomy' }, { min: 2, max: 4, space: 'vast' }] });
+    sheet.bastion = { facilities: [entry, { ...facility(), editorId: 'bedroom', name: 'Bedroom', entity: { ...facility().entity, facilityType: 'basic', level: undefined } }] };
+    const fixture = TestBed.createComponent(BastionsPageComponent); fixture.componentRef.setInput('characterData', sheet); fixture.detectChanges();
+    expect(facilityHirelingOptions(entry.entity)).toEqual([{ value: '0', note: 'Roomy' }, { value: '2–4', note: 'Vast' }]);
+    const order = fixture.nativeElement.querySelector('select[aria-label="Facility order"]') as HTMLSelectElement;
+    order.value = 'research'; order.dispatchEvent(new Event('change')); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('article')).toHaveLength(1);
+    expect(fixture.nativeElement.querySelector('article').textContent).toContain('Research');
+    fixture.nativeElement.querySelector('article button').click(); fixture.detectChanges();
+    const info = fixture.nativeElement.querySelector('dialog [aria-label="Facility information"]') as HTMLElement;
+    for (const text of ['Research', 'Empower', 'Roomy', 'Vast', '2–4']) expect(info.textContent).toContain(text);
+    expect(info.textContent).toContain('or');
+    fixture.componentInstance.filters.set({ type: 'basic', level: '5', order: 'research' }); fixture.detectChanges();
+    expect(fixture.componentInstance.selected()).toEqual([]);
+    fixture.componentInstance.clearFilters(); expect(fixture.componentInstance.selected()).toHaveLength(2);
+    expect(sheet.bastion.facilities![0].entity.hirelings).toHaveLength(2);
+    fixture.destroy();
+  });
+
   it('opens full facility details and prerequisites, edits the same notes on cards and dialogs, and searches without affecting the saved list', () => {
     const sheet = emptyBasicCharacter(), entry = facility(); sheet.bastion = { facilities: [entry] };
     const fixture = TestBed.createComponent(BastionsPageComponent); fixture.componentRef.setInput('characterData', sheet); fixture.detectChanges();

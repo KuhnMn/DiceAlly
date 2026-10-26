@@ -1,6 +1,7 @@
 import { ContentRecord, JsonObject, object } from '../content/content.model';
 import { SPELL_SCHOOLS } from '../editor/spell-selection';
 import { featureCategoryLabel, featureFilterValues } from '../editor/feature-selection';
+import { facilityOrderLabel } from '../models/bastion';
 
 export const CONTENT_TYPES = [
   { id: 'class', label: 'Classes', icon: 'book', kinds: ['class', 'subclass'] },
@@ -27,7 +28,7 @@ export const FACET_LABELS = {
   school: 'School', casting: 'Casting Time', ritual: 'Ritual', concentration: 'Concentration',
   category: 'Category', featureType: 'Feature Type', prerequisite: 'Prerequisites', rarity: 'Rarity',
   itemType: 'Equipment Type', attunement: 'Attunement', cr: 'Challenge Rating', creature: 'Creature Type', size: 'Size',
-  facilityType: 'Facility Type', facilityLevel: 'Level',
+  facilityType: 'Facility Type', facilityLevel: 'Level', facilityOrder: 'Order',
 } as const;
 export type Facet = keyof typeof FACET_LABELS;
 export type Filters = Partial<Record<Facet, string[]>>;
@@ -64,6 +65,7 @@ export function recordFacets(record: ContentRecord): Filters {
     const type = typeof data['facilityType'] === 'string' ? data['facilityType'].trim().toLowerCase() : '';
     if (type) set('facilityType', type === 'basic' ? 'basic' : 'special');
     set('facilityLevel', typeof data['level'] === 'number' ? data['level'] : 'unspecified');
+    set('facilityOrder', data['orders']);
   }
   if (record.kind === 'class') set('class', record.name);
   set('subclass', definition?.subclass?.shortName ?? data['subclassShortName']);
@@ -101,6 +103,7 @@ export function recordFacets(record: ContentRecord): Filters {
   return facets;
 }
 export function facetLabel(facet: Facet, value: string): string {
+  if (facet === 'facilityOrder') return facilityOrderLabel(value);
   if (facet === 'facilityType') return value === 'basic' ? 'Basic' : 'Special';
   if (facet === 'facilityLevel') return value === 'unspecified' ? 'No Level Listed' : `Level ${value}`;
   if (facet === 'kind') return kindLabel(value);

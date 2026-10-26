@@ -4,7 +4,8 @@ import { RouterLink } from '@angular/router';
 import { IndexedDbContentCache } from '../content/content-cache';
 import type { ContentRecord } from '../content/content.model';
 import type { ExportedCharacter } from '../models/character.model';
-import { FacilityEntry, facilityTypeLabel } from '../models/bastion';
+import { FacilityEntry, FacilityFilters, facilityTypeLabel, emptyFacilityFilters, facilityFilterCount, matchesFacilityFilters } from '../models/bastion';
+import { FacilityFiltersComponent } from '../facility-filters.component';
 import { compareSearchMatches } from '../search-ranking';
 import { ListControlsComponent } from '../list-controls.component';
 import { UiIconComponent } from '../ui-icon.component';
@@ -27,7 +28,7 @@ import { newEditorId } from './editor-identity';
   selector: 'app-editor-bastions',
   imports: [FormsModule, RouterLink, ListControlsComponent, UiIconComponent, BastionPlanComponent, FacilityDetailsComponent,
     EditorListHeaderComponent, EditorEntryRowComponent, EntryAnnotationsComponent, DescriptionDialogComponent,
-    CatalogDialogComponent, CatalogResultRowComponent, RemoveEntryDialogComponent, SourceBookFilterComponent],
+    CatalogDialogComponent, CatalogResultRowComponent, RemoveEntryDialogComponent, SourceBookFilterComponent, FacilityFiltersComponent],
   templateUrl: './bastions-editor.component.html',
   styleUrls: ['./editor.css', './editor-feature-fields.css'],
   host: { class: 'block min-w-0' },
@@ -48,6 +49,11 @@ export class BastionsEditorComponent implements OnInit, OnDestroy {
   search = '';
   type = 'ALL';
   level = '';
+  order = '';
+  listFilters = emptyFacilityFilters();
+  readonly filterCount = facilityFilterCount;
+  get listLevels() { return [...new Set(this.facilities.flatMap(entry => entry.entity.level == null ? [] : [entry.entity.level]))].sort((a, b) => a - b); }
+  setCatalogFilters(filters: FacilityFilters) { this.type = filters.type; this.level = filters.level; this.order = filters.order; this.searchChanged(); }
   catalogLevels: number[] = [];
   customName = '';
   customDescription = '';
@@ -66,7 +72,7 @@ export class BastionsEditorComponent implements OnInit, OnDestroy {
   }
   get facilities() { return this.sheet().bastion?.facilities ?? []; }
   get selected() {
-    return this.facilities.filter(entry => entry.name.toLowerCase().includes(this.listSearch.trim().toLowerCase()))
+    return this.facilities.filter(entry => entry.name.toLowerCase().includes(this.listSearch.trim().toLowerCase()) && matchesFacilityFilters(entry.entity, this.listFilters))
       .sort((a, b) => compareSearchMatches(a.name, b.name, this.listSearch));
   }
   ngOnInit() { void this.refreshContent(); }
@@ -88,15 +94,14 @@ export class BastionsEditorComponent implements OnInit, OnDestroy {
     });
   }
   private catalogQuery(): CatalogQuery {
-    const books = this.sourceBooks.selected(), type = this.type, level = this.level;
+    const books = this.sourceBooks.selected(), filters = { type: this.type, level: this.level, order: this.order };
     return { kinds: ['facility'], search: this.search, includes: record => {
-      const data = record.referenceDefinition?.kind === 'facility' ? record.referenceDefinition : record.data;
-      return this.sourceBooks.allows(record.publication, books) && (type === 'ALL' || data['facilityType'] === type)
-        && (!level || data['level'] === Number(level));
+      return this.sourceBooks.allows(record.publication, books) && matchesFacilityFilters(this.catalogEntry(record).entity, filters);
     } };
   }
   searchChanged() { this.catalog.scheduleSearch(() => this.catalogQuery()); }
-  clearFilters() { this.type = 'ALL'; this.level = ''; this.searchChanged(); }
+  clearListFilters() { this.listFilters = emptyFacilityFilters(); }
+  clearFilters() { this.type = 'ALL'; this.level = ''; this.order = ''; this.searchChanged(); }
   nextPage(direction: number) { void this.catalog.nextPage(direction, this.catalogQuery()); }
   catalogEntry(record: ContentRecord): FacilityEntry {
     let entry = this.previews.get(record);

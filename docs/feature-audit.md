@@ -32,6 +32,13 @@ Vorhandene Daten bedeuten nicht automatisch vorhandene Regeln: Ein Damage-Tag be
 
 ## Priorisierte Erweiterungen mit vorhandenen Daten
 
+Umgesetzt am 26. Oktober 2026: Punkte **1, 5, 6 und 9** in folgendem Umfang:
+
+- **1 – Cast mit Uses:** Der Cast-Dialog bietet neben Slots alle gültigen Uses des konkreten Zaubers an, auch bei Cantrips. Eine bestätigte Anwendung verbraucht genau eine ausgewählte Nutzung; freie Nutzungen bleiben auf dem Basisgrad. Item-Ladungen oder gemeinsame Ressourcen werden nicht automatisch zugeordnet.
+- **5 – Bastions:** Orders, Space und Hirelings erscheinen als strukturierte Angaben. Alternative Raumgrößen und davon abhängige Personalangaben bleiben Alternativen; fehlende Werte werden als nicht angegeben markiert. Editor und Viewer teilen Typ-/Level-/Order-Filter, das Compendium hat ebenfalls einen Orders-Filter. Tags und Detaildialoge folgen den vorhandenen responsiven Komponenten.
+- **6 – Konzentration:** Auch Cantrips bieten das Setzen des Konzentrationstrackers an. Bei aktiviertem Tracking erfordert eine bestehende Konzentration vor dem Verbrauch eine Bestätigung; Abbrechen verbraucht weder Slot noch Uses. Bei ausgeschaltetem Tracking erscheint keine Konzentrationsabfrage und der Tracker bleibt unverändert.
+- **9 – Komponenten und Upcasting:** Komponenten-Badges, Materialbeschreibung, explizite Kosten und Verbrauch sind getrennt lesbar. Der gewählte Slotgrad hebt den unveränderten Higher-Level-Text hervor. Es werden keine Schadensmittelwerte oder aus Prosa geratenen Formeln berechnet. Ritual-Zauber bieten die Ressource „Ritual - Free“ am Basisgrad ohne Slot- oder Uses-Verbrauch; Vorbereitungs- und Konzentrationsabfragen bleiben erhalten.
+
 Die Aufwände sind relative Größen, keine Zusage in Tagen. „Klein“ bedeutet überwiegend abgeleitete Darstellung; „Mittel“ umfasst zusätzliche Interaktionen oder neue gespeicherte Felder. Neue gespeicherte Zustände müssen lokale Speicherung, Export/Import, Synchronisation und ältere Charaktere berücksichtigen.
 
 | Priorität | Vorschlag | Bereits vorhandene Grundlage | Neues Verhalten / Grenze | Aufwand |
@@ -44,7 +51,7 @@ Die Aufwände sind relative Größen, keine Zusage in Tagen. „Klein“ bedeute
 | 6 | Konzentration beim Zaubern anbieten | Concentration-Metadaten und bestehender manueller Tracker | Nach bestätigtem Cast optional „Konzentration darauf setzen“; bestehende Konzentration ausdrücklich ersetzen lassen. Kein automatischer Abbruch bei einem bloßen Detailaufruf. | Klein–Mittel |
 | 7 | Verbrauchsgegenstand benutzen | Item-Menge und frei bearbeitbare Uses | „Eines verbrauchen“ vermindert genau eine Menge; Heilung/Schaden bleiben eigenständige Entscheidungen. Keine Wirkung aus Prosa ableiten. | Klein–Mittel |
 | 8 | Herkunft von Werten und Einträgen erklären | ContentReferences, Klassen-/Grant-Owners, Definition-Snapshots, Origins und manuelle Overrides | Zunächst wenige häufige Werte/Einträge erklären: Herkunft, manueller Anteil, Override. Für ältere Importe fehlende Herkunft offen kennzeichnen. | Mittel |
-| 9 | Komponenten und Upcasting besser präsentieren | Material-/Kosten-/Consume-Felder, Dauer, Ritual-/Concentration-Metadaten und Higher-Level-Einträge | Kompakte Hinweise und Hervorhebung des Higher-Level-Texts beim gewählten Grad. Formeln nur dann auswerten, wenn eine unterstützte eindeutige Struktur vorliegt. Ritual nur mit expliziter Quellenfähigkeit. | Klein–Mittel |
+| 9 | Komponenten und Upcasting besser präsentieren | Material-/Kosten-/Consume-Felder, Dauer, Ritual-/Concentration-Metadaten und Higher-Level-Einträge | Kompakte Hinweise und Hervorhebung des Higher-Level-Texts beim gewählten Grad. Formeln nur dann auswerten, wenn eine unterstützte eindeutige Struktur vorliegt. Ritual-Regeln editionsbezogen darstellen. | Klein–Mittel |
 | 10 | Einrichtungs- und Level-Vorschau verbessern | Wizard-Auswahlen, Warnungen, Vorher/Nachher-Zustände und bestehende Preview-Pfade | Offene Entscheidungen verlinken und fehlende Essentials unverbindlich nennen. Keine allgemeine Behauptung, ein Charakter sei regelkonform. | Mittel |
 
 ## Neue Funktionen, die zum Umfang passen
