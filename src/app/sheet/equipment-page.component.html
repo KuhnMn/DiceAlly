@@ -105,13 +105,9 @@
           <app-ui-icon class="shrink-0" name="chevron" /></button></h3>
 
 
-        @if (getItemProp(item, 'weaponCategory') || getItemTypeTags(item).length || (getItemProp(item, 'rarity') && getItemProp(item, 'rarity') !== 'none')) {
+        @if (getItemProp(item, 'weaponCategory') || getItemTypeTags(item).length || (getItemProp(item, 'rarity') && getItemProp(item, 'rarity') !== 'none') || item.entity?.properties?.length || item.entity?.masteries?.length) {
         <div class="mt-2 flex flex-wrap items-center gap-1.5">
           <ng-container [ngTemplateOutlet]="itemTags" [ngTemplateOutletContext]="{ $implicit: item }" />
-        </div>
-        }
-        @if (item.entity?.properties?.length || item.entity?.masteries?.length) {
-        <div class="mt-2 flex flex-wrap items-center gap-1.5">
           @for (property of item.entity?.properties; track property.name) { <app-item-rule-tag [label]="property.name" [entry]="property.entry" [notes]="property.notes" /> }
           @for (mastery of item.entity?.masteries; track mastery.name) { <app-item-rule-tag [label]="mastery.name" [entry]="mastery.entry" [notes]="mastery.notes" [mastery]="true" /> }
         </div>
