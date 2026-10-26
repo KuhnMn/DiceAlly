@@ -172,6 +172,72 @@ describe('Subclass-granted spell prefill', () => {
 describe('Optional class wizard prefill', () => {
   beforeEach(() => { localStorage.removeItem('ally-creator-source-books'); TestBed.configureTestingModule({ providers: [provideRouter([])] }); });
 
+  it('keeps disabled-section choices out of the open decisions and restores saved answers when enabled again', () => {
+    const f = fixture();
+    const first = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+    const choice = first.unresolved.find(choice => choice.scope === 'proficiencies')!;
+    expect(choice.ownerKey).toBe(f.find('class', 'Mage').key);
+    f.state.answers[choice.id] = ['arcana'];
+    f.state.options['proficiencies'] = false;
+    const disabled = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+    expect(disabled.choices.some(choice => choice.scope === 'proficiencies')).toBe(false);
+    expect(disabled.sheet.character!.proficiencies?.skills?.['ARCANA']).toBeUndefined();
+    f.state.options['proficiencies'] = true;
+    const restored = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+    expect(restored.choices.some(entry => entry.id === choice.id)).toBe(true);
+    expect(restored.unresolved.some(entry => entry.id === choice.id)).toBe(false);
+    expect(restored.sheet.character!.proficiencies!.skills!['ARCANA']).toBe('PROFICIENT');
+    expect(restored.values.find(value => value.path.at(-1) === 'ARCANA')?.origin).toBe('Mage (TEST)');
+  });
+
+  it('reviews the actual displayed class total instead of claiming a standalone level edit was kept', () => {
+    const f = fixture(); f.sheet.character!.level = 99;
+    f.sheet.classes = [{ name: 'Custom Class', custom: true, level: 2 }];
+    const proposal = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+    expect(proposal.sheet.character!.level).toBe(6);
+    expect(proposal.changes.filter(change => change.path[0] === 'character' && change.path[1] === 'level'))
+      .toEqual([{ path: ['character', 'level'], label: 'Character level', action: 'Update' }]);
+    expect(f.sheet.character!.level).toBe(99);
+  });
+
+  it('shows retained HP separately from its calculation and links open choices without changing the draft', async () => {
+    const f = fixture(); f.sheet.character!.maxHp = 50; f.sheet.creatorWizard = f.state;
+    const before = structuredClone(f.sheet);
+    const cache = new IndexedDbContentCache();
+    await cache.stage({ ...f.revision, status: 'staging' }); await cache.put(f.revision.id, f.records); await cache.activate(f.revision);
+    await cache.saveSource('development-local', f.revision.source);
+    const component = TestBed.createComponent(ClassWizardComponent); component.componentRef.setInput('sheet', f.sheet);
+    component.detectChanges(); await component.whenStable(); await component.componentInstance.loadContent();
+    const wizard = component.componentInstance;
+    wizard.leaveManual = true; wizard.goToStage(2); component.detectChanges();
+    expect(wizard.reviewSummary().find(stat => stat.label === 'Maximum HP')).toMatchObject({ before: 50, after: 50 });
+    expect(wizard.proposal()!.hpContributions.map(part => part.total)).toEqual([20, 8]);
+    expect(component.nativeElement.querySelector('[aria-label="Wizard HP calculation"]').textContent).toContain('28');
+    expect(component.nativeElement.querySelector('[aria-label="Manual follow-up"]').textContent).toContain('skill proficiencies');
+    const choice = wizard.proposal()!.unresolved[0];
+    const open = [...component.nativeElement.querySelectorAll('[aria-label="Manual follow-up"] button')]
+      .find((button: unknown) => (button as HTMLButtonElement).textContent?.includes(choice.label)) as HTMLButtonElement;
+    open.click(); await component.whenStable();
+    expect(wizard.stage).toBe(1);
+    expect(document.activeElement?.getAttribute('data-choice-id')).toBe(choice.id);
+    expect(f.sheet).toEqual(before);
+    wizard.goToStage(2); component.detectChanges(); await component.whenStable();
+    expect(wizard.stage).toBe(2);
+    let applied = f.sheet; let requested = '';
+    wizard.applied.subscribe(value => applied = value); wizard.editRequested.subscribe(value => requested = value);
+    const manualLabel = 'Apply and open Proficiencies & More for ' + choice.label;
+    const buttons = [...component.nativeElement.querySelectorAll('button[aria-label]')] as HTMLButtonElement[];
+    expect(buttons.map(button => button.getAttribute('aria-label'))).toContain(manualLabel);
+    const manual = buttons.find(button => button.getAttribute('aria-label') === manualLabel)!;
+    manual.click(); await component.whenStable(); expect(requested).toBe('Proficiencies & More');
+    const next = component.nativeElement.querySelector('[aria-label="Apply and open Items for Equipment"]') as HTMLButtonElement;
+    next.click(); await component.whenStable();
+    expect(requested).toBe('Items'); expect(applied.character!.maxHp).toBe(50);
+    expect(applied.creatorWizard!.classes).toEqual(f.state.classes);
+    expect(f.sheet).toEqual(before);
+    component.destroy();
+  });
+
   it('reads Arcana Domain’s structured rule for exactly two Wizard cantrips', () => {
     const f = fixture();
     // This additionalSpells shape is taken from class-cleric.json (Arcana Domain, SCAG).

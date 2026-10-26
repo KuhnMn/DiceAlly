@@ -1,7 +1,7 @@
 <app-catalog-dialog title="Class Wizard" closeLabel="Cancel" subtitle="" (closed)="closed.emit()">
   <div class="flex items-start justify-between gap-2 mb-4"><nav class="flex flex-wrap gap-2" aria-label="Wizard steps">
     @for (label of ['Classes & Species', 'Choices', 'Review']; track label; let position = $index) {
-      <span class="spell-filter-chip" [class.spell-filter-active]="stage === position" [attr.aria-current]="stage === position ? 'step' : null">{{ position + 1 }}. {{ label }}</span>
+      <button type="button" class="spell-filter-chip" [class.spell-filter-active]="stage === position" [attr.aria-current]="stage === position ? 'step' : null" [disabled]="loading() || (position === 1 && !canSelect) || (position === 2 && !canReview)" (click)="goToStage(position)">{{ position + 1 }}. {{ label }}</button>
     }
   </nav><app-info-button title="Class setup and leveling"><p>This is the existing class wizard, also used for leveling. Choose your classes and levels, finish the choices, then review proposed changes before applying them to your draft. Save the character to keep those changes.</p><p>The first class determines starting proficiencies and first-level HP. Later levels use average HP plus your current Constitution modifier.</p><p>Choose a background beside Species here to include its proficiency choices. Your current library classes, levels, subclasses, species, and background prefill this wizard whenever it opens. Custom class text stays outside wizard selections. Applying replaces the displayed background and library classes, while keeping custom class text; its feats, ability scores, equipment, and spells remain manual. The wizard is optional; you can also edit the character yourself.</p></app-info-button></div>
   @if (loading()) { <p role="status" class="text-sm">Loading your imported class library…</p> }
@@ -9,6 +9,7 @@
   @if (!revision() && !loading()) { <a routerLink="/content" class="text-primary underline" (click)="closed.emit()">Open content imports</a> }
   @if (revision() && !loading()) {
     @if (stage === 0) {
+      <p data-wizard-stage tabindex="-1" class="mb-3 text-sm text-on-surface-variant">Choose the classes and levels you want after setup or leveling. Nothing changes until you apply the review to your draft.</p>
       <app-source-book-filter />
       <div class="flex justify-end mb-3"><button type="button" class="secondary-button compact-button" (click)="loadContent(true)">Use Current Library</button></div>
       <div class="space-y-3">
@@ -58,17 +59,27 @@
       }
       @for (message of proposal()?.errors ?? []; track message) { <p role="alert" class="text-sm text-error mt-2">{{ friendlyMessage(message) }}</p> }
     } @else if (stage === 1) {
-      <h3 class="font-semibold mb-2">Choose what to prefill</h3>
-      <p class="mb-3 text-xs text-on-surface-variant">Select what to prefill. Tick Override edits for a section to replace its manual values, including removed entries. Notes and usage counters are preserved.</p>
+      <h3 data-wizard-stage tabindex="-1" class="font-semibold mb-2">Choose What to Prefill</h3>
+      <p class="mb-2 text-xs text-on-surface-variant">Displayed classes, their total level, and background follow step 1. Custom class text is kept alongside your library classes.</p>
+      <p class="mb-3 text-xs text-on-surface-variant">Enabled sections add or update wizard entries while preserving your manual edits and removals. Turn a section off to handle it yourself. Override Edits replaces manual values in that section; notes and usage counters are preserved.</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">@for (section of sections; track section.key) {
         <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-lg border border-outline-variant p-2">
-          <label class="flex items-center gap-2 text-sm"><input type="checkbox" [name]="'wizard-scope-' + section.key" [ngModel]="state.options[section.key] !== false" (ngModelChange)="state.options[section.key] = $event; rebuild()" />{{ section.label }}</label>
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" [name]="'wizard-scope-' + section.key" [ngModel]="state.options[section.key] !== false" (ngModelChange)="state.options[section.key] = $event; rebuild()" /><span>{{ section.label }}<span class="mt-0.5 block text-[11px] text-on-surface-variant">{{ sectionStatus(section.key) }}</span></span></label>
           <label class="flex items-center gap-1.5 text-xs text-on-surface-variant"><input type="checkbox" [name]="'wizard-override-' + section.key" [attr.aria-label]="'Override manual edits for ' + section.label" [disabled]="state.options[section.key] === false" [(ngModel)]="overrideEdits[section.key]" (ngModelChange)="rebuild()" />Override edits</label>
         </div>
       }</div>
+      @if (proposal()?.unresolved?.length) {
+        <details open class="mb-3 rounded-lg border border-outline-variant bg-surface-container p-2.5" aria-label="Open wizard decisions">
+          <summary class="cursor-pointer text-sm font-semibold">Open Decisions ({{ proposal()!.unresolved.length }})</summary>
+          <div class="mt-1 flex flex-wrap gap-1.5">@for (choice of proposal()!.unresolved; track choice.id) {
+            <button type="button" class="secondary-button compact-button text-left" (click)="openChoice(choice)">{{ choice.label | capitalizeFirst }} <app-ui-icon name="down" /></button>
+          }</div>
+        </details>
+      }
       <div class="space-y-3">@for (choice of proposal()?.choices ?? []; track choice.id; let position = $index) {
-        <section class="rounded-lg border-2 border-outline-variant bg-surface-container p-3">
+        <section [attr.data-choice-id]="choice.id" tabindex="-1" class="rounded-lg border-2 border-outline-variant bg-surface-container p-3 focus-visible:outline-2 focus-visible:outline-primary">
           <div class="flex flex-wrap justify-between gap-2 text-sm mb-2"><h3 class="font-semibold capitalize">{{ choice.label }}</h3><span class="text-xs" [class.text-primary]="choiceComplete(choice)" [class.text-on-surface-variant]="!choiceComplete(choice)">@if (choiceComplete(choice)) { Finished &middot; }{{ state.answers[choice.id]?.length ?? 0 }} / {{ choice.count }}</span></div>
+          @if (choiceSource(choice)) { <p class="mb-2 text-xs text-on-surface-variant">From: {{ choiceSource(choice) }}</p> }
           @if (choice.searchable !== false && choice.candidates.length > 12) { <input class="editor-input mb-2" [name]="'wizard-choice-search-' + position" [(ngModel)]="choiceSearch[choice.id]" placeholder="Search options…" [attr.aria-label]="'Search ' + choice.label" /> }
           <div class="flex flex-wrap gap-1 max-h-48 overflow-y-auto">@for (candidate of choices(choice); track candidate.value) {
             <button type="button" class="spell-filter-chip text-left" [class.spell-filter-active]="state.answers[choice.id]?.includes(candidate.value)" [attr.aria-pressed]="!!state.answers[choice.id]?.includes(candidate.value)" [disabled]="choice.count > 1 && (state.answers[choice.id]?.length ?? 0) >= choice.count && !state.answers[choice.id]?.includes(candidate.value)" (click)="toggleChoice(choice, candidate.value)">{{ candidate.label | capitalizeFirst }}</button>
@@ -84,19 +95,48 @@
         </div>
       }
     } @else {
-      <h3 class="font-semibold mb-3">Review the prefill</h3>
+      <h3 data-wizard-stage tabindex="-1" class="font-semibold mb-1">Review the Prefill</h3>
+      <p class="mb-3 text-xs text-on-surface-variant">Current Draft <span aria-hidden="true">→</span> After Apply. These are the resulting values, including preserved manual entries.</p>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-        <div class="rounded border border-outline-variant p-2 text-sm">Class Levels<strong class="block">{{ proposal()?.summary?.level }}</strong></div>
-        <div class="rounded border border-outline-variant p-2 text-sm">Calculated HP<strong class="block">{{ proposal()?.summary?.maxHp }}</strong></div>
-        <div class="rounded border border-outline-variant p-2 text-sm">Features<strong class="block">{{ proposal()?.summary?.features }}</strong></div>
-        <div class="rounded border border-outline-variant p-2 text-sm">Spell entries<strong class="block">{{ proposal()?.summary?.spells }}</strong></div>
+        @for (stat of reviewSummary(); track stat.label) {
+          <div class="min-w-0 rounded-lg border border-outline-variant bg-surface-container p-2" [attr.aria-label]="stat.label + ': ' + stat.before + ' → ' + stat.after">
+            <span class="block text-xs text-on-surface-variant">{{ stat.label }}</span>
+            <span class="mt-1 flex items-center gap-2 text-sm"><span class="text-on-surface-variant">{{ stat.before }}</span><app-ui-icon name="right" class="text-xs text-on-surface-variant" /><strong>{{ stat.after }}</strong></span>
+          </div>
+        }
       </div>
-      <p class="text-xs text-on-surface-variant mb-3">After prefill: sheet level {{ proposal()?.sheet?.character?.level }}, maximum HP {{ proposal()?.sheet?.character?.maxHp }}.</p>
-      <p class="text-sm mb-3">{{ overrideSections.length ? 'Manual values will be replaced only in sections marked Override edits. Notes and used counters are preserved.' : 'Manual changes, notes and used counters are preserved.' }} This updates your draft; use Save afterward.</p>
-      <div class="max-h-[55dvh] overflow-y-auto space-y-4 pr-1">@for (section of reviewItems(); track section.label) {
+      @if (proposal()?.hpContributions?.length) {
+        <details class="mb-3 rounded-lg border border-outline-variant bg-surface-container text-xs" aria-label="Wizard HP calculation">
+          <summary class="cursor-pointer px-3 py-2 font-semibold">Wizard HP Calculation: {{ proposal()!.summary.maxHp }} <span class="font-normal text-on-surface-variant">· {{ sectionStatus('hp') }}</span></summary>
+          <dl class="divide-y divide-outline-variant border-t border-outline-variant px-3">
+            @for (part of proposal()!.hpContributions; track $index) {
+              <div class="py-2"><div class="flex items-baseline justify-between gap-2"><dt class="font-semibold">{{ part.label }} · Level {{ part.level }}</dt><dd class="font-semibold">{{ part.total }} HP</dd></div><p class="mt-1 text-on-surface-variant">{{ hpExplanation(part) }}</p></div>
+            }
+          </dl>
+          <p class="border-t border-outline-variant px-3 py-2 text-on-surface-variant">Uses your current Constitution score and average HP after the starting class's first level. Custom class text does not contribute to this calculation. The Maximum HP card above shows what will actually be kept.</p>
+        </details>
+      }
+      <div class="mb-3 rounded-lg border border-outline-variant p-2.5 text-xs">
+        <p>{{ overrideSections.length ? 'Manual values will be replaced only in sections marked Override Edits. Notes and used counters are preserved.' : 'Manual changes, notes and used counters are preserved.' }} @if (keptEntries()) { <strong>{{ keptEntries() }} {{ keptEntries() === 1 ? 'entry' : 'entries' }} kept.</strong> }</p>
+        <button type="button" class="mt-1 inline-flex min-h-8 items-center gap-1 text-primary underline" (click)="goToStage(1)">Adjust Prefill Sections <app-ui-icon name="left" /></button>
+      </div>
+      @if (proposal()?.unresolved?.length || proposal()?.warnings?.length) {
+        <section class="mb-3 rounded-lg border border-outline-variant bg-surface-container p-2.5" aria-label="Manual follow-up">
+          <h4 class="text-sm font-semibold">Left for Manual Editing</h4>
+          <p class="mt-1 text-xs text-on-surface-variant">These decisions are still open. Return to an option here or configure it in the editor after applying.</p>
+          <div class="mt-2 space-y-1.5">@for (choice of proposal()!.unresolved; track choice.id) {
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button type="button" class="secondary-button compact-button min-w-0 text-left" (click)="openChoice(choice)">{{ choice.label | capitalizeFirst }} <app-ui-icon name="left" /></button>
+              @if (choice.scope; as scope) { <button type="button" class="inline-flex min-h-9 items-center gap-1 text-xs text-primary underline" [disabled]="!canReview" (click)="apply(choiceEditorPages[scope])" [attr.aria-label]="'Apply and open ' + choiceEditorPages[scope] + ' for ' + choice.label">Apply &amp; Edit <app-ui-icon name="right" /></button> }
+            </div>
+          }</div>
+          @for (message of proposal()!.warnings; track message) { <p class="mt-1 border-l-2 border-outline-variant pl-2 text-xs text-on-surface-variant">{{ friendlyMessage(message) }}</p> }
+        </section>
+      }
+      <div class="space-y-4">@for (section of reviewItems(); track section.label) {
         <section>
           <h4 class="mb-2 flex items-center justify-between gap-2 border-b border-outline-variant pb-1 text-sm font-bold">
-            {{ section.label }}<span class="text-xs font-normal text-on-surface-variant">{{ section.count }} entries</span>
+            {{ section.label }}<span class="text-xs font-normal text-on-surface-variant">{{ section.count }} {{ section.count === 1 ? 'entry' : 'entries' }}</span>
           </h4>
           <div class="space-y-2">@for (group of section.groups; track group.label) {
             <details [open]="group.entries.length <= 6" class="rounded-lg border border-outline-variant bg-surface-container text-xs">
@@ -109,23 +149,60 @@
                 </span>
               </summary>
               <div class="border-t border-outline-variant px-3 py-1 divide-y divide-outline-variant">@for (entry of group.entries; track $index) {
-                <div class="flex items-start justify-between gap-3 py-1.5">
-                  <span class="min-w-0 break-words">{{ entry.label }}</span>
-                  <strong class="shrink-0" [class.text-secondary]="entry.action === 'Keep'">{{ reviewActionLabels[entry.action] }}</strong>
+                <div class="py-2">
+                  <div class="flex items-start justify-between gap-3"><span class="min-w-0 break-words font-semibold">{{ entry.label }}</span><strong class="shrink-0" [class.text-secondary]="entry.action === 'Keep'">{{ reviewActionLabels[entry.action] }}</strong></div>
+                  @if (changeValues(entry.path); as values) {
+                    @if (entry.action !== 'Keep' || values.suggested) {
+                      <dl class="mt-1 grid grid-cols-[6rem_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-on-surface-variant">
+                        <dt>{{ entry.action === 'Keep' ? 'Keep' : 'Current' }}</dt><dd class="min-w-0 break-words">{{ values.before }}</dd>
+                        @if (entry.action !== 'Keep') { <dt>After Applying</dt><dd class="min-w-0 break-words text-on-surface">{{ values.after }}</dd> }
+                        @if (values.suggested) { <dt>Wizard Suggests</dt><dd class="min-w-0 break-words">{{ values.suggested }}</dd> }
+                      </dl>
+                    }
+                    @if (values.origin) { <p class="mt-1 text-on-surface-variant">Granted By: {{ values.origin }}</p> }
+                    @if (values.detail) { <p class="mt-1 border-l-2 border-outline-variant pl-2 text-on-surface-variant">{{ values.detail }}</p> }
+                    @if (values.differences?.length) {
+                      <dl class="mt-2 space-y-2">
+                        @for (difference of values.differences; track $index) {
+                          <div><dt class="font-semibold">{{ difference.label }}</dt><dd class="mt-0.5 grid grid-cols-2 gap-3"><span class="min-w-0 break-words"><span class="block text-on-surface-variant">Keep</span>{{ difference.current }}</span><span class="min-w-0 break-words"><span class="block text-on-surface-variant">Wizard Suggests</span>{{ difference.suggested }}</span></dd></div>
+                        }
+                      </dl>
+                    }
+                    @if (values.suggested || values.differences?.length) { <button type="button" class="mt-1 inline-flex min-h-8 items-center gap-1 text-primary underline" (click)="goToStage(1)">Change Prefill Settings <app-ui-icon name="left" /></button> }
+                  }
                 </div>
               }</div>
             </details>
           }</div>
         </section>
       } @empty { <p class="text-sm text-on-surface-variant">Your character already matches this prefill.</p> }</div>
+      @if (followUps().length) {
+        <section class="mt-4 rounded-lg border border-outline-variant bg-surface-container p-3" aria-label="Setup suggestions">
+          <h4 class="text-sm font-semibold">Worth Checking</h4>
+          <p class="mt-1 text-xs text-on-surface-variant">Based on what is currently entered. These suggestions are optional and do not check all character rules.</p>
+          <div class="mt-2 divide-y divide-outline-variant">@for (item of followUps(); track item.id) {
+            <div class="flex flex-wrap items-start justify-between gap-2 py-2 text-xs">
+              <div class="min-w-0 flex-1 basis-44"><p class="font-semibold">{{ item.label }}</p><p class="mt-0.5 text-on-surface-variant">{{ item.detail }}</p></div>
+              <button type="button" class="secondary-button compact-button" [disabled]="!canReview" (click)="apply(item.page)" [attr.aria-label]="'Apply and open ' + item.page + ' for ' + item.label">Apply &amp; Open <app-ui-icon name="right" /></button>
+            </div>
+          }</div>
+        </section>
+      }
+      <details class="mt-3 rounded-lg border border-outline-variant p-3" aria-label="Continue in the editor">
+        <summary class="cursor-pointer text-sm font-semibold">Continue in the Editor</summary>
+        <p class="mt-2 text-xs text-on-surface-variant">Apply &amp; Open keeps this wizard setup in your draft and opens the selected page. Save afterward. Reopening the wizard reads your latest selections and preserves manual edits unless you override them.</p>
+        <div class="mt-2 grid gap-2 sm:grid-cols-2">@for (area of manualAreas; track area.id) {
+          <button type="button" class="secondary-button text-left" [disabled]="!canReview" (click)="apply(area.page)" [attr.aria-label]="'Apply and open ' + area.page"><span class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs font-semibold"><span>{{ area.label }}</span><span class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-primary">Apply &amp; Open <app-ui-icon name="right" /></span></span><span class="mt-1 block text-xs font-normal text-on-surface-variant">{{ area.detail }}</span></button>
+        }</div>
+      </details>
     }
   }
   <div catalog-footer class="flex flex-wrap items-center justify-between gap-2">
     <span class="text-xs text-on-surface-variant">{{ state.classes.length }} class selections</span>
     <div class="flex gap-2">
-      @if (stage > 0) { <button type="button" class="secondary-button" (click)="stage = stage - 1">Previous</button> }
+      @if (stage > 0) { <button type="button" class="secondary-button" (click)="goToStage(stage - 1)">Previous</button> }
       @if (stage < 2) { <button type="button" class="action-button" [disabled]="loading() || (stage === 0 ? !canSelect : !canReview)" (click)="advance()">{{ stage === 0 ? 'Choices' : 'Review' }}</button> }
-      @else { <button type="button" class="action-button" [disabled]="!canReview" (click)="apply()">Apply Prefill</button> }
+      @else { <button type="button" class="action-button" [disabled]="!canReview" (click)="apply()">Apply to Draft</button> }
     </div>
   </div>
 </app-catalog-dialog>

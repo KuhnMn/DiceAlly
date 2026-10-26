@@ -9,9 +9,26 @@ import { By } from '@angular/platform-browser';
 import { SwipePagesDirective } from '../sheet/swipe-pages.directive';
 import { NgForm } from '@angular/forms';
 import { walkingSpeedFeet, walkingSpeedEntry } from '../models/character-speed';
+import { ClassWizardComponent } from './class-wizard.component';
 
 describe('Basic Info editor', () => {
   beforeEach(async () => { await TestBed.configureTestingModule({ imports: [LocalEditorComponent], providers: [provideRouter([])] }).compileComponents(); });
+
+  it('hands an applied wizard draft to the requested manual editor page without saving it', async () => {
+    TestBed.configureTestingModule({ deferBlockBehavior: DeferBlockBehavior.Manual });
+    const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
+    const editor = fixture.componentInstance;
+    editor.sheet.character!.name = 'Keep This Draft';
+    editor.wizardOpen = true; fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
+    const [block] = await fixture.getDeferBlocks(); await block.render(DeferBlockState.Complete);
+    const wizard = fixture.debugElement.query(By.directive(ClassWizardComponent)).componentInstance as ClassWizardComponent;
+    const draft = structuredClone(editor.sheet); draft.character!.maxHp = 28;
+    wizard.applied.emit(draft); wizard.editRequested.emit('Spells'); await fixture.whenStable();
+    expect(editor.sheet).toBe(draft); expect(editor.pages[editor.page]).toBe('Spells');
+    expect(editor.wizardOpen).toBe(false); expect(editor.unsaved).toBe(true); expect(editor.version).toBe(0);
+    expect(editor.character.name).toBe('Keep This Draft'); expect(editor.character.maxHp).toBe(28);
+    fixture.destroy();
+  });
 
   it('keeps the editor draft available when the deferred wizard cannot download', async () => {
     TestBed.configureTestingModule({ deferBlockBehavior: DeferBlockBehavior.Manual });

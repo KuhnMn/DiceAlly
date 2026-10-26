@@ -161,7 +161,7 @@ export function deriveProficiencyGrants(selections: ContentClassSelection[], ind
     }
   }
   return {
-    canAccept: diagnostics.length === 0, diagnostics, choices, packages, manual: structuredClone(manual), generated,
+    canAccept: diagnostics.length === 0, diagnostics, choices, packages, owners: ownerKeys, manual: structuredClone(manual), generated,
     contributions: [...structuredClone(manual), ...generated]
   };
 }

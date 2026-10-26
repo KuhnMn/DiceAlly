@@ -5,8 +5,9 @@ import { emptyBasicCharacter } from './basic-info';
 
 export type WizardState = NonNullable<ExportedCharacter['creatorWizard']>;
 export type WizardClass = WizardState['classes'][number];
-export interface PrefillValue { path: string[]; value: unknown; scope: string; label: string; }
-export interface PrefillChange { path: string[]; label: string; action: 'Fill' | 'Update' | 'Remove' | 'Keep'; }
+export interface PrefillValue { path: string[]; value: unknown; scope: string; label: string; origin?: string; }
+export type PrefillKeepReason = 'existing' | 'edited' | 'removed' | 'protected' | 'matching' | 'annotations' | 'linked';
+export interface PrefillChange { path: string[]; label: string; action: 'Fill' | 'Update' | 'Remove' | 'Keep'; keepReason?: PrefillKeepReason; }
 
 type MutableObject = Record<string, unknown>;
 function objectAt(sheet: ExportedCharacter, path: string[], create = false): MutableObject | undefined {
@@ -58,7 +59,8 @@ function collection(sheet: ExportedCharacter, path: string[], create = false): {
   }
   return list ? { list, index } : undefined;
 }
-function read(sheet: ExportedCharacter, path: string[]): unknown {
+export function readWizardValue(sheet: ExportedCharacter, path: string[]): unknown {
+  if (path[0] === 'classes' || path[0] === 'background') return sheet[path[0]];
   if (path[0] !== 'character' && path[0] !== 'species') {
     const group = collection(sheet, path);
     if (!group || group.index < 0) return;
@@ -117,7 +119,7 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
   for (const [key, entry] of desired) {
     // Shared source definitions are owned by features/spells, never by an unrelated section.
     const overrideManualEdits = overrideSections.includes(entry.scope);
-    let current = read(sheet, entry.path);
+    let current = readWizardValue(sheet, entry.path);
     const matches = collisions(sheet, entry);
     const replacement = overrideManualEdits && current === undefined && matches.length === 1 ? matches[0] : undefined;
     if (replacement) current = replacement;
@@ -125,10 +127,14 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
     // Compare definition-only fingerprints here; notes and trackers are preserved separately.
     const excludesAnnotations = ['features', 'spells', 'species'].includes(entry.path[0]);
     const manuallyChanged = old ? wizardFingerprint(current, excludesAnnotations) !== (old.editFingerprint ?? old.fingerprint)
-      : current !== undefined && !same(current, read(defaults, entry.path));
+      : current !== undefined && !same(current, readWizardValue(defaults, entry.path));
     if ((!overrideManualEdits && (protectedKeys.has(key) || manuallyChanged || matches.length > 0))
       || matches.length > (replacement ? 1 : 0)) {
-      protectedKeys.add(key); changes.push({ path: entry.path, label: entry.label, action: 'Keep' });
+      const keepReason: PrefillKeepReason = matches.length ? 'matching'
+        : old && current === undefined ? 'removed'
+        : old && manuallyChanged ? 'edited'
+        : protectedKeys.has(key) ? 'protected' : 'existing';
+      protectedKeys.add(key); changes.push({ path: entry.path, label: entry.label, action: 'Keep', keepReason });
     } else {
       protectedKeys.delete(key);
       let proposed = structuredClone(entry.value);
@@ -158,17 +164,19 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
     .sort(([a], [b]) => Number(JSON.parse(a)[0] === 'sources') - Number(JSON.parse(b)[0] === 'sources'));
   for (const [key, entry] of obsolete) {
     const overrideManualEdits = overrideSections.includes(entry.scope);
-    const path = JSON.parse(key) as string[]; const current = read(sheet, path);
+    const path = JSON.parse(key) as string[]; const current = readWizardValue(sheet, path);
     const source = current as { name?: string } | undefined;
     const stillLinked = path[0] === 'sources' && source?.name && (sheet.features?.some(feature => feature.featureSourceName === source.name)
       || sheet.spells?.some(spell => spell.castingSourceName === source.name) || sheet.character?.spellSlots?.[source.name]?.length);
     if (current !== undefined && (hasAnnotations(current) || stillLinked
       || !overrideManualEdits && (protectedKeys.has(key) || wizardFingerprint(current) !== entry.fingerprint))) {
-      protectedKeys.add(key); changes.push({ path, label: entry.label, action: 'Keep' });
+      const keepReason: PrefillKeepReason = hasAnnotations(current) ? 'annotations' : stillLinked ? 'linked'
+        : wizardFingerprint(current) !== entry.fingerprint ? 'edited' : 'protected';
+      protectedKeys.add(key); changes.push({ path, label: entry.label, action: 'Keep', keepReason });
     } else {
       if (current !== undefined) changes.push({ path, label: entry.label, action: 'Remove' });
       // Required basic values (such as Walk speed) return to their editor defaults.
-      write(sheet, path, read(defaults, path)); delete baseline[key]; protectedKeys.delete(key);
+      write(sheet, path, readWizardValue(defaults, path)); delete baseline[key]; protectedKeys.delete(key);
     }
   }
   sheet.creatorWizard = { ...structuredClone(state), baseline: Object.values(baseline),

@@ -5,6 +5,19 @@ const state = (): WizardState => ({ revisionId: 'test', classes: [], answers: {}
 const hp: PrefillValue = { path: ['character', 'maxHp'], value: 20, scope: 'hp', label: 'Maximum HP' };
 
 describe('Wizard manual edit override', () => {
+  it('distinguishes existing values without wizard history from detected edits to generated values', () => {
+    const imported = emptyBasicCharacter(); imported.character!.maxHp = 20;
+    const existing = mergeWizardPrefill(imported, state(), [hp]);
+    expect(existing.changes[0]).toMatchObject({ action: 'Keep', keepReason: 'existing' });
+    expect(existing.sheet.character!.maxHp).toBe(20);
+    const generated = mergeWizardPrefill(emptyBasicCharacter(), state(), [hp]).sheet;
+    generated.character!.maxHp = 50;
+    const edited = mergeWizardPrefill(generated, generated.creatorWizard!, [hp]);
+    expect(edited.changes[0]).toMatchObject({ action: 'Keep', keepReason: 'edited' });
+    expect(edited.sheet.character!.maxHp).toBe(50);
+    expect(edited.sheet.creatorWizard!.baseline.every(entry => !('keepReason' in entry))).toBe(true);
+  });
+
   it('preserves manual values by default and replaces protected edits only when enabled', () => {
     const original = emptyBasicCharacter(); original.character!.maxHp = 50;
     const kept = mergeWizardPrefill(original, state(), [hp]);
@@ -22,6 +35,7 @@ describe('Wizard manual edit override', () => {
     const initial = mergeWizardPrefill(emptyBasicCharacter(), state(), [feature]).sheet;
     initial.features = [];
     const kept = mergeWizardPrefill(initial, initial.creatorWizard!, [feature]);
+    expect(kept.changes[0].keepReason).toBe('removed');
     expect(kept.sheet.features).toEqual([]);
     expect(mergeWizardPrefill(kept.sheet, kept.sheet.creatorWizard!, [feature], ['features']).sheet.features).toHaveLength(1);
     const disabled = { ...kept.sheet.creatorWizard!, options: { features: false } };
@@ -35,7 +49,7 @@ describe('Wizard manual edit override', () => {
     original.combatActions = [{ name: 'Gift action', actionType: 'ACTION', linkedResourceType: 'CLASS_FEATURE', linkedResource: { editorId: 'manual', name: 'Gift' } }];
     const value: PrefillValue = { path: ['features', 'generated'], scope: 'features', label: 'Gift',
       value: { editorId: 'generated', name: 'Gift', source: 'TEST', featureSourceName: 'Mage', userAdded: false } };
-    expect(mergeWizardPrefill(original, state(), [value]).changes[0].action).toBe('Keep');
+    expect(mergeWizardPrefill(original, state(), [value]).changes[0]).toMatchObject({ action: 'Keep', keepReason: 'matching' });
     const overridden = mergeWizardPrefill(original, state(), [value], ['features']);
     expect(overridden.sheet.features).toHaveLength(1);
     expect(overridden.sheet.features![0]).toMatchObject({ editorId: 'generated', userAdded: false });

@@ -42,3 +42,14 @@ hold the data transformations and character rules.
 
 `basic-info.spec.ts` exercises the shell and first three pages together. The other
 page and helper specs live next to their implementations.
+
+The Class Wizard builds a detached proposal and only replaces the editor draft
+after explicit application. Its review compares actual before/after values,
+separates retained manual HP from the class HP calculation, and links unfinished
+choices back to their controls. Disabled prefill sections omit their decisions
+without deleting saved answers. Classes, their displayed total level and background
+follow the first step; other sections preserve manual edits unless explicitly
+overridden. `wizard-review.ts` formats the changes and their sources;
+`wizard-guidance.ts` provides optional suggestions based on observable omissions.
+The wizard's typed `editRequested` event follows `applied`, so Apply & Open hands
+the accepted draft to a shared editor page without saving or losing wizard history.

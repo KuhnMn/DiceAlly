@@ -91,7 +91,7 @@ describe('Class compendium progression', () => {
     expect(screen.loading()).toBe(false); expect(screen.selectedClass()?.key).toBe(f.find('class', 'Mage').key);
     expect(screen.selectedSources()).toEqual(['TCE']); expect(screen.subclassSources()).toEqual(['TCE']);
     expect(screen.subclassFeatures().map(row => row.record.name)).toEqual(['School Gift']);
-    expect(fixture.nativeElement.querySelector('[aria-label="Selected subclass description"]').textContent).toContain('School');
+    expect(fixture.nativeElement.querySelector('.subclass-option[aria-pressed="true"]').textContent).toContain('School');
     snapshot.queryParamMap = convertToParamMap({ entry: modern.key, books: '["TCE"]' }); queries.next(snapshot.queryParamMap);
     await vi.waitFor(() => expect(screen.selectedSubclass()?.key).toBe(modern.key));
     expect(screen.selectedClass()?.key).toBe(f.find('class', 'Mage', 'XPHB').key);

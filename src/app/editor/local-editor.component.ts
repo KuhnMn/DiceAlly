@@ -42,6 +42,7 @@ import { activeContentRevision } from './active-content-revision';
 import { refreshCharacterDescriptions } from './refresh-character-content';
 import { portableCharacter } from '../characters/portable-character';
 import { defaultWalkingSpeed, primaryWalkingSpeed } from '../models/character-speed';
+import { EDITOR_PAGES } from './editor-pages';
 
 @Component({
   selector: 'app-local-editor',
@@ -71,7 +72,7 @@ export class LocalEditorComponent implements OnInit {
   readonly descriptionRefreshSkipped = signal<{ name: string; reason: string }[]>([]);
   readonly message = signal('');
   readonly error = signal('');
-  readonly pages = ['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Species & Features', 'Spells', 'Items', 'Companions', 'Bastions', 'Combat', 'Notes', 'Sheet Settings'];
+  readonly pages: readonly string[] = EDITOR_PAGES;
   get hasCastingSources() { return this.character.featureSources?.some(source => source.isSpellcastingSource && source.name?.trim()) ?? false; }
   get hasSpellSlots() { return Object.values(this.character.spellSlots ?? {}).some(slots => slots.length > 0); }
   page = 0;

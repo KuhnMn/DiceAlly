@@ -24,7 +24,7 @@
   <app-character-update-notice [characterId]="character.characterUuid" [characterName]="character.name || 'Unnamed Character'" [loadedVersion]="version" [busy]="busy()" (refresh)="refreshCharacter()" />
   @if (wizardOpen) {
     @defer (on immediate) {
-      <app-class-wizard [sheet]="sheet" (applied)="applyWizard($event)" (closed)="wizardOpen = false" />
+      <app-class-wizard [sheet]="sheet" (applied)="applyWizard($event)" (editRequested)="setPage(pages.indexOf($event))" (closed)="wizardOpen = false" />
     } @loading {
       <p role="status" class="mb-3 text-sm text-on-surface-variant">Loading Class Wizard…</p>
     } @error {

@@ -2,10 +2,12 @@ import { spellRecordClasses } from '../content/spell-adapter';
 import { rankSearchResults } from '../search-ranking';
 import { UiIconComponent } from '../ui-icon.component';
 import { InfoButtonComponent } from '../info-button.component';
-import { groupWizardReview, REVIEW_ACTION_LABELS } from './wizard-review';
+import { groupWizardReview, REVIEW_ACTION_LABELS, wizardReviewValues } from './wizard-review';
+import { WIZARD_CHOICE_PAGES, WIZARD_MANUAL_AREAS, wizardFollowUps } from './wizard-guidance';
+import { EditorPage } from './editor-pages';
 import { isCompleteSelection } from '../rules/spell-choice';
 import { CapitalizeFirstPipe } from '../capitalize-first-pipe';
-import { Component, OnDestroy, OnInit, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { AfterRenderRef, Component, ElementRef, Injector, OnDestroy, OnInit, afterNextRender, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { IndexedDbContentCache } from '../content/content-cache';
@@ -15,7 +17,7 @@ import { CatalogDialogComponent } from './catalog-dialog.component';
 import { SourceBookFilterComponent } from './source-book-filter.component';
 import { SourceBookFilterService } from './source-book-filter.service';
 import { WizardClass, WizardState } from './wizard-prefill';
-import { WIZARD_SECTIONS, WizardChoice, matchesSubclass, previewClassWizard } from './class-wizard-preview';
+import { WIZARD_SECTIONS, WizardChoice, WizardHpContribution, matchesSubclass, previewClassWizard } from './class-wizard-preview';
 import { validateBasicInfo } from './basic-info';
 import { SearchableSelectComponent, SelectOption } from './searchable-select.component';
 import { activeContentRevision } from './active-content-revision';
@@ -29,6 +31,7 @@ import { activeContentRevision } from './active-content-revision';
 export class ClassWizardComponent implements OnInit, OnDestroy {
   readonly sheet = input.required<ExportedCharacter>();
   readonly applied = output<ExportedCharacter>();
+  readonly editRequested = output<EditorPage>();
   readonly closed = output<void>();
   readonly loading = signal(true);
   readonly error = signal('');
@@ -39,12 +42,34 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
     return proposal ? groupWizardReview(proposal.changes, this.sheet(), proposal.sheet) : [];
   });
   readonly reviewActionLabels = REVIEW_ACTION_LABELS;
+  readonly reviewValues = computed(() => {
+    const proposal = this.proposal();
+    return new Map(proposal?.changes.map(change => [JSON.stringify(change.path), wizardReviewValues(change, this.sheet(), proposal.sheet, proposal.values)]) ?? []);
+  });
+  readonly reviewSummary = computed(() => {
+    const before = this.sheet(), after = this.proposal()?.sheet;
+    return [
+      { label: 'Class Levels', before: before.character?.level ?? 0, after: after?.character?.level ?? 0 },
+      { label: 'Maximum HP', before: before.character?.maxHp ?? 0, after: after?.character?.maxHp ?? 0 },
+      { label: 'Features', before: before.features?.length ?? 0, after: after?.features?.length ?? 0 },
+      { label: 'Spell Entries', before: before.spells?.length ?? 0, after: after?.spells?.length ?? 0 },
+    ];
+  });
+  readonly followUps = computed(() => wizardFollowUps(this.proposal()?.sheet ?? this.sheet()));
+  readonly manualAreas = WIZARD_MANUAL_AREAS;
+  readonly choiceEditorPages = WIZARD_CHOICE_PAGES;
+  readonly keptEntries = computed(() => this.proposal()?.changes.filter(change => change.action === 'Keep').length ?? 0);
   readonly sections = WIZARD_SECTIONS;
   readonly sourceBooks = inject(SourceBookFilterService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
+  private focusRequest: AfterRenderRef | undefined;
   private readonly cache = new IndexedDbContentCache();
   readonly records = new Map<string, ContentRecord>();
   state: WizardState = { revisionId: '', classes: [], answers: {}, options: {}, baseline: [], protectedPaths: [] };
-  stage = 0;
+  private readonly currentStage = signal(0);
+  get stage() { return this.currentStage(); }
+  set stage(value: number) { this.currentStage.set(value); }
   choiceSearch: Record<string, string> = {};
   leaveManual = false;
   readonly overrideEdits: Record<string, boolean> = {};
@@ -70,7 +95,7 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
     if (this.sheet().creatorWizard) this.state = structuredClone(this.sheet().creatorWizard!);
     await this.loadContent();
   }
-  ngOnDestroy() { this.destroyed = true; }
+  ngOnDestroy() { this.destroyed = true; this.focusRequest?.destroy(); }
   async loadContent(useCurrent = false) {
     this.loading.set(true); this.error.set(''); this.records.clear();
     try {
@@ -201,6 +226,36 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
     if (message.includes('handler') || message.includes('Unsupported') || message.includes('spell grant')) return 'An option in this content needs manual configuration after the prefill.';
     return message.replace(/\[.*$/, '').replace(/grant/gi, 'option').trim();
   }
+  choiceSource(choice: WizardChoice) { return choice.ownerKey ? this.label(choice.ownerKey) : ''; }
+  sectionStatus(key: string) {
+    return this.state.options[key] === false ? 'Edit Manually' : this.overrideEdits[key] ? 'Replace Manual Values' : 'Preserve Manual Edits';
+  }
+  changeValues(path: string[]) { return this.reviewValues().get(JSON.stringify(path)); }
+  hpExplanation(part: WizardHpContribution) {
+    const modifier = part.constitutionModifier < 0 ? `− ${Math.abs(part.constitutionModifier)}` : `+ ${part.constitutionModifier}`;
+    const average = Math.ceil((part.hitDie + 1) / 2);
+    const later = part.level - (part.starting ? 1 : 0);
+    return [part.starting ? `First Level: ${part.hitDie} ${modifier} CON` : '',
+      later ? `${later} ${part.starting ? 'Further ' : ''}Level${later === 1 ? '' : 's'}: ${later} × (${average} ${modifier} CON)` : ''].filter(Boolean).join(' · ');
+  }
+  goToStage(stage: number) {
+    if (stage < 0 || stage > 2 || stage === 1 && !this.canSelect || stage === 2 && !this.canReview) return;
+    this.stage = stage;
+    this.focusStage();
+  }
+  openChoice(choice: WizardChoice) {
+    this.goToStage(1);
+    this.focusStage(choice.id);
+  }
+  private focusStage(choiceId?: string) {
+    this.focusRequest?.destroy();
+    this.focusRequest = afterNextRender(() => {
+      const target = choiceId
+        ? [...this.host.nativeElement.querySelectorAll<HTMLElement>('[data-choice-id]')].find(element => element.dataset['choiceId'] === choiceId)
+        : this.host.nativeElement.querySelector<HTMLElement>('[data-wizard-stage]');
+      target?.focus({ preventScroll: true }); target?.scrollIntoView?.({ block: choiceId ? 'center' : 'start' });
+    }, { injector: this.injector });
+  }
   toggleChoice(choice: WizardChoice, value: string) {
     const current = this.state.answers[choice.id] ?? [];
     this.state.answers[choice.id] = current.includes(value) ? current.filter(entry => entry !== value)
@@ -209,11 +264,11 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
   }
   get canSelect() { return !!this.proposal() && !this.proposal()!.errors.length; }
   get canReview() { return this.canSelect && (this.leaveManual || (!this.proposal()!.unresolved.length && !this.proposal()!.warnings.length)); }
-  advance() { this.rebuild(); if (this.stage === 0 && this.canSelect) this.stage = 1; else if (this.stage === 1 && this.canReview) this.stage = 2; }
-  apply() {
+  advance() { this.rebuild(); this.goToStage(this.stage + 1); }
+  apply(page?: EditorPage) {
     this.rebuild();
     const proposal = this.proposal(); if (this.stage !== 2 || !proposal || !this.canReview) return;
-    try { validateBasicInfo(proposal.sheet); this.applied.emit(proposal.sheet); }
+    try { validateBasicInfo(proposal.sheet); this.applied.emit(proposal.sheet); if (page) this.editRequested.emit(page); }
     catch (error) { this.error.set(String(error)); }
   }
 }
