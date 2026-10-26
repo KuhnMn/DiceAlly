@@ -32,8 +32,14 @@
 	.theme-caption { display: none; }
 	.library-theme select { min-height: 44px; max-width: 145px; padding: .5rem; font-size: .75rem; }
 
-	.character-list { gap: .5rem; }
-	.character-card { padding: .75rem; border-width: 1px; border-radius: .75rem; }
+	.character-list {
+		gap: 0;
+		overflow: hidden;
+		border: 1px solid var(--md-sys-color-outline-variant);
+		border-radius: .75rem;
+	}
+	.character-card { padding: .75rem; border: 0; border-radius: 0; }
+	.character-card + .character-card { border-top: 1px solid var(--md-sys-color-outline-variant); }
 	.character-header { margin-bottom: .5rem; }
 	.character-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: .125rem .5rem; }
 	.character-title h3 { font-size: 1rem; line-height: 1.5; }
