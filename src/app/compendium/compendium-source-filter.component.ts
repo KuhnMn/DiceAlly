@@ -13,7 +13,7 @@ import { relevantSources } from './compendium-sources';
         <span>{{ label() }}</span><span class="inline-flex items-center gap-1 text-xs text-primary">{{ selected().length ? selectedBooks().length + ' selected' : 'All Books' }} <app-ui-icon name="chevron-down" /></span>
       </summary>
       <div class="space-y-2 border-t border-outline-variant p-2">
-        <p class="text-xs text-on-surface-variant">Applies only here and in subviews. No selection includes all books.</p>
+        <p class="text-xs text-on-surface-variant">Your selection is remembered for this view. No selection includes all books.</p>
         <label class="block"><span class="sr-only">Search source books</span><input type="search" placeholder="Search source books…" [value]="query()" (input)="query.set($any($event.target).value)" class="min-h-11 w-full min-w-0 rounded-lg border border-outline-variant bg-surface-container px-2 text-base sm:text-sm" /></label>
         <div class="flex flex-wrap gap-2">
           <button type="button" class="compendium-button" (click)="selectedChange.emit([])">All Books</button>

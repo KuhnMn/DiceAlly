@@ -1,0 +1,12 @@
+.stat-badge-frame {
+  width: var(--sheet-stat-size, 3.25rem);
+  height: var(--sheet-stat-height, 3.75rem);
+}
+.stat-round-frame {
+  width: var(--sheet-stat-size, 3.25rem);
+  height: var(--sheet-stat-size, 3.25rem);
+}
+.stat-value { font-size: var(--sheet-stat-value-size, 1.125rem); }
+.stat-caption { font-size: var(--sheet-stat-caption-size, .625rem); }
+.stat-editor-caption { font-size: var(--sheet-stat-caption-size, .75rem); }
+.stat-number-input { width: calc(var(--sheet-stat-size, 3.25rem) - .25rem); }

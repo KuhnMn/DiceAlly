@@ -27,6 +27,7 @@ import { SourceBookFilterService } from '../editor/source-book-filter.service';
 import { CompendiumSearchComponent } from './compendium-search.component';
 import { requestedSourceBooks } from './compendium-navigation';
 import { CompendiumSourceFilterComponent } from './compendium-source-filter.component';
+import { CompendiumFilterService } from './compendium-filter.service';
 
 @Component({
   selector: 'app-compendium',
@@ -37,6 +38,8 @@ import { CompendiumSourceFilterComponent } from './compendium-source-filter.comp
 export class CompendiumComponent implements OnInit, OnDestroy {
   readonly mobile = toSignal(inject(BreakpointObserver).observe('(max-width: 1023px)').pipe(map(result => result.matches)), { initialValue: false });
   readonly sourceDefaults = inject(SourceBookFilterService);
+  private readonly filterPreferences = inject(CompendiumFilterService);
+  private filterCategory: ContentType['id'] | null = null;
   private readonly route = inject(ActivatedRoute);
   private readonly cache = new IndexedDbContentCache();
   private subscription?: Subscription;
@@ -139,6 +142,7 @@ export class CompendiumComponent implements OnInit, OnDestroy {
     return type;
   }
   async chooseType(id: string | null) {
+    this.saveFilters();
     clearTimeout(this.timer);
     const version = ++this.version;
     const navigation = ++this.navigationVersion;
@@ -147,8 +151,11 @@ export class CompendiumComponent implements OnInit, OnDestroy {
     const requested = this.route.snapshot.queryParamMap;
     this.query = requested?.get('q') ?? '';
     const requestedBooks = requestedSourceBooks(requested);
-    this.filters = { source: requestedBooks ?? (requested?.get('source') ? [requested.get('source')!] : [...this.sourceDefaults.selected()]) };
-    this.effects = {}; this.sort = 'name'; this.offset = 0;
+    const explicitFilters = requestedBooks !== null || requested?.has('source') || requested?.has('q') || requested?.has('entry');
+    const saved = type && !explicitFilters ? this.filterPreferences.load(type.id) : undefined;
+    this.filterCategory = type?.id ?? null;
+    this.filters = saved?.filters ?? { source: requestedBooks ?? (requested?.get('source') ? [requested.get('source')!] : [...this.sourceDefaults.selected()]) };
+    this.effects = saved?.effects ?? {}; this.sort = 'name'; this.offset = 0;
     this.closeDetails(); this.results.set([]); this.total.set(0); this.facets.set([]);
     const revision = this.revision();
     if (!type || !revision) { this.loading.set(false); if (!type) void this.loadCounts(); return; }
@@ -192,6 +199,7 @@ export class CompendiumComponent implements OnInit, OnDestroy {
     } catch (error) { if (version === this.version) { this.error.set(`Could not load this category: ${String(error)}`); this.loading.set(false); } }
   }
   scheduleSearch() {
+    this.saveFilters();
     clearTimeout(this.timer); ++this.version;
     this.offset = 0; this.loading.set(true);
     this.timer = setTimeout(() => { void this.search(); }, 180);
@@ -208,6 +216,7 @@ export class CompendiumComponent implements OnInit, OnDestroy {
     clearTimeout(this.timer);
     const revision = this.revision(), type = this.type();
     if (!revision || !type || this.destroyed) return;
+    this.saveFilters();
     const version = ++this.version;
     const filters = structuredClone(this.filters);
     const effects = structuredClone(this.effects);
@@ -254,5 +263,8 @@ export class CompendiumComponent implements OnInit, OnDestroy {
     finally { if (version === this.detailVersion) this.detailLoading.set(false); }
   }
   closeDetails() { ++this.detailVersion; this.detailHistory.clear(); this.selected.set(null); this.related.set([]); this.itemView.set(null); this.detailLoading.set(false); this.detailError.set(''); }
-  ngOnDestroy() { this.destroyed = true; ++this.version; ++this.detailVersion; ++this.navigationVersion; clearTimeout(this.timer); this.subscription?.unsubscribe(); }
+  private saveFilters() {
+    if (this.filterCategory) this.filterPreferences.save(this.filterCategory, { filters: this.filters, effects: this.effects });
+  }
+  ngOnDestroy() { this.saveFilters(); this.destroyed = true; ++this.version; ++this.detailVersion; ++this.navigationVersion; clearTimeout(this.timer); this.subscription?.unsubscribe(); }
 }

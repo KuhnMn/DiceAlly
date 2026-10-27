@@ -12,6 +12,17 @@ import { SheetListLayoutComponent } from './sheet-list-layout.component';
   imports: [CombatActionColumnsComponent, CombatActionComponent, BasicCombatActionsComponent, UiIconComponent, ConcentrationControlComponent, SheetListLayoutComponent],
   styles: [`
     :host { display: block; min-width: 0; }
+    #mobile-combat-round {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+    #mobile-combat-round::-webkit-inner-spin-button,
+    #mobile-combat-round::-webkit-outer-spin-button {
+      display: none;
+      appearance: none;
+      -webkit-appearance: none;
+      margin: 0;
+    }
     .combat-multiple-columns { display: grid; grid-template-columns: repeat(var(--combat-columns), minmax(0, 1fr)); gap: 1rem; align-items: start; }
     .combat-multiple-columns > div { min-width: 0; margin-top: 0; }
     .combat-multiple-columns > div:only-child { grid-column: 1 / -1; }

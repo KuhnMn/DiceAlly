@@ -10,6 +10,15 @@
   width: 100%;
   min-width: 0;
   padding: .375rem .25rem;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.stat-stepper input::-webkit-inner-spin-button,
+.stat-stepper input::-webkit-outer-spin-button {
+  display: none;
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
 }
 .stat-stepper .stepper-button {
   width: 100%;

@@ -20,8 +20,14 @@ import { DialogScrollLockService } from '../editor/dialog-scroll-lock.service';
   host: { class: 'block', '[class.tablet]': 'tablet()', '[class.desktop]': 'desktop()', '(document:pointerdown)': 'dismissRest($event)', '(document:keydown.escape)': 'closeRest()' },
   styles: [`
     :host(.desktop) .status-grid, :host(.desktop) .condition-trigger { display: none; }
-    :host(.tablet) .status-stats { grid-template-columns: repeat(4, 3.25rem); gap: .75rem; }
-    :host(.tablet) .status-grid { grid-template-columns: minmax(15rem, 1fr) 4rem minmax(11rem, 1fr); gap: .75rem; }
+    :host(.tablet) {
+      --sheet-stat-size: 4rem;
+      --sheet-stat-height: 4.625rem;
+      --sheet-stat-value-size: 1.375rem;
+      --sheet-stat-caption-size: .75rem;
+    }
+    :host(.tablet) .status-stats { grid-template-columns: repeat(4, var(--sheet-stat-size)); gap: .75rem; }
+    :host(.tablet) .status-grid { grid-template-columns: minmax(18.25rem, 1fr) 4rem minmax(11rem, 1fr); gap: .75rem; }
   `],
   template: `
     @if (sheet().character; as character) {

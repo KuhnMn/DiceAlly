@@ -84,11 +84,11 @@
       <app-class-proficiencies [owner]="owner" [multiclass]="true" />
     }
   } @else {
-    <app-list-controls label="Search classes" searchName="class-search" [query]="query()" (queryChange)="query.set($event)" [filterCount]="sourceCount()" (cleared)="selectedSources.set([])">
-      <app-compendium-source-filter [books]="sources()" [selected]="selectedSources()" [defaults]="sourceDefaults.selected()" (selectedChange)="selectedSources.set($event)" />
+    <app-list-controls label="Search classes" searchName="class-search" [query]="query()" (queryChange)="query.set($event)" [filterCount]="sourceCount()" (cleared)="setSources([])">
+      <app-compendium-source-filter [books]="sources()" [selected]="selectedSources()" [defaults]="sourceDefaults.selected()" (selectedChange)="setSources($event)" />
     </app-list-controls>
     @if (selectedSources().length) {
-      <div class="mb-3 flex flex-wrap gap-1.5" aria-label="Active filters"><app-active-filter-chips [groups]="[{key: 'source', label: 'Source Books', values: sourceChips()}]" (removed)="selectedSources.set([])" /></div>
+      <div class="mb-3 flex flex-wrap gap-1.5" aria-label="Active filters"><app-active-filter-chips [groups]="[{key: 'source', label: 'Source Books', values: sourceChips()}]" (removed)="setSources([])" /></div>
     }
     <p class="mb-3 text-sm text-on-surface-variant" role="status">{{ visibleClasses().length }} classes</p>
     <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" aria-label="Classes">

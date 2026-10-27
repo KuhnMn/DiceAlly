@@ -32,7 +32,7 @@
   } @else if (!type()) {
     @if (loading()) { <p role="status" class="mb-3 text-sm">Reading your library…</p> }
     @if (countsError()) { <p role="status" class="mb-3 text-sm">{{ countsError() }} <button type="button" class="text-primary underline" (click)="loadCounts()">Retry Counts</button></p> }
-    <app-source-book-filter heading="Default Source Books" description="Shared with the character creator. Each compendium list starts with these books. Changes inside a list apply only to that screen and its subviews. No selection includes all books." />
+    <app-source-book-filter heading="Default Source Books" description="Shared with the character creator. Compendium categories use these books on your first visit, then remember their own filter selections. No selection includes all books." />
     <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4" aria-label="Compendium categories">
       @for (category of types; track category.id) {
         <a [routerLink]="['/compendium', category.id]" class="category-card">
@@ -42,7 +42,7 @@
         </a>
       }
     </div>
-    <p class="mt-4 text-xs text-on-surface-variant">Category counts include the entire active library and installed homebrew. Lists start with your default Source Books.</p>
+    <p class="mt-4 text-xs text-on-surface-variant">Category counts include the entire active library and installed homebrew. Each category remembers its filters in this browser.</p>
   } @else if (revision()) {
     <app-list-controls [label]="'Search ' + type()!.label.toLowerCase()" searchName="compendium-search"
       [(query)]="query" (queryChange)="scheduleSearch()" [filterCount]="filterCount" [disabled]="loading() && !facets().length" (cleared)="clearFilters()">

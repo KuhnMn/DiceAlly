@@ -1,4 +1,3 @@
-import { readBrowseSummary } from '../content/content-browse-summary';
 import { ScrollToTopComponent } from '../scroll-to-top.component';
 import { loadRelatedEntries } from './related-entries';
 import { EntryHistory } from './entry-history';
@@ -23,6 +22,7 @@ import { ClassResourcesComponent } from './class-resources.component';
 import { ActiveFilterChipsComponent } from './active-filter-chips.component';
 import { sourceChipValues, sourceFilterCount } from './compendium-sources';
 import { ClassProficienciesComponent } from './class-proficiencies.component';
+import { CompendiumFilterService } from './compendium-filter.service';
 
 @Component({
   selector: 'app-class-compendium',
@@ -32,6 +32,7 @@ import { ClassProficienciesComponent } from './class-proficiencies.component';
 })
 export class ClassCompendiumComponent implements OnInit, OnDestroy {
   readonly sourceDefaults = inject(SourceBookFilterService);
+  private readonly filterPreferences = inject(CompendiumFilterService);
   private readonly cache = new IndexedDbContentCache();
   private readonly route = inject(ActivatedRoute);
   private routeSubscription?: Subscription;
@@ -60,22 +61,18 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
   readonly detailError = signal('');
   private detailVersion = 0;
   readonly query = signal('');
-  readonly selectedSources = signal([...this.sourceDefaults.selected()]);
+  readonly selectedSources = signal(this.filterPreferences.load('class')?.filters.source ?? [...this.sourceDefaults.selected()]);
   readonly subclassSources = signal([...this.selectedSources()]);
   readonly subclassBooks = computed(() => [...new Set(this.subclasses().map(record => record.publication))].sort());
   readonly visibleSubclasses = computed(() => this.subclasses().filter(record => this.sourceDefaults.allows(record.publication, this.subclassSources())));
   readonly featureQuery = signal('');
-  private readonly subclassPublications = signal<Record<string, string[]>>({});
-  private booksForClass(record: ContentRecord): string[] {
-    return [record.publication, ...this.subclassPublications()[record.homebrewVariant?.originalKey ?? record.key] ?? []];
-  }
-  readonly sources = computed(() => [...new Set(this.classes().flatMap(record => this.booksForClass(record)))].sort());
+  readonly sources = computed(() => [...new Set(this.classes().map(record => record.publication))].sort());
   readonly sourceCount = computed(() => sourceFilterCount(this.selectedSources(), this.sources()));
   readonly sourceChips = computed(() => sourceChipValues(this.selectedSources(), this.sources()));
   readonly subclassSourceChips = computed(() => sourceChipValues(this.subclassSources(), this.subclassBooks()));
   readonly visibleClasses = computed(() => {
     const terms = this.query().trim().toLowerCase().split(/\s+/).filter(Boolean);
-    return this.classes().filter(record => this.booksForClass(record).some(book => this.sourceDefaults.allows(book, this.selectedSources()))
+    return this.classes().filter(record => this.sourceDefaults.allows(record.publication, this.selectedSources())
       && terms.every(term => `${record.name} ${record.publication}`.toLowerCase().includes(term)));
   });
   readonly levels = computed(() => groupProgression(this.baseFeatures(), this.subclassFeatures(), this.featureQuery()));
@@ -92,19 +89,12 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
     try {
       const revision = await activeContentRevision(this.cache);
       const records: ContentRecord[] = [];
-      const summary = revision ? await readBrowseSummary(this.cache, revision.id) : undefined;
-      const subclassBooks: Record<string, string[]> = summary?.subclassSources ?? {};
-      if (revision) await this.cache.searchCategory(revision.id, summary ? ['class'] : ['class', 'subclass'], '', 0, 0, record => {
-        if (record.kind === 'class') records.push(record);
-        else {
-          const parent = classDefinition(record).parent?.key;
-          if (parent) { const books = subclassBooks[parent] ??= []; if (!books.includes(record.publication)) books.push(record.publication); }
-        }
+      if (revision) await this.cache.searchCategory(revision.id, ['class'], '', 0, 0, record => {
+        records.push(record);
         return false;
       });
       if (this.destroyed || version !== this.version) return;
       this.revision.set(revision ?? null);
-      this.subclassPublications.set(subclassBooks);
       this.classes.set(records.sort((a, b) => a.name.localeCompare(b.name) || a.publication.localeCompare(b.publication)));
       this.loading.set(false);
       await this.openRequestedEntry();
@@ -120,8 +110,9 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
     try {
       const entry = await this.cache.get(revision.id, key);
       if (!current() || version !== this.version) return;
-      const sources = requestedSourceBooks(requested) ?? [...this.sourceDefaults.selected()];
-      this.selectedSources.set(sources);
+      const requestedBooks = requestedSourceBooks(requested);
+      const sources = requestedBooks ?? this.selectedSources();
+      this.setSources(sources);
       if (!entry || !['class', 'subclass'].includes(entry.kind) || !this.sourceDefaults.allows(entry.publication, sources)) {
         ++this.version; this.resetClass();
         this.navigationError.set('The requested class or subclass is unavailable or excluded by Source Books.'); return;
@@ -132,6 +123,7 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
       if (!owner) { ++this.version; this.resetClass(); this.navigationError.set('The parent class for this entry is not installed.'); return; }
       await this.chooseClass(owner);
       if (!current() || this.selectedClass()?.key !== owner.key) return;
+      if (requestedBooks !== null || entry.kind === 'subclass') this.setSubclassSources(sources);
       if (entry.kind === 'subclass') await this.chooseSubclass(this.subclasses().find(record => record.key === entry.key) ?? null);
     } catch {
       if (current() && version === this.version) { ++this.version; this.resetClass(); this.navigationError.set('Could not open the requested class or subclass.'); }
@@ -144,8 +136,14 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
     this.progressionLoading.set(false); this.subclassLoading.set(false);
   }
   showAllClasses() { ++this.version; this.resetClass(); }
+  setSources(sources: string[]) {
+    this.selectedSources.set([...sources]);
+    this.filterPreferences.save('class', { filters: { source: [...sources] }, effects: {} });
+  }
   setSubclassSources(sources: string[]) {
     this.subclassSources.set([...sources]);
+    const owner = this.selectedClass();
+    if (owner) this.filterPreferences.save(`class:${owner.key}`, { filters: { source: [...sources] }, effects: {} });
     const selected = this.selectedSubclass();
     if (selected && !this.sourceDefaults.allows(selected.publication, sources)) {
       this.closeDetails();
@@ -156,7 +154,9 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
     const revision = this.revision();
     if (!revision || record.kind !== 'class') return;
     const version = ++this.version;
-    this.resetClass(); this.subclassSources.set([...this.selectedSources()]); this.selectedClass.set(record); this.progressionLoading.set(true);
+    this.resetClass();
+    this.subclassSources.set(this.filterPreferences.load(`class:${record.key}`)?.filters.source ?? [...this.selectedSources()]);
+    this.selectedClass.set(record); this.progressionLoading.set(true);
     try {
       const subclasses: ContentRecord[] = [];
       const [, progression] = await Promise.all([
@@ -213,5 +213,5 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
   closeDetails() {
     ++this.detailVersion; this.detailHistory.clear(); this.detail.set(null); this.related.set([]); this.detailLoading.set(false); this.detailError.set('');
   }
-  ngOnDestroy() { this.destroyed = true; ++this.version; ++this.subclassVersion; ++this.detailVersion; ++this.navigationVersion; this.routeSubscription?.unsubscribe(); }
+  ngOnDestroy() { this.setSources(this.selectedSources()); this.destroyed = true; ++this.version; ++this.subclassVersion; ++this.detailVersion; ++this.navigationVersion; this.routeSubscription?.unsubscribe(); }
 }

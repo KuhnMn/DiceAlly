@@ -8,11 +8,12 @@ import { UiIconComponent } from '../ui-icon.component';
 @Component({
   selector: 'app-sheet-ac-control',
   imports: [FormsModule, SheetStatBadgeComponent, UiIconComponent],
+  styleUrl: './sheet-stat-sizing.css',
   template: `
     <div class="relative">
       @if (isEditingAcOverride()) {
-        <label class="flex h-15 w-13 flex-col items-center justify-center gap-1 rounded-lg border border-primary bg-surface-container text-xs">AC
-          <input #acInput type="number" inputmode="numeric" [(ngModel)]="acOverrideInput" (keydown)="handleAcKeydown($event)" (blur)="saveAcOverride()" aria-label="Armor class override" class="w-12 min-w-0 border-b border-primary bg-transparent text-center text-lg font-bold text-primary outline-none" />
+        <label class="stat-badge-frame stat-editor-caption flex flex-col items-center justify-center gap-1 rounded-lg border border-primary bg-surface-container">AC
+          <input #acInput type="number" inputmode="numeric" [(ngModel)]="acOverrideInput" (keydown)="handleAcKeydown($event)" (blur)="saveAcOverride()" aria-label="Armor class override" class="stat-number-input stat-value min-w-0 border-b border-primary bg-transparent text-center font-bold text-primary outline-none" />
         </label>
       } @else {
         <button type="button" (click)="startEditingAc()" aria-label="Set armor class override" [title]="armorClassInfo().source + ' — click to override'" class="block rounded-lg focus-visible:outline-2 focus-visible:outline-primary"><app-sheet-stat-badge label="AC" [value]="armorClassInfo().ac" [overridden]="acOverride() !== null" /></button>

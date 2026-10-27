@@ -17,6 +17,7 @@ import { CompendiumDetailsComponent } from './compendium-details.component';
 import { SourceBookFilterService } from '../editor/source-book-filter.service';
 import { CompendiumSourceFilterComponent } from './compendium-source-filter.component';
 import { By } from '@angular/platform-browser';
+import { CompendiumFilterService } from './compendium-filter.service';
 
 async function catalog() {
   const source = { ...DEFAULT_CONTENT_SOURCE, owner: `class-browser-${crypto.randomUUID()}` };
@@ -54,7 +55,10 @@ async function catalog() {
 }
 
 describe('Class compendium progression', () => {
-  beforeEach(() => localStorage.removeItem('ally-creator-source-books'));
+  beforeEach(() => {
+    localStorage.removeItem('ally-creator-source-books');
+    localStorage.removeItem('ally-compendium-filters-v1');
+  });
   afterEach(() => vi.restoreAllMocks());
 
   it('navigates from a global subclass search result to its exact class with that subclass active', async () => {
@@ -85,6 +89,8 @@ describe('Class compendium progression', () => {
     const snapshot = { queryParamMap: queries.value };
     TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: ActivatedRoute, useValue: { queryParamMap: queries, snapshot } }] });
     TestBed.inject(SourceBookFilterService).setSelection(['XPHB']);
+    TestBed.inject(CompendiumFilterService).save('class', { filters: { source: ['PHB'] }, effects: {} });
+    TestBed.inject(CompendiumFilterService).save(`class:${f.find('class', 'Mage').key}`, { filters: { source: ['XGE'] }, effects: {} });
     const fixture = TestBed.createComponent(ClassCompendiumComponent), screen = fixture.componentInstance; fixture.detectChanges();
     await vi.waitFor(() => expect(screen.selectedSubclass()?.key).toBe(school.key));
     await vi.waitFor(() => expect(screen.subclassLoading()).toBe(false)); fixture.detectChanges();
@@ -102,24 +108,54 @@ describe('Class compendium progression', () => {
     fixture.destroy();
   });
 
-  it('offers subclass-only books in the class list and finds only their exact parent editions', async () => {
+  it('filters class editions by their own books and offers subclass books in the detail view', async () => {
     const f = await catalog(); TestBed.configureTestingModule({ providers: [provideRouter([])] });
     TestBed.inject(SourceBookFilterService).setSelection(['TCE', 'NOT_INSTALLED']);
     const fixture = TestBed.createComponent(ClassCompendiumComponent), screen = fixture.componentInstance;
     fixture.detectChanges(); await vi.waitFor(() => expect(screen.loading()).toBe(false));
-    expect(screen.sources()).toEqual(['PHB', 'TCE', 'XGE', 'XPHB']);
-    expect(screen.visibleClasses().map(record => record.publication)).toEqual(['PHB', 'XPHB']);
+    expect(screen.sources()).toEqual(['PHB', 'XPHB']);
+    expect(screen.visibleClasses()).toEqual([]);
     fixture.detectChanges();
     let control = fixture.debugElement.query(By.directive(CompendiumSourceFilterComponent)).componentInstance as CompendiumSourceFilterComponent;
-    expect(control.visibleBooks()).toEqual(['PHB', 'TCE', 'XGE', 'XPHB']);
+    expect(control.visibleBooks()).toEqual(['PHB', 'XPHB']);
+    const modernBook = [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLLabelElement>('app-compendium-source-filter label')]
+      .find(label => label.textContent.trim() === 'XPHB')!;
+    (modernBook.querySelector('input') as HTMLInputElement).click(); fixture.detectChanges();
+    expect(screen.visibleClasses().map(record => record.key)).toEqual([f.find('class', 'Mage', 'XPHB').key]);
+    expect(fixture.nativeElement.querySelectorAll('[aria-label="Classes"] > button')).toHaveLength(1);
+    control.toggle('PHB'); fixture.detectChanges();
+    expect(screen.visibleClasses()).toHaveLength(3);
+    control.toggle('XPHB'); fixture.detectChanges();
+    expect(screen.visibleClasses().map(record => record.publication)).toEqual(['PHB', 'PHB']);
+    control.selectedChange.emit([]); fixture.detectChanges();
+    expect(screen.visibleClasses()).toHaveLength(3);
     screen.selectedSources.set(['XGE']);
-    expect(screen.visibleClasses().map(record => record.key)).toEqual([f.find('class', 'Mage').key]);
+    expect(screen.visibleClasses()).toEqual([]);
     await screen.chooseClass(f.find('class', 'Mage')); fixture.detectChanges();
     control = fixture.debugElement.query(By.directive(CompendiumSourceFilterComponent)).componentInstance as CompendiumSourceFilterComponent;
     expect(control.visibleBooks()).toEqual(['TCE', 'XGE']);
     expect(screen.visibleSubclasses().map(record => record.name)).toEqual(['Alternative School']);
     expect(TestBed.inject(SourceBookFilterService).selected()).toEqual(['NOT_INSTALLED', 'TCE']);
     fixture.destroy();
+  });
+
+  it('remembers class sources across visits and preserves All Books independently of shared defaults', async () => {
+    await catalog(); TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const defaults = TestBed.inject(SourceBookFilterService); defaults.setSelection(['PHB']);
+    const first = TestBed.createComponent(ClassCompendiumComponent); first.detectChanges();
+    await vi.waitFor(() => expect(first.componentInstance.loading()).toBe(false));
+    first.componentInstance.setSources(['XPHB']); first.destroy();
+    const second = TestBed.createComponent(ClassCompendiumComponent); second.detectChanges();
+    await vi.waitFor(() => expect(second.componentInstance.loading()).toBe(false));
+    expect(second.componentInstance.selectedSources()).toEqual(['XPHB']);
+    expect(second.componentInstance.visibleClasses().map(record => record.publication)).toEqual(['XPHB']);
+    second.componentInstance.setSources([]); second.destroy();
+    const third = TestBed.createComponent(ClassCompendiumComponent); third.detectChanges();
+    await vi.waitFor(() => expect(third.componentInstance.loading()).toBe(false));
+    expect(third.componentInstance.selectedSources()).toEqual([]);
+    expect(third.componentInstance.visibleClasses()).toHaveLength(3);
+    expect(defaults.selected()).toEqual(['PHB']);
+    third.destroy();
   });
 
   it('uses exact class references and keeps same-name editions and unrelated features apart', async () => {
@@ -247,7 +283,7 @@ describe('Class compendium progression', () => {
     const fixture = TestBed.createComponent(ClassCompendiumComponent), screen = fixture.componentInstance;
     fixture.detectChanges(); await vi.waitFor(() => expect(screen.loading()).toBe(false));
     expect(screen.selectedSources()).toEqual(['PHB', 'TCE']);
-    expect(screen.visibleClasses().map(record => record.publication)).toEqual(['PHB', 'PHB', 'XPHB']);
+    expect(screen.visibleClasses().map(record => record.publication)).toEqual(['PHB', 'PHB']);
     await screen.chooseClass(f.find('class', 'Mage')); fixture.detectChanges();
     expect(screen.subclassSources()).toEqual(['PHB', 'TCE']);
     expect(screen.visibleSubclasses().map(record => record.name)).toEqual(['School']);
@@ -263,7 +299,7 @@ describe('Class compendium progression', () => {
     expect(screen.selectedSources()).toEqual(['PHB', 'TCE']);
     expect(defaults.selected()).toEqual(['PHB', 'TCE']);
     screen.showAllClasses(); await screen.chooseClass(f.find('class', 'Mage'));
-    expect(screen.subclassSources()).toEqual(['PHB', 'TCE']);
+    expect(screen.subclassSources()).toEqual(['XGE']);
     screen.setSubclassSources([]); expect(screen.visibleSubclasses()).toHaveLength(2);
     fixture.destroy();
   });

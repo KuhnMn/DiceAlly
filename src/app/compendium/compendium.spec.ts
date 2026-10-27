@@ -19,6 +19,7 @@ import { CompendiumSourceFilterComponent } from './compendium-source-filter.comp
 import { filterGroupSummary } from './active-filter-chips.component';
 import { materializeContent } from '../content/content-materializer';
 import { ImportDiagnostic } from '../content/content.model';
+import { CompendiumFilterService } from './compendium-filter.service';
 
 describe('Compendium catalog', () => {
   it('exposes charms and rewards with their source-defined types', () => {
@@ -86,6 +87,7 @@ describe('Compendium screen', () => {
 
   beforeEach(async () => {
     localStorage.removeItem('ally-creator-source-books');
+    localStorage.removeItem('ally-compendium-filters-v1');
     params = new BehaviorSubject(convertToParamMap({}));
     breakpoint.next({ matches: false, breakpoints: {} });
     TestBed.configureTestingModule({ providers: [provideRouter([]),
@@ -119,10 +121,12 @@ describe('Compendium screen', () => {
     const snapshot = { paramMap: params.value, queryParamMap: queries.value };
     TestBed.overrideProvider(ActivatedRoute, { useValue: { paramMap: params, queryParamMap: queries, snapshot } });
     TestBed.inject(SourceBookFilterService).setSelection(['XPHB']);
+    TestBed.inject(CompendiumFilterService).save('spell', { filters: { source: ['KEEP'], school: ['V'] }, effects: { damageTypes: ['fire'] } });
     breakpoint.next({ matches: mobile, breakpoints: {} });
     const { fixture, screen } = await setup();
     await vi.waitFor(() => expect(screen.selected()?.key).toBe(data[0].key)); fixture.detectChanges();
     expect(screen.filters.source).toEqual([]);
+    expect(screen.filters.school).toBeUndefined(); expect(screen.effects).toEqual({});
     expect(fixture.nativeElement.querySelector(mobile ? 'app-sheet-detail-dialog' : '.desktop-details').textContent).toContain(data[0].name);
     snapshot.queryParamMap = convertToParamMap({ entry: data[1].key, books: '["XPHB"]', q: data[1].name }); queries.next(snapshot.queryParamMap);
     await vi.waitFor(() => expect(screen.selected()?.key).toBe(data[1].key)); fixture.detectChanges();
@@ -255,7 +259,7 @@ describe('Compendium screen', () => {
     fixture.destroy();
   });
 
-  it('shares home defaults with the creator and copies them into each list without persisting local overrides', async () => {
+  it('uses shared defaults on first visit and remembers independent filters for each category', async () => {
     const defaults = TestBed.inject(SourceBookFilterService);
     defaults.setSelection(['XPHB']);
     const { fixture, screen } = await setup();
@@ -274,8 +278,35 @@ describe('Compendium screen', () => {
     await screen.chooseType('feat');
     expect(screen.filters.source).toEqual(['PHB']); expect(screen.total()).toBe(0);
     screen.clearFilters(); await screen.search(); expect(screen.total()).toBe(1);
-    await screen.chooseType('spell'); expect(screen.total()).toBe(16);
+    await screen.chooseType('spell'); expect(screen.total()).toBe(32);
+    expect(screen.filters.source).toEqual(['PHB', 'XPHB']);
+    defaults.setSelection(['XPHB']);
+    await screen.chooseType('feat'); expect(screen.filters).toEqual({}); expect(screen.total()).toBe(1);
+    await screen.chooseType('spell'); expect(screen.filters.source).toEqual(['PHB', 'XPHB']);
+    expect(defaults.selected()).toEqual(['XPHB']);
     fixture.destroy();
+  });
+
+  it('restores facets and spell effects after navigation and recreation, including changes before the search debounce', async () => {
+    const { fixture, screen } = await setup();
+    await screen.chooseType('spell');
+    screen.toggle('school', 'A');
+    screen.effects = { damageTypes: ['fire'], savingThrows: ['dexterity'] }; screen.scheduleSearch();
+    // Navigate immediately, before the delayed search can save anything.
+    await screen.chooseType('feat');
+    expect(screen.filters.school).toBeUndefined(); expect(screen.effects).toEqual({});
+    screen.toggle('category', 'O');
+    await screen.chooseType('spell');
+    expect(screen.filters.school).toEqual(['A']);
+    expect(screen.effects).toEqual({ damageTypes: ['fire'], savingThrows: ['dexterity'] });
+    fixture.destroy();
+    params.next(convertToParamMap({ type: 'spell' }));
+    const reopened = await setup();
+    expect(reopened.screen.filters.school).toEqual(['A']);
+    expect(reopened.screen.effects.damageTypes).toEqual(['fire']);
+    expect(new CompendiumFilterService().load('feat')!.filters.category).toEqual(['O']);
+    reopened.screen.clearFilters(); reopened.fixture.destroy();
+    expect(new CompendiumFilterService().load('spell')).toEqual({ filters: {}, effects: {} });
   });
 
   it('lists only sources with category entries while keeping unavailable defaults removable without including excluded books', async () => {

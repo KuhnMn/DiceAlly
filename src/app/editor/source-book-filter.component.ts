@@ -15,7 +15,7 @@ import { activeContentRevision } from './active-content-revision';
 })
 export class SourceBookFilterComponent implements OnInit {
   readonly heading = input('Source Books');
-  readonly description = input('Filter the creator’s classes, species, features, spells and tools by book. These books also become the default filters in the compendium. No selection includes all books. Already added entries stay visible.');
+  readonly description = input('Filter the creator’s classes, species, features, spells and tools by book. New compendium categories start with these books, then remember their own filters. No selection includes all books. Already added entries stay visible.');
   readonly filter = inject(SourceBookFilterService);
   readonly books = signal<string[]>([]);
   readonly loading = signal(false);

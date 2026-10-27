@@ -3,11 +3,12 @@ import { Component, input } from '@angular/core';
 @Component({
   selector: 'app-sheet-stat-badge',
   host: { class: 'inline-flex shrink-0' },
+  styleUrl: './sheet-stat-sizing.css',
   template: `
-    <div class="relative flex h-15 w-13 flex-col items-center justify-center" [class.text-primary]="tone() === 'primary'" [class.text-rose]="tone() === 'rose'" [class.text-teal]="tone() === 'teal'" [attr.aria-label]="label() + ' ' + value()">
+    <div class="stat-badge-frame relative flex flex-col items-center justify-center" [class.text-primary]="tone() === 'primary'" [class.text-rose]="tone() === 'rose'" [class.text-teal]="tone() === 'teal'" [attr.aria-label]="label() + ' ' + value()">
       <svg aria-hidden="true" viewBox="0 0 56 64" class="absolute inset-0 h-full w-full" fill="none" stroke="currentColor" stroke-width="2.5"><path [attr.d]="paths[shape()]" /></svg>
-      <span class="relative text-lg font-bold leading-tight" [class.text-teal]="overridden()" [class.text-on-surface]="!overridden()">{{ value() }}</span>
-      <span class="relative inline-flex items-center gap-1 text-[10px] font-semibold">@if (proficient()) { <span class="text-primary" title="Proficient" aria-label="Proficient">●</span> }{{ label() }}</span>
+      <span class="stat-value relative font-bold leading-tight" [class.text-teal]="overridden()" [class.text-on-surface]="!overridden()">{{ value() }}</span>
+      <span class="stat-caption relative inline-flex items-center gap-1 font-semibold">@if (proficient()) { <span class="text-primary" title="Proficient" aria-label="Proficient">●</span> }{{ label() }}</span>
     </div>
   `,
 })

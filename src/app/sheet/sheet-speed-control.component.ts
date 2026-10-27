@@ -9,22 +9,22 @@ import { SheetSpeedDescriptionComponent } from './sheet-speed-description.compon
 @Component({
   selector: 'app-sheet-speed-control',
   imports: [FormsModule, UiIconComponent, SheetSpeedDescriptionComponent],
-  styleUrl: './sheet-stat-tooltip.css',
+  styleUrls: ['./sheet-stat-tooltip.css', './sheet-stat-sizing.css'],
   host: { class: 'inline-block relative', '(document:pointerdown)': 'outside($event)', '(document:keydown.escape)': 'dismiss()' },
   template: `
-    <div class="relative stat-display" [class]="compact() ? 'h-13 w-13' : 'border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-20 sm:h-20 bg-surface-container-low flex flex-col items-center justify-center shadow-lg'">
+    <div class="relative stat-display" [class]="compact() ? 'stat-round-frame' : 'border-4 border-surface rounded-lg sm:rounded-full w-20 h-16 sm:w-20 sm:h-20 bg-surface-container-low flex flex-col items-center justify-center shadow-lg'">
       @if (editingId() === walk().id) {
-        <label class="flex flex-col items-center justify-center" [class]="compact() ? 'h-13 w-13 rounded-lg border border-primary bg-surface-container text-xs' : 'h-full w-full'">
+        <label class="flex flex-col items-center justify-center" [class]="compact() ? 'stat-round-frame stat-editor-caption rounded-lg border border-primary bg-surface-container' : 'h-full w-full'">
           <span [class]="compact() ? '' : 'text-xs text-on-surface-variant uppercase font-semibold'">Walk</span>
-          <input #overrideInput type="number" min="0" step="1" [ngModel]="inputValue()" (ngModelChange)="inputValue.set('' + $event)" (blur)="saveOverride()" (keydown.enter)="$event.preventDefault(); saveOverride()" (keydown.escape)="cancelEdit(); $event.stopPropagation()" aria-label="Walking speed override" class="text-center font-bold bg-transparent text-primary outline-none" [class]="compact() ? 'w-12 border-b border-primary text-lg' : 'w-16 text-2xl border-b-2 border-primary'" />
+          <input #overrideInput type="number" min="0" step="1" [ngModel]="inputValue()" (ngModelChange)="inputValue.set('' + $event)" (blur)="saveOverride()" (keydown.enter)="$event.preventDefault(); saveOverride()" (keydown.escape)="cancelEdit(); $event.stopPropagation()" aria-label="Walking speed override" class="text-center font-bold bg-transparent text-primary outline-none" [class]="compact() ? 'stat-number-input stat-value border-b border-primary' : 'w-16 text-2xl border-b-2 border-primary'" />
         </label>
       } @else {
         <button type="button" (click)="edit(walk())" [attr.aria-label]="'Walking speed: ' + feet(walk()) + ' feet. Set override'" [attr.title]="walk().overrideFeet == null ? 'Click to override walking speed' : null"
           class="flex flex-col items-center justify-center focus-visible:outline-2 focus-visible:outline-primary"
-          [class]="compact() ? 'h-13 w-13 rounded-full border-2 border-blue bg-transparent' : 'h-full w-full rounded-lg sm:rounded-full'">
+          [class]="compact() ? 'stat-round-frame rounded-full border-2 border-blue bg-transparent' : 'h-full w-full rounded-lg sm:rounded-full'">
           @if (compact()) {
-            <span class="font-bold leading-tight text-lg" [class.text-teal]="walk().overrideFeet != null" [class.text-on-surface]="walk().overrideFeet == null">{{ feet(walk()) }}</span>
-            <span class="text-[10px] font-semibold text-blue">Walk</span>
+            <span class="stat-value font-bold leading-tight" [class.text-teal]="walk().overrideFeet != null" [class.text-on-surface]="walk().overrideFeet == null">{{ feet(walk()) }}</span>
+            <span class="stat-caption font-semibold text-blue">Walk</span>
           } @else {
             <div class="text-xs text-on-surface-variant uppercase font-semibold">Walk</div>
             <div class="text-2xl font-bold" [class.text-teal]="walk().overrideFeet != null" [class.text-on-surface]="walk().overrideFeet == null">{{ feet(walk()) }}</div>
