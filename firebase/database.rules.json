@@ -3,27 +3,19 @@
     ".read": false,
     ".write": false,
     "characterShares": {
+      ".indexOn": ["ownerUid"],
+      ".read": "auth != null && root.child('members').child(auth.uid).val() === true && query.orderByChild === 'ownerUid' && query.equalTo === auth.uid && query.limitToFirst > 0 && query.limitToFirst <= 10",
       "$code": {
-        ".read": "auth != null && root.child('members').child(auth.uid).val() === true && data.exists() && data.child('createdAt').isNumber() && data.child('createdAt').val() + 86400000 > now && (!data.child('expiresAt').exists() || data.child('expiresAt').val() > now)",
-        ".write": "auth != null && root.child('members').child(auth.uid).val() === true && ((!data.exists() && newData.child('ownerUid').val() === auth.uid && $code.matches(/^[a-f0-9]{24}$/)) || (data.child('ownerUid').val() === auth.uid && !newData.exists()))",
-        ".validate": "newData.hasChildren(['ownerUid', 'characterId', 'createdAt', 'character'])",
+        ".write": "auth != null && root.child('members').child(auth.uid).val() === true && data.child('ownerUid').val() === auth.uid && !newData.exists()"
+      }
+    },
+    "characterCodes": {
+      "$code": {
+        ".read": "auth != null && root.child('members').child(auth.uid).val() === true && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/)",
+        ".write": "auth != null && root.child('members').child(auth.uid).val() === true && ((!data.exists() && newData.child('ownerUid').val() === auth.uid) || (data.child('ownerUid').val() === auth.uid && !newData.exists() && newData.parent().parent().child('users').child(auth.uid).child('shareCodes').child(data.child('characterId').val()).val() !== $code))",
+        ".validate": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && newData.hasChildren(['ownerUid', 'characterId']) && newData.parent().parent().child('users').child(auth.uid).child('shareCodes').child(newData.child('characterId').val()).val() === $code && newData.parent().parent().child('users').child(auth.uid).child('characters').child(newData.child('characterId').val()).child('meta/deleted').val() === false",
         "ownerUid": { ".validate": "newData.isString() && newData.val() === auth.uid" },
         "characterId": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200" },
-        "createdAt": { ".validate": "newData.isNumber() && newData.val() <= now && newData.val() >= now - 300000" },
-        "expiresAt": { ".validate": "newData.isNumber() && newData.val() > now && newData.val() <= now + 86400000" },
-        "character": {
-          ".validate": "newData.hasChildren(['meta', 'body'])",
-          "meta": {
-            ".validate": "newData.hasChildren(['revision', 'hash', 'updatedAt', 'deleted'])",
-            "revision": { ".validate": "newData.val() === 1" },
-            "hash": { ".validate": "newData.isString() && newData.val().matches(/^[a-f0-9]{64}$/)" },
-            "updatedAt": { ".validate": "newData.isString() && newData.val().length <= 40" },
-            "deleted": { ".validate": "newData.val() === false" },
-            "$other": { ".validate": false }
-          },
-          "body": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 8000000" },
-          "$other": { ".validate": false }
-        },
         "$other": { ".validate": false }
       }
     },
@@ -35,6 +27,12 @@
     "users": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid && root.child('members').child(auth.uid).val() === true",
+        "shareCodes": {
+          "$characterId": {
+            ".write": "auth != null && auth.uid === $uid && root.child('members').child(auth.uid).val() === true && ((newData.exists() && (!data.exists() || newData.val() === data.val())) || (!newData.exists() && (!data.exists() || !newData.parent().parent().parent().parent().child('characterCodes').child(data.val()).exists())))",
+            ".validate": "newData.isString() && newData.val().matches(/^[A-HJ-NP-Z2-9]{6}$/) && newData.parent().parent().child('characters').child($characterId).child('meta/deleted').val() === false && newData.parent().parent().parent().parent().child('characterCodes').child(newData.val()).child('ownerUid').val() === $uid && newData.parent().parent().parent().parent().child('characterCodes').child(newData.val()).child('characterId').val() === $characterId"
+          }
+        },
         "settings": {
           "$key": {
             ".write": "auth != null && auth.uid === $uid && root.child('members').child(auth.uid).val() === true && ($key === 'theme' || $key === 'sourceBooks') && newData.exists()",
@@ -46,8 +44,9 @@
         },
         "characters": {
           "$characterId": {
+            ".read": "auth != null && root.child('members').child(auth.uid).val() === true && data.child('meta/deleted').val() === false && root.child('users').child($uid).child('shareCodes').child($characterId).isString() && root.child('characterCodes').child(root.child('users').child($uid).child('shareCodes').child($characterId).val()).child('ownerUid').val() === $uid && root.child('characterCodes').child(root.child('users').child($uid).child('shareCodes').child($characterId).val()).child('characterId').val() === $characterId",
             ".write": "auth != null && auth.uid === $uid && root.child('members').child(auth.uid).val() === true && newData.exists() && ((!data.exists() && newData.child('meta/revision').val() === 1) || (data.exists() && newData.child('meta/revision').val() === data.child('meta/revision').val() + 1))",
-            ".validate": "newData.hasChild('meta') && ((newData.child('meta/deleted').val() === true && !newData.hasChild('body')) || (newData.child('meta/deleted').val() === false && newData.hasChild('body')))",
+            ".validate": "newData.hasChild('meta') && ((newData.child('meta/deleted').val() === true && !newData.hasChild('body') && !newData.parent().parent().child('shareCodes').child($characterId).exists()) || (newData.child('meta/deleted').val() === false && newData.hasChild('body')))",
             "meta": {
               ".validate": "newData.hasChildren(['revision', 'hash', 'updatedAt', 'deleted'])",
               "revision": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() % 1 === 0" },

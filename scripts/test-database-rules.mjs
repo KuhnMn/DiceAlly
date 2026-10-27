@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { ref, set, get, serverTimestamp } from 'firebase/database';
+import { ref, set, get, update, query, orderByChild, equalTo, limitToFirst } from 'firebase/database';
 
 // Run only against the emulator; no credentials and no production database access.
 const environment = await initializeTestEnvironment({
@@ -42,41 +42,74 @@ try {
   await assertFails(set(ref(alice, path), { ...record, meta: { ...record.meta, revision: 2, deleted: 'yes' } }));
   await assertFails(set(ref(alice, path), { ...record, meta: { ...record.meta, revision: 2 }, extra: true }));
   await assertFails(set(ref(alice, path), { ...record, meta: { ...record.meta, revision: 2 }, body: 'x'.repeat(8_000_001) }));
-  const code = 'a'.repeat(24), sharePath = `characterShares/${code}`;
-  const shared = { ownerUid: 'alice', characterId: 'hero', createdAt: Date.now() - 1000,
-    expiresAt: Date.now() + 3600000, character: record };
-  await assertFails(set(ref(stranger, sharePath), { ...shared, ownerUid: 'stranger' }));
-  await assertFails(set(ref(bob, sharePath), shared));
-  await assertSucceeds(set(ref(alice, sharePath), shared));
-  await assertSucceeds(get(ref(bob, sharePath)));
-  await assertFails(get(ref(anonymous, sharePath)));
-  await assertFails(get(ref(stranger, sharePath)));
-  await assertFails(get(ref(bob, 'characterShares'))); // codes cannot be enumerated
-  await assertFails(set(ref(bob, sharePath), null));
-  await assertFails(set(ref(alice, sharePath), shared)); // frozen snapshot
-  await assertSucceeds(set(ref(alice, sharePath), null));
-  const serverTimedPath = `characterShares/${'b'.repeat(24)}`;
-  // This is the old client payload with a clock just one minute ahead: creation must be denied.
-  await assertFails(set(ref(alice, serverTimedPath), { ...shared, createdAt: Date.now() + 60000 }));
-  await assertFails(set(ref(alice, serverTimedPath), { ...shared, createdAt: serverTimestamp(), expiresAt: Date.now() + 86460000 }));
-  // The client can be ahead or behind Firebase; only the server supplies this timestamp.
-  const serverTimedShare = { ownerUid: 'alice', characterId: 'hero', createdAt: serverTimestamp(), character: record };
-  await assertSucceeds(set(ref(alice, serverTimedPath), serverTimedShare));
-  const serverTimed = (await assertSucceeds(get(ref(bob, serverTimedPath)))).val();
-  if (typeof serverTimed.createdAt !== 'number') throw new Error('Share creation did not resolve its server timestamp.');
-  await assertFails(set(ref(alice, serverTimedPath), serverTimedShare));
-  await assertFails(set(ref(bob, serverTimedPath), null));
+  // Retired snapshots can only be queried and removed by their owner; no new bodies can accumulate.
+  const legacyPath = `characterShares/${'a'.repeat(24)}`;
+  const legacy = { ownerUid: 'alice', characterId: 'hero', createdAt: 1, character: record };
   await environment.withSecurityRulesDisabled(async context => {
-    await set(ref(context.database(), serverTimedPath), { ...serverTimed, createdAt: Date.now() - 86400001 });
+    await set(ref(context.database(), legacyPath), legacy);
+    await set(ref(context.database(), `characterShares/${'b'.repeat(24)}`), { ...legacy, ownerUid: 'bob' });
   });
-  await assertFails(get(ref(bob, serverTimedPath)));
-  await assertSucceeds(set(ref(alice, serverTimedPath), null));
-  await assertFails(get(ref(bob, sharePath)));
-  await environment.withSecurityRulesDisabled(async context => {
-    await set(ref(context.database(), sharePath), { ...shared, expiresAt: Date.now() - 1000 });
+  await assertFails(set(ref(alice, `characterShares/${'c'.repeat(24)}`), legacy));
+  await assertFails(get(ref(bob, legacyPath)));
+  await assertFails(get(ref(alice, 'characterShares')));
+  await assertFails(get(query(ref(bob, 'characterShares'), orderByChild('ownerUid'), equalTo('alice'), limitToFirst(10))));
+  const oldShares = await assertSucceeds(get(query(ref(alice, 'characterShares'), orderByChild('ownerUid'), equalTo('alice'), limitToFirst(10))));
+  if (Object.keys(oldShares.val()).length !== 1) throw new Error('Legacy cleanup exposed another owner.');
+  await assertFails(set(ref(bob, legacyPath), null));
+  await assertSucceeds(update(ref(alice), { [legacyPath]: null }));
+
+  const sharedPath = 'users/alice/characters/sharedHero';
+  const shareUpdates = (uid, id, code) => ({
+    [`characterCodes/${code}`]: { ownerUid: uid, characterId: id },
+    [`users/${uid}/shareCodes/${id}`]: code,
   });
-  await assertFails(get(ref(bob, sharePath)));
-  await assertSucceeds(set(ref(alice, sharePath), null));
+  await assertSucceeds(set(ref(alice, sharedPath), record));
+  const code = 'K7MP4R', codePath = `characterCodes/${code}`, indexPath = 'users/alice/shareCodes/sharedHero';
+  await assertFails(set(ref(alice, codePath), { ownerUid: 'alice', characterId: 'sharedHero' }));
+  await assertFails(set(ref(alice, indexPath), code));
+  await assertFails(update(ref(bob), shareUpdates('alice', 'sharedHero', code)));
+  await assertFails(update(ref(stranger), shareUpdates('stranger', 'sharedHero', code)));
+  await assertFails(update(ref(alice), shareUpdates('alice', 'missingHero', code)));
+  await assertFails(update(ref(alice), shareUpdates('alice', 'sharedHero', 'O0I1AB')));
+  await assertSucceeds(update(ref(alice), shareUpdates('alice', 'sharedHero', code)));
+  const link = (await assertSucceeds(get(ref(bob, codePath)))).val();
+  if (Object.keys(link).sort().join() !== 'characterId,ownerUid') throw new Error('Sharing stored a duplicate character.');
+  await assertSucceeds(get(ref(bob, sharedPath)));
+  await assertFails(get(ref(bob, 'users/alice/characters')));
+  await assertFails(get(ref(bob, 'users/alice/shareCodes')));
+  await assertFails(get(ref(bob, 'characterCodes')));
+  await assertFails(get(ref(anonymous, codePath)));
+  await assertFails(get(ref(stranger, sharedPath)));
+  await assertFails(set(ref(bob, sharedPath), { ...record, meta: { ...record.meta, revision: 2 } }));
+  await assertSucceeds(set(ref(bob, 'users/bob/characters/hero'), record));
+  await assertFails(update(ref(bob), shareUpdates('bob', 'hero', code))); // occupied codes cannot be overwritten
+  await assertFails(update(ref(alice), shareUpdates('alice', 'sharedHero', 'ABC234'))); // only one code per character
+  const updatedShared = { ...record, body: 'latest saved version', meta: { ...record.meta, revision: 2 } };
+  await assertSucceeds(set(ref(alice, sharedPath), updatedShared));
+  if ((await assertSucceeds(get(ref(bob, sharedPath)))).val().body !== updatedShared.body) throw new Error('Share did not resolve the latest character.');
+  await assertFails(set(ref(alice, codePath), null)); // reciprocal links must be removed together
+  await assertFails(set(ref(alice, indexPath), null));
+  await assertFails(update(ref(bob), { [codePath]: null, [indexPath]: null }));
+  await assertSucceeds(update(ref(alice), { [codePath]: null, [indexPath]: null }));
+  await assertFails(get(ref(bob, sharedPath)));
+  if ((await assertSucceeds(get(ref(bob, codePath)))).exists()) throw new Error('Revocation retained the code.');
+  await assertSucceeds(update(ref(alice), shareUpdates('alice', 'sharedHero', code)));
+  const sharedDeleted = { meta: { ...record.meta, revision: 3, deleted: true } };
+  await assertFails(set(ref(alice, sharedPath), sharedDeleted)); // cannot leave a live link behind
+  await assertSucceeds(update(ref(alice), { [sharedPath]: sharedDeleted, [codePath]: null, [indexPath]: null }));
+  if ((await assertSucceeds(get(ref(alice, indexPath)))).exists()) throw new Error('Deletion retained the owner index.');
+  if ((await assertSucceeds(get(ref(bob, codePath)))).exists()) throw new Error('Deletion retained the public code.');
+  await assertFails(get(ref(bob, sharedPath)));
+  await assertFails(update(ref(alice), shareUpdates('alice', 'sharedHero', code)));
+  await assertSucceeds(set(ref(alice, sharedPath), { ...record, meta: { ...record.meta, revision: 4 } }));
+  await assertFails(get(ref(bob, sharedPath))); // restoring a character does not resurrect a revoked link
+
+  await assertSucceeds(set(ref(alice, 'users/alice/characters/raceHero'), record));
+  const simultaneousShares = await Promise.allSettled([
+    update(ref(alice), shareUpdates('alice', 'raceHero', 'ABC234')),
+    update(ref(alice), shareUpdates('alice', 'raceHero', 'DEF567')),
+  ]);
+  if (simultaneousShares.filter(result => result.status === 'fulfilled').length !== 1) throw new Error('Concurrent sharing created duplicate codes.');
   const next = { ...record, meta: { ...record.meta, revision: 2 } };
   const racing = await Promise.allSettled([set(ref(alice, path), next), set(ref(alice, path), next)]);
   if (racing.filter(result => result.status === 'fulfilled').length !== 1) throw new Error('Concurrent saves did not have exactly one winner.');

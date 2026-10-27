@@ -72,28 +72,39 @@ Unconfigured deployments deny protected application routes as well.
 
 ### Share codes
 
-The library's Export dialog can create a 96-bit random Share Code for a saved character.
-It uploads a frozen complete snapshot under `characterShares/<code>`. An approved recipient
-enters that code in Import Share Code; the application verifies the snapshot hash and assigns
-a new character UUID before saving it to the recipient's account. Later edits are independent.
-Codes expire after 24 hours and can be revoked from the generating dialog. Codes cannot be
-listed; reading requires an exact code and an approved account. Only the creator can revoke
-a code. Snapshots cannot be overwritten. Private character paths remain inaccessible to others.
-This replaces the temporary Worker sharing client and its public bearer-token configuration.
+The library's Export dialog shows or creates one permanent six-character Share Code per
+character, formatted like `K7M-P4R`. The alphabet omits I, O, 0 and 1 for easier spelling.
+Codes are random, and occupied codes are retried without overwriting another character's link.
+Reopening Share on any device reuses the character's existing code.
 
-Creation uses Firebase's server timestamp, and database rules enforce expiry 24 hours after
-that timestamp. The sender's or recipient's device clock does not determine validity. Earlier
-codes containing `expiresAt` remain readable until the earlier of that expiry and 24 hours
-after creation. Publish the current `firebase/database.rules.json` together with the updated
-client: older rules require a client-supplied expiry and will reject the new creation payload.
-HTTP 401/403 during creation means Firebase denied the write; verify approval and the deployed
-rules. Other HTTP failures are reported with their status instead of being labeled permission errors.
+Creating a code first syncs the saved character and refuses unsynced changes or unresolved
+conflicts. Existing codes remain available for revocation even while edits are unsynced.
+Only a small `{ownerUid, characterId}` link is stored at `characterCodes/<code>`, with the
+owner's reverse lookup at `users/<uid>/shareCodes/<characterId>`. No extra character body is
+uploaded. Approved users can read a character while its reciprocal share link is active;
+unshared characters, account settings, character lists and code lists remain private.
+An import reads the latest synced character, verifies its hash and assigns a new UUID.
+Imported copies remain independent: revocation does not remove somebody else's import.
 
-Expiry denies access but does not physically remove the snapshot: automatic server cleanup
-is not available in this client-only implementation. Operators should remove expired entries
-under `characterShares` periodically to reclaim storage. The emulator tests cover approval,
-ownership, immutability, expiry, revocation and denied listing. Live sharing requires publishing
-the latest rules; no backend API or Firebase Storage bucket is needed.
+Codes have no time limit. Revoke Code atomically removes the link and reverse lookup, without
+deleting the original character. Character deletion atomically removes both alongside its
+cloud body, retaining only the existing sync tombstone. Offline deletion completes on the
+next successful sync. Restoring a character does not restore a revoked share code.
+Database rules enforce reciprocal links, one code per character, ownership, membership and
+revision checks; interrupted requests or simultaneous devices cannot leave duplicate links.
+
+Publish `firebase/database.rules.json` together with the updated client. Old snapshot creation
+and redemption are disabled. On each account's first successful cleanup in an app session,
+sync removes that owner's old `characterShares` snapshots in batches of ten; failed cleanup
+is reported and retried on the next sync without blocking normal character synchronization.
+Original characters and recipients' imported copies are retained. Accounts that never return
+will not run client cleanup; an administrator can remove the retired `characterShares` node
+in the Firebase console to reclaim all remaining snapshot storage. The new sharing system
+does not use that node.
+
+The emulator tests cover short codes, collisions, simultaneous creation, live-version reads,
+revocation, deletion, owner-scoped legacy cleanup and denied access to unshared data. No
+backend service, scheduled cleanup job, or Firebase Storage bucket is required.
 
 ### Account preferences
 

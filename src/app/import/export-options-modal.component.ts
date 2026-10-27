@@ -22,11 +22,11 @@ type ExportMode = 'select' | 'json' | 'share';
               JSON Downloaded
             } @else if (mode() === 'share') {
               @if (isUploading()) {
-                Uploading...
+                Preparing Share Code...
               } @else if (shareCode()) {
                 Share Code Ready
               } @else {
-                Upload Failed
+                Sharing Unavailable
               }
             }
           </h2>
@@ -65,8 +65,8 @@ type ExportMode = 'select' | 'json' | 'share';
               <div class="flex items-center">
                 <span class="text-2xl mr-3">#</span>
                 <div>
-                  <div class="font-semibold">Share via Code Sync</div>
-                  <div class="text-sm opacity-90">Create a code for an approved user</div>
+                  <div class="font-semibold">Share via Code</div>
+                  <div class="text-sm opacity-90">Show or create a permanent character code</div>
                 </div>
               </div>
             </button>
@@ -88,27 +88,28 @@ type ExportMode = 'select' | 'json' | 'share';
           @if (isUploading()) {
             <div class="flex flex-col items-center py-8">
               <div class="animate-spin text-4xl mb-4"><app-ui-icon name="loader" /></div>
-              <p class="text-on-surface-variant">Creating a private share code...</p>
+              <p class="text-on-surface-variant">Preparing your character’s share code...</p>
             </div>
           } @else if (shareCode()) {
             <p class="text-on-surface-variant mb-4">
-              Your character has been uploaded. Share the Share Code below:
+              Share this code with another approved user:
             </p>
 
             
 
             <div class="mb-4 p-4 bg-surface-container rounded-lg border-2 border-outline-variant">
               <p class="text-xs text-on-surface-variant font-semibold mb-2">Share Code</p>
-              <p class="text-sm font-mono text-primary break-all">{{ shareCode() }}</p>
+              <p class="text-2xl font-mono font-semibold tracking-widest text-primary">{{ shareCode() }}</p>
             </div>
 
             <div class="space-y-2 mb-4">
               <p class="text-xs text-on-surface-variant">
-                <span class="font-semibold">Note:</span> Codes expire after 24 hours. Importing creates an independent copy; later edits are not linked.
+                <span class="font-semibold">Note:</span> This code stays the same until you revoke it or delete the character. Imports use your latest synced version and create independent copies.
               </p>
             </div>
 
             <div class="flex flex-col gap-2">
+              @if (uploadError()) { <p role="alert" class="rounded-lg bg-error-container p-3 text-sm text-on-error-container">{{ uploadError() }}</p> }
               
               <button
                 (click)="copyCodeToClipboard()"
@@ -116,7 +117,7 @@ type ExportMode = 'select' | 'json' | 'share';
               >
                 <app-ui-icon name="copy" /> Copy Share Code
               </button>
-              <button (click)="revokeCode()" class="px-4 py-2 rounded-lg bg-rose-container text-on-rose-container">Revoke Code</button>
+              <button (click)="revokeCode()" [disabled]="isUploading()" class="px-4 py-2 rounded-lg bg-rose-container text-on-rose-container disabled:opacity-50">Revoke Code</button>
               <button
                 (click)="close.emit()"
                 class="px-4 py-2 bg-surface-container text-on-surface font-medium rounded-lg hover:bg-surface-container-high transition-colors"
@@ -126,7 +127,7 @@ type ExportMode = 'select' | 'json' | 'share';
             </div>
           } @else if (uploadError()) {
             <div class="mb-4 p-4 bg-error-container text-on-error-container rounded-lg">
-              <p class="font-semibold mb-2">Upload Failed</p>
+              <p class="font-semibold mb-2">Sharing Unavailable</p>
               <p class="text-sm">{{ uploadError() }}</p>
             </div>
             <div class="flex gap-2">
@@ -214,14 +215,14 @@ export class ExportOptionsModalComponent {
 
   async createShareCode() {
     const character = this.character();
-    if (!character) return;
+    if (!character?.character?.characterUuid || this.isUploading()) return;
 
     this.mode.set('share');
     this.isUploading.set(true);
     this.shareCode.set(null);
     this.uploadError.set(null);
 
-    try { this.shareCode.set(await this.sharing.create(character)); }
+    try { this.shareCode.set(await this.sharing.create(character.character.characterUuid)); }
     catch (error) { this.uploadError.set(error instanceof Error ? error.message : 'Could not create a share code.'); }
     finally { this.isUploading.set(false); }
   }

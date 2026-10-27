@@ -24,6 +24,7 @@ export class CharacterSyncService implements OnDestroy {
   readonly initialReady = signal(false);
   private running?: Promise<void>;
   private rerun = false;
+  private readonly cleanedShareOwners = new Set<string>();
   private readonly interval = typeof window === 'undefined' ? undefined : setInterval(() => void this.sync(), 60_000);
   private readonly online = () => void this.sync();
 
@@ -51,7 +52,7 @@ export class CharacterSyncService implements OnDestroy {
     const active = () => this.account.user()?.uid === user.uid && this.account.accessible();
     const local = this.repository.current();
     const cloud = new FirebaseCharacterCloud(this.config.databaseURL, user.uid, () => user.getIdToken(), active);
-    return { uid: user.uid, active, local, engine: new CharacterSyncEngine(local, cloud, active) };
+    return { uid: user.uid, active, local, cloud, engine: new CharacterSyncEngine(local, cloud, active) };
   }
   sync(): Promise<void> {
     if (this.running) { this.rerun = true; return this.running; }
@@ -71,6 +72,14 @@ export class CharacterSyncService implements OnDestroy {
       const execute = async () => {
         if (!session.active()) return;
         const result = await session.engine.run();
+        if (session.active() && !this.cleanedShareOwners.has(session.uid)) {
+          try {
+            await session.cloud.shares.cleanupLegacy();
+            if (session.active()) this.cleanedShareOwners.add(session.uid);
+          } catch (error) {
+            result.errors.push(`Old share cleanup failed: ${error instanceof Error ? error.message : String(error)}`);
+          }
+        }
         if (!session.active()) return;
         this.pending.set(result.pending);
         this.conflicts.set(result.conflicts);
