@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 import { SpellsPageComponent } from './spells-page.component';
 import { SpellsEditorComponent } from '../editor/spells-editor.component';
 import { emptyBasicCharacter } from '../editor/basic-info';
-import { matchesCastingTime, matchesSpellSchool } from '../editor/spell-selection';
+import { matchesCastingTime, matchesSpellSchool } from '../models/spell-metadata';
 
 describe('Spell preparation views and casting times', () => {
   beforeEach(() => TestBed.configureTestingModule({ providers: [provideRouter([])] }));

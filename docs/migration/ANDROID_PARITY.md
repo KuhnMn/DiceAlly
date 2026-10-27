@@ -2,7 +2,7 @@
 
 Milestone 1, inspected 2026-10-14. This is a source-code audit, not a claim that the Android app was executed. Expected outputs are distinguished from observed code behavior in [PARITY_CASES.md](PARITY_CASES.md). The persistence design is in [CHARACTER_DOCUMENT.md](CHARACTER_DOCUMENT.md).
 
-Android paths below are relative to `C:/Users/maxim/AndroidStudioProjects/DnDAlly2/app/src/main/java/com/ltx/`. Web paths are relative to this repository. M2-M8 refer to the milestones in `IMPLEMENTATION_PLAN.md`.
+Android paths below are relative to `C:/Users/maxim/AndroidStudioProjects/DnDAlly2/app/src/main/java/com/ltx/`. Web paths are relative to this repository. M2-M8 refer to the milestones in [the historical implementation plan](IMPLEMENTATION_PLAN.md).
 
 ## Workflow matrix
 

@@ -1,11 +1,10 @@
-import type { Theme } from '../services/theme.service';
-
 export const SETTING_KEYS = ['theme', 'sourceBooks'] as const;
 export type SettingKey = typeof SETTING_KEYS[number];
 export interface AccountSetting { value: string; mutationId: string; }
 export interface CachedSetting extends AccountSetting { pending: boolean; }
 export type SettingsCache = Partial<Record<SettingKey, CachedSetting>>;
-export const THEMES: readonly Theme[] = ['light-mc', 'dark-mc', 'light-royal', 'dark-royal', 'light-ethereal', 'dark-ethereal', 'light-forge', 'dark-forge', 'light-glade', 'dark-glade'];
+export const THEMES = ['light-mc', 'dark-mc', 'light-royal', 'dark-royal', 'light-ethereal', 'dark-ethereal', 'light-forge', 'dark-forge', 'light-glade', 'dark-glade'] as const;
+export type Theme = typeof THEMES[number];
 
 /** JSON strings retain an empty Source Books selection (Firebase otherwise removes empty arrays). */
 export function validSetting(key: SettingKey, input: unknown): input is AccountSetting {

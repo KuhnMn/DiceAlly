@@ -1,5 +1,5 @@
 import { Component, input, model } from '@angular/core';
-import { SPELL_SCHOOLS, SpellSchool } from './editor/spell-selection';
+import { SPELL_SCHOOLS, SpellSchool } from './models/spell-metadata';
 import { HorizontalRowDirective } from './sheet/horizontal-row.directive';
 
 /** Shared school choices for the spell catalog, editor, and playing sheet. */

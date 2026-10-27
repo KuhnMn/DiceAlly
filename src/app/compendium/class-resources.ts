@@ -1,3 +1,4 @@
+import { ABILITY_NAMES, abilityName } from '../models/character-references';
 import type { BrewSourceByKind } from '../content/generated/brew-source';
 import { ContentRecord, normalize } from '../content/content.model';
 import { ClassCasting } from '../content/class.model';
@@ -103,10 +104,9 @@ export function classResourceTables(owner: ContentRecord, selected: ContentRecor
   return [...ownerTables(owner, subclass, false), ...(subclass ? ownerTables(subclass, subclass, true) : [])];
 }
 
-const ABILITIES: Record<string, string> = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' };
 export function preparedSpellFormula(formula: string): string {
   return formula.replace(/<\$(\w+)\$>/g, (_match, token: string) => token === 'level' ? 'Class Level'
-    : token.endsWith('_mod') && ABILITIES[token.slice(0, -4)] ? `${ABILITIES[token.slice(0, -4)]} Modifier` : token.replaceAll('_', ' '));
+    : token.endsWith('_mod') && Object.hasOwn(ABILITY_NAMES, token.slice(0, -4)) ? `${abilityName(token.slice(0, -4))} Modifier` : token.replaceAll('_', ' '));
 }
 export function classCastingNotes(owner: ContentRecord, selected: ContentRecord | null): CastingNote[] {
   const notes: CastingNote[] = [];
@@ -114,7 +114,7 @@ export function classCastingNotes(owner: ContentRecord, selected: ContentRecord 
     const casting: ClassCasting = classDefinition(record).casting;
     const add = (label: string, text: string) => notes.push({ owner: record.name, label, text });
     if (casting.progression) add('Spellcasting', ({ full: 'Full Caster', '1/2': 'Half Caster', '1/3': 'Third Caster', artificer: 'Artificer Spellcasting', pact: 'Pact Magic' } as const)[casting.progression]);
-    if (casting.ability) add('Spellcasting Ability', ABILITIES[casting.ability]);
+    if (casting.ability) add('Spellcasting Ability', abilityName(casting.ability));
     if (casting.preparedSpells) add('Prepared Spells', preparedSpellFormula(casting.preparedSpells));
     if (casting.preparedSpellsChange) add('Change Prepared Spells', ({ restShort: 'After a Short Rest', restLong: 'After a Long Rest', level: 'On Gaining a Level' } as const)[casting.preparedSpellsChange]);
     if (casting.spellsKnownProgressionFixedAllowLowerLevel) add('Spell Choices', 'Spells learned can include lower-level spells.');

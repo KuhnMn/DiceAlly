@@ -1,3 +1,4 @@
+import { ABILITY_NAMES } from '../models/character-references';
 import type { Prerequisite } from '../models/character.model';
 import { featureCategoryLabel } from '../editor/feature-selection';
 
@@ -12,7 +13,6 @@ export interface PreparedPrerequisites {
   notes: string[];
 }
 
-const ABILITIES = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' } as const;
 const SPELLCASTING_FOCI: Record<string, string> = {
   arcane: 'an Arcane Focus', druid: 'a Druidic Focus', holy: 'a Holy Symbol',
   tool: 'a Tool', artisansTool: "Artisan’s Tools",
@@ -58,8 +58,8 @@ export function preparePrerequisites(prerequisites: readonly Prerequisite[] | nu
       add(`${className?.name ? `${className.name} ` : ''}Level ${level.level}+${subclass?.name ? ` (${subclass.name})` : ''}`);
     }
     if (prerequisite.ability?.length) requirements.push(group('anyOf', prerequisite.ability.map(scores => group('allOf',
-      (Object.keys(ABILITIES) as (keyof typeof ABILITIES)[]).filter(ability => scores[ability] != null)
-        .map(ability => leaf(`${ABILITIES[ability]} ${scores[ability]}+`))))));
+      (Object.keys(ABILITY_NAMES) as (keyof typeof ABILITY_NAMES)[]).filter(ability => scores[ability] != null)
+        .map(ability => leaf(`${ABILITY_NAMES[ability]} ${scores[ability]}+`))))));
     if (prerequisite.proficiency?.length) requirements.push(group('anyOf', prerequisite.proficiency.map(proficiency => {
       const parts: PrerequisiteExpression[] = [];
       if (proficiency.armor) parts.push(leaf(`${title(proficiency.armor)}${proficiency.armor === 'shield' ? '' : ' Armor'} Training`));

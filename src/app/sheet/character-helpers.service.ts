@@ -1,3 +1,4 @@
+import { spellSchoolLabel } from '../models/spell-metadata';
 import { SKILL_DEFINITIONS } from '../models/character-references';
 import { Injectable } from '@angular/core';
 import { castingTimeText, prepareSpellCastingTimes, prepareSpellComponents, prepareSpellDurations, spellDurationText } from './spell-presentation';
@@ -62,27 +63,7 @@ export class CharacterHelpersService {
   }
 
   spellSchoolLabel(school: string): string {
-    const normalized = school?.trim().toUpperCase();
-    switch (normalized) {
-      case 'A':
-        return 'Abjuration';
-      case 'C':
-        return 'Conjuration';
-      case 'D':
-        return 'Divination';
-      case 'E':
-        return 'Enchantment';
-      case 'V':
-        return 'Evocation';
-      case 'I':
-        return 'Illusion';
-      case 'N':
-        return 'Necromancy';
-      case 'T':
-        return 'Transmutation';
-      default:
-        return school;
-    }
+    return spellSchoolLabel(school);
   }
 
   spellTimeLabel(times: SpellTime[]): string {

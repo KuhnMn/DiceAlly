@@ -1,8 +1,8 @@
 import { Injectable, PLATFORM_ID, inject, signal, effect } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { THEMES } from '../settings/account-settings';
+import { THEMES, type Theme } from '../settings/account-settings';
 
-export type Theme = 'light-mc' | 'dark-mc' | 'light-royal' | 'dark-royal' | 'light-ethereal' | 'dark-ethereal' | 'light-forge' | 'dark-forge' | 'light-glade' | 'dark-glade';
+export type { Theme } from '../settings/account-settings';
 
 @Injectable({
   providedIn: 'root'

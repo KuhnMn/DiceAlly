@@ -1,3 +1,4 @@
+import { ABILITY_NAMES } from '../models/character-references';
 import { attachedSpells, AttachedSpellUsage, visitAttachedSpells } from '../content/attached-spells';
 import { ContentCache } from '../content/content-cache';
 import { ContentRecord } from '../content/content.model';
@@ -19,7 +20,7 @@ function usageNote(usage: AttachedSpellUsage): string | undefined {
 }
 
 const ABILITIES: Readonly<Record<string, string>> = {
-  str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma',
+  ...ABILITY_NAMES,
   inherit: 'Uses the selected spellcasting ability',
 };
 

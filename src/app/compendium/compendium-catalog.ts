@@ -1,5 +1,5 @@
 import { ContentRecord, JsonObject, object } from '../content/content.model';
-import { SPELL_SCHOOLS } from '../editor/spell-selection';
+import { SPELL_SCHOOLS } from '../models/spell-metadata';
 import { featureCategoryLabel, featureFilterValues } from '../editor/feature-selection';
 import { facilityOrderLabel } from '../models/bastion';
 

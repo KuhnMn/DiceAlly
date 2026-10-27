@@ -40,8 +40,9 @@ The generated static application is in `dist/AllySheetViewer/browser`.
 Serve application routes with an SPA fallback to `index.html`.
 
 The domain does not require Firebase Hosting. Its DNS and static hosting setup can be
-configured independently. Do not deploy until authentication, approval rules, and cloud
-save/conflict handling have been implemented and verified.
+configured independently. Authentication, approval guards, cloud synchronization and conflict
+handling are implemented. Before publishing, verify the database rules and account access
+for the intended environment; implementation alone does not verify a live deployment.
 
 ## Implementation status
 

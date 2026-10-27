@@ -1,5 +1,5 @@
 import { Component, model } from '@angular/core';
-import { SPELL_CASTING_TIMES, SpellCastingTime } from './editor/spell-selection';
+import { SPELL_CASTING_TIMES, SpellCastingTime } from './models/spell-metadata';
 import { HorizontalRowDirective } from './sheet/horizontal-row.directive';
 
 @Component({

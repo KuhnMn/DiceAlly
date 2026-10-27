@@ -1,118 +1,68 @@
 # AllySheetViewer
 
-AllySheetViewer is a personal Angular web app for viewing and managing character-sheet style data with a fast, mobile-friendly interface.
+AllySheetViewer (Dice Ally) is an Angular app for creating, viewing and managing
+character sheets. It provides a responsive playing sheet, character editor,
+Compendium, notes, resource tracking, JSON import/export and share codes.
 
-The project focuses on practical in-session usage: quick lookup, notes, feature tracking, and import/export workflows.
+Protected routes require a configured Firebase project and an approved account.
+Character changes are cached in IndexedDB and synchronized with Firebase Realtime
+Database. Game content is imported by the user and cached locally.
 
-## Highlights
+## Local development
 
-- Character sheet companion UI with focused page sections (info, equipment, features, spells, notes, monsters)
-- Feature use tracking with visual progress and regain-condition display
-- Import and export workflow with modal-based options
-- Local persistence through storage services
-- Theme support and responsive layout for desktop and mobile
-- JSON export and temporary share codes for character transfers
+Use Node.js 24 and npm 11 (the package manager is pinned in package.json).
 
-## Tech Stack
+1. Install dependencies with `npm ci`.
+2. Copy `.env.example` to `.env` and fill in the Firebase web app settings.
+3. Configure account approval and database rules using the
+   [Firebase setup guide](docs/migration/FIREBASE_SETUP.md).
+4. Run `npm start` and open <http://localhost:4200>.
 
-- Angular 21
-- TypeScript
-- Angular CLI + angular-cli-ghpages deployment target
-- Vitest for unit testing
+`npm start`, `npm run watch` and `npm run build` generate the ignored
+`public/runtime-config.js` from environment variables and the local `.env`.
+Hosting environment variables take precedence. Restart the dev server after
+changing configuration. Do not edit the generated file by hand.
 
-## Local Development
+With no Firebase settings, configuration generation succeeds, but protected routes
+remain unavailable. Partial Firebase settings fail with the missing variable names.
+Browser configuration is public; never supply service-account credentials.
 
-Install dependencies:
+Sharing uses permanent, revocable Firebase share codes such as `K7M-P4R`.
+The Cloudflare temporary-upload service and its runtime token are no longer used.
+See the Firebase guide for the current sharing and synchronization behavior.
 
-```bash
-npm install
-```
+## Build and checks
 
-### Runtime Configuration
+| Command | Purpose |
+| --- | --- |
+| `npm run build` | Production browser build in `dist/AllySheetViewer/browser` |
+| `npm test -- --watch=false` | Angular/Vitest unit suite |
+| `npm run test:schemas` | Schema-tooling tests |
+| `npm run schemas:check` | Check generated schema artifacts |
+| `npm run schemas:audit` | Audit content contracts |
+| `node --test scripts/retain-release-assets.test.mjs` | Release-asset retention tests |
+| `npm run test:rules` | Firebase database rules tests using the emulator |
+| `npm run deploy:prepare` | Prepare the separate Dice Ally Pages deployment |
 
-The app requires a runtime config file for the Cloudflare Worker that handles temporary character sharing. This file is **not** committed to the repository.
+The application is a browser-only static site. Serve nested routes with an SPA
+fallback. See the [deployment guide](docs/migration/GITHUB_PAGES_DEPLOYMENT.md)
+for publishing commands, required environment settings and release retention.
 
-Copy the example file:
+## Repository structure
 
-```bash
-cp public/runtime-config.example.js public/runtime-config.js
-```
+- `src/app/characters`: Character repositories, sharing, session state and sync.
+- `src/app/content`: Import, schema adapters, linking, cache and generated contracts.
+- `src/app/editor`: Editor pages, selection helpers and Class Wizard.
+- `src/app/sheet`: Playing-sheet pages and presentation components.
+- `src/app/models` and `src/app/rules`: Shared data structures and domain operations.
+- `src/app/auth`, `settings` and `loading`: Account, preferences and navigation support.
+- `src/styles.css`: Global styles and active theme tokens.
+- `scripts`, `schemas` and `firebase`: Tooling, schema snapshots and database rules.
+- `docs`: Implementation guides, review evidence and historical migration records.
 
-Then edit `public/runtime-config.js` and fill in your values:
-
-```js
-window.__ALLY_APP_CONFIG__ = {
-  tmpfilesProxyUrl: 'https://YOUR_WORKER.workers.dev',
-  tmpfilesProxyAuthToken: 'YOUR_AUTH_TOKEN',
-};
-```
-
-#### Setting up the Cloudflare Worker temporary storage
-
-The Worker source is at `cloudflare/tmpfiles-proxy-worker.js`. It stores JSON payloads in Cloudflare KV for 5 minutes and enforces Bearer token authentication.
-
-Create a KV namespace first and keep its ID for the deploy command:
-
-```bash
-npx wrangler kv namespace create TEMP_UPLOADS
-```
-
-Then bind it in your `wrangler.toml`:
-
-```toml
-name = "allysheetviewer-tmpfiles-proxy"
-main = "cloudflare/tmpfiles-proxy-worker.js"
-compatibility_date = "2026-03-20"
-
-[[kv_namespaces]]
-binding = "TEMP_UPLOADS"
-id = "YOUR_NAMESPACE_ID"
-```
-
-Deploy it with:
-
-```bash
-npx wrangler deploy
-```
-
-Store your auth token as a Cloudflare Worker secret:
-
-```bash
-npx wrangler secret put AUTH_TOKEN
-```
-
-Set `tmpfilesProxyUrl` to your deployed Worker URL and `tmpfilesProxyAuthToken` to the same token in `public/runtime-config.js`.
-
-Share-link behavior:
-
-- Uploaded payload max size: 5 MB
-- File lifetime: 5 minutes (300 seconds)
-- Download route format: `/files/{id}`
-- ID format: 6 digits (legacy 32-char IDs are still accepted)
-
-Without this configuration, the share/import-via-link feature will display an error but all other functionality works normally.
-
-Start the dev server:
-
-```bash
-npm start
-```
-
-App URL:
-
-- <http://localhost:4200>
-
-Build for production:
-
-```bash
-npm run build
-```
-
-Run tests:
-
-```bash
-npm test
-```
+Use the [documentation index](docs/README.md) to find current guides and historical
+references. The [maintenance review](docs/maintenance-review.md) explains cleanup
+decisions and remaining structural concerns.
 
 ## Repository Scope
 

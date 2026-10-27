@@ -1,5 +1,15 @@
 import type { ContentReference, Entry, ExportedCharacter } from './character.model';
 
+export const ABILITY_NAMES = {
+  str: 'Strength', dex: 'Dexterity', con: 'Constitution',
+  int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma',
+} as const;
+export type AbilityAbbreviation = keyof typeof ABILITY_NAMES;
+
+export function abilityName(ability: string): string {
+  return Object.hasOwn(ABILITY_NAMES, ability) ? ABILITY_NAMES[ability as AbilityAbbreviation] : ability;
+}
+
 export const STANDARD_CONDITIONS = ['BLINDED', 'CHARMED', 'DEAFENED', 'EXHAUSTION', 'FRIGHTENED', 'GRAPPLED', 'INCAPACITATED', 'INVISIBLE', 'PARALYZED', 'PETRIFIED', 'POISONED', 'PRONE', 'RESTRAINED', 'STUNNED', 'UNCONSCIOUS'] as const;
 export const STANDARD_SENSES = ['Blindsight', 'Darkvision', 'Tremorsense', 'Truesight'] as const;
 export const SKILL_DEFINITIONS = [

@@ -27,6 +27,7 @@ if (config.siteUrl !== `https://${domain}` && config.siteUrl !== `https://${doma
   throw new Error(`Set APP_SITE_URL=https://${domain} before preparing this deployment.`);
 }
 
+run('scripts/generate-content-schemas.mjs');
 run('node_modules/@angular/cli/bin/ng.js', ['build', '--configuration=production', '--base-href=/', '--output-path=dist/dice-ally-pages']);
 // Old tabs still reference the previous release's hashed modules. Fetch before publishing;
 // a failed fetch aborts deployment instead of silently dropping compatibility assets.

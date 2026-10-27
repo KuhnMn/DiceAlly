@@ -1,5 +1,7 @@
 # Web-only migration implementation plan
 
+Historical plan from October 2026. Milestone statuses and old integration paths below are retained as migration history. For current setup, see [the README](../../README.md); for architecture, see [the documentation index](../README.md).
+
 Prepared: 2026-10-14. Status: Milestones 1 and 2 completed for the current desktop scope. Desktop acceptance is user-reported; automated browser measurements and mobile acceptance are deferred by user decision.
 
 ## Outcome and constraints
@@ -148,9 +150,9 @@ Share workflow:
 
 Deliverables completed:
 
-- [Android workflow and import inventory](docs/migration/ANDROID_PARITY.md), including observed gaps and milestone assignments.
-- [Character document contract v1](docs/migration/CHARACTER_DOCUMENT.md), including stable references, field ownership, overrides, and legacy adaptation.
-- [Source-derived parity cases](docs/migration/PARITY_CASES.md), including numeric Android baselines and web preservation requirements.
+- [Android workflow and import inventory](ANDROID_PARITY.md), including observed gaps and milestone assignments.
+- [Character document contract v1](CHARACTER_DOCUMENT.md), including stable references, field ownership, overrides, and legacy adaptation.
+- [Source-derived parity cases](PARITY_CASES.md), including numeric Android baselines and web preservation requirements.
 
 Validation boundary: source audit and manually derived cases, not captured Android runtime outputs. Executable fixtures and real-dataset validation are assigned to M2/M3.
 
@@ -160,7 +162,7 @@ Done when every current Android workflow is assigned to a milestone, legacy impo
 
 ### 2. Content import prototype and performance gate
 
-Progress and measured compatibility results are recorded in [Content import prototype](docs/migration/CONTENT_IMPORT_PROTOTYPE.md). The importer, mappings, reference linking, compatibility audit and cache recovery pass their automated checks. Milestone 2 is accepted for desktop based on the user's local check; additional browser measurements and mobile acceptance are deferred, not verified.
+Progress and measured compatibility results are recorded in [Content import prototype](CONTENT_IMPORT_PROTOTYPE.md). The importer, mappings, reference linking, compatibility audit and cache recovery pass their automated checks. Milestone 2 is accepted for desktop based on the user's local check; additional browser measurements and mobile acceptance are deferred, not verified.
 
 Implement configurable source resolution, file discovery, mappings, background processing, staged IndexedDB imports, indexes, and explicit check/reimport controls. No cloud compendium uploads.
 
@@ -168,7 +170,7 @@ Accepted for the current desktop scope: supported source probes, mapping/linking
 
 ### 3. Independent rules engine
 
-Core baseline implemented: [native validation/acceptance, explicit content-update previews, composed rules, species choices, resource/source/action customization, explicit spell casting and health/rest policies](docs/migration/RULES_ENGINE.md). The original core parity/preservation criteria have source-derived synthetic test coverage; this is not complete Android runtime or upstream-mechanic parity. Proceed to Milestone 4 integration rather than extending this milestone indefinitely.
+Core baseline implemented: [native validation/acceptance, explicit content-update previews, composed rules, species choices, resource/source/action customization, explicit spell casting and health/rest policies](RULES_ENGINE.md). The original core parity/preservation criteria have source-derived synthetic test coverage; this is not complete Android runtime or upstream-mechanic parity. Proceed to Milestone 4 integration rather than extending this milestone indefinitely.
 
 Port level application, multiclass/subclass relations, features, grants, slots, proficiencies, hit dice, and derived values. Introduce provenance and explicit override handling. Reconcile existing web rest/calculation logic with Android reference behavior.
 
@@ -178,9 +180,9 @@ Scope review: the rules baseline is ready to exercise in a creator. Full viewer/
 
 ### 4. Local creator, editor, and content-update preview
 
-**Rebuild required (2026-10-14):** the user rejected the creator's workflow and usability. [Creator rebuild reference](docs/migration/CREATOR_REBUILD_REFERENCE.md) supersedes the previous creator design. Rebuild page by page following the Android editor and existing web themes/Tailwind styling, starting with Basic Info only. The future wizard is optional sheet prefill; manual edits take precedence and ordinary editing must not require rule-engine grant/choice acceptance. The artifact notes below are historical implementation results, not milestone acceptance.
+**Rebuild required (2026-10-14):** the user rejected the creator's workflow and usability. [Creator rebuild reference](CREATOR_REBUILD_REFERENCE.md) supersedes the previous creator design. Rebuild page by page following the Android editor and existing web themes/Tailwind styling, starting with Basic Info only. The future wizard is optional sheet prefill; manual edits take precedence and ordinary editing must not require rule-engine grant/choice acceptance. The artifact notes below are historical implementation results, not milestone acceptance.
 
-Local development artifact implemented: [Local creator/editor](docs/migration/LOCAL_CREATOR.md). Development navigation exposes `/dev/characters`; production routes remain gated. Native IndexedDB saves/drafts, ordered creation, management forms/structured extension fields, sheet projection/session saves, explicit content-update acceptance, legacy reconstruction, and native/Android exports are connected. Automated integration and pinned real-selection browser checks cover the end-to-end local workflow. Comprehensive Android runtime/mechanic and physical-phone acceptance remain rollout validation, not verified parity claims.
+Local development artifact implemented: [Local creator/editor](LOCAL_CREATOR.md). Development navigation exposes `/dev/characters`; production routes remain gated. Native IndexedDB saves/drafts, ordered creation, management forms/structured extension fields, sheet projection/session saves, explicit content-update acceptance, legacy reconstruction, and native/Android exports are connected. Automated integration and pinned real-selection browser checks cover the end-to-end local workflow. Comprehensive Android runtime/mechanic and physical-phone acceptance remain rollout validation, not verified parity claims.
 
 Build multi-step creation, drafts, full editing, management parity, and update previews using the local repository. Preserve existing viewer features and Android file import/export. Local workflows in this milestone are development validation; do not publish an ungated application.
 
