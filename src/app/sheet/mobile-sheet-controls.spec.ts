@@ -118,6 +118,30 @@ describe('Mobile sheet controls', () => {
     expect(fixture.componentInstance.armorClassInfo().ac).toBe(12);
   });
 
+  it.each([
+    { name: 'Manual', character: { armorClass: 16 }, source: 'Static AC' },
+    { name: 'Override', character: { armorClass: 16, armorClassOverride: 19 }, source: 'Manual Override' },
+    { name: 'Calculated', character: { calculateAC: true, abilityScores: { dexterity: 14 } }, source: 'Dexterity Only' },
+  ])('shows the $name AC source immediately on hover or focus, and hides it while editing', ({ character, source }) => {
+    const fixture = TestBed.createComponent(SheetAcControlComponent);
+    fixture.componentRef.setInput('characterData', { character }); fixture.detectChanges();
+    const trigger = fixture.nativeElement.querySelector('app-sheet-stat-tooltip > div') as HTMLElement;
+    const button = trigger.querySelector('button[aria-label="Set armor class override"]') as HTMLButtonElement;
+    expect(button.hasAttribute('title')).toBe(false);
+    trigger.dispatchEvent(new MouseEvent('mouseenter')); fixture.detectChanges();
+    const tooltip = document.querySelector('[role="tooltip"]')!;
+    expect(tooltip.textContent).toBe(source);
+    expect(button.getAttribute('aria-describedby')).toBe(tooltip.id);
+    trigger.dispatchEvent(new MouseEvent('mouseleave')); fixture.detectChanges();
+    expect(document.querySelector('[role="tooltip"]')).toBeNull();
+    button.dispatchEvent(new FocusEvent('focusin', { bubbles: true })); fixture.detectChanges();
+    expect(document.querySelector('[role="tooltip"]')?.textContent).toBe(source);
+    button.click(); fixture.detectChanges();
+    expect(document.querySelector('[role="tooltip"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('input[aria-label="Armor class override"]')).not.toBeNull();
+    fixture.destroy();
+  });
+
   it('keeps every skill visible with proficiency markers and removes inline health details', () => {
     const fixture = TestBed.createComponent(MobileCharacterInfoPageComponent);
     fixture.componentRef.setInput('characterData', { character: { abilityScores: { dexterity: 14 }, proficiencies: { skills: { STEALTH: 'PROFICIENT' } } } });

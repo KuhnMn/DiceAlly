@@ -30,3 +30,14 @@
   border-style: solid;
   border-color: #1f2937 transparent transparent transparent;
 }
+.overlay-stat-tooltip {
+  position: relative;
+  visibility: visible;
+  bottom: auto;
+  left: auto;
+  transform: none;
+  width: max-content;
+  max-width: min(24rem, calc(100vw - 24px));
+  white-space: normal;
+}
+.overlay-stat-tooltip::after { display: none; }
