@@ -62,7 +62,7 @@ import { SheetListLayoutComponent } from './sheet-list-layout.component';
                           <app-basic-combat-actions [actions]="groupedBasicActions()[actionType]" />
                         }
                         @if (groupedCombatActions()[actionType]?.length) { <app-combat-action-columns /> }
-                        @for (action of groupedCombatActions()[actionType]; track action) {
+                        @for (action of groupedCombatActions()[actionType]; track action.editorId ?? $index) {
                           <app-combat-action [action]="action" [sheet]="characterData()!" [linkType]="getCombatActionLinkType(action)" [navigable]="isActionClickable(action)" (navigated)="navigateToCombatAction(action)" />
                         }
                       </div>

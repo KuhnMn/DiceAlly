@@ -37,7 +37,7 @@
   <app-spell-effect-filter [(selected)]="displayedEffects" />
   </app-list-controls>
   <div class="rounded-lg bg-surface-container">
-    @for (spell of selected; track spell) {
+    @for (spell of selected; track spell.editorId ?? $index) {
       @let prepared = preparedEntry(spell);
       @let tracked = prepared ?? spell;
       <app-editor-entry-row [sheet]="sheet()" [resource]="spell" [name]="spell.name" [expanded]="expanded.has(spell)" (detailsRequested)="toggle(spell)" (removeRequested)="remove(spell)"

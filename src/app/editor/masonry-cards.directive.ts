@@ -1,26 +1,26 @@
 import { AfterViewInit, Directive, ElementRef, OnDestroy, inject } from '@angular/core';
+import { observeResizeAfterFrame } from '../resize-observer';
 
 /** Size grid rows to each card so later cards can occupy gaps in either column. */
 @Directive({ selector: '[appMasonryCards]' })
 export class MasonryCardsDirective implements AfterViewInit, OnDestroy {
   private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
-  private observer?: ResizeObserver;
+  private stopObserving?: () => void;
 
   ngAfterViewInit() {
     if (typeof ResizeObserver === 'undefined') return;
     const container = this.element.nativeElement;
     const cards = Array.from(container.querySelectorAll<HTMLElement>('.editor-card'));
     const sizeCards = () => {
-      for (const card of cards) {
+      const spans = cards.map(card => `span ${Math.ceil(card.getBoundingClientRect().height + 16)}`);
+      cards.forEach((card, index) => {
         // One-pixel rows, plus the same 16px spacing used by the rest of the editor.
-        card.style.gridRowEnd = `span ${Math.ceil(card.getBoundingClientRect().height + 16)}`;
-      }
+        if (card.style.gridRowEnd !== spans[index]) card.style.gridRowEnd = spans[index];
+      });
     };
-    sizeCards();
+    this.stopObserving = observeResizeAfterFrame(cards, sizeCards);
     container.classList.add('masonry-ready');
-    this.observer = new ResizeObserver(sizeCards);
-    cards.forEach(card => this.observer!.observe(card));
   }
 
-  ngOnDestroy() { this.observer?.disconnect(); }
+  ngOnDestroy() { this.stopObserving?.(); }
 }

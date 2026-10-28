@@ -149,7 +149,7 @@ import { BackgroundDetailsComponent } from '../background-details.component';
         </details>
         <details class="overflow-hidden rounded-xl border border-outline-variant bg-surface p-3 text-sm">
           <summary class="flex min-h-11 cursor-pointer items-center gap-2 border-b border-outline-variant pb-2 font-bold">Feature Index ({{ features().length }})</summary>
-          @for (feature of features(); track feature) { <button type="button" (click)="goToFeature(feature)" class="block min-h-11 text-left text-primary underline">{{ feature.name }}</button> }
+          @for (feature of features(); track feature.editorId ?? $index) { <button type="button" (click)="goToFeature(feature)" class="block min-h-11 text-left text-primary underline">{{ feature.name }}</button> }
         </details>
         </div></div>
       </div>

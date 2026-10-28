@@ -11,7 +11,7 @@
 
     <app-list-controls [label]="'Search ' + label.toLowerCase()" searchName="selected-monster-search" [(query)]="listSearch" [hasFilters]="false" />
     <div class="rounded-lg bg-surface-container">
-    @for (monster of filteredMonsters; track monster; let i = $index) {
+    @for (monster of filteredMonsters; track monster.editorId ?? $index; let i = $index) {
       <app-editor-entry-row [sheet]="sheet()" [resource]="monster" [name]="monster.name || 'Unnamed monster'" [expanded]="expanded.has(monster)" (detailsRequested)="toggle(monster)" (removeRequested)="remove(monster)" [notesCount]="monster.notes?.length || 0" [usesCount]="monster.uses?.length || 0">
         <ng-container entry-metadata>
           <span class="shrink-0 rounded bg-secondary-container px-1 text-on-secondary-container">@if (health(monster).enabled) { Max HP {{ health(monster).maximum }} } @else { Stat Block Only }</span>

@@ -17,7 +17,7 @@ import { InfoButtonComponent } from '../info-button.component';
   template: `
     <div class="mb-2 flex items-center gap-1"><h3 class="text-sm font-semibold">Classes &amp; Levels</h3><app-info-button title="Displayed classes"><p>These rows describe your character and add up to its total level. Library selections and levels prefill the Class Wizard the next time it opens. Editing these rows does not itself add proficiencies, features, or spells.</p><p>Applying the wizard replaces library-selected rows and the displayed background. Custom class text stays alongside the wizard's classes.</p></app-info-button><button type="button" class="secondary-button compact-button ml-auto" (click)="add()"><app-ui-icon name="plus" /> Class</button></div>
     <div class="space-y-2">
-      @for (entry of sheet().classes ?? []; track entry; let i = $index) {
+      @for (entry of sheet().classes ?? []; track $index; let i = $index) {
         <div class="rounded-lg border border-outline-variant bg-surface-container p-2 space-y-2">
           <div class="flex items-end gap-2">
             <label class="min-w-0 flex-1"><span class="field-label">Class</span><app-searchable-select [label]="'Class ' + (i + 1)" [compact]="true" [options]="classOptions(entry)" [value]="entry.custom ? 'CUSTOM' : entry.classKey ?? ''" (selected)="select(entry, $event)" /></label>

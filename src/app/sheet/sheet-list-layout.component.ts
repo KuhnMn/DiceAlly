@@ -1,6 +1,7 @@
 import { sheetColumnCapacity } from './sheet-layout.service';
 import { Component, signal, computed, inject, ElementRef, afterNextRender, DestroyRef } from '@angular/core';
 import { UiIconComponent } from '../ui-icon.component';
+import { observeResizeAfterFrame } from '../resize-observer';
 
 @Component({
   selector: 'app-sheet-list-layout',
@@ -30,9 +31,7 @@ export class SheetListLayoutComponent {
       const container = this.element.nativeElement.closest('.sheet-tab-content') ?? this.element.nativeElement.parentElement;
       if (!container || typeof ResizeObserver === 'undefined') return;
       const measure = () => { const width = container.getBoundingClientRect().width; if (width > 0) this.maxColumns.set(sheetColumnCapacity(width)); };
-      const observer = new ResizeObserver(measure);
-      observer.observe(container); measure();
-      this.destroyRef.onDestroy(() => observer.disconnect());
+      this.destroyRef.onDestroy(observeResizeAfterFrame([container], measure));
     });
   }
 }

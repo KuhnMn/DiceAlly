@@ -9,9 +9,9 @@
   <div id="spell-slot-content" [hidden]="!listVisible">
   @if (error) { <p role="alert" class="text-sm text-error mb-3">{{ error }}</p> }
   <div class="space-y-3">
-    @for (source of visibleSources; track source) {
+    @for (source of visibleSources; track source.editorId ?? source.name) {
       <div><h3 class="font-semibold mb-2">{{ source.name }}</h3>
-        <div class="space-y-2">@for (slot of slots(source.name!); track slot; let i = $index) {
+        <div class="space-y-2">@for (slot of slots(source.name!); track $index; let i = $index) {
           <div class="rounded-lg border-2 border-outline-variant bg-surface-container p-2 space-y-2">
             <div class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2"><label class="flex items-center gap-1.5 text-xs font-semibold">Level<select class="editor-input !w-14" [name]="'slot-level-' + source.name + '-' + i" [ngModel]="slot.level" (ngModelChange)="setLevel(source.name!, slot, $event)">@for (level of [1,2,3,4,5,6,7,8,9]; track level) { <option [ngValue]="level" [disabled]="hasCombination(source.name!, level, slot.regainCondition || 'LONG_REST', slot)">{{ level }}</option> }</select></label>
             <div class="justify-self-end"><label [for]="'slot-total-' + source.name + '-' + i" class="sr-only">Total slots</label><div class="stat-stepper slot-total-stepper"><button type="button" class="stepper-button" [attr.aria-label]="'Decrease ' + source.name + ' level ' + slot.level + ' total'" [disabled]="slot.total <= 1" (click)="adjust(slot, -1)"><app-ui-icon name="minus" /></button><input [id]="'slot-total-' + source.name + '-' + i" [name]="'slot-total-' + source.name + '-' + i" class="editor-input text-center" type="number" min="1" required step="1" #slotTotal="ngModel" [ngModel]="slot.total" (ngModelChange)="setTotal(slot, $event, slotTotal)" /><button type="button" class="stepper-button" [attr.aria-label]="'Increase ' + source.name + ' level ' + slot.level + ' total'" (click)="adjust(slot, 1)"><app-ui-icon name="plus" /></button></div></div><button type="button" class="secondary-button compact-button icon-button" [attr.aria-label]="'Remove ' + source.name + ' level ' + slot.level + ' spell slots'" title="Remove spell slots" (click)="remove(source.name!, i)"><app-ui-icon name="close" /></button></div>

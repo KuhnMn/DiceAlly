@@ -20,7 +20,7 @@ import { InfoButtonComponent } from '../info-button.component';
         @if (group.length) {
           <section class="mt-3 min-w-0 rounded-lg bg-surface-container p-2 sm:p-2.5" [attr.aria-label]="type.label">
             <div class="mb-1.5 flex items-center gap-2"><h3 class="text-xs font-bold uppercase text-on-surface-variant">{{ type.label }}</h3><span class="text-xs tabular-nums text-on-surface-variant">{{ group.length }}</span></div>
-            <div class="space-y-1.5">@for (action of group; track action; let i = $index) {
+            <div class="space-y-1.5">@for (action of group; track action.editorId ?? $index; let i = $index) {
               @let sourceUpdateAvailable = hasSourceUpdate(action);
               <article class="min-w-0 rounded-lg border border-outline-variant bg-surface p-2 sm:p-2.5">
                 <div class="flex min-w-0 items-start gap-1">

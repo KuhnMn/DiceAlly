@@ -17,7 +17,7 @@
     <app-feature-filters [kind]="selectedType" [categories]="displayedCategoryOptions" [(selectedCategories)]="displayedCategories" [classes]="displayedOptions.classes" [levels]="displayedOptions.levels" [(selectedClasses)]="displayedClasses" [(selectedLevels)]="displayedLevels" />
   </app-list-controls>
   <div class="rounded-lg bg-surface-container">
-    @for (feature of selected; track feature; let i = $index) {
+    @for (feature of selected; track feature.editorId ?? $index; let i = $index) {
       <app-editor-entry-row [sheet]="sheet()" [resource]="feature" [name]="feature.name" [expanded]="expanded.has(feature)" (detailsRequested)="toggle(feature)" (removeRequested)="remove(feature)" [notesCount]="feature.notes?.length || 0" [usesCount]="feature.uses?.length || 0">
         <ng-container entry-metadata>
           @if (selectedType === 'CLASS_FEATURE') {

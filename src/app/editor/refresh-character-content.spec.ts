@@ -156,6 +156,37 @@ describe('Refresh saved character descriptions', () => {
     } finally { fixture.destroy(); savedSource.mockRestore(); active.mockRestore(); await cache.discard(revision.id); }
   });
 
+  it('keeps all 16 spell rows mounted when descriptions replace the draft objects', async () => {
+    await TestBed.configureTestingModule({ imports: [LocalEditorComponent], providers: [provideRouter([])] }).compileComponents();
+    const { revision, spell } = fixtureData();
+    const records = Array.from({ length: 16 }, (_, index) => {
+      const name = `Ward ${String(index).padStart(2, '0')}`;
+      return record('spell', name, { ...spell.data, name });
+    });
+    const cache = new IndexedDbContentCache();
+    await cache.stage(revision); await cache.put(revision.id, records);
+    const savedSource = vi.spyOn(IndexedDbContentCache.prototype, 'savedSource').mockResolvedValue(revision.source);
+    const active = vi.spyOn(IndexedDbContentCache.prototype, 'active').mockResolvedValue({ ...revision, status: 'ready' });
+    const fixture = TestBed.createComponent(LocalEditorComponent);
+    try {
+      await fixture.whenStable();
+      const editor = fixture.componentInstance;
+      editor.sheet.spells = records.map((entry, index) => ({ editorId: `ward-${index}`, name: entry.name, source: 'TEST',
+        listType: 'KNOWN', contentReference: contentReference(entry, revision) }));
+      editor.setPage(5); fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
+      const rows = [...fixture.nativeElement.querySelectorAll('app-editor-spells app-editor-entry-row')];
+      expect(rows).toHaveLength(16);
+      await editor.refreshDescriptions(); await fixture.whenStable();
+      expect(editor.error()).toBe('');
+      const refreshed = [...fixture.nativeElement.querySelectorAll('app-editor-spells app-editor-entry-row')];
+      expect(refreshed).toHaveLength(16);
+      refreshed.forEach((row, index) => expect(row).toBe(rows[index]));
+      expect(editor.sheet.spells![0].entity?.entries).toEqual(['Updated spell']);
+    } finally {
+      fixture.destroy(); savedSource.mockRestore(); active.mockRestore(); await cache.discard(revision.id);
+    }
+  });
+
   it('rejects a completed refresh if the draft was edited while IndexedDB was being read', async () => {
     await TestBed.configureTestingModule({ imports: [LocalEditorComponent], providers: [provideRouter([])] }).compileComponents();
     const { revision, spell } = fixtureData();

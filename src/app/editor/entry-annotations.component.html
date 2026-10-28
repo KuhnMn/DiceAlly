@@ -14,7 +14,7 @@
       <button type="button" class="annotation-button" aria-label="Add use tracker" (click)="addUses(entry())"><app-ui-icon name="plus" /> Counter</button>
     </div>
     <div class="space-y-2">
-      @for (uses of entry().uses ?? []; track uses; let u = $index) {
+      @for (uses of entry().uses ?? []; track $index; let u = $index) {
         <div class="rounded border border-outline-variant bg-surface-container-lowest p-1.5">
           <div class="grid min-w-0 grid-cols-[minmax(0,1fr)_4rem_2rem] items-end gap-1.5 sm:grid-cols-[minmax(0,1fr)_4rem_minmax(8rem,1fr)_2rem]">
             <label class="min-w-0">
@@ -54,7 +54,7 @@
       <button type="button" class="annotation-button" aria-label="Add note group" (click)="addNote(entry())"><app-ui-icon name="plus" /> Note group</button>
     </div>
     <div class="space-y-2">
-      @for (group of entry().notes ?? []; track group; let n = $index) {
+      @for (group of entry().notes ?? []; track $index; let n = $index) {
         <div class="note-group rounded border border-outline-variant p-1.5">
           <div class="flex items-center gap-1 mb-1">
             <label class="flex-1 min-w-0">

@@ -31,7 +31,7 @@ import { SpellSourceCount } from './spell-selection';
           [value]="value()" [disabled]="disabled()" [compact]="compact()" (selected)="selected.emit($event)" />
       } @else {
       <div appHorizontalRow class="flex flex-wrap items-stretch gap-2">
-        @for (option of options; track option.source ?? option.value) {
+        @for (option of options; track option.source?.editorId ?? option.value) {
           <button type="button" class="max-w-full border-2 rounded-lg px-3 py-2 text-center text-sm break-words transition-colors max-sm:w-max"
             [ngClass]="value() === option.value ? activeClasses : 'border-outline-variant bg-surface-container'"
             [attr.aria-pressed]="value() === option.value" (click)="selected.emit(option.value)">

@@ -70,7 +70,7 @@
     </div>
     <div id="added-feature-sources" [hidden]="!sourcesVisible">
     @if (sourceMessage()) { <p role="alert" class="text-sm text-error mb-3">{{ sourceMessage() }}</p> }
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 items-start gap-3">@for (source of sources; track source; let i = $index) {
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 items-start gap-3">@for (source of sources; track source.editorId ?? $index; let i = $index) {
       <div class="source-editor rounded-lg border border-outline-variant bg-surface-container p-3 space-y-3">
         <div class="flex items-end gap-2">
           <label class="min-w-0 flex-1"><span class="field-label">Source name</span><input class="editor-input" [name]="'source-name-' + i" [value]="source.name ?? ''" (change)="renameSource(source, $event)" /></label>

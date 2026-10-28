@@ -10,7 +10,7 @@
 
     <app-list-controls label="Search items" searchName="selected-item-search" [(query)]="listSearch" [hasFilters]="false" />
     <div class="rounded-lg bg-surface-container">
-    @for (item of filteredItems; track item; let i = $index) {
+    @for (item of filteredItems; track item.editorId ?? $index; let i = $index) {
       <app-editor-entry-row [sheet]="sheet()" [resource]="item" [name]="item.name" [expanded]="expanded.has(item)" (detailsRequested)="toggle(item)" (removeRequested)="remove(item)" [notesCount]="item.notes?.length || 0" [usesCount]="item.uses?.length || 0">
         <ng-container entry-metadata>
           @if (item.allowMultiples) { <span class="shrink-0 rounded bg-secondary-container px-1 text-on-secondary-container" [attr.aria-label]="'Quantity ' + (item.count ?? 1)">&times; {{ item.count ?? 1 }}</span> }

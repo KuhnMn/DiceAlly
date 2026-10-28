@@ -14,6 +14,7 @@ import { CharacterSessionService } from '../characters/character-session.service
 import { ThemePickerComponent } from '../theme-picker.component';
 import { ScrollableTabsDirective } from '../scrollable-tabs.directive';
 import { AppDialogService } from '../services/app-dialog.service';
+import { observeResizeAfterFrame } from '../resize-observer';
 import { Component, inject, signal, ElementRef, viewChild, OnDestroy, computed, effect, HostListener, untracked, afterNextRender, afterRenderEffect, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
@@ -282,20 +283,19 @@ export class CharacterSheetComponent implements OnDestroy {
       const tabs = this.tabs()?.nativeElement;
       if (!chrome || !tabs || typeof ResizeObserver === 'undefined') return;
       const measure = () => {
-        this.element.nativeElement.style.setProperty('--sheet-chrome-height', `${chrome.getBoundingClientRect().height}px`);
-        this.element.nativeElement.style.setProperty('--sheet-tabs-height', `${tabs.getBoundingClientRect().height}px`);
+        const chromeHeight = `${chrome.getBoundingClientRect().height}px`;
+        const tabsHeight = `${tabs.getBoundingClientRect().height}px`;
+        const style = this.element.nativeElement.style;
+        if (style.getPropertyValue('--sheet-chrome-height') !== chromeHeight) style.setProperty('--sheet-chrome-height', chromeHeight);
+        if (style.getPropertyValue('--sheet-tabs-height') !== tabsHeight) style.setProperty('--sheet-tabs-height', tabsHeight);
       };
-      const observer = new ResizeObserver(measure);
-      observer.observe(chrome); observer.observe(tabs); measure();
-      onCleanup(() => observer.disconnect());
+      onCleanup(observeResizeAfterFrame([chrome, tabs], measure));
     });
     afterRenderEffect(onCleanup => {
       const content = this.content()?.nativeElement;
       if (!content || typeof ResizeObserver === 'undefined') return;
       const measure = () => this.layout.contentColumns.set(sheetColumnCapacity(content.getBoundingClientRect().width));
-      const observer = new ResizeObserver(measure);
-      observer.observe(content); measure();
-      onCleanup(() => observer.disconnect());
+      onCleanup(observeResizeAfterFrame([content], measure));
     });
     afterNextRender(() => {
       if (typeof MutationObserver !== 'undefined') {

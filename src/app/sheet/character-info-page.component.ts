@@ -465,7 +465,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
                           <app-basic-combat-actions [actions]="groupedBasicActions()[actionType]" />
                         }
                         @if (groupedCombatActions()[actionType]?.length) { <app-combat-action-columns /> }
-                        @for (action of groupedCombatActions()[actionType]; track action) {
+                        @for (action of groupedCombatActions()[actionType]; track action.editorId ?? $index) {
                           <app-combat-action [action]="action" [sheet]="characterData()!" [linkType]="getCombatActionLinkType(action)" [navigable]="isActionClickable(action)" (navigated)="navigateToCombatAction(action)" />
                         }
                       </div>
@@ -596,7 +596,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
             </h3>
             <div class="space-y-3 text-sm max-h-[800px] overflow-y-auto  pr-3">
               @if (features().length > 0) {
-                @for (feature of features(); track feature.editorId ?? feature) {
+                @for (feature of features(); track feature.editorId ?? $index) {
                   <div class="pb-2 border-b border-outline-variant">
                     <button
                       type="button"
