@@ -10,6 +10,9 @@ import { WizardState } from './wizard-prefill';
 import { matchesSubclass, previewClassWizard } from './class-wizard-preview';
 import { ClassWizardComponent } from './class-wizard.component';
 import { primaryWalkingSpeed, walkingSpeedFeet } from '../models/character-speed';
+import { classDefinition } from '../content/class-adapter';
+import { deriveClassFeatures } from '../rules/feature-rules';
+import { refreshCharacterDescriptions } from './refresh-character-content';
 
 function fixture() {
   const source = { ...DEFAULT_CONTENT_SOURCE, owner: 'class-wizard-test' };
@@ -48,6 +51,79 @@ function fixture() {
   const sheet = emptyBasicCharacter(); sheet.character!.abilityScores!.constitution = 14;
   return { revision, records, find, state, index, sheet };
 }
+
+describe('Classic subclasses with revised classes', () => {
+  function mixedFixture() {
+    const f = fixture();
+    const levels = [1, 2, 3, 6];
+    const records = mapContent({
+      class: ['PHB', 'XPHB'].map(source => ({ name: 'Wizard', source, edition: source === 'XPHB' ? 'one' : 'classic',
+        hd: { number: 1, faces: 6 }, classFeatures: [`Basics|Wizard|${source}|1`] })),
+      classFeature: ['PHB', 'XPHB'].map(source => ({ name: 'Basics', source, className: 'Wizard', classSource: source, level: 1 })),
+      subclass: [{ name: 'Old School', shortName: 'School', source: 'TCE', edition: 'classic', className: 'Wizard', classSource: 'PHB',
+        subclassFeatures: levels.map(level => `School Gift ${level}|Wizard|PHB|School|TCE|${level}`) }],
+      subclassFeature: levels.map(level => ({ name: `School Gift ${level}`, source: 'TCE', className: 'Wizard', classSource: 'PHB',
+        subclassShortName: 'School', subclassSource: 'TCE', level, entries: [`Gift at source level ${level}.`] })),
+    }, 'mixed-edition.json').records;
+    const parent = records.find(record => record.kind === 'class' && record.publication === 'XPHB')!;
+    const classic = records.find(record => record.kind === 'class' && record.publication === 'PHB')!;
+    const subclass = records.find(record => record.kind === 'subclass')!;
+    const index = new Map(records.map(record => [record.key, record]));
+    const state: WizardState = { ...f.state, classes: [{ selectionId: 'wizard', classKey: parent.key, subclassKey: subclass.key, level: 3 }], answers: {} };
+    return { ...f, records, parent, classic, subclass, index, state };
+  }
+
+  it('offers an older subclass for its revised class while preserving exact ancestry checks', () => {
+    const f = mixedFixture();
+    expect(matchesSubclass(f.subclass, f.parent.key, f.index)).toBe(true);
+    expect(matchesSubclass(f.subclass, f.classic.key, f.index)).toBe(true);
+    expect(matchesSubclass(f.subclass, f.find('class', 'Fighter').key, new Map([...f.index, ...f.records.map(record => [record.key, record] as const)]))).toBe(false);
+  });
+
+  it('defers level 1 and 2 subclass features to level 3, keeps later levels and preserves source records', () => {
+    const f = mixedFixture(), before = JSON.stringify(f.records);
+    for (const [level, expected] of [[2, []], [3, [3, 3, 3]], [5, [3, 3, 3]], [6, [3, 3, 3, 6]]] as const) {
+      f.state.classes[0].level = level;
+      const result = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+      expect(result.errors).toEqual([]); expect(result.warnings).toEqual([]);
+      expect(result.sheet.features!.filter(feature => feature.source === 'TCE').map(feature => feature.featureEntity!.level)).toEqual(expected);
+      expect(result.sheet.features!.some(feature => feature.name === 'Basics')).toBe(true);
+    }
+    expect(JSON.stringify(f.records)).toBe(before);
+    const derived = deriveClassFeatures(f.state.classes, { records: f.index, sourceIdentity: f.revision.sourceIdentity, revisionId: f.revision.id });
+    expect(derived.canAccept).toBe(true);
+    const early = derived.instances.find(instance => instance.snapshot.name === 'School Gift 1')!;
+    expect(classDefinition(early.snapshot).level).toBe(1);
+    expect(early.grants[0].level).toBe(3);
+  });
+
+  it('keeps original acquisition levels when the same subclass uses its classic class', () => {
+    const f = mixedFixture();
+    f.state.classes[0] = { ...f.state.classes[0], classKey: f.classic.key, level: 2 };
+    const result = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+    expect(result.errors).toEqual([]);
+    expect(result.sheet.features!.filter(feature => feature.source === 'TCE').map(feature => feature.featureEntity!.level)).toEqual([1, 2]);
+  });
+
+  it('accepts synthetic legacy subclass copies that keep their original feature identities', () => {
+    const f = mixedFixture();
+    f.subclass.data['classSource'] = 'XPHB';
+    const result = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+    expect(result.errors).toEqual([]);
+    expect(result.sheet.features!.filter(feature => feature.source === 'TCE').map(feature => feature.featureEntity!.level)).toEqual([3, 3, 3]);
+    expect(result.sheet.features!.find(feature => feature.name === 'School Gift 1')!.featureEntity!.classSource).toBe('PHB');
+  });
+
+  it('preserves level 3 acquisition after refreshing descriptions', async () => {
+    const f = mixedFixture();
+    const applied = previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet;
+    const refreshed = await refreshCharacterDescriptions(applied, { get: async (_revision, key) => f.index.get(key) }, f.revision);
+    const early = refreshed.sheet.features!.find(feature => feature.name === 'School Gift 1')!;
+    expect(early.featureEntity!.level).toBe(3);
+    expect(early.acquiredAtLevel).toBe(3);
+    expect(early.featureEntity!.entries).toEqual(['Gift at source level 1.']);
+  });
+});
 
 describe('Subclass-granted spell prefill', () => {
   it('imports prepared spells and ability-based innate uses together, with a minimum of one', () => {

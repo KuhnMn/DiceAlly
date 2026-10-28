@@ -1,4 +1,5 @@
 import { classDefinition } from '../content/class-adapter';
+import { subclassMatchesClass, usesLegacySubclass } from '../content/class-compatibility';
 import { object } from '../content/content.model';
 import { ContentClassSelection, ContentRulesIndex } from './feature-rules';
 import { OptionalFeatureSlot } from './optional-feature-rules';
@@ -17,10 +18,11 @@ export function deriveOptionalSlots(selections: ContentClassSelection[],index: C
     try {
       const parent = index.records.get(selection.classKey); const sub = selection.subclassKey ? index.records.get(selection.subclassKey) : undefined;
       if (!parent || parent.kind !== 'class' || (selection.subclassKey && (!sub || sub.kind !== 'subclass'
-        || classDefinition(sub).parent?.key !== parent.key))) {
+        || !subclassMatchesClass(sub, parent)))) {
         diagnostics.push('Invalid progression class/subclass ancestry.'); continue;
       }
       for (const owner of [parent,...(sub ? [sub] : [])]) {
+        if (owner.kind === 'subclass' && usesLegacySubclass(parent, owner) && selection.level < 3) continue;
         const progression = classDefinition(owner).optionalFeatures;
         progression.forEach((raw,position) => {
           const entry = raw; const types = entry.featureType; const values = entry.progression;

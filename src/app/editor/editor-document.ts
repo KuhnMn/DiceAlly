@@ -68,7 +68,10 @@ export function projectSheet(document: CharacterDocument): ExportedCharacter {
   sheet.features = document.instances.features.map(f => ({ name: f.snapshot.name, source: f.snapshot.publication,
     userAdded: f.manual, featureSourceName: 'Features',
     ...(f.snapshot.kind === 'feat' ? { featEntity: characterOptionSourceData(f.snapshot) as unknown as FeatEntity } : f.snapshot.kind === 'optionalfeature'
-      ? { optionalFeatureEntity: characterOptionSourceData(f.snapshot) as unknown as OptionalFeatureEntity } : { featureEntity: projectClassFeatureData(f.snapshot) as unknown as FeatureEntity }),
+      ? { optionalFeatureEntity: characterOptionSourceData(f.snapshot) as unknown as OptionalFeatureEntity } : {
+        ...(f.grants[0]?.level !== undefined ? { acquiredAtLevel: f.grants[0].level } : {}),
+        featureEntity: { ...projectClassFeatureData(f.snapshot),
+          ...(f.grants[0]?.level !== undefined ? { level: f.grants[0].level } : {}) } as unknown as FeatureEntity }),
     notes: [{ tag: f.id, notes: document.session.annotations[f.id] ?? [] }] }));
   sheet.features.push(...structuredClone(document.compatibility['legacyFeatures'] ?? []) as NonNullable<ExportedCharacter['features']>);
   sheet.spells = document.instances.spells.map(s => ({ name: s.snapshot.name, source: s.snapshot.publication,

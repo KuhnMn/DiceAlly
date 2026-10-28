@@ -1,4 +1,4 @@
-import { classDefinition } from '../content/class-adapter';
+import { subclassMatchesClass } from '../content/class-compatibility';
 import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CharacterClassEntry, ExportedCharacter } from '../models/character.model';
@@ -59,8 +59,9 @@ export class ClassesEditorComponent implements OnInit {
     return options;
   }
   subclassOptions(entry: CharacterClassEntry): SelectOption[] {
+    const parent = this.records.find(record => record.key === entry.classKey);
     const options = [{ value: '', label: 'None' }, ...this.records.filter(record => record.kind === 'subclass'
-      && classDefinition(record).parent?.key === entry.classKey && this.books.allows(record.publication))
+      && !!parent && subclassMatchesClass(record, parent) && this.books.allows(record.publication))
       .map(record => ({ value: record.key, label: `${record.name} (${record.publication})` }))];
     if (entry.subclassKey && !options.some(option => option.value === entry.subclassKey)) options.push({ value: entry.subclassKey, label: entry.subclass ?? 'Saved subclass' });
     return options;

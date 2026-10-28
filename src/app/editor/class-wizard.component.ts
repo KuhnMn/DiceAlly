@@ -161,7 +161,7 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
     return selected && !choices.some(record => record.key === selected.key) ? [selected, ...choices] : choices;
   }
   subclasses(selection: WizardClass) {
-    return [...this.records.values()].filter(record => matchesSubclass(record, selection.classKey)
+    return [...this.records.values()].filter(record => matchesSubclass(record, selection.classKey, this.records)
       && (record.key === selection.subclassKey || this.sourceBooks.allows(record.publication)))
       .sort((a, b) => this.label(a.key).localeCompare(this.label(b.key)));
   }

@@ -584,6 +584,8 @@ export interface SpellEntryFull {
 }
 
 export interface FeatureEntryFull {
+  /** Character acquisition level when compatibility rules defer a source feature. */
+  acquiredAtLevel?: number;
   editorId?: string;
   contentReference?: ContentReference;
   name: string;

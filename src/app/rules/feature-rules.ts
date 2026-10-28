@@ -1,6 +1,7 @@
 import { canonicalClassRecord, classDefinition } from '../content/class-adapter';
 import { ContentRecord, JsonObject, normalize } from '../content/content.model';
 import { ClassCasting } from '../content/class.model';
+import { subclassFeatureLevel, subclassMatchesClass, usesLegacySubclass } from '../content/class-compatibility';
 import { CasterProgression, ClassLevelInput } from './level-rules';
 
 export interface ContentRulesIndex {
@@ -20,6 +21,8 @@ export interface FeatureGrant {
   selectionId: string;
   ownerKey: string;
   role: 'classFeature' | 'subclassFeature' | 'optionalfeature';
+  /** Acquisition level when a legacy subclass is used with a revised class. */
+  level?: number;
 }
 export interface FeatureInstance {
   id: string;
@@ -39,7 +42,7 @@ export interface FeaturePreview {
   diagnostics: { selectionId?: string; message: string }[];
 }
 const CASTERS: Record<NonNullable<ClassCasting['progression']>, CasterProgression> = { full: 'full', '1/2': 'half', '1/3': 'third', artificer: 'artificer', pact: 'pact' };
-/** Pure selection preview. No source/edition guessing and no automatic content revision updates. */
+/** Pure selection preview over pinned records and explicit class/subclass compatibility. */
 export function deriveClassFeatures(selections: ContentClassSelection[], index: ContentRulesIndex,
   previous: FeatureInstance[] = [], suppressedGrantIds: readonly string[] = []): FeaturePreview {
   const diagnostics: FeaturePreview['diagnostics'] = [];
@@ -62,7 +65,7 @@ export function deriveClassFeatures(selections: ContentClassSelection[], index: 
       if (!parent || parent.kind !== 'class') { report(selection.selectionId, 'Selected class is missing or has the wrong kind.'); continue; }
       const subclass = selection.subclassKey ? index.records.get(selection.subclassKey) : undefined;
       if (selection.subclassKey && (!subclass || subclass.kind !== 'subclass'
-        || classDefinition(subclass).parent?.key !== parent.key)) {
+        || !subclassMatchesClass(subclass, parent))) {
         report(selection.selectionId, 'Selected subclass is missing or belongs to a different class/publication.'); continue;
       }
       const parentDefinition = classDefinition(parent);
@@ -87,20 +90,26 @@ export function deriveClassFeatures(selections: ContentClassSelection[], index: 
           const record = index.records.get(key);
           if (!record || record.kind !== role) { report(selection.selectionId, `Missing qualified feature: ${key}`); continue; }
           const definition = classDefinition(record);
-          if (definition.parent?.key !== parent.key) {
+          const expectedParent = role === 'subclassFeature' ? ownerDefinition.parent?.key : parent.key;
+          // Synthetic legacy subclass copies can name the revised class while retaining old feature UIDs.
+          const legacyParent = role === 'subclassFeature' && usesLegacySubclass(parent, owner)
+            && normalize(definition.parent?.name ?? '') === normalize(parent.name);
+          if (definition.parent?.key !== expectedParent && !legacyParent) {
             report(selection.selectionId, `Feature belongs to a different class: ${key}`); continue;
           }
           if (role === 'subclassFeature' && (normalize(definition.subclass!.shortName) !== normalize(ownerDefinition.shortName!)
             || normalize(definition.subclass!.source) !== normalize(owner.publication))) {
             report(selection.selectionId, `Feature belongs to a different subclass: ${key}`); continue;
           }
-          const level = definition.level;
-          if (typeof level !== 'number' || !Number.isInteger(level) || level < 0 || level > 20) {
+          const sourceLevel = definition.level;
+          if (typeof sourceLevel !== 'number' || !Number.isInteger(sourceLevel) || sourceLevel < 0 || sourceLevel > 20) {
             report(selection.selectionId, `Invalid feature level: ${key}`); continue;
           }
+          const level = role === 'subclassFeature' ? subclassFeatureLevel(sourceLevel, parent, owner) : sourceLevel;
           if (level > selection.level) continue;
           const grant: FeatureGrant = { id: JSON.stringify(['feature-grant', index.sourceIdentity, selection.selectionId, owner.key, role, key]),
-            selectionId: selection.selectionId, ownerKey: owner.key, role };
+            selectionId: selection.selectionId, ownerKey: owner.key, role,
+            ...(level !== sourceLevel ? { level } : {}) };
           if (suppressed.has(grant.id)) continue;
           const entry = wanted.get(key) ?? { record, grants: [] };
           if (!entry.grants.some(g => g.id === grant.id)) entry.grants.push(grant);

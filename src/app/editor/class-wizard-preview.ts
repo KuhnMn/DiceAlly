@@ -2,6 +2,7 @@ import { additionalSpells, SPELL_GRANT_LISTS } from '../content/additional-spell
 import { spellDefinition, spellRecordClasses } from '../content/spell-adapter';
 import { characterOption, characterOptionSourceData } from '../content/character-option-adapter';
 import { castingMetadata, classDefinition } from '../content/class-adapter';
+import { subclassMatchesClass, usesLegacySubclass } from '../content/class-compatibility';
 import { updateSpeciesChoiceNotes } from './species-choice-notes';
 import { capitalizeFirst } from '../text';
 import { wizardEditorId } from './editor-identity';
@@ -40,8 +41,10 @@ function declaresSpellcasting(record: ContentRecord): boolean {
   return !!castingMetadata(record).ability || hasAdditionalSpells(record);
 }
 
-export function matchesSubclass(record: ContentRecord, classKey: string) {
-  return record.kind === 'subclass' && classDefinition(record).parent?.key === classKey;
+export function matchesSubclass(record: ContentRecord, classKey: string, records?: ReadonlyMap<string, ContentRecord>) {
+  const parent = records?.get(classKey);
+  return parent ? subclassMatchesClass(record, parent)
+    : record.kind === 'subclass' && classDefinition(record).parent?.key === classKey;
 }
 
 /**
@@ -140,6 +143,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     hpContributions.push({ label: `${parent.name} (${parent.publication})`, level: selection.level,
       hitDie: classInput.hitDie, starting: position === 0, constitutionModifier: conModifier, total });
     for (const owner of [parent, ...(subclass ? [subclass] : [])]) {
+      if (owner.kind === 'subclass' && usesLegacySubclass(parent, owner) && selection.level < 3) continue;
       addOwner(selection.selectionId, owner, selection.level, sourceNames.get(`${selection.selectionId}:${owner.key}`)!, castingAbility, maxSpellLevel);
     }
     if (selection.spellList && classInput.caster !== 'none') for (const record of records.values()) {
@@ -172,9 +176,14 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     const record = instance.snapshot; const grant = instance.grants[0];
     const sourceName = sourceNames.get(`${grant.selectionId}:${grant.ownerKey}`)!;
     const id = wizardEditorId('feature', revision.sourceIdentity, grant.selectionId, record.key);
-    put('features', record.name, ['features', id], createFeatureEntry(record, revision, {
+    const feature = createFeatureEntry(record, revision, {
       editorId: id, sourceName, userAdded: false,
-    }));
+    });
+    if (grant.level !== undefined && feature.featureEntity) {
+      feature.acquiredAtLevel = grant.level;
+      feature.featureEntity.level = grant.level;
+    }
+    put('features', record.name, ['features', id], feature);
     const selection = state.classes.find(entry => entry.selectionId === grant.selectionId)!;
     addOwner(grant.selectionId, record, selection.level, sourceName,
       castingMetadata(records.get(selection.classKey)).ability ?? '', spellLevels.get(grant.selectionId) ?? 0);

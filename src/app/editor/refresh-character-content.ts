@@ -81,6 +81,7 @@ export async function refreshCharacterDescriptions(
     const fresh = createFeatureEntry(record, revision);
     delete feature.featureEntity; delete feature.featEntity; delete feature.optionalFeatureEntity;
     feature.featureEntity = fresh.featureEntity;
+    if (feature.acquiredAtLevel !== undefined && feature.featureEntity) feature.featureEntity.level = feature.acquiredAtLevel;
     feature.featEntity = fresh.featEntity;
     feature.optionalFeatureEntity = fresh.optionalFeatureEntity;
     updated(feature, record);
