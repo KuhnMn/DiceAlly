@@ -207,12 +207,14 @@ type SpellLevelFilter = 'ALL' | number;
       <app-list-controls label="Search spells" [query]="searchQuery()" (queryChange)="searchQuery.set($event)"
         [filterCount]="activeFilterCount()" (cleared)="clearFilters()">
       <ng-container list-toolbar-action>
-        @if (spellView() === 'SPELLBOOK') {
           <button type="button" aria-label="Only ritual spells" title="Only ritual spells" [attr.aria-pressed]="spellRitualFilter() === 'RITUAL'"
             (click)="spellRitualFilter.set(spellRitualFilter() === 'RITUAL' ? 'ALL' : 'RITUAL')"
             [class.bg-green-container]="spellRitualFilter() === 'RITUAL'" [class.text-on-green-container]="spellRitualFilter() === 'RITUAL'"
-            class="min-h-11 shrink-0 rounded-lg border border-outline-variant px-2 text-xs">Ritual</button>
-        }
+            [class.border-green]="spellRitualFilter() === 'RITUAL'" [class.border-outline]="spellRitualFilter() !== 'RITUAL'"
+            [class.bg-surface-container]="spellRitualFilter() !== 'RITUAL'"
+            class="inline-flex min-h-11 shrink-0 items-center justify-center gap-1 rounded-lg border-2 px-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-primary">
+            <app-ui-icon name="candle" /><span>Ritual</span>
+          </button>
       </ng-container>
       <div appHorizontalRow class="mb-2 flex flex-wrap items-center gap-2">
         <span class="text-sm font-semibold text-on-surface">Spell Level:</span>

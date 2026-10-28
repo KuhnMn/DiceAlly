@@ -127,13 +127,13 @@ describe('Spell preparation views and casting times', () => {
     expect(JSON.stringify(data)).toBe(before);
   });
 
-  it('filters rituals from the toolbar and keeps the source chips and advanced filters in sync', () => {
+  it.each(['PREPARED', 'KNOWN', 'SPELLBOOK'] as const)('filters rituals from the %s toolbar and keeps the source chips and advanced filters in sync', view => {
     const fixture = TestBed.createComponent(SpellsPageComponent), data = sheet();
     data.spells!.filter(spell => spell.name === 'Action spell').forEach(spell => spell.entity!.meta = { ritual: true });
     const before = JSON.stringify(data);
     fixture.componentRef.setInput('characterData', data);
     const page = fixture.componentInstance;
-    page.spellView.set('SPELLBOOK'); fixture.detectChanges();
+    page.spellView.set(view); fixture.detectChanges();
     const ritual = () => fixture.nativeElement.querySelector('[aria-label="Only ritual spells"]') as HTMLButtonElement;
     expect(ritual().closest('app-list-controls')).not.toBeNull();
     ritual().click(); fixture.detectChanges();
