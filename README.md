@@ -11,6 +11,12 @@ Database. Game content is imported by the user and cached locally.
 ## Local development
 
 Use Node.js 24 and npm 11 (the package manager is pinned in package.json).
+The Firebase database rules emulator also requires Java 21 or newer.
+
+The dependency overrides keep Firestore's gRPC dependency and the optional RE2
+dependency on patched releases. Recheck their upstream constraints before removing
+these overrides. Angular 21's build tooling requires TypeScript 5.9 and Vitest 4;
+upgrade those together with the Angular toolchain.
 
 1. Install dependencies with `npm ci`.
 2. Copy `.env.example` to `.env` and fill in the Firebase web app settings.

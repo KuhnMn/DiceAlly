@@ -65,6 +65,20 @@ test('annotation removal preserves fields named like annotations and schema cons
   assert.equal(validate({ description: 'text', title: 'other' }), false);
 });
 
+test('nested source schema references resolve from the registered URI without rewriting snapshots', () => {
+  const source = { $id: 'class.json', type: 'object', properties: {
+    name: { $ref: '../util.json#/$defs/name' },
+  }, required: ['name'] };
+  const original = structuredClone(source);
+  const ajv = createSchemaValidator();
+  ajv.addSchema(validationSchema({ $id: 'util.json', $defs: { name: { type: 'string' } } }, 'util.json'), 'util.json');
+  ajv.addSchema(validationSchema(source, 'class/class.json'), 'class/class.json');
+  const validate = ajv.getSchema('class/class.json');
+  assert.equal(validate({ name: 'Wizard' }), true);
+  assert.equal(validate({ name: 1 }), false);
+  assert.deepEqual(source, original);
+});
+
 test('source types preserve recursive references, unions, required fields, and nulls', () => {
   const schemas = new Map([['sample.json', { properties: { sample: { items: { $ref: '#/$defs/node' } } },
     $defs: { node: { type: 'object', properties: {

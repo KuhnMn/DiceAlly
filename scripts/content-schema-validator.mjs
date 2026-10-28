@@ -25,15 +25,17 @@ export function createSchemaValidator() {
   return ajv;
 }
 
-/** Drop annotations from compiler input only; the snapshot remains verbatim. */
-export function validationSchema(schema) {
+/** Drop annotations and anchor the root URI in compiler input only; snapshots remain verbatim. */
+export function validationSchema(schema, uri) {
   if (!schema || typeof schema !== 'object') return schema;
   const result = { ...schema };
+  // Some upstream $ids are bare filenames even when their references depend on a subdirectory.
+  if (uri) result.$id = uri;
   for (const key of ['title', 'description', 'markdownDescription', 'examples', '$comment', 'version']) delete result[key];
   for (const key of ['$defs', 'definitions', 'properties', 'patternProperties', 'dependentSchemas']) {
     if (result[key]) result[key] = Object.fromEntries(Object.entries(result[key]).map(([name, value]) => [name, validationSchema(value)]));
   }
-  for (const key of ['allOf', 'anyOf', 'oneOf', 'prefixItems']) if (result[key]) result[key] = result[key].map(validationSchema);
+  for (const key of ['allOf', 'anyOf', 'oneOf', 'prefixItems']) if (result[key]) result[key] = result[key].map(value => validationSchema(value));
   for (const key of ['additionalProperties', 'unevaluatedProperties', 'items', 'contains', 'propertyNames', 'if', 'then', 'else', 'not']) {
     if (result[key] && typeof result[key] === 'object') result[key] = validationSchema(result[key]);
   }

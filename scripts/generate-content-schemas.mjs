@@ -40,7 +40,7 @@ for (const profile of ['site', 'brew']) {
     if (createHash('sha256').update(bytes).digest('hex') !== info.sha256) throw new Error(`Schema checksum mismatch: ${profile}/${file}`);
     const schema = JSON.parse(bytes);
     schemas.set(info.uri ?? file, schema);
-    ajv.addSchema(validationSchema(schema), info.uri ?? file);
+    ajv.addSchema(validationSchema(schema, info.uri ?? file), info.uri ?? file);
   }
   const roots = [...schemaFiles, ...(profile === 'brew' ? ['homebrew.json'] : [])];
   const validators = Object.fromEntries(roots.map(file => [file.replace(/\.json$/, '').replaceAll(/[-/]/g, '_'), file]));
