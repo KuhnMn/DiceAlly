@@ -1,3 +1,4 @@
+import { SheetSavingThrowComponent } from './sheet-saving-throw.component';
 import { SheetProficienciesComponent } from './sheet-proficiencies.component';
 import { AdvantageBadgeComponent } from './advantage-badge.component';
 import { Component, input } from '@angular/core';
@@ -10,7 +11,7 @@ import { BackgroundDetailsComponent } from '../background-details.component';
 /** Mobile composition reuses the full sheet's calculations and editing actions. */
 @Component({
   selector: 'app-mobile-character-info-page',
-  imports: [BackgroundDetailsComponent, RuleReferenceComponent, SheetSpeedDescriptionComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent],
+  imports: [SheetSavingThrowComponent, BackgroundDetailsComponent, RuleReferenceComponent, SheetSpeedDescriptionComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent],
   styles: [`
     :host { display: block; min-width: 0; }
     .overview-primary, .overview-secondary { min-width: 0; }
@@ -43,18 +44,7 @@ import { BackgroundDetailsComponent } from '../background-details.component';
                   {{ helpers.formatSigned(ability.modifier) }}
                 </div>
                 <div class="mt-1 pt-1 border-t-2 border-outline-variant">
-                  <div class="text-xs">
-                      @if (ability.proficient) {
-                      <span class="text-primary font-bold"
-                        title="Proficient">●
-                    </span>
-                    }  
-                  Save</div>
-                  <div class="flex items-center justify-center gap-1">
-                    <div class="text-sm font-bold text-tertiary">
-                      {{ helpers.formatSigned(ability.savingThrowValue) }}
-                    </div>
-                  </div>
+                  <app-sheet-saving-throw [calculation]="ability.savingThrow" [proficient]="ability.proficient" [label]="ability.name" />
                 </div>
               </div>
             }

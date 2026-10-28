@@ -757,6 +757,7 @@ export interface CharacterData {
   resistances?: string[];
   senses?: Record<string, number> | Record<string, unknown>;
   calculateAC?: boolean;
+  calculateSavingThrowBonuses?: boolean;
   unarmoredDefense?: string | AbilityScores | null;
   characterUuid?: string;
   deathSavesSuccesses?: number;

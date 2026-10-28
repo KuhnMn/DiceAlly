@@ -1,6 +1,8 @@
 import { spellSchoolLabel } from '../models/spell-metadata';
 import { SKILL_DEFINITIONS } from '../models/character-references';
 import { Injectable } from '@angular/core';
+import { ItemStatBonus, itemSavingThrowBonuses } from '../models/item-stat-bonuses';
+import { capitalizeFirst } from '../text';
 import { castingTimeText, prepareSpellCastingTimes, prepareSpellComponents, prepareSpellDurations, spellDurationText } from './spell-presentation';
 import {
   Entry,
@@ -13,6 +15,12 @@ import {
   CharacterData,
   InventoryItem,
 } from '../models/character.model';
+
+export interface SavingThrowCalculation {
+  value: number;
+  source: string;
+  itemBonuses: ItemStatBonus[];
+}
 
 @Injectable({
   providedIn: 'root',
@@ -106,18 +114,27 @@ export class CharacterHelpersService {
     return typeof misc[abbr.toLowerCase()] === 'number';
   }
 
-  savingThrowValue(character: CharacterData | null, abilityScore: string) {
-    if (!abilityScore || !character) return 0;
+  savingThrowValue(character: CharacterData | null, abilityScore: string, inventory: readonly InventoryItem[] = []) {
+    return this.savingThrowCalculation(character, abilityScore, inventory).value;
+  }
+
+  savingThrowCalculation(character: CharacterData | null, abilityScore: string, inventory: readonly InventoryItem[] = []): SavingThrowCalculation {
+    if (!abilityScore || !character) return { value: 0, source: 'No character data', itemBonuses: [] };
     const abbr = this.abilityScoreToAbbreviation(abilityScore);
     const abilityScoreValue = this.abilityScoreValue(character, abilityScore);
-    if (typeof abilityScoreValue !== 'number') return 0;
-    const total =
-      this.modifierNumber(abilityScoreValue) +
-      (this.isProficientInSavingThrow(character, abbr) ? this.proficiencyBonus(character) : 0) +
-      (this.hasMiscBonusForSavingThrow(character, abbr)
-        ? (character?.proficiencies?.saveMiscBonuses?.[abbr.toLowerCase()] ?? 0)
-        : 0);
-    return total;
+    if (typeof abilityScoreValue !== 'number') return { value: 0, source: 'No ability score', itemBonuses: [] };
+    const abilityName = Object.keys(character.abilityScores ?? {}).find(key => key.startsWith(abbr)) ?? abilityScore;
+    const contributions = [{ name: `${capitalizeFirst(abilityName)} Modifier`, value: this.modifierNumber(abilityScoreValue) }];
+    if (this.isProficientInSavingThrow(character, abbr)) {
+      contributions.push({ name: 'Proficiency', value: this.proficiencyBonus(character) });
+    }
+    const manualBonus = character.proficiencies?.saveMiscBonuses?.[abbr.toLowerCase()] ?? 0;
+    if (manualBonus) contributions.push({ name: 'Manual Bonus', value: manualBonus });
+    const itemBonuses = character.calculateSavingThrowBonuses ? itemSavingThrowBonuses(inventory) : [];
+    contributions.push(...itemBonuses);
+    const value = contributions.reduce((total, contribution) => total + contribution.value, 0);
+    const source = contributions.map(contribution => `${contribution.name} (${this.formatSigned(contribution.value)})`).join(' + ');
+    return { value, source: `${source} = ${this.formatSigned(value)}`, itemBonuses };
   }
 
   initiative(character: CharacterData | null) {

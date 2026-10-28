@@ -30,7 +30,7 @@
 <section class="editor-card">
   <h2>Armor Class</h2>
   @if (editor.character.armorClassOverride != null) { <p class="mb-3 text-sm text-on-surface-variant">Temporary AC override: {{ editor.character.armorClassOverride }}. Edit the base below; manage the override on the sheet.</p> }
-  <div class="flex items-center gap-1"><label class="flex min-w-0 flex-1 items-center justify-between gap-4"><span class="font-medium">Calculate Automatically</span><input name="calculate-ac" type="checkbox" [ngModel]="editor.character.calculateAC" (ngModelChange)="editor.setAutomaticAc($event)" /></label><app-info-button title="Calculated armor class"><p>The preview compares 10 + Dexterity modifier with equipped armor and enabled Unarmored Defense, then adds the best equipped shield and numeric AC bonuses from other equipped items.</p><p>Light armor uses Dexterity; medium armor caps its Dexterity bonus at +2; heavy armor adds none. Unarmored Defense uses 10 + Dexterity modifier + the selected ability modifier.</p><p>Use manual AC for other effects or special formulas. Conditions and reminders do not add automatic modifiers.</p></app-info-button></div>
+  <div class="automatic-calculation-control"><label><span>Calculate Automatically</span><input name="calculate-ac" type="checkbox" [ngModel]="editor.character.calculateAC" (ngModelChange)="editor.setAutomaticAc($event)" /></label><app-info-button title="Calculated armor class"><p>The preview compares 10 + Dexterity modifier with equipped armor and enabled Unarmored Defense, then adds the best equipped shield and numeric AC bonuses from other equipped items.</p><p>Light armor uses Dexterity; medium armor caps its Dexterity bonus at +2; heavy armor adds none. Unarmored Defense uses 10 + Dexterity modifier + the selected ability modifier.</p><p>Use manual AC for other effects or special formulas. Conditions and reminders do not add automatic modifiers.</p></app-info-button></div>
   @if (!editor.character.calculateAC) {
     <div class="stepper-field flex flex-wrap items-center justify-between gap-3 mt-4"><label for="manual-ac" class="font-medium">Armor Class</label>
       <div class="stat-stepper"><button type="button" class="stepper-button" aria-label="Decrease Armor Class" (click)="editor.adjust('armorClass', -1)"><app-ui-icon name="minus" /></button>
@@ -42,7 +42,7 @@
       <div class="min-w-0 flex-1"><p class="text-xs font-semibold">Calculated AC</p><p class="mt-0.5 text-xs leading-snug break-words">{{ editor.calculatedAc.source }}</p></div>
       <strong class="shrink-0 whitespace-nowrap text-xl leading-none tabular-nums">{{ editor.calculatedAc.ac }}</strong>
     </div>
-    <label class="flex items-center justify-between gap-4 mt-4"><span>Unarmored Defense</span><input name="unarmored-defense" type="checkbox" [ngModel]="!!editor.character.unarmoredDefense" (ngModelChange)="editor.setUnarmoredDefense($event)" /></label>
+    <div class="automatic-calculation-control mt-4"><label><span>Unarmored Defense</span><input name="unarmored-defense" type="checkbox" [ngModel]="!!editor.character.unarmoredDefense" (ngModelChange)="editor.setUnarmoredDefense($event)" /></label></div>
     @if (editor.character.unarmoredDefense) {
       <label class="block mt-3"><span class="field-label">Preferred ability</span><select name="defense-ability" class="editor-input" [ngModel]="editor.defenseAbility" (ngModelChange)="editor.setDefenseAbility($event)">@for (ability of editor.defenseAbilities; track ability.key) { <option [value]="ability.key">{{ ability.label }}</option> }</select></label>
     }

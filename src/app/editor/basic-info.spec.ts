@@ -208,6 +208,32 @@ describe('Basic Info editor', () => {
     editor.proficiencies.setSaveBonus('wis', null); expect(editor.proficiencies.saveBonus('wis')).toBe(0);
   });
 
+  it('toggles automatic item save bonuses in Proficiencies and preserves the setting when saved and reopened', async () => {
+    const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
+    const editor = fixture.componentInstance;
+    editor.character.level = 5; editor.abilities.abilityScores.wisdom = 16;
+    editor.proficiencies.toggleSaveProficiency('wis'); editor.proficiencies.setSaveBonus('wis', -1);
+    editor.sheet.inventory = [{ name: 'Ring of Protection', source: 'XDMG', isEquipped: true, isAttuned: true,
+      entity: { item: { name: 'Ring of Protection', source: 'XDMG', reqAttune: 'by anyone', bonusSavingThrow: '+1' } } }];
+    editor.setPage(2); fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
+    const checkbox = fixture.nativeElement.querySelector('input[name="calculate-save-bonuses"]') as HTMLInputElement;
+    expect(checkbox.checked).toBe(false);
+    expect(editor.proficiencies.saveTotal('wisdom')).toBe('+5');
+    checkbox.click(); await fixture.whenStable();
+    expect(editor.character.calculateSavingThrowBonuses).toBe(true);
+    expect(editor.proficiencies.saveTotal('wisdom')).toBe('+6');
+    expect(fixture.nativeElement.querySelector('[aria-label="Wisdom saving throw total"]').textContent).toBe('+6');
+    await editor.save(); expect(editor.error()).toBe('');
+    const entry = (await new IndexedDbCharacterRepository().get(editor.character.characterUuid!))!;
+    editor.newCharacter(); editor.open(entry);
+    expect(editor.character.calculateSavingThrowBonuses).toBe(true);
+    expect(editor.proficiencies.saveTotal('wisdom')).toBe('+6');
+    expect(editor.proficiencies.saveBonus('wis')).toBe(-1);
+    editor.proficiencies.setAutomaticSaveBonuses(false);
+    expect(editor.proficiencies.saveTotal('wisdom')).toBe('+5');
+    fixture.destroy();
+  });
+
   it('keeps setup help behind info buttons and retains the Class Wizard label for saved characters', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
     const editor = fixture.componentInstance, before = JSON.stringify(editor.sheet);

@@ -47,5 +47,10 @@ export class ProficienciesEditorModel extends EditorPageModel {
     else bonuses[key] = bonus;
     this.changed();
   }
-  saveTotal(ability: string) { return this.helpers.formatSigned(this.helpers.savingThrowValue(this.character, ability)); }
+  setAutomaticSaveBonuses(enabled: boolean) {
+    this.character.calculateSavingThrowBonuses = enabled;
+    this.changed();
+  }
+  saveCalculation(ability: string) { return this.helpers.savingThrowCalculation(this.character, ability, this.sheet.inventory ?? []); }
+  saveTotal(ability: string) { return this.helpers.formatSigned(this.saveCalculation(ability).value); }
 }

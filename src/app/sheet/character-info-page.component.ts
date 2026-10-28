@@ -1,3 +1,5 @@
+import { SheetSavingThrowComponent } from './sheet-saving-throw.component';
+import { ItemEffectRemindersComponent } from './item-effect-reminders.component';
 import { isSheetPageVisible, sheetPageForAnchor } from '../models/sheet-pages';
 import { CombatActionColumnsComponent } from './combat-action-columns.component';
 import { CombatActionComponent } from './combat-action.component';
@@ -26,7 +28,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
 
 @Component({
   selector: 'app-character-info-page',
-  imports: [CombatActionColumnsComponent, CombatActionComponent, BasicCombatActionsComponent, RuleReferenceComponent, SheetSpeedControlComponent, SheetSpeedDescriptionComponent, BackgroundDetailsComponent, ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
+  imports: [SheetSavingThrowComponent, ItemEffectRemindersComponent, CombatActionColumnsComponent, CombatActionComponent, BasicCombatActionsComponent, RuleReferenceComponent, SheetSpeedControlComponent, SheetSpeedDescriptionComponent, BackgroundDetailsComponent, ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
   styleUrl: './sheet-stat-tooltip.css',
   styles: [`
     .round-tracker-input::-webkit-outer-spin-button,
@@ -115,18 +117,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
                   {{ helpers.formatSigned(ability.modifier) }}
                 </div>
                 <div class="mt-1 pt-1 border-t-2 border-outline-variant">
-                  <div class="text-xs">
-                      @if (ability.proficient) {
-                      <span class="text-primary font-bold"
-                        title="Proficient">●
-                    </span>
-                    }  
-                  Save</div>
-                  <div class="flex items-center justify-center gap-1">
-                    <div class="text-sm font-bold text-tertiary">
-                      {{ helpers.formatSigned(ability.savingThrowValue) }}
-                    </div>
-                  </div>
+                  <app-sheet-saving-throw [calculation]="ability.savingThrow" [proficient]="ability.proficient" [label]="ability.name" />
                 </div>
               </div>
             }
@@ -460,6 +451,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
             <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
               Combat
             </h3>
+            <app-item-effect-reminders [sheet]="characterData()" (navigateToSource)="navigateToFeatures.emit($event)" />
             @if (combatActions().length > 0 || characterData()?.basicActions?.length) {
               <div class="space-y-3 text-sm max-h-[800px] overflow-y-auto pr-3">
                 @for (actionType of ['ACTION', 'BONUS', 'REACTION', 'OTHER']; track actionType) {
@@ -697,14 +689,14 @@ export class CharacterInfoPageComponent {
       const abbr = this.helpers.abilityScoreToAbbreviation(key);
       const modifier = this.helpers.modifierNumber(value);
       const proficient = this.helpers.isProficientInSavingThrow(c, abbr);
-      const savingThrowValue = this.helpers.savingThrowValue(c, key);
+      const savingThrow = this.helpers.savingThrowCalculation(c, key, this.inventory());
       return {
         name: key,
         abbr: abbr,
         score: value,
         modifier: modifier,
         proficient,
-        savingThrowValue,
+        savingThrow,
       };
     });
   });

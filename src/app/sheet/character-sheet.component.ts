@@ -143,7 +143,7 @@ import { NotesPageComponent } from './notes-page.component';
           }
           @if (visitedPages().has(7) && isPageVisible(7)) { <div [class.hidden]="currentPage() !== 7"><app-mobile-combat-page [characterData]="characterData()" (navigateToFeatures)="navigateToFeatures($event)" /></div> }
           @if (visitedPages().has(2)) { <div [class.hidden]="currentPage() !== 2"><app-features-page [characterData]="characterData()" /></div> }
-          @if (visitedPages().has(3) && isPageVisible(3)) { <div [class.hidden]="currentPage() !== 3"><app-spells-page [characterData]="characterData()" /></div> }
+          @if (visitedPages().has(3) && isPageVisible(3)) { <div [class.hidden]="currentPage() !== 3"><app-spells-page [characterData]="characterData()" (navigateToSource)="navigateToFeatures($event)" /></div> }
           @if (visitedPages().has(4) && isPageVisible(4)) { <div [class.hidden]="currentPage() !== 4"><app-equipment-page [characterData]="characterData()" /></div> }
           @if (visitedPages().has(5) && isPageVisible(5)) { <div [class.hidden]="currentPage() !== 5"><app-monsters-page [characterData]="characterData()" /></div> }
           @if (visitedPages().has(8) && isPageVisible(8)) { <div [class.hidden]="currentPage() !== 8"><app-bastions-page [characterData]="characterData()" /></div> }

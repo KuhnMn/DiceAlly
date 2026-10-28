@@ -1,3 +1,4 @@
+import { ItemEffectRemindersComponent } from './item-effect-reminders.component';
 import { CombatActionColumnsComponent } from './combat-action-columns.component';
 import { CombatActionComponent } from './combat-action.component';
 import { ConcentrationControlComponent } from './concentration-control.component';
@@ -9,7 +10,7 @@ import { SheetListLayoutComponent } from './sheet-list-layout.component';
 
 @Component({
   selector: 'app-mobile-combat-page',
-  imports: [CombatActionColumnsComponent, CombatActionComponent, BasicCombatActionsComponent, UiIconComponent, ConcentrationControlComponent, SheetListLayoutComponent],
+  imports: [ItemEffectRemindersComponent, CombatActionColumnsComponent, CombatActionComponent, BasicCombatActionsComponent, UiIconComponent, ConcentrationControlComponent, SheetListLayoutComponent],
   styles: [`
     :host { display: block; min-width: 0; }
     #mobile-combat-round {
@@ -47,6 +48,7 @@ import { SheetListLayoutComponent } from './sheet-list-layout.component';
                 <button type="button" (click)="resetRoundTracker()" [class.invisible]="(c.roundTracker ?? 0) === 0" [disabled]="(c.roundTracker ?? 0) === 0" title="Reset" aria-label="Reset round tracker" class="flex h-11 w-10 items-center justify-center rounded-lg border border-outline-variant bg-surface-container-high text-lg text-on-surface transition-colors hover:bg-primary-container hover:text-on-primary-container focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="reset" /></button>
               </div>
             </div>
+            <app-item-effect-reminders [sheet]="characterData()" (navigateToSource)="navigateToFeatures.emit($event)" />
             @if (combatActions().length > 0 || characterData()?.basicActions?.length) {
               <div class="combat-groups space-y-3 text-sm" [class.combat-multiple-columns]="listLayout.displayColumns() > 1" [style.--combat-columns]="listLayout.displayColumns()">
                 @for (actionType of ['ACTION', 'BONUS', 'REACTION', 'OTHER']; track actionType) {

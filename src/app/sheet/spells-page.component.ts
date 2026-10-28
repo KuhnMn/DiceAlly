@@ -1,3 +1,4 @@
+import { ItemEffectRemindersComponent } from './item-effect-reminders.component';
 import { SpellCastControlComponent } from './spell-cast-control.component';
 import { higherLevelEntries } from '../entries/entry-compatibility';
 import { compareSearchMatches } from '../search-ranking';
@@ -28,20 +29,13 @@ import { ExportedCharacter, FeatureNotes, SpellEntryFull } from '../models/chara
 import { CharacterStore } from '../stores/character.store';
 import { AppDialogService } from '../services/app-dialog.service';
 
-type SpellBonusItemOverview = {
-  key: string;
-  name: string;
-  source: string | undefined;
-  bonusesText: string;
-};
-
 type SpellRitualFilter = 'ALL' | 'RITUAL' | 'NON_RITUAL';
 type SpellLevelFilter = 'ALL' | number;
 
 @Component({
   selector: 'app-spells-page',
   host: { class: 'block w-full min-w-0 max-w-full' },
-  imports: [SpellCastControlComponent,SpellEffectFilterComponent, SpellSchoolFilterComponent, SpellViewSwitcherComponent, SpellCastingTimeFilterComponent, ListControlsComponent, SheetListLayoutComponent, RecoveryIndicatorComponent, SpellDetailsComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, SpellSummaryComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [ItemEffectRemindersComponent, SpellCastControlComponent,SpellEffectFilterComponent, SpellSchoolFilterComponent, SpellViewSwitcherComponent, SpellCastingTimeFilterComponent, ListControlsComponent, SheetListLayoutComponent, RecoveryIndicatorComponent, SpellDetailsComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, SpellSummaryComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .spell-page-header app-spell-view-switcher { margin-bottom: 0; }
     .spell-page.spell-preparation-view { padding: .75rem; }
@@ -207,21 +201,8 @@ type SpellLevelFilter = 'ALL' | number;
             (selected)="spellCastingSourceFilter.set($event)" />
         }
       </div>
-      @if (spellView() === 'PREPARED' && spellBonusItemsOverview().length > 0) {
-        <div class="mb-3 mt-2 p-2 border border-tertiary rounded-lg bg-tertiary-container">
-          <div class="text-xs font-semibold text-on-tertiary-container mb-2">Item Spell Bonuses</div>
-          <div class="space-y-1">
-            @for (entry of spellBonusItemsOverview(); track entry.key) {
-              <div class="text-xs text-on-tertiary-container">
-                <span class="font-semibold">{{ entry.name }}</span>
-                @if (entry.source) {
-                  <span class="opacity-80"> ({{ entry.source }})</span>
-                }
-                <span class="ml-1">- {{ entry.bonusesText }}</span>
-              </div>
-            }
-          </div>
-        </div>
+      @if (spellView() === 'PREPARED') {
+        <app-item-effect-reminders [sheet]="characterData()" scope="spells" (navigateToSource)="navigateToSource.emit($event)" />
       }
       <app-list-controls label="Search spells" [query]="searchQuery()" (queryChange)="searchQuery.set($event)"
         [filterCount]="activeFilterCount()" (cleared)="clearFilters()">
@@ -383,6 +364,7 @@ export class SpellsPageComponent {
   readonly detailEntry = input<SpellEntryFull | null>(null);
   readonly detailNavigation = input<TemplateRef<unknown> | null>(null);
   readonly detailClosed = output<void>();
+  readonly navigateToSource = output<string>();
   closeDetail(id: string) {
     if (this.detailEntry()) this.detailClosed.emit();
     else this.toggleExpanded(id);
@@ -468,37 +450,6 @@ export class SpellsPageComponent {
         label: this.spellLevelHeader(level),
       })),
     ];
-  });
-
-  spellBonusItemsOverview = computed(() => {
-    const inventory = this.characterData()?.inventory ?? [];
-    const entries: SpellBonusItemOverview[] = [];
-
-    inventory.forEach((item, index) => {
-        const entity = item.entity?.item;
-        if (!entity) return;
-
-        const isEquipped = item.isEquipped ?? false;
-        if (!isEquipped) return;
-
-        const requiresAttunement = entity.reqAttune !== null && entity.reqAttune !== undefined;
-        if (requiresAttunement && !(item.isAttuned ?? false)) return;
-
-        const bonuses: string[] = [];
-        if (entity.bonusSpellAttack) bonuses.push(`Spell Attack ${entity.bonusSpellAttack}`);
-        if (entity.bonusSpellSaveDc) bonuses.push(`Spell Save DC ${entity.bonusSpellSaveDc}`);
-        if (entity.bonusSpellDamage) bonuses.push(`Spell Damage ${entity.bonusSpellDamage}`);
-        if (bonuses.length === 0) return;
-
-        entries.push({
-          key: `${item.name}:${item.source ?? ''}:${index}`,
-          name: item.name,
-          source: item.source,
-          bonusesText: bonuses.join(', '),
-        });
-      });
-
-    return entries;
   });
 
   spellSlotGroups = computed(() => {
