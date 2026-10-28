@@ -1,7 +1,7 @@
 import { canonicalClassRecord, classDefinition } from '../content/class-adapter';
-import { ContentRecord, JsonObject, normalize } from '../content/content.model';
+import { ContentRecord, JsonObject } from '../content/content.model';
 import { ClassCasting } from '../content/class.model';
-import { subclassFeatureLevel, subclassMatchesClass, usesLegacySubclass } from '../content/class-compatibility';
+import { subclassFeatureLevel, subclassFeatureMatchesClass, subclassMatchesClass } from '../content/class-compatibility';
 import { CasterProgression, ClassLevelInput } from './level-rules';
 
 export interface ContentRulesIndex {
@@ -90,15 +90,10 @@ export function deriveClassFeatures(selections: ContentClassSelection[], index: 
           const record = index.records.get(key);
           if (!record || record.kind !== role) { report(selection.selectionId, `Missing qualified feature: ${key}`); continue; }
           const definition = classDefinition(record);
-          const expectedParent = role === 'subclassFeature' ? ownerDefinition.parent?.key : parent.key;
-          // Synthetic legacy subclass copies can name the revised class while retaining old feature UIDs.
-          const legacyParent = role === 'subclassFeature' && usesLegacySubclass(parent, owner)
-            && normalize(definition.parent?.name ?? '') === normalize(parent.name);
-          if (definition.parent?.key !== expectedParent && !legacyParent) {
+          if (role === 'classFeature' && definition.parent?.key !== parent.key) {
             report(selection.selectionId, `Feature belongs to a different class: ${key}`); continue;
           }
-          if (role === 'subclassFeature' && (normalize(definition.subclass!.shortName) !== normalize(ownerDefinition.shortName!)
-            || normalize(definition.subclass!.source) !== normalize(owner.publication))) {
+          if (role === 'subclassFeature' && !subclassFeatureMatchesClass(record, parent, owner)) {
             report(selection.selectionId, `Feature belongs to a different subclass: ${key}`); continue;
           }
           const sourceLevel = definition.level;

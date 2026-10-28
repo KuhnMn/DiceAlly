@@ -183,6 +183,46 @@ describe('Class compendium progression', () => {
     expect(base.rows).toHaveLength(2);
   });
 
+  it('shows classic subclass features in the revised class list and moves early features to level 3', async () => {
+    const f = await catalog();
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(ClassCompendiumComponent), screen = fixture.componentInstance;
+    fixture.detectChanges(); await vi.waitFor(() => expect(screen.loading()).toBe(false));
+    await screen.chooseClass(f.find('class', 'Mage', 'XPHB'));
+    screen.setSubclassSources([]); fixture.detectChanges();
+    const subclass = f.find('subclass', 'Alternative School', 'XGE');
+    const select = fixture.nativeElement.querySelector('select[aria-label="Subclass"]') as HTMLSelectElement;
+    expect([...select.options].some(option => option.value === subclass.key)).toBe(true);
+    select.value = subclass.key; select.dispatchEvent(new Event('change'));
+    await vi.waitFor(() => expect(screen.subclassLoading()).toBe(false)); fixture.detectChanges();
+    expect(screen.selectedSubclass()?.key).toBe(subclass.key);
+    expect(screen.progressionError()).toBe(''); expect(screen.missingCount()).toBe(0);
+    expect(screen.subclassFeatures().map(row => [row.record.name, row.level])).toEqual([['Alternative Gift', 3]]);
+    expect(screen.levels().map(group => group.level)).toEqual([1, 3]);
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[aria-label="Level 3 features"]')?.textContent).toContain('Alternative Gift');
+    expect(root.querySelector('[aria-label="Level 1 features"]')?.textContent).toContain('Modern Gift');
+    expect(root.querySelector('[aria-label="Level 2 features"]')).toBeNull();
+    fixture.destroy();
+  });
+
+  it('loads synthetic subclass copies and legacy fallback lists without mixing other subclass identities', async () => {
+    const f = await catalog(), owner = f.find('class', 'Mage', 'XPHB');
+    const selected = structuredClone(f.find('subclass', 'Alternative School', 'XGE'));
+    selected.classDefinition!.parent = { key: owner.key, name: owner.name, source: owner.publication };
+    const before = JSON.stringify(selected);
+    const result = await loadProgression(f.cache, f.revision.id, owner, selected);
+    expect(result.missing).toEqual([]);
+    expect(result.rows.map(row => [row.record.name, row.level])).toEqual([['Alternative Gift', 3]]);
+    expect(result.rows[0].record.classDefinition!.level).toBe(2);
+    expect(JSON.stringify(selected)).toBe(before);
+    selected.classDefinition!.features = [];
+    const fallback = await loadProgression(f.cache, f.revision.id, owner, selected);
+    expect(fallback.rows.map(row => row.record.name)).toEqual(['Alternative Gift']);
+    const original = f.find('subclass', 'School', 'TCE');
+    expect(belongsToSubclass(f.find('subclassFeature', 'Modern School Gift', 'TCE'), owner, original)).toBe(false);
+  });
+
   it('reports missing references and supports legacy parent-only progressions without including subclasses', async () => {
     const f = await catalog(), owner = f.find('class', 'Mage');
     const partial = structuredClone(owner);

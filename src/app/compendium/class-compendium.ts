@@ -1,20 +1,19 @@
 import { ContentRecord, normalize } from '../content/content.model';
 import { IndexedDbContentCache } from '../content/content-cache';
 import { classDefinition } from '../content/class-adapter';
+import { subclassFeatureLevel, subclassFeatureMatchesClass, subclassMatchesClass } from '../content/class-compatibility';
 
 export interface ClassFeatureRow { record: ContentRecord; level: number; subclass: boolean; }
 export interface FeatureProgression { rows: ClassFeatureRow[]; missing: string[]; }
 const identity = (record: ContentRecord) => record.homebrewVariant?.originalKey ?? record.key;
 
 export function belongsToClass(record: ContentRecord, owner: ContentRecord): boolean {
+  if (record.kind === 'subclass') return subclassMatchesClass(record, owner);
   return ['subclass', 'classFeature', 'subclassFeature'].includes(record.kind)
     && classDefinition(record).parent?.key === identity(owner);
 }
 export function belongsToSubclass(record: ContentRecord, owner: ContentRecord, subclass: ContentRecord): boolean {
-  if (record.kind !== 'subclassFeature' || !belongsToClass(record, owner) || !belongsToClass(subclass, owner)) return false;
-  const membership = classDefinition(record).subclass;
-  return normalize(membership?.shortName ?? '') === normalize(classDefinition(subclass).shortName ?? subclass.name)
-    && normalize(membership?.source ?? '') === normalize(subclass.publication);
+  return subclassFeatureMatchesClass(record, owner, subclass);
 }
 
 /** Explicit feature references define a progression; a parent-only fallback supports historical imports. */
@@ -41,7 +40,9 @@ export async function loadProgression(cache: IndexedDbContentCache, revisionId: 
       return false;
     });
   }
-  return { rows: records.map(record => ({ record, level: classDefinition(record).level ?? 0, subclass: !!subclass })), missing };
+  return { rows: records.map(record => ({ record,
+    level: subclass ? subclassFeatureLevel(classDefinition(record).level ?? 0, owner, subclass) : classDefinition(record).level ?? 0,
+    subclass: !!subclass })), missing };
 }
 
 export function groupProgression(base: ClassFeatureRow[], subclass: ClassFeatureRow[], query = ''): { level: number; features: ClassFeatureRow[] }[] {
