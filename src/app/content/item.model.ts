@@ -4,6 +4,11 @@ import type { ContentRecord } from './content.model';
 /** Structured charge metadata already retained in the materialized source payload. */
 export type ItemChargeDefinition = Pick<BrewSourceByKind['item'], 'charges' | 'recharge' | 'rechargeAmount'>;
 
+/** Vehicle equipment statistics retained outside the canonical item's core combat fields. */
+export type ItemVehicleDefinition = Pick<BrewSourceByKind['item'],
+  'crew' | 'crewMin' | 'crewMax' | 'capPassenger' | 'capCargo' | 'vehSpeed' | 'vehAc'
+  | 'vehHp' | 'vehDmgThresh' | 'travelCost' | 'shippingCost' | 'value'>;
+
 type SourceFields = Pick<BrewSourceByKind['item'],
   'page' | 'type' | 'typeAlt' | 'rarity' | 'weight' | 'value' | 'dmg1' | 'dmg2' | 'dmgType'
   | 'weaponCategory' | 'range' | 'bonusWeapon' | 'bonusAc' | 'ac' | 'bonusWeaponAttack'

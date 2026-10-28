@@ -11,6 +11,10 @@ export interface EquipmentDetails {
   spellcastingAbilityDescription?: string;
 }
 
+export function equipmentDescriptionEntries(entity: DisplayItem | null | undefined): Entry[] {
+  return [...entity?.item.entries ?? entity?.baseItem?.entries ?? [], ...entity?.typeEntries ?? []];
+}
+
 /** Presentation reads the detached definition, without library queries or eligibility inference. */
 export function prepareEquipmentDetails(entity: DisplayItem): EquipmentDetails {
   const requirement = entity.item.reqAttune;
@@ -18,7 +22,7 @@ export function prepareEquipmentDetails(entity: DisplayItem): EquipmentDetails {
     charges: prepareItemCharges(entity.item),
     attunementRequirementText: !requirement || requirement === 'false' ? undefined
       : requirement === 'by anyone' || requirement === 'true' ? 'Required' : requirement.charAt(0).toUpperCase() + requirement.slice(1),
-    descriptionEntries: entity.item.entries ?? [],
+    descriptionEntries: equipmentDescriptionEntries(entity),
     properties: entity.properties ?? [],
     masteries: entity.masteries ?? [],
     attachedSpells: entity.attachedSpells ?? [],

@@ -32,7 +32,19 @@
       @for (record of catalog.results(); track record.key) {
         <app-catalog-result-row [name]="record.name" destination="inventory" [alreadyAdded]="hasExisting(record)" [disabled]="adding || catalog.loading()" (addRequested)="add(record)">
           <span catalog-metadata class="min-w-0 truncate rounded bg-surface-container-highest px-1" [title]="record.publication">{{ record.publication }}</span>
-          <app-description-dialog catalog-description class="shrink-0 self-stretch" [title]="record.name" [compact]="true"><div class="p-2"><app-entry-renderer [entries]="catalogEntries(record)" /></div></app-description-dialog>
+          <app-description-dialog catalog-description class="shrink-0 self-stretch" [title]="record.name" [compact]="true">
+            <div class="space-y-3 p-2">
+              @if (catalogSummary(record); as summary) {
+                @if (summary.length) {
+                  <dl aria-label="Item statistics" class="grid grid-cols-2 gap-3 rounded-lg bg-surface-container p-3 text-sm">
+                    @for (stat of summary; track stat.label) { <div><dt class="text-xs text-on-surface-variant">{{ stat.label }}</dt><dd class="font-semibold">{{ stat.value }}</dd></div> }
+                  </dl>
+                }
+              }
+              <app-vehicle-item-details [item]="vehicleItemData(record)" [showCost]="true" />
+              <app-entry-renderer [entries]="catalogEntries(record)" />
+            </div>
+          </app-description-dialog>
         </app-catalog-result-row>
       }
     </div>

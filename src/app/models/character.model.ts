@@ -1,6 +1,6 @@
 import type { SourceEntry } from '../content/content-entries';
 import type { CharacterSpeed } from './character-speed';
-import type { ItemChargeDefinition } from '../content/item.model';
+import type { ItemChargeDefinition, ItemVehicleDefinition } from '../content/item.model';
 import type { SpellEffectFields } from '../content/spell-effects';
 
 export type Entry =
@@ -424,7 +424,7 @@ export interface Resistance {
   [key: string]: unknown;
 }
 
-export interface ItemEntity extends ItemChargeDefinition {
+export interface ItemEntity extends ItemChargeDefinition, ItemVehicleDefinition {
   id?: number;
   name: string;
   source: string;
@@ -554,6 +554,7 @@ export interface DisplayItem {
   item: ItemEntity;
   baseItem?: BaseItemEntity | null;
   itemType?: string | null;
+  typeEntries?: Entry[];
   properties?: DisplayProperty[];
   masteries?: DisplayMastery[];
   attachedSpells?: ItemAttachedSpell[];

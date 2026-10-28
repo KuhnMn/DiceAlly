@@ -5,13 +5,15 @@ import { EntryRendererComponent } from '../entries/entry-renderer.component';
 import { RuleDetailsComponent } from './rule-details.component';
 import { SpellDetailsComponent } from './spell-details.component';
 import { prepareEquipmentDetails } from './equipment-presentation';
+import { VehicleItemDetailsComponent } from './vehicle-item-details.component';
 
 @Component({
   selector: 'app-equipment-details',
-  imports: [EntryRendererComponent, RuleDetailsComponent, SpellDetailsComponent],
+  imports: [EntryRendererComponent, RuleDetailsComponent, SpellDetailsComponent, VehicleItemDetailsComponent],
   host: { class: 'block space-y-3' },
   template: `
     @if (details(); as detail) {
+      <app-vehicle-item-details [item]="entity()?.item" />
       @if (detail.charges; as charges) {
         <section aria-label="Item charges" class="rounded-lg border border-outline-variant bg-surface-container p-3 text-sm">
           <div class="flex flex-wrap items-center gap-x-4 gap-y-2">

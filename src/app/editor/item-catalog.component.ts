@@ -1,5 +1,7 @@
 import { contentEntries } from '../content/content-entries';
-import { itemTypeUid } from '../content/item.model';
+import { ItemVehicleDefinition, itemTypeUid } from '../content/item.model';
+import { VehicleItemDetailsComponent } from '../sheet/vehicle-item-details.component';
+import { vehicleItemStatistics } from '../sheet/vehicle-item-presentation';
 import { CatalogMembershipIndex, catalogEntryKeys } from './catalog-membership-index';
 import { ListControlsComponent } from '../list-controls.component';
 import { CatalogResultRowComponent } from './catalog-result-row.component';
@@ -24,7 +26,7 @@ import { itemRuleEntries } from '../content/item-resolver';
 /** Shared acquisition dialog for play and creation. Annotation editing belongs only to the creator. */
 @Component({
   selector: 'app-item-catalog',
-  imports: [ListControlsComponent, CatalogResultRowComponent, DescriptionDialogComponent, UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, SourceBookFilterComponent, EntryRendererComponent],
+  imports: [VehicleItemDetailsComponent, ListControlsComponent, CatalogResultRowComponent, DescriptionDialogComponent, UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, SourceBookFilterComponent, EntryRendererComponent],
   templateUrl: './item-catalog.component.html', styleUrl: './editor.css',
 })
 export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
@@ -92,13 +94,24 @@ export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
   }
   catalogEntries(record: ContentRecord): Entry[] {
     const item = itemSourceData(record);
+    const type = this.itemTypes.find(type => record.links.some(link => link.role === 'item-type' && link.target === type.key));
+    const typeEntries = type ? itemRuleEntries(type, item) as Entry[] : [];
     const properties = record.links.filter(link => link.role === 'item-property').flatMap(link => {
       const definition = this.itemProperties.get(link.target);
       if (!definition) return [];
       const entries = itemRuleEntries(definition, item) as Entry[];
       return entries.length ? [{ type: 'entries' as const, name: definition.name, entries }] : [];
     });
-    return [...contentEntries(record), ...properties];
+    return [...contentEntries(record), ...typeEntries, ...properties];
+  }
+  vehicleItemData(record: ContentRecord): ItemVehicleDefinition { return itemSourceData(record) as ItemVehicleDefinition; }
+  catalogSummary(record: ContentRecord): { label: string; value: string }[] {
+    const item = itemSourceData(record);
+    if (vehicleItemStatistics(item as ItemVehicleDefinition).length) return [];
+    const rows: { label: string; value: string }[] = [];
+    if (typeof item['value'] === 'number') rows.push({ label: 'Cost', value: `${(item['value'] / 100).toLocaleString('en-US')} gp` });
+    if (typeof item['weight'] === 'number') rows.push({ label: 'Weight', value: `${item['weight'].toLocaleString('en-US')} lb.` });
+    return rows;
   }
   private append(sheet: ExportedCharacter, item: InventoryItem) {
     item.allowMultiples = this.stackable;

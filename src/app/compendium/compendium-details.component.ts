@@ -15,6 +15,9 @@ import { ObjectCompanion } from '../models/companions';
 import { FACET_LABELS, Facet, facetLabel, kindLabel, recordFacets } from './compendium-catalog';
 import { FacilityInformationComponent } from '../sheet/facility-information.component';
 import { facilitySnapshot } from '../editor/facility-selection';
+import { VehicleItemDetailsComponent } from '../sheet/vehicle-item-details.component';
+import { ItemVehicleDefinition } from '../content/item.model';
+import { vehicleItemStatistics } from '../sheet/vehicle-item-presentation';
 
 /** Read-only compendium projection: the sheet's renderers without character mutations. */
 @Component({
@@ -30,7 +33,7 @@ import { facilitySnapshot } from '../editor/facility-selection';
     :host(.compact-reference) .gap-3 { gap: .5rem; }
     :host(.compact-reference) .text-base { font-size: .875rem; line-height: 1.4; }
   `],
-  imports: [EntryRendererComponent, SpellDetailsComponent, MonsterStatBlockComponent, ObjectStatBlockComponent, PrerequisiteDetailsComponent, FacilityInformationComponent],
+  imports: [VehicleItemDetailsComponent, EntryRendererComponent, SpellDetailsComponent, MonsterStatBlockComponent, ObjectStatBlockComponent, PrerequisiteDetailsComponent, FacilityInformationComponent],
   template: `
     @if (!overview()) {
     <p class="mb-3 text-sm text-on-surface-variant">{{ kindLabel(record().kind) }} · {{ record().publication }}
@@ -43,6 +46,7 @@ import { facilitySnapshot } from '../editor/facility-selection';
     </dl>
     }
     <app-prerequisite-details [prerequisites]="prerequisites()" />
+    @if (vehicleItem(); as item) { <app-vehicle-item-details class="mb-3" [item]="item" /> }
     @if (facility(); as facility) { <app-facility-information [definition]="facility" /> }
     @if (!overview() && statistics().length) {
       <dl class="mb-4 grid grid-cols-2 gap-3 text-sm">
@@ -87,6 +91,10 @@ export class CompendiumDetailsComponent {
   readonly revision = input.required<ImportRevision>();
   readonly related = input<ContentRecord[]>([]);
   readonly itemView = input<ItemView | null>(null);
+  readonly vehicleItem = computed(() => {
+    const item = this.itemView()?.item as ItemVehicleDefinition | undefined;
+    return vehicleItemStatistics(item).length ? item : null;
+  });
   readonly opened = output<ContentRecord>();
   readonly kindLabel = kindLabel;
   readonly sourceData = computed<JsonObject>(() => ({ ...this.record().data, ...this.record().referenceDefinition }));
@@ -144,6 +152,7 @@ export class CompendiumDetailsComponent {
     const item = this.itemView();
     const sourceRecord = { ...record, data: this.sourceData() };
     const sections = [{ title: '', entries: item && Array.isArray(item.item['entries']) ? item.item['entries'] as SourceEntries : contentEntries(sourceRecord) },
+      { title: '', entries: item?.typeEntries as SourceEntries ?? [] },
       { title: 'At Higher Levels', entries: contentEntries(sourceRecord, 'entriesHigherLevel') },
       { title: 'Template', entries: contentEntries(sourceRecord, 'entriesTemplate') }];
     if (record.kind === 'reward' && sourceRecord.data['abilityEntry'] != null) {

@@ -1,4 +1,7 @@
 import { itemTypeUid } from '../content/item.model';
+import { VehicleItemDetailsComponent } from '../sheet/vehicle-item-details.component';
+import { vehicleItemStatistics } from '../sheet/vehicle-item-presentation';
+import { equipmentDescriptionEntries } from '../sheet/equipment-presentation';
 import { EditorCombatIndex } from './editor-combat-index';
 import { rankSearchResults } from '../search-ranking';
 import { EditorEntryRowComponent } from './editor-entry-row.component';
@@ -22,7 +25,7 @@ import { SourceBookFilterService } from './source-book-filter.service';
 @Component({
   providers: [EditorCombatIndex],
   selector: 'app-editor-items',
-  imports: [EditorEntryRowComponent, ListControlsComponent, DescriptionDialogComponent, CombatBookmarkComponent, FormsModule, EntryAnnotationsComponent, RemoveEntryDialogComponent, EntryRendererComponent, UiIconComponent, ItemCatalogComponent],
+  imports: [VehicleItemDetailsComponent, EditorEntryRowComponent, ListControlsComponent, DescriptionDialogComponent, CombatBookmarkComponent, FormsModule, EntryAnnotationsComponent, RemoveEntryDialogComponent, EntryRendererComponent, UiIconComponent, ItemCatalogComponent],
   templateUrl: './items-editor.component.html', styleUrls: ['./editor.css', './editor-feature-fields.css'],
 })
 export class ItemsEditorComponent implements DoCheck, OnInit, OnDestroy {
@@ -80,7 +83,8 @@ export class ItemsEditorComponent implements DoCheck, OnInit, OnDestroy {
   change() { this.combatIndex.clear(); this.view.markForCheck(); this.edited.emit(); }
   toggle(item: InventoryItem) { this.expanded.has(item) ? this.expanded.delete(item) : this.expanded.add(item); }
   openCatalog() { this.catalogOpen = true; }
-  entries(item: InventoryItem): Entry[] { return item.entity?.item.entries ?? item.entity?.baseItem?.entries ?? []; }
+  entries(item: InventoryItem): Entry[] { return equipmentDescriptionEntries(item.entity); }
+  hasVehicleStatistics(item: InventoryItem): boolean { return vehicleItemStatistics(item.entity?.item).length > 0; }
   descriptionEntries(item: InventoryItem): Entry[] {
     const rules = [...item.entity?.properties ?? [], ...item.entity?.masteries ?? []].flatMap(rule =>
       rule.entry ? [{ type: 'entries' as const, name: rule.name, entries: [rule.entry] }] : []);

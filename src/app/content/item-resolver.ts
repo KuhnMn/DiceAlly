@@ -10,14 +10,25 @@ export interface ItemView {
   item: JsonObject;
   baseItem?: JsonObject;
   itemType: string | null;
+  typeEntries?: unknown[];
   properties: { key: string; name: string; entry: unknown; entries: unknown[]; notes?: string[] }[];
   masteries: { key: string; name: string; entry: unknown; entries: unknown[]; notes?: string[] }[];
   page: ItemDefinition['page'] | null;
   ac: number | null;
 }
-/** Property templates describe this particular item; keep the reusable definition unchanged. */
+/** Resolve shared type text and item-specific property templates without changing definitions. */
 export function itemRuleEntries(definition: ContentRecord, item: JsonObject): unknown[] {
   const description = Array.isArray(definition.data['entries']) ? definition.data['entries'] : [];
+  if (definition.kind === 'itemType' && Array.isArray(definition.data['entriesTemplate'])) {
+    const expand = (value: unknown): unknown => {
+      if (typeof value === 'string') return applyItemTemplate(value, item, 'Unspecified');
+      if (Array.isArray(value)) return value.map(expand);
+      if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, expand(child)]));
+      return value;
+    };
+    try { return [...description, ...definition.data['entriesTemplate'].map(expand)]; }
+    catch { return [...description, 'Some details for this item type could not be displayed.']; }
+  }
   if (definition.kind !== 'itemProperty' || typeof definition.data['template'] !== 'string') return description;
   const name = definition.name.replace(/-/g, '\u2011');
   try {
@@ -58,6 +69,7 @@ export async function resolveItemView(cache: Pick<ContentCache, 'get'>, revision
       ...(notes.has(definition.key) ? { notes: notes.get(definition.key) } : {}) };
   });
   return { item, baseItem: base?.data, itemType: type?.name ?? null,
+    typeEntries: type ? itemRuleEntries(type, item) : [],
     properties: entries('item-property'), masteries: entries('item-mastery'),
     page: definition.page ?? (base ? itemDefinition(base).page : undefined) ?? null, ac: definition.ac ?? (base ? itemDefinition(base).ac : undefined) ?? null };
 }
