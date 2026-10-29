@@ -12,15 +12,20 @@
     "prestart": "npm run config && npm run schemas:generate",
     "prebuild": "npm run config && npm run schemas:generate",
     "prewatch": "npm run config && npm run schemas:generate",
-    "pretest": "npm run schemas:generate",
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
     "deploy": "node scripts/deploy-pages.mjs",
     "deploy:prepare": "node scripts/deploy-pages.mjs --prepare-only",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
-    "test:rules": "firebase emulators:exec --only database --project demo-dice-ally \"node scripts/test-database-rules.mjs\""
+    "test": "node scripts/run-tests.mjs quick",
+    "test:rules": "firebase emulators:exec --only database --project demo-dice-ally \"node scripts/test-database-rules.mjs\"",
+    "test:changed": "node scripts/run-tests.mjs changed",
+    "test:unit": "node scripts/run-tests.mjs unit",
+    "test:ui": "node scripts/run-tests.mjs ui",
+    "test:all": "node scripts/run-tests.mjs all",
+    "test:tools": "node scripts/test-workflow.test.mjs && node scripts/retain-release-assets.test.mjs",
+    "schemas:ensure": "node scripts/ensure-content-schemas.mjs"
   },
   "prettier": {
     "printWidth": 100,

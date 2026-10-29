@@ -42,13 +42,23 @@ See the Firebase guide for the current sharing and synchronization behavior.
 | Command | Purpose |
 | --- | --- |
 | `npm run build` | Production browser build in `dist/AllySheetViewer/browser` |
-| `npm test -- --watch=false` | Angular/Vitest unit suite |
+| `npm test` | Fast core safety checks: 75 tests without an Angular build |
+| `npm run test:changed -- --list` | Preview checks affected by uncommitted files, including transitive consumers |
+| `npm run test:changed` | Run those affected checks; use `-- --base origin/main` for branch changes |
+| `npm test -- src/app/content/homebrew-updates.spec.ts` | Run an explicit test file (or pass production/template/style paths) |
+| `npm test -- --watch` | Keep the fast runner alive while editing |
+| `npm run test:unit` | All Node behavior/data tests |
+| `npm run test:ui` | All Angular DOM/template integration tests |
+| `npm run test:all` | Complete product suite, then test-tooling/release-asset checks |
+| `npm run test:tools` | Test selection, schema-cache and retained-release-asset checks |
 | `npm run test:schemas` | Schema-tooling tests |
 | `npm run schemas:check` | Check generated schema artifacts |
 | `npm run schemas:audit` | Audit content contracts |
 | `node --test scripts/retain-release-assets.test.mjs` | Release-asset retention tests |
 | `npm run test:rules` | Firebase database rules tests using the emulator |
 | `npm run deploy:prepare` | Prepare the separate Dice Ally Pages deployment |
+
+See [the test audit and workflow](docs/testing.md) for scope, measured costs, schema caching and when a full check is necessary. `npm test` is deliberately not the complete suite.
 
 The application is a browser-only static site. Serve nested routes with an SPA
 fallback. See the [deployment guide](docs/migration/GITHUB_PAGES_DEPLOYMENT.md)

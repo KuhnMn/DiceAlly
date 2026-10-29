@@ -1,8 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { isModuleLoadError, loadWithRetry } from './lazy-load';
 import { canPreload } from './idle-preloading.strategy';
 
-afterEach(() => vi.useRealTimers());
+beforeEach(() => vi.stubGlobal('navigator', { onLine: true }));
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe('Lazy module loading', () => {
   it.each(['Failed to fetch dynamically imported module: /chunk-X.js', 'error loading dynamically imported module', 'Importing a module script failed.'])('recognizes browser download failures: %s', message => {

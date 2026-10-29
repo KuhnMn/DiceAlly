@@ -2,12 +2,18 @@
 
 ## Keep verification proportional
 
-- For small styling, spacing, label, or icon changes, use focused checks.
-- Reserve full test suites and production builds for changes affecting behavior,
-  data, persistence, dependencies, or build configuration.
-- After relevant checks pass, stop unless a specific unresolved concern remains.
+- `npm test` runs the small core safety group. It is not full product coverage.
+- For a bounded feature or fix, use `npm run test:changed -- --list`, then run the affected checks once. Explicit production/spec/template/style paths can be passed to `npm test -- <paths>`; use `--base <revision>` for branch-wide impact.
+- Small styling, spacing, labels and icons need focused rendering/compile checks, not new label-only tests or the complete suite.
+- Reserve `npm run test:all` for cross-cutting document/migration, synchronization/security, schema or test/build infrastructure changes, or an explicitly requested broad audit. Local behavior changes do not automatically require it.
+- Pure behavior tests use the direct Node runner. DOM/template tests use Angular. Do not route all tests through Angular or include unrelated suites out of habit.
+- A deployment already creates a production build. Do not add a separate production build immediately before it unless a specific build concern needs investigation. Test-only changes do not need a production build.
+- If a broad run fails, inspect and rerun the failing file/test; do not repeatedly run the complete suite, comparison suites and alternate configurations. Fix the relevant fixture or behavior. Report unresolved failures instead of hiding them with skips or a larger global timeout.
+- Do not run a large build and a full suite concurrently when investigating timing failures.
+- Schema generation is cached for tests and invalidated by input/output contents. Keep `schemas:generate` and `schemas:check` authoritative; do not weaken validation to make tests faster.
+- Remove tests only when they add no independent regression protection. Do not merge unrelated assertions just to lower a test count.
+- After the relevant checks pass, stop and report the actual scope/results. No unsolicited repeat suite/build.
 - Keep changes focused; avoid unrelated cleanup and refactoring.
-- Report completion promptly and state what was actually verified.
 
 ## Code Structure
 

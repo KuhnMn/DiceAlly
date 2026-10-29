@@ -136,9 +136,13 @@ describe('IndexedDB content cache', () => {
     expect(await cache.withImport('retry-lock', async () => 'retried')).toBe('retried');
   });
   it('fails safely when exclusive locking is unavailable', async () => {
-    const cache = new IndexedDbContentCache(undefined); const r = revision('no-locks'); await cache.stage(r);
-    await expect(cache.recover('no-locks')).rejects.toThrow('Web Locks');
-    expect((await cache.revisions('no-locks'))[0].revision.id).toBe(r.id);
+    // Node also exposes Web Locks now. Model an unsupported browser explicitly.
+    vi.stubGlobal('navigator', {});
+    try {
+      const cache = new IndexedDbContentCache(); const r = revision('no-locks'); await cache.stage(r);
+      await expect(cache.recover('no-locks')).rejects.toThrow('Web Locks');
+      expect((await cache.revisions('no-locks'))[0].revision.id).toBe(r.id);
+    } finally { vi.unstubAllGlobals(); }
   });
   it('keeps staging private to its revision and switches the pointer atomically', async () => {
     const cache = new IndexedDbContentCache();

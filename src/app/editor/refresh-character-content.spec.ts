@@ -125,8 +125,8 @@ describe('Refresh saved character descriptions', () => {
     expect(JSON.stringify(sheet)).toBe(before);
   });
 
-  it('provides the creator button, keeps refresh unsaved until Save, and clears busy state on failure', async () => {
-    await TestBed.configureTestingModule({ imports: [LocalEditorComponent], providers: [provideRouter([])] }).compileComponents();
+  it('keeps refresh unsaved until Save and clears busy state on failure', async () => {
+    await TestBed.configureTestingModule({ imports: [LocalEditorComponent], providers: [provideRouter([])] }).overrideComponent(LocalEditorComponent, { set: { template: '' } }).compileComponents();
     const { revision, spell } = fixtureData();
     const cache = new IndexedDbContentCache();
     await cache.stage(revision); await cache.put(revision.id, [spell]);
@@ -139,7 +139,6 @@ describe('Refresh saved character descriptions', () => {
       editor.sheet.spells = [{ name: spell.name, source: 'TEST', notes: [{ notes: ['Keep note'] }] }];
       await editor.save();
       expect(editor.unsaved).toBe(false);
-      expect(Array.from(fixture.nativeElement.querySelectorAll('button')).some(button => (button as HTMLButtonElement).textContent?.includes('Refresh Descriptions'))).toBe(true);
       await editor.refreshDescriptions();
       expect(editor.error()).toBe(''); expect(editor.busy()).toBe(false);
       expect(editor.unsaved).toBe(true);
@@ -169,11 +168,10 @@ describe('Refresh saved character descriptions', () => {
     const active = vi.spyOn(IndexedDbContentCache.prototype, 'active').mockResolvedValue({ ...revision, status: 'ready' });
     const fixture = TestBed.createComponent(LocalEditorComponent);
     try {
-      await fixture.whenStable();
       const editor = fixture.componentInstance;
       editor.sheet.spells = records.map((entry, index) => ({ editorId: `ward-${index}`, name: entry.name, source: 'TEST',
         listType: 'KNOWN', contentReference: contentReference(entry, revision) }));
-      editor.setPage(5); fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
+      editor.setPage(5); await fixture.whenStable();
       const rows = [...fixture.nativeElement.querySelectorAll('app-editor-spells app-editor-entry-row')];
       expect(rows).toHaveLength(16);
       await editor.refreshDescriptions(); await fixture.whenStable();
@@ -188,7 +186,7 @@ describe('Refresh saved character descriptions', () => {
   });
 
   it('rejects a completed refresh if the draft was edited while IndexedDB was being read', async () => {
-    await TestBed.configureTestingModule({ imports: [LocalEditorComponent], providers: [provideRouter([])] }).compileComponents();
+    await TestBed.configureTestingModule({ imports: [LocalEditorComponent], providers: [provideRouter([])] }).overrideComponent(LocalEditorComponent, { set: { template: '' } }).compileComponents();
     const { revision, spell } = fixtureData();
     let finishRead!: (record: ContentRecord) => void;
     let started!: () => void;

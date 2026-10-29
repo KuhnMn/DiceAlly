@@ -23,6 +23,7 @@ const record: ContentRecord = { key: 'item-test', kind: 'item', name: 'Magic Swo
   links: [{ role: 'item-property', target: 'property-test' }] };
 
 describe('Items creator', () => {
+  afterEach(() => vi.restoreAllMocks());
   beforeEach(() => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
     TestBed.inject(SourceBookFilterService).setSelection([]);
@@ -113,6 +114,9 @@ describe('Items creator', () => {
     expect(record.data['name']).toBe('Magic Sword');
   });
   it('adds custom items, persists annotations, and requires confirmation before removing them', async () => {
+    // Custom-item editing must not depend on content left installed by another test.
+    vi.spyOn(IndexedDbContentCache.prototype, 'savedSource').mockResolvedValue(DEFAULT_CONTENT_SOURCE);
+    vi.spyOn(IndexedDbContentCache.prototype, 'active').mockResolvedValue(undefined);
     const fixture = TestBed.createComponent(ItemsEditorComponent);
     const sheet = emptyBasicCharacter();
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
