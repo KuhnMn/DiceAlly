@@ -258,6 +258,25 @@ describe('Explicit single-file homebrew imports', () => {
     expect((await f.cache.category(updated.id, 'feat'))[0].name).toBe('Other Feat');
   });
 
+  it('replaces a URL file in place while retaining other homebrew and core content', async () => {
+    const f = await fixture(), url = 'https://example.org/selected.json';
+    const original = await parseHomebrewFile(homebrewDocumentFixture(document()), 'selected.json', url);
+    const first = await importHomebrew(f.cache, { ...f, file: original, bytes: 100 });
+    const otherFile = await readHomebrewFile({ feat: [{ name: 'Other Feat', source: 'OTHER' }] }, 'other.json');
+    const other = await importHomebrew(f.cache, { ...f, base: first, file: otherFile, bytes: 1 });
+    const replacement = await parseHomebrewFile(homebrewDocumentFixture({ spell: [{ name: 'Replacement', source: 'TESTBREW', level: 1 }] }), 'selected.json', url);
+    const updated = await importHomebrew(f.cache, { ...f, base: other, file: replacement, bytes: 100 });
+    expect(updated.homebrewFiles?.map(file => file.id).sort()).toEqual([original.id, otherFile.id].sort());
+    expect(updated.homebrewFiles?.find(file => file.id === original.id)?.url).toBe(url);
+    expect((await f.cache.category(updated.id, 'spell')).map(record => record.name).sort()).toEqual(['Core Spell', 'Replacement']);
+    expect((await f.cache.category(updated.id, 'species')).map(record => record.name)).toEqual(['Core Human']);
+    expect((await f.cache.category(updated.id, 'feat')).map(record => record.name)).toEqual(['Other Feat']);
+    const same = await importHomebrew(f.cache, { ...f, base: updated, file: replacement, bytes: 100 });
+    expect(same.id).toBe(updated.id);
+    await expect(importHomebrew(f.cache, { ...f, base: updated, file: { ...otherFile, id: original.id }, bytes: 1 })).rejects.toThrow('already installed');
+    expect((await f.cache.active(f.namespace, f.source))?.id).toBe(updated.id);
+  });
+
   it('reports missing external dependencies without fetching them or hiding available spells', async () => {
     const f = await fixture();
     const file = await readHomebrewFile({

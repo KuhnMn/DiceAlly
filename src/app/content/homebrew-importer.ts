@@ -30,7 +30,11 @@ export async function importHomebrew(cache: ContentCache, options: HomebrewImpor
   }
   signal?.throwIfAborted();
   // The same document can be selected as a local file or URL; do not install a second copy.
-  if (file && base?.homebrewFiles?.some(installed => installed.digest === file.digest)) return base;
+  const duplicate = file && base?.homebrewFiles?.find(installed => installed.digest === file.digest);
+  if (file && duplicate) {
+    if (duplicate.id === file.id || !base?.homebrewFiles?.some(installed => installed.id === file.id)) return base!;
+    throw new Error(`The updated contents are already installed as ${duplicate.name}. The previous homebrew was retained.`);
+  }
   if (removeFileId && !base?.homebrewFiles?.some(installed => installed.id === removeFileId)) {
     throw new Error('That homebrew file is no longer installed.');
   }

@@ -1,8 +1,8 @@
 import { ContentSource, object, string, validateSource } from './content.model';
 
-export type FetchContent = (url: string, signal?: AbortSignal) => Promise<{ value: unknown; bytes: number }>;
-export const fetchContent: FetchContent = async (url, signal) => {
-  const response = await fetch(url, { signal });
+export type FetchContent = (url: string, signal?: AbortSignal, cache?: RequestCache) => Promise<{ value: unknown; bytes: number }>;
+export const fetchContent: FetchContent = async (url, signal, cache) => {
+  const response = await fetch(url, { signal, cache });
   if (!response.ok) {
     throw new Error(`Download failed (${response.status}) for ${url}. GitHub may be unavailable or rate limited.`);
   }

@@ -26,6 +26,8 @@ export class ContentImportComponent implements OnInit, OnDestroy {
   }
   readonly message = signal('');
   readonly updateMessage = signal('');
+  readonly checkingHomebrew = signal(false);
+  readonly homebrewMessages = signal<Record<string, string>>({});
   readonly progress = signal<ImportProgress | null>(null);
   readonly revision = signal<ImportRevision | undefined>(undefined);
   readonly diagnostics = signal<ImportDiagnostic[]>([]);
@@ -97,6 +99,20 @@ export class ContentImportComponent implements OnInit, OnDestroy {
       await this.runImport({ action: 'remove-homebrew', namespace: this.namespace, source, fileId });
     } catch (error) { this.busy.set(false); this.message.set(String(error)); }
   }
+  async refreshHomebrew(fileId: string, checkOnly = false) {
+    if (this.busy()) return;
+    const file = this.revision()?.homebrewFiles?.find(file => file.id === fileId);
+    if (!file?.url) return;
+    this.busy.set(true);
+    this.homebrewMessages.update(messages => ({ ...messages, [fileId]: checkOnly ? 'Checking for updates…' : 'Updating…' }));
+    try {
+      const source = validateSource(await this.cache.savedSource(this.namespace) ?? this.source);
+      await this.runImport({ action: checkOnly ? 'check-homebrew' : 'update-homebrew', namespace: this.namespace, source, fileId });
+    } catch (error) {
+      this.busy.set(false); this.checkingHomebrew.set(false); this.message.set(String(error));
+      this.homebrewMessages.update(messages => ({ ...messages, [fileId]: String(error) }));
+    }
+  }
   async startHomebrew(from: 'url' | 'file') {
     if (this.busy()) return;
     if (from === 'file' && !this.homebrewFile) return;
@@ -113,33 +129,53 @@ export class ContentImportComponent implements OnInit, OnDestroy {
   private async runImport(request: Exclude<ContentImportRequest, { action: 'cancel' }>) {
     if (typeof Worker === 'undefined') throw new Error('Content imports require browser Web Workers.');
     this.busy.set(true);
+    this.checkingHomebrew.set(request.action === 'check-homebrew');
     this.diagnostics.set([]);
     this.progress.set(null);
     this.revision.set(await this.cache.active(this.namespace, request.source));
-    const estimate = await navigator.storage?.estimate();
-    this.message.set(estimate?.quota ? `Available browser storage: ${this.mb(estimate.quota - (estimate.usage ?? 0))} MB. Importing…` : 'Importing…');
-    await navigator.storage?.persist?.();
+    if (request.action === 'check-homebrew') this.message.set('Checking homebrew for updates…');
+    else {
+      const estimate = await navigator.storage?.estimate();
+      this.message.set(estimate?.quota ? `Available browser storage: ${this.mb(estimate.quota - (estimate.usage ?? 0))} MB. Importing…` : 'Importing…');
+      await navigator.storage?.persist?.();
+    }
     this.worker = new Worker(new URL('./content.worker', import.meta.url), { type: 'module' });
     this.worker.onmessage = ({ data }) => {
       if (data.type === 'progress') this.progress.set(data.progress);
       else {
         this.importing.set(false);
+        this.checkingHomebrew.set(false);
         this.busy.set(false);
         this.diagnostics.set(data.diagnostics ?? data.revision?.diagnostics ?? []);
-        if (data.type === 'complete') {
+        if (data.type === 'homebrew-checked' && request.action === 'check-homebrew') {
+          const text = data.state === 'current' ? 'Installed homebrew is current.' : 'Updated content is available. Choose Update to install it.';
+          this.homebrewMessages.update(messages => ({ ...messages, [request.fileId]: text }));
+          this.message.set(text);
+        } else if (data.type === 'complete') {
+          this.homebrewMessages.set({});
+          if (request.action === 'update-homebrew') this.homebrewMessages.set({ [request.fileId]: 'Homebrew updated to the latest contents at its URL.' });
           this.revision.set(data.revision);
           this.message.set(request.action === 'remove-homebrew' ? 'Homebrew file removed. Saved characters were not changed.'
+            : request.action === 'update-homebrew' ? 'Homebrew file updated. Saved characters were not changed.'
             : request.action === 'homebrew' ? 'Homebrew file imported. Saved characters were not changed.' : 'Content imported. Saved characters were not changed.');
-        } else this.message.set(data.message);
+        } else {
+          this.message.set(data.message);
+          if (request.action === 'check-homebrew' || request.action === 'update-homebrew') {
+            this.homebrewMessages.update(messages => ({ ...messages, [request.fileId]: data.message }));
+          }
+        }
         this.worker?.terminate(); this.worker = undefined;
         void this.refreshStorage();
       }
     };
     this.worker.onerror = () => {
       this.importing.set(false);
-      this.message.set('The background importer stopped unexpectedly. The previous revision remains active.');
+      this.checkingHomebrew.set(false);
+      if (request.action === 'check-homebrew' || request.action === 'update-homebrew') this.homebrewMessages.update(messages => ({ ...messages, [request.fileId]: 'The operation stopped. Please try again.' }));
+      this.message.set(request.action === 'check-homebrew' ? 'The update check stopped unexpectedly. Installed content was not changed.' : 'The background importer stopped unexpectedly. The previous revision remains active.');
       this.worker?.terminate(); this.worker = undefined;
-      void this.recoverStoppedImport();
+      if (request.action === 'check-homebrew') this.busy.set(false);
+      else void this.recoverStoppedImport();
     };
     this.worker.postMessage(request);
     this.importing.set(true);

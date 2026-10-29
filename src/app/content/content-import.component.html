@@ -20,7 +20,7 @@
     <div class="flex items-center gap-3">
       <span class="status-indicator shrink-0" [class.status-indicator-active]="busy()" aria-hidden="true"></span>
       <div class="min-w-0 grow">
-        <p role="status" aria-live="polite" class="text-sm font-medium">{{ importing() ? 'Importing Game Data' : busy() ? 'Checking Game Data...' : message() || (revision() ? 'Game data is ready.' : 'Ready to import game data.') }}</p>
+        <p role="status" aria-live="polite" class="text-sm font-medium">{{ checkingHomebrew() ? 'Checking Homebrew for Updates' : importing() ? 'Importing Game Data' : busy() ? 'Checking Game Data...' : message() || (revision() ? 'Game data is ready.' : 'Ready to import game data.') }}</p>
         @if (importing() && progress(); as p) {
           <p class="text-xs text-on-surface-variant mt-1">{{ phaseLabel(p.phase) }}@if (p.total > 0) { &middot; {{ p.completed }} / {{ p.total }} } &middot; {{ p.records }} records &middot; {{ mb(p.bytes) }} MB</p>
           @if (p.file) { <p class="text-xs text-on-surface-variant truncate mt-1" [title]="p.file">{{ p.file }}</p> }
@@ -83,15 +83,24 @@
         <div class="rounded-lg bg-surface-container-low p-3 mt-3">
           <h3 class="text-sm font-semibold mb-2">Installed Homebrew</h3>
           @for (file of revision()?.homebrewFiles ?? []; track file.id) {
-            <div class="flex items-start justify-between gap-2 mb-2">
-              <p class="text-sm min-w-0">{{ file.name }} <span class="text-xs text-on-surface-variant">· {{ file.sources.join(', ') }}</span></p>
-              <button type="button" class="secondary-button shrink-0" [disabled]="busy()" (click)="removeHomebrew(file.id)" [attr.aria-label]="'Remove ' + file.name">Remove</button>
+            <div class="min-w-0 border-t border-outline-variant py-3 first:border-t-0 first:pt-0 last:pb-0">
+              <p class="text-sm font-semibold">{{ file.name }} <span class="text-xs font-normal text-on-surface-variant">· {{ file.sources.join(', ') }}</span></p>
+              @if (file.url) { <p class="mt-1 text-xs text-on-surface-variant break-all">{{ file.url }}</p> }
+              @else { <p class="mt-1 text-xs text-on-surface-variant">Uploaded file. Select the JSON file again to update it.</p> }
+              <div class="mt-2 flex flex-wrap gap-2">
+                @if (file.url) {
+                  <button type="button" class="action-button" [disabled]="busy()" (click)="refreshHomebrew(file.id)" [attr.aria-label]="'Update ' + file.name">Update</button>
+                  <button type="button" class="secondary-button" [disabled]="busy()" (click)="refreshHomebrew(file.id, true)" [attr.aria-label]="'Check for updates to ' + file.name">Check for Updates</button>
+                }
+                <button type="button" class="secondary-button" [disabled]="busy()" (click)="removeHomebrew(file.id)" [attr.aria-label]="'Remove ' + file.name">Remove</button>
+              </div>
+              @if (homebrewMessages()[file.id]; as status) { <p role="status" aria-live="polite" class="mt-2 text-xs text-on-surface-variant">{{ status }}</p> }
             </div>
           }
         </div>
         <p class="text-xs text-on-surface-variant mt-2">Removing a file removes its content from the creator. Saved characters keep their existing snapshots.</p>
       }
-      <p class="text-xs text-on-surface-variant mt-3">Dependencies are not downloaded automatically. Reimporting a file updates it; library updates retain your homebrew.</p>
+      <p class="text-xs text-on-surface-variant mt-3">Update checks compare the contents at the saved URL without installing them. Dependencies are not downloaded automatically. Reimporting a file updates it; library updates retain your homebrew.</p>
     </section>
   </div>
 
