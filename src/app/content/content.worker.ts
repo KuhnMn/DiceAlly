@@ -19,7 +19,7 @@ addEventListener('message', async ({ data }: MessageEvent<ContentImportRequest>)
     if (data.action === 'check-homebrew') {
       const base = await cache.active(data.namespace, data.source);
       const result = await downloadHomebrewUpdate(base, data.fileId, signal);
-      postMessage({ type: 'homebrew-checked', fileId: data.fileId, state: result.state });
+      postMessage({ type: 'homebrew-checked', fileId: data.fileId, revisionId: base?.id, state: result.state });
       return;
     }
     const revision = await cache.withImport(data.namespace, async () => {

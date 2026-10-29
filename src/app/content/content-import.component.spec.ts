@@ -1,4 +1,5 @@
-import { DEFAULT_CONTENT_SOURCE, HomebrewFile, ImportRevision, sourceIdentity } from './content.model';
+import { CONTENT_SCHEMA_ID } from './generated/schema-version';
+import { ADAPTER_VERSION, DEFAULT_CONTENT_SOURCE, HomebrewFile, ImportRevision, sourceIdentity } from './content.model';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { afterEach, vi } from 'vitest';
@@ -76,7 +77,7 @@ describe('Inactive revision cleanup feedback', () => {
     const result = await setup();
     const file: HomebrewFile = { id: 'remote', name: 'brew.json', url: 'https://example.org/brew.json', digest: 'old', importedAt: '', sources: ['BREW'], document: {} };
     const base: ImportRevision = { id: 'base', namespace: 'development-local', source: DEFAULT_CONTENT_SOURCE,
-      sourceIdentity: sourceIdentity(DEFAULT_CONTENT_SOURCE), commit: 'a'.repeat(40), adapterVersion: 1, status: 'ready',
+      sourceIdentity: sourceIdentity(DEFAULT_CONTENT_SOURCE), commit: 'a'.repeat(40), adapterVersion: ADAPTER_VERSION, schemaSnapshot: CONTENT_SCHEMA_ID, status: 'ready',
       createdAt: '', files: [], diagnostics: [], metrics: { bytes: 0, records: 1, mappedBytes: 0, elapsedMs: 0 },
       homebrewFiles: [file, { ...file, id: 'local', name: 'local.json', url: undefined }] };
     result.component.revision.set(base);
@@ -92,22 +93,31 @@ describe('Inactive revision cleanup feedback', () => {
     expect(fixture.nativeElement.querySelector('button[aria-label="Check for updates to brew.json"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('button[aria-label="Update local.json"]')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Select the JSON file again to update it');
+    const source = fixture.nativeElement.querySelector('.homebrew-source') as HTMLDetailsElement;
+    expect(source.open).toBe(false); expect(source.textContent).toContain('https://example.org/brew.json');
+    source.open = true; expect(source.open).toBe(true);
   });
   it.each(['current', 'available'])('checks for %s content without installing a revision', async state => {
     const { component, fixture, base, file } = await installedHomebrew();
     const before = structuredClone(base);
-    await component.refreshHomebrew(file.id, true);
+    component.message.set('Previous import status'); component.updateMessage.set('Rules status');
+    component.diagnostics.set([{ severity: 'warning', file: 'previous.json', message: 'Keep this diagnostic' }]);
+    await component.checkHomebrew(file.id);
     const worker = FakeWorker.instances[0];
     expect(worker.postMessage).toHaveBeenCalledWith({ action: 'check-homebrew', namespace: 'development-local', source: base.source, fileId: file.id });
-    expect(component.checkingHomebrew()).toBe(true); expect(component.busy()).toBe(true);
-    fixture.detectChanges(); expect(fixture.nativeElement.textContent).toContain('Checking Homebrew for Updates');
-    await component.refreshHomebrew(file.id);
+    expect(component.checkingHomebrewFiles().has(file.id)).toBe(true); expect(component.busy()).toBe(false);
+    expect(component.importing()).toBe(false);
+    fixture.detectChanges(); expect(fixture.nativeElement.querySelector('.import-status-bar progress')).toBeNull();
+    await component.checkHomebrew(file.id);
     expect(FakeWorker.instances).toHaveLength(1);
     worker.receive({ type: 'homebrew-checked', fileId: file.id, state });
     expect(component.revision()).toBe(base); expect(base).toEqual(before);
     expect(component.homebrewMessages()[file.id]).toContain(state === 'current' ? 'is current' : 'available');
-    expect(component.busy()).toBe(false); expect(component.checkingHomebrew()).toBe(false);
+    expect(component.busy()).toBe(false); expect(component.checkingHomebrewFiles().has(file.id)).toBe(false);
     expect(worker.terminate).toHaveBeenCalled();
+    expect(component.message()).toBe('Previous import status'); expect(component.updateMessage()).toBe('Rules status');
+    expect(component.diagnostics()[0].message).toBe('Keep this diagnostic');
+    expect(component.homebrewMessages()['local']).toBeUndefined();
   });
   it('updates the installed source and file rather than unsaved form inputs', async () => {
     const { component, base, file } = await installedHomebrew();
@@ -122,7 +132,7 @@ describe('Inactive revision cleanup feedback', () => {
   });
   it('keeps the installed revision on a failed check or update and permits a retry', async () => {
     const { component, base, file } = await installedHomebrew();
-    await component.refreshHomebrew(file.id, true);
+    await component.checkHomebrew(file.id);
     FakeWorker.instances[0].receive({ type: 'error', message: 'Download failed (404)' });
     expect(component.revision()).toBe(base); expect(component.homebrewMessages()[file.id]).toContain('404');
     expect(component.busy()).toBe(false);
@@ -133,8 +143,52 @@ describe('Inactive revision cleanup feedback', () => {
   });
   it('does not start workers for missing files or local uploads', async () => {
     const { component } = await installedHomebrew();
-    await component.refreshHomebrew('local'); await component.refreshHomebrew('missing', true);
+    await component.refreshHomebrew('local'); await component.checkHomebrew('missing');
     expect(FakeWorker.instances).toHaveLength(0); expect(component.busy()).toBe(false);
+  });
+
+  it('checks only the Rules Library without changing global progress or Homebrew status', async () => {
+    const { component, fixture, base } = await installedHomebrew();
+    let finish!: (response: Response) => void;
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+    const saveSource = vi.spyOn(IndexedDbContentCache.prototype, 'saveSource').mockResolvedValue();
+    component.message.set('Previous import status'); component.homebrewMessages.set({ remote: 'Keep Homebrew status' });
+    const pending = component.check();
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
+    expect(component.checkingRules()).toBe(true); expect(component.busy()).toBe(false); expect(component.importing()).toBe(false);
+    fixture.detectChanges(); expect(fixture.nativeElement.querySelector('.import-status-bar progress')).toBeNull();
+    finish(new Response(JSON.stringify({ sha: base.commit }))); await pending;
+    expect(component.updateMessage()).toContain('is current'); expect(component.checkingRules()).toBe(false);
+    expect(component.message()).toBe('Previous import status'); expect(component.homebrewMessages()['remote']).toBe('Keep Homebrew status');
+    expect(component.revision()).toBe(base); expect(saveSource).not.toHaveBeenCalled(); expect(FakeWorker.instances).toHaveLength(0);
+  });
+  it('keeps checks on different Homebrew entries independent, including worker failures', async () => {
+    const { component, base, file } = await installedHomebrew();
+    component.revision.set({ ...base, homebrewFiles: [file, { ...file, id: 'second', name: 'second.json', url: 'https://example.org/second.json' }] });
+    component.homebrewMessages.set({ second: 'Previous status' });
+    await component.checkHomebrew(file.id);
+    expect(component.homebrewMessages()['second']).toBe('Previous status');
+    await component.checkHomebrew('second');
+    expect(FakeWorker.instances).toHaveLength(2); expect(component.busy()).toBe(false);
+    FakeWorker.instances[0].receive({ type: 'homebrew-checked', fileId: file.id, state: 'available' });
+    expect(component.homebrewMessages()[file.id]).toContain('available');
+    expect(component.checkingHomebrewFiles().has('second')).toBe(true);
+    FakeWorker.instances[1].onerror!();
+    expect(component.homebrewMessages()['second']).toContain('stopped unexpectedly');
+    expect(component.homebrewMessages()[file.id]).toContain('available'); expect(component.checkingHomebrewFiles().size).toBe(0);
+    expect(component.message()).toBe(''); expect(component.importing()).toBe(false);
+  });
+  it('cancels read-only checks when installing and ignores their late replies', async () => {
+    const { component, base, file } = await installedHomebrew();
+    await component.checkHomebrew(file.id);
+    const check = FakeWorker.instances[0];
+    await component.refreshHomebrew(file.id);
+    expect(check.terminate).toHaveBeenCalled(); expect(component.checkingHomebrewFiles().size).toBe(0);
+    expect(component.importing()).toBe(true);
+    check.receive({ type: 'homebrew-checked', fileId: file.id, state: 'available' });
+    expect(component.homebrewMessages()[file.id]).toBe('Updating…');
+    FakeWorker.instances[1].receive({ type: 'complete', revision: base });
+    expect(component.busy()).toBe(false);
   });
 
 });

@@ -26,7 +26,8 @@ export class ContentImportComponent implements OnInit, OnDestroy {
   }
   readonly message = signal('');
   readonly updateMessage = signal('');
-  readonly checkingHomebrew = signal(false);
+  readonly checkingRules = signal(false);
+  readonly checkingHomebrewFiles = signal<ReadonlySet<string>>(new Set());
   readonly homebrewMessages = signal<Record<string, string>>({});
   readonly progress = signal<ImportProgress | null>(null);
   readonly revision = signal<ImportRevision | undefined>(undefined);
@@ -39,6 +40,8 @@ export class ContentImportComponent implements OnInit, OnDestroy {
   readonly removal = signal<(RevisionRemovalProgress & { revisionId: string }) | null>(null);
   private readonly cache = new IndexedDbContentCache();
   private worker?: Worker;
+  private rulesCheck?: AbortController;
+  private readonly homebrewChecks = new Map<string, Worker>();
   private readonly namespace = 'development-local';
 
   async ngOnInit(): Promise<void> {
@@ -61,22 +64,25 @@ export class ContentImportComponent implements OnInit, OnDestroy {
   }
 
   async check(): Promise<void> {
-    if (this.busy()) return;
-    this.busy.set(true);
+    if (this.busy() || this.checkingRules()) return;
+    const controller = new AbortController();
+    this.rulesCheck = controller;
+    this.checkingRules.set(true);
     this.updateMessage.set('Checking for updates…');
     try {
       const source = validateSource(this.source);
-      await this.cache.saveSource(this.namespace, source);
       const installed = await this.cache.active(this.namespace, source);
-      this.revision.set(installed);
+      if (this.rulesCheck !== controller) return;
       if (installed && requiresContentReimport(installed)) {
         this.updateMessage.set('Reimport required: the installed library uses an older adapter or schema snapshot.');
         return;
       }
-      const head = await resolveCommit(source);
-      this.updateMessage.set(installed?.commit === head ? 'Installed content is current.' : `Revision ${head.slice(0, 12)} is available. Import when ready.`);
-    } catch (error) { this.updateMessage.set(String(error)); }
-    finally { this.busy.set(false); }
+      const head = await resolveCommit(source, undefined, controller.signal);
+      if (this.rulesCheck === controller) this.updateMessage.set(installed?.commit === head ? 'Installed content is current.' : `Revision ${head.slice(0, 12)} is available. Import when ready.`);
+    } catch (error) { if (this.rulesCheck === controller) this.updateMessage.set(String(error)); }
+    finally {
+      if (this.rulesCheck === controller) { this.rulesCheck = undefined; this.checkingRules.set(false); }
+    }
   }
   async start(): Promise<void> {
     if (this.busy()) return;
@@ -99,19 +105,63 @@ export class ContentImportComponent implements OnInit, OnDestroy {
       await this.runImport({ action: 'remove-homebrew', namespace: this.namespace, source, fileId });
     } catch (error) { this.busy.set(false); this.message.set(String(error)); }
   }
-  async refreshHomebrew(fileId: string, checkOnly = false) {
-    if (this.busy()) return;
-    const file = this.revision()?.homebrewFiles?.find(file => file.id === fileId);
-    if (!file?.url) return;
-    this.busy.set(true);
-    this.homebrewMessages.update(messages => ({ ...messages, [fileId]: checkOnly ? 'Checking for updates…' : 'Updating…' }));
+  async checkHomebrew(fileId: string) {
+    if (this.busy() || this.homebrewChecks.has(fileId)) return;
+    const revision = this.revision();
+    const file = revision?.homebrewFiles?.find(file => file.id === fileId);
+    if (!revision || !file?.url) return;
+    let worker: Worker | undefined;
+    const finish = (text: string) => {
+      if (this.homebrewChecks.get(fileId) !== worker) return;
+      this.homebrewChecks.delete(fileId);
+      this.checkingHomebrewFiles.update(ids => { const next = new Set(ids); next.delete(fileId); return next; });
+      worker?.terminate();
+      if (this.revision()?.id === revision.id) this.homebrewMessages.update(messages => ({ ...messages, [fileId]: text }));
+    };
     try {
-      const source = validateSource(await this.cache.savedSource(this.namespace) ?? this.source);
-      await this.runImport({ action: checkOnly ? 'check-homebrew' : 'update-homebrew', namespace: this.namespace, source, fileId });
+      if (typeof Worker === 'undefined') throw new Error('Update checks require browser Web Workers.');
+      const source = validateSource(revision.source);
+      worker = new Worker(new URL('./content.worker', import.meta.url), { type: 'module' });
+      this.homebrewChecks.set(fileId, worker);
+      this.checkingHomebrewFiles.update(ids => new Set([...ids, fileId]));
+      this.homebrewMessages.update(messages => ({ ...messages, [fileId]: 'Checking for updates…' }));
+      worker.onmessage = ({ data }) => {
+        if (data.type === 'progress') return;
+        if (data.type === 'homebrew-checked' && data.fileId === fileId) {
+          finish(data.revisionId && data.revisionId !== revision.id ? 'The library changed. Refresh this page and check again.'
+            : data.state === 'current' ? 'Installed homebrew is current.' : 'Updated content is available. Choose Update to install it.');
+        } else finish(data.message ?? 'The update check did not return a result. Please try again.');
+      };
+      worker.onerror = () => finish('The update check stopped unexpectedly. Please try again.');
+      worker.postMessage({ action: 'check-homebrew', namespace: this.namespace, source, fileId });
     } catch (error) {
-      this.busy.set(false); this.checkingHomebrew.set(false); this.message.set(String(error));
+      if (worker) finish(String(error));
+      else this.homebrewMessages.update(messages => ({ ...messages, [fileId]: String(error) }));
+    }
+  }
+  async refreshHomebrew(fileId: string) {
+    if (this.busy()) return;
+    const revision = this.revision();
+    const file = revision?.homebrewFiles?.find(file => file.id === fileId);
+    if (!revision || !file?.url) return;
+    this.busy.set(true);
+    try {
+      await this.runImport({ action: 'update-homebrew', namespace: this.namespace, source: validateSource(revision.source), fileId });
+    } catch (error) {
+      this.busy.set(false); this.message.set(String(error));
       this.homebrewMessages.update(messages => ({ ...messages, [fileId]: String(error) }));
     }
+  }
+  private cancelUpdateChecks() {
+    if (this.rulesCheck) {
+      this.rulesCheck.abort(); this.rulesCheck = undefined; this.checkingRules.set(false);
+      this.updateMessage.set('Update check cancelled.');
+    }
+    for (const [fileId, worker] of this.homebrewChecks) {
+      worker.terminate();
+      this.homebrewMessages.update(messages => ({ ...messages, [fileId]: 'Update check cancelled.' }));
+    }
+    this.homebrewChecks.clear(); this.checkingHomebrewFiles.set(new Set());
   }
   async startHomebrew(from: 'url' | 'file') {
     if (this.busy()) return;
@@ -126,32 +176,25 @@ export class ContentImportComponent implements OnInit, OnDestroy {
         ...(from === 'url' ? { url: this.homebrewUrl.trim() } : { file: this.homebrewFile }) });
     } catch (error) { this.busy.set(false); this.message.set(String(error)); }
   }
-  private async runImport(request: Exclude<ContentImportRequest, { action: 'cancel' }>) {
+  private async runImport(request: Exclude<ContentImportRequest, { action: 'cancel' | 'check-homebrew' }>) {
     if (typeof Worker === 'undefined') throw new Error('Content imports require browser Web Workers.');
     this.busy.set(true);
-    this.checkingHomebrew.set(request.action === 'check-homebrew');
+    this.cancelUpdateChecks();
+    if (request.action === 'update-homebrew') this.homebrewMessages.update(messages => ({ ...messages, [request.fileId]: 'Updating…' }));
     this.diagnostics.set([]);
     this.progress.set(null);
     this.revision.set(await this.cache.active(this.namespace, request.source));
-    if (request.action === 'check-homebrew') this.message.set('Checking homebrew for updates…');
-    else {
-      const estimate = await navigator.storage?.estimate();
-      this.message.set(estimate?.quota ? `Available browser storage: ${this.mb(estimate.quota - (estimate.usage ?? 0))} MB. Importing…` : 'Importing…');
-      await navigator.storage?.persist?.();
-    }
+    const estimate = await navigator.storage?.estimate();
+    this.message.set(estimate?.quota ? `Available browser storage: ${this.mb(estimate.quota - (estimate.usage ?? 0))} MB. Importing…` : 'Importing…');
+    await navigator.storage?.persist?.();
     this.worker = new Worker(new URL('./content.worker', import.meta.url), { type: 'module' });
     this.worker.onmessage = ({ data }) => {
       if (data.type === 'progress') this.progress.set(data.progress);
       else {
         this.importing.set(false);
-        this.checkingHomebrew.set(false);
         this.busy.set(false);
         this.diagnostics.set(data.diagnostics ?? data.revision?.diagnostics ?? []);
-        if (data.type === 'homebrew-checked' && request.action === 'check-homebrew') {
-          const text = data.state === 'current' ? 'Installed homebrew is current.' : 'Updated content is available. Choose Update to install it.';
-          this.homebrewMessages.update(messages => ({ ...messages, [request.fileId]: text }));
-          this.message.set(text);
-        } else if (data.type === 'complete') {
+        if (data.type === 'complete') {
           this.homebrewMessages.set({});
           if (request.action === 'update-homebrew') this.homebrewMessages.set({ [request.fileId]: 'Homebrew updated to the latest contents at its URL.' });
           this.revision.set(data.revision);
@@ -160,7 +203,7 @@ export class ContentImportComponent implements OnInit, OnDestroy {
             : request.action === 'homebrew' ? 'Homebrew file imported. Saved characters were not changed.' : 'Content imported. Saved characters were not changed.');
         } else {
           this.message.set(data.message);
-          if (request.action === 'check-homebrew' || request.action === 'update-homebrew') {
+          if (request.action === 'update-homebrew') {
             this.homebrewMessages.update(messages => ({ ...messages, [request.fileId]: data.message }));
           }
         }
@@ -170,12 +213,10 @@ export class ContentImportComponent implements OnInit, OnDestroy {
     };
     this.worker.onerror = () => {
       this.importing.set(false);
-      this.checkingHomebrew.set(false);
-      if (request.action === 'check-homebrew' || request.action === 'update-homebrew') this.homebrewMessages.update(messages => ({ ...messages, [request.fileId]: 'The operation stopped. Please try again.' }));
-      this.message.set(request.action === 'check-homebrew' ? 'The update check stopped unexpectedly. Installed content was not changed.' : 'The background importer stopped unexpectedly. The previous revision remains active.');
+      if (request.action === 'update-homebrew') this.homebrewMessages.update(messages => ({ ...messages, [request.fileId]: 'The operation stopped. Please try again.' }));
+      this.message.set('The background importer stopped unexpectedly. The previous revision remains active.');
       this.worker?.terminate(); this.worker = undefined;
-      if (request.action === 'check-homebrew') this.busy.set(false);
-      else void this.recoverStoppedImport();
+      void this.recoverStoppedImport();
     };
     this.worker.postMessage(request);
     this.importing.set(true);
@@ -197,6 +238,7 @@ export class ContentImportComponent implements OnInit, OnDestroy {
     if (this.busy()) return;
     this.busy.set(true);
     this.message.set('');
+    this.cancelUpdateChecks();
     this.removal.set({ revisionId: id, phase: 'checking', records: 0 });
     try {
       await this.cache.deleteRevision(this.namespace, id, progress => this.removal.set({ ...progress, revisionId: id }));
@@ -208,6 +250,7 @@ export class ContentImportComponent implements OnInit, OnDestroy {
   }
   mb(bytes: number): string { return (bytes / 1024 / 1024).toFixed(1); }
   ngOnDestroy(): void {
+    this.cancelUpdateChecks();
     // Let cancellation discard staging data before shutting down the worker.
     const worker = this.worker;
     if (worker) {

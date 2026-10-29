@@ -20,7 +20,7 @@
     <div class="flex items-center gap-3">
       <span class="status-indicator shrink-0" [class.status-indicator-active]="busy()" aria-hidden="true"></span>
       <div class="min-w-0 grow">
-        <p role="status" aria-live="polite" class="text-sm font-medium">{{ checkingHomebrew() ? 'Checking Homebrew for Updates' : importing() ? 'Importing Game Data' : busy() ? 'Checking Game Data...' : message() || (revision() ? 'Game data is ready.' : 'Ready to import game data.') }}</p>
+        <p role="status" aria-live="polite" class="text-sm font-medium">{{ importing() ? 'Importing Game Data' : busy() ? 'Checking Game Data...' : message() || (revision() ? 'Game data is ready.' : 'Ready to import game data.') }}</p>
         @if (importing() && progress(); as p) {
           <p class="text-xs text-on-surface-variant mt-1">{{ phaseLabel(p.phase) }}@if (p.total > 0) { &middot; {{ p.completed }} / {{ p.total }} } &middot; {{ p.records }} records &middot; {{ mb(p.bytes) }} MB</p>
           @if (p.file) { <p class="text-xs text-on-surface-variant truncate mt-1" [title]="p.file">{{ p.file }}</p> }
@@ -38,11 +38,11 @@
   </section>
 
   <div class="mb-4 grid md:grid-cols-2 gap-4 items-start">
-    <section id="rules-library" class="editor-card scroll-mt-24">
+    <section id="rules-library" class="editor-card scroll-mt-24" [attr.aria-busy]="checkingRules()">
       <h2>Rules Library</h2>
       <p class="text-sm text-on-surface-variant">Import the main game data or update your installed library.</p>
       <form (ngSubmit)="start()">
-        <fieldset [disabled]="busy()" class="min-w-0 space-y-3">
+        <fieldset [disabled]="busy() || checkingRules()" class="min-w-0 space-y-3">
           <details class="rounded-lg bg-surface-container-low p-3 mt-3">
             <summary class="text-sm font-semibold cursor-pointer">Repository Settings</summary>
             <div class="grid sm:grid-cols-2 gap-3 mt-3">
@@ -53,9 +53,9 @@
             </div>
           </details>
           <p class="text-xs text-on-surface-variant">{{ source.owner }}/{{ source.repository }} · {{ source.branch }}</p>
-          <div class="flex flex-wrap gap-2">
+          <div class="library-update-actions">
             <button type="submit" class="action-button">{{ revision() ? 'Update Library' : 'Import Library' }}</button>
-            <button type="button" (click)="check()" class="secondary-button">Check for Updates</button>
+            <button type="button" (click)="check()" class="secondary-button">@if (checkingRules()) { <app-ui-icon name="loader" class="animate-spin" />Checking… } @else { Check for Updates }</button>
           </div>
           <p role="status" aria-live="polite" class="text-xs text-on-surface-variant">{{ updateMessage() }}</p>
         </fieldset>
@@ -83,17 +83,25 @@
         <div class="rounded-lg bg-surface-container-low p-3 mt-3">
           <h3 class="text-sm font-semibold mb-2">Installed Homebrew</h3>
           @for (file of revision()?.homebrewFiles ?? []; track file.id) {
-            <div class="min-w-0 border-t border-outline-variant py-3 first:border-t-0 first:pt-0 last:pb-0">
-              <p class="text-sm font-semibold">{{ file.name }} <span class="text-xs font-normal text-on-surface-variant">· {{ file.sources.join(', ') }}</span></p>
-              @if (file.url) { <p class="mt-1 text-xs text-on-surface-variant break-all">{{ file.url }}</p> }
-              @else { <p class="mt-1 text-xs text-on-surface-variant">Uploaded file. Select the JSON file again to update it.</p> }
-              <div class="mt-2 flex flex-wrap gap-2">
-                @if (file.url) {
-                  <button type="button" class="action-button" [disabled]="busy()" (click)="refreshHomebrew(file.id)" [attr.aria-label]="'Update ' + file.name">Update</button>
-                  <button type="button" class="secondary-button" [disabled]="busy()" (click)="refreshHomebrew(file.id, true)" [attr.aria-label]="'Check for updates to ' + file.name">Check for Updates</button>
-                }
-                <button type="button" class="secondary-button" [disabled]="busy()" (click)="removeHomebrew(file.id)" [attr.aria-label]="'Remove ' + file.name">Remove</button>
+            <div class="homebrew-entry min-w-0 border-t border-outline-variant py-3 first:border-t-0 first:pt-0 last:pb-0" [attr.aria-busy]="checkingHomebrewFiles().has(file.id)">
+              <div class="flex items-start gap-2">
+                <div class="min-w-0 grow">
+                  <p class="text-sm font-semibold">{{ file.name }} <span class="text-xs font-normal text-on-surface-variant">· {{ file.sources.join(', ') }}</span></p>
+                  @if (file.url) {
+                    <details class="homebrew-source mt-1 text-xs text-on-surface-variant">
+                      <summary class="cursor-pointer">Source URL</summary>
+                      <p class="mt-1 break-all select-all">{{ file.url }}</p>
+                    </details>
+                  } @else { <p class="mt-1 text-xs text-on-surface-variant">Uploaded file. Select the JSON file again to update it.</p> }
+                </div>
+                <button type="button" class="secondary-button homebrew-remove" [disabled]="busy()" (click)="removeHomebrew(file.id)" [attr.aria-label]="'Remove ' + file.name" [title]="'Remove ' + file.name"><app-ui-icon name="trash" /></button>
               </div>
+              @if (file.url) {
+                <div class="library-update-actions mt-2">
+                  <button type="button" class="action-button" [disabled]="busy() || checkingHomebrewFiles().has(file.id)" (click)="refreshHomebrew(file.id)" [attr.aria-label]="'Update ' + file.name">Update</button>
+                  <button type="button" class="secondary-button" [disabled]="busy() || checkingHomebrewFiles().has(file.id)" (click)="checkHomebrew(file.id)" [attr.aria-label]="'Check for updates to ' + file.name">@if (checkingHomebrewFiles().has(file.id)) { <app-ui-icon name="loader" class="animate-spin" />Checking… } @else { Check for Updates }</button>
+                </div>
+              }
               @if (homebrewMessages()[file.id]; as status) { <p role="status" aria-live="polite" class="mt-2 text-xs text-on-surface-variant">{{ status }}</p> }
             </div>
           }
