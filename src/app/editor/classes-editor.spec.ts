@@ -7,6 +7,26 @@ import { characterDescription } from '../character-description';
 import { IndexedDbCharacterRepository } from '../characters/indexeddb-character-repository';
 
 describe('Display-only class rows', () => {
+  it('shows one legacy subclass choice while preserving either saved source identity', () => {
+    const fixture = TestBed.createComponent(ClassesEditorComponent), sheet = emptyBasicCharacter();
+    fixture.componentRef.setInput('sheet', sheet);
+    const editor = fixture.componentInstance;
+    editor.books.setSelection([]);
+    editor.records = mapContent({ class: [{ name: 'Wizard', source: 'XPHB' }],
+      subclass: ['PHB', 'XPHB'].map(classSource => ({ name: 'Old School', shortName: 'School', source: 'TCE',
+        edition: 'classic', className: 'Wizard', classSource, subclassFeatures: [] })),
+    }, 'classes.json').records;
+    editor.add(); const entry = sheet.classes![0];
+    editor.select(entry, editor.records.find(record => record.kind === 'class')!.key);
+    expect(editor.subclassOptions(entry).filter(option => option.value)).toHaveLength(1);
+    for (const record of editor.records.filter(record => record.kind === 'subclass')) {
+      editor.selectSubclass(entry, record.key);
+      expect(editor.subclassOptions(entry).filter(option => option.value).map(option => option.value)).toEqual([record.key]);
+      expect(entry.subclassKey).toBe(record.key);
+    }
+    fixture.destroy();
+  });
+
   it('supports library classes/subclasses and custom text, derives the total, and never configures the wizard', async () => {
     const fixture = TestBed.createComponent(ClassesEditorComponent), sheet = emptyBasicCharacter();
     sheet.creatorWizard = { revisionId: 'saved', classes: [{ selectionId: 'saved', classKey: 'saved-wizard-class', level: 8 }], answers: {}, options: {}, baseline: [], protectedPaths: [] };

@@ -1,3 +1,4 @@
+import { subclassChoices } from '../content/class-compatibility';
 import 'fake-indexeddb/auto';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
@@ -12,7 +13,7 @@ import { canonicalSpeciesRecord } from '../content/species-adapter';
 import { ADAPTER_VERSION, ContentRecord, DEFAULT_CONTENT_SOURCE, ImportRevision, sourceIdentity, entityKey } from '../content/content.model';
 import { IndexedDbContentCache } from '../content/content-cache';
 import { ClassCompendiumComponent } from './class-compendium.component';
-import { belongsToClass, belongsToSubclass, groupProgression, loadProgression, subclassChoices } from './class-compendium';
+import { belongsToClass, belongsToSubclass, groupProgression, loadProgression } from './class-compendium';
 import { CompendiumDetailsComponent } from './compendium-details.component';
 import { SourceBookFilterService } from '../editor/source-book-filter.service';
 import { CompendiumSourceFilterComponent } from './compendium-source-filter.component';

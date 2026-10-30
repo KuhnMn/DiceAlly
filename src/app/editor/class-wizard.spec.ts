@@ -80,6 +80,39 @@ describe('Classic subclasses with revised classes', () => {
     expect(matchesSubclass(f.subclass, f.find('class', 'Fighter').key, new Map([...f.index, ...f.records.map(record => [record.key, record] as const)]))).toBe(false);
   });
 
+  it('shows one choice per legacy subclass and keeps saved identities and feature grants intact', () => {
+    const f = mixedFixture();
+    const copy = mapContent({ subclass: [{ ...f.subclass.data, classSource: 'XPHB' }] }, 'mixed-edition.json').records[0];
+    const component = TestBed.createComponent(ClassWizardComponent), wizard = component.componentInstance;
+    component.componentRef.setInput('sheet', f.sheet);
+    for (const record of [...f.records, copy]) wizard.records.set(record.key, record);
+    wizard.sourceBooks.setSelection([]);
+    const selection = { ...f.state.classes[0] };
+    const before = JSON.stringify([...wizard.records.values()]);
+    for (const selected of [f.subclass, copy]) {
+      selection.subclassKey = selected.key;
+      expect(wizard.subclasses(selection).map(record => record.key)).toEqual([selected.key]);
+      expect(wizard.subclassChoices(selection).filter(option => option.value)).toHaveLength(1);
+      for (const level of [3, 6]) {
+        const result = previewClassWizard(f.sheet, { ...f.state, classes: [{ ...selection, level }] }, f.revision, wizard.records);
+        expect(result.errors).toEqual([]);
+        const added = result.sheet.features!.filter(feature => feature.source === 'TCE');
+        expect(added.map(feature => feature.featureEntity!.level)).toEqual(level === 3 ? [3, 3, 3] : [3, 3, 3, 6]);
+        expect(new Set(added.map(feature => feature.editorId)).size).toBe(added.length);
+      }
+    }
+    selection.subclassKey = undefined;
+    expect(wizard.subclasses(selection).map(record => record.key)).toEqual([copy.key]);
+    wizard.sourceBooks.setSelection(['PHB']);
+    expect(wizard.subclasses(selection)).toEqual([]);
+    selection.subclassKey = f.subclass.key;
+    expect(wizard.subclasses(selection).map(record => record.key)).toEqual([f.subclass.key]);
+    selection.classKey = f.classic.key;
+    expect(wizard.subclasses(selection).map(record => record.key)).toEqual([f.subclass.key]);
+    expect(JSON.stringify([...wizard.records.values()])).toBe(before);
+    component.destroy();
+  });
+
   it('defers level 1 and 2 subclass features to level 3, keeps later levels and preserves source records', () => {
     const f = mixedFixture(), before = JSON.stringify(f.records);
     for (const [level, expected] of [[2, []], [3, [3, 3, 3]], [5, [3, 3, 3]], [6, [3, 3, 3, 6]]] as const) {

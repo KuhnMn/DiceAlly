@@ -1,4 +1,5 @@
 import { spellRecordClasses } from '../content/spell-adapter';
+import { subclassChoices } from '../content/class-compatibility';
 import { rankSearchResults } from '../search-ranking';
 import { UiIconComponent } from '../ui-icon.component';
 import { InfoButtonComponent } from '../info-button.component';
@@ -161,8 +162,10 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
     return selected && !choices.some(record => record.key === selected.key) ? [selected, ...choices] : choices;
   }
   subclasses(selection: WizardClass) {
-    return [...this.records.values()].filter(record => matchesSubclass(record, selection.classKey, this.records)
-      && (record.key === selection.subclassKey || this.sourceBooks.allows(record.publication)))
+    const owner = this.records.get(selection.classKey);
+    const candidates = [...this.records.values()].filter(record => matchesSubclass(record, selection.classKey, this.records)
+      && (record.key === selection.subclassKey || this.sourceBooks.allows(record.publication)));
+    return (owner ? subclassChoices(candidates, owner, selection.subclassKey) : candidates)
       .sort((a, b) => this.label(a.key).localeCompare(this.label(b.key)));
   }
   get species() {

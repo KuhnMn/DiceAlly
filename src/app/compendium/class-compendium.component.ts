@@ -1,3 +1,4 @@
+import { subclassChoices, subclassChoiceKey } from '../content/class-compatibility';
 import { ScrollToTopComponent } from '../scroll-to-top.component';
 import { loadRelatedEntries } from './related-entries';
 import { EntryHistory } from './entry-history';
@@ -15,7 +16,7 @@ import { ListControlsComponent } from '../list-controls.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { SheetDetailDialogComponent } from '../sheet/sheet-detail-dialog.component';
 import { CompendiumDetailsComponent } from './compendium-details.component';
-import { belongsToClass, ClassFeatureRow, groupProgression, loadProgression, subclassChoices, subclassChoiceKey } from './class-compendium';
+import { belongsToClass, ClassFeatureRow, groupProgression, loadProgression } from './class-compendium';
 import { SourceBookFilterService } from '../editor/source-book-filter.service';
 import { CompendiumSourceFilterComponent } from './compendium-source-filter.component';
 import { ClassResourcesComponent } from './class-resources.component';

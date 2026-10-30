@@ -34,3 +34,24 @@ export function subclassFeatureMatchesClass(feature: ContentRecord, parent: Cont
 export function subclassFeatureLevel(level: number, parent: ContentRecord, subclass: ContentRecord): number {
   return usesLegacySubclass(parent, subclass) ? Math.max(3, level) : level;
 }
+
+/** Classic subclasses may also be installed as copies attached to the revised class. */
+export function subclassChoiceKey(record: ContentRecord, owner: ContentRecord): string {
+  if (record.homebrewVariant || !usesLegacySubclass(owner, record)) return record.key;
+  return JSON.stringify([normalize(record.name), normalize(record.publication),
+    normalize(classDefinition(record).shortName ?? record.name)]);
+}
+
+/** Collapse choices without rewriting source identities or a character's saved selection. */
+export function subclassChoices(records: readonly ContentRecord[], owner: ContentRecord, selectedKey?: string): ContentRecord[] {
+  const choices = new Map<string, ContentRecord>();
+  const parentKey = owner.homebrewVariant?.originalKey ?? owner.key;
+  for (const record of records) {
+    const key = subclassChoiceKey(record, owner), previous = choices.get(key);
+    // Keep a saved selection; otherwise prefer the copy explicitly attached to this edition.
+    if (!previous || record.key === selectedKey || (previous.key !== selectedKey
+      && classDefinition(previous).parent?.key !== parentKey
+      && classDefinition(record).parent?.key === parentKey)) choices.set(key, record);
+  }
+  return [...choices.values()];
+}
