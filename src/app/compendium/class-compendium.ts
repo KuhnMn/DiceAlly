@@ -1,11 +1,29 @@
 import { ContentRecord, normalize } from '../content/content.model';
 import { IndexedDbContentCache } from '../content/content-cache';
 import { classDefinition } from '../content/class-adapter';
-import { subclassFeatureLevel, subclassFeatureMatchesClass, subclassMatchesClass } from '../content/class-compatibility';
+import { subclassFeatureLevel, subclassFeatureMatchesClass, subclassMatchesClass, usesLegacySubclass } from '../content/class-compatibility';
 
 export interface ClassFeatureRow { record: ContentRecord; level: number; subclass: boolean; }
 export interface FeatureProgression { rows: ClassFeatureRow[]; missing: string[]; }
 const identity = (record: ContentRecord) => record.homebrewVariant?.originalKey ?? record.key;
+
+/** Classic subclasses may also be installed as copies attached to the revised class. */
+export function subclassChoiceKey(record: ContentRecord, owner: ContentRecord): string {
+  if (record.homebrewVariant || !usesLegacySubclass(owner, record)) return record.key;
+  return JSON.stringify([normalize(record.name), normalize(record.publication),
+    normalize(classDefinition(record).shortName ?? record.name)]);
+}
+
+export function subclassChoices(records: ContentRecord[], owner: ContentRecord): ContentRecord[] {
+  const choices = new Map<string, ContentRecord>();
+  for (const record of records) {
+    const key = subclassChoiceKey(record, owner), previous = choices.get(key);
+    // Prefer the copy explicitly attached to this edition, independent of cache order.
+    if (!previous || (classDefinition(previous).parent?.key !== identity(owner)
+      && classDefinition(record).parent?.key === identity(owner))) choices.set(key, record);
+  }
+  return [...choices.values()];
+}
 
 export function belongsToClass(record: ContentRecord, owner: ContentRecord): boolean {
   if (record.kind === 'subclass') return subclassMatchesClass(record, owner);

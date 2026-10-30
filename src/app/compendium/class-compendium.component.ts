@@ -15,7 +15,7 @@ import { ListControlsComponent } from '../list-controls.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { SheetDetailDialogComponent } from '../sheet/sheet-detail-dialog.component';
 import { CompendiumDetailsComponent } from './compendium-details.component';
-import { belongsToClass, ClassFeatureRow, groupProgression, loadProgression } from './class-compendium';
+import { belongsToClass, ClassFeatureRow, groupProgression, loadProgression, subclassChoices, subclassChoiceKey } from './class-compendium';
 import { SourceBookFilterService } from '../editor/source-book-filter.service';
 import { CompendiumSourceFilterComponent } from './compendium-source-filter.component';
 import { ClassResourcesComponent } from './class-resources.component';
@@ -64,7 +64,11 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
   readonly selectedSources = signal(this.filterPreferences.load('class')?.filters.source ?? [...this.sourceDefaults.selected()]);
   readonly subclassSources = signal([...this.selectedSources()]);
   readonly subclassBooks = computed(() => [...new Set(this.subclasses().map(record => record.publication))].sort());
-  readonly visibleSubclasses = computed(() => this.subclasses().filter(record => this.sourceDefaults.allows(record.publication, this.subclassSources())));
+  readonly visibleSubclasses = computed(() => {
+    const owner = this.selectedClass();
+    return owner ? subclassChoices(this.subclasses(), owner)
+      .filter(record => this.sourceDefaults.allows(record.publication, this.subclassSources())) : [];
+  });
   readonly featureQuery = signal('');
   readonly sources = computed(() => [...new Set(this.classes().map(record => record.publication))].sort());
   readonly sourceCount = computed(() => sourceFilterCount(this.selectedSources(), this.sources()));
@@ -175,6 +179,10 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
   async chooseSubclass(subclass: ContentRecord | null) {
     const owner = this.selectedClass(), revision = this.revision();
     if (!owner || !revision || (subclass && (!belongsToClass(subclass, owner) || !this.sourceDefaults.allows(subclass.publication, this.subclassSources())))) return;
+    if (subclass) {
+      const key = subclassChoiceKey(subclass, owner);
+      subclass = this.visibleSubclasses().find(record => subclassChoiceKey(record, owner) === key) ?? subclass;
+    }
     const version = ++this.subclassVersion;
     this.selectedSubclass.set(subclass); this.subclassFeatures.set([]); this.missingSubclass.set([]);
     this.progressionError.set(''); this.subclassLoading.set(!!subclass);

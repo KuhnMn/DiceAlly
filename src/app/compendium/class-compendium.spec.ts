@@ -12,7 +12,7 @@ import { canonicalSpeciesRecord } from '../content/species-adapter';
 import { ADAPTER_VERSION, ContentRecord, DEFAULT_CONTENT_SOURCE, ImportRevision, sourceIdentity, entityKey } from '../content/content.model';
 import { IndexedDbContentCache } from '../content/content-cache';
 import { ClassCompendiumComponent } from './class-compendium.component';
-import { belongsToClass, belongsToSubclass, groupProgression, loadProgression } from './class-compendium';
+import { belongsToClass, belongsToSubclass, groupProgression, loadProgression, subclassChoices } from './class-compendium';
 import { CompendiumDetailsComponent } from './compendium-details.component';
 import { SourceBookFilterService } from '../editor/source-book-filter.service';
 import { CompendiumSourceFilterComponent } from './compendium-source-filter.component';
@@ -221,6 +221,40 @@ describe('Class compendium progression', () => {
     expect(fallback.rows.map(row => row.record.name)).toEqual(['Alternative Gift']);
     const original = f.find('subclass', 'School', 'TCE');
     expect(belongsToSubclass(f.find('subclassFeature', 'Modern School Gift', 'TCE'), owner, original)).toBe(false);
+  });
+
+  it('offers a classic subclass only once on a revised class and preserves selection and features', async () => {
+    const f = await catalog(), owner = f.find('class', 'Mage', 'XPHB');
+    const original = f.find('subclass', 'Alternative School', 'XGE');
+    const copy = structuredClone(original);
+    copy.key = entityKey('subclass', { name: copy.name, source: copy.publication,
+      className: owner.name, classSource: owner.publication });
+    copy.classDefinition!.parent = { key: owner.key, name: owner.name, source: owner.publication };
+    await f.cache.put(f.revision.id, [copy]);
+    expect(subclassChoices([original, copy], owner)).toEqual([copy]);
+    expect(subclassChoices([copy, original], owner)).toEqual([copy]);
+    const otherBook = { ...original, key: 'other-book', publication: 'TEST' };
+    const variant = { ...original, key: 'homebrew-variant', homebrewVariant: { originalKey: original.key, number: 1 } };
+    const modern = { ...copy, key: 'modern-edition', data: { ...copy.data, edition: 'one' } };
+    expect(subclassChoices([original, copy, otherBook, variant, modern], owner)).toEqual([copy, otherBook, variant, modern]);
+
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(ClassCompendiumComponent), screen = fixture.componentInstance;
+    fixture.detectChanges(); await vi.waitFor(() => expect(screen.loading()).toBe(false));
+    await screen.chooseClass(owner); screen.setSubclassSources([]); fixture.detectChanges();
+    const select = fixture.nativeElement.querySelector('select[aria-label="Subclass"]') as HTMLSelectElement;
+    expect([...select.options].filter(option => option.textContent?.includes(original.name))).toHaveLength(1);
+    expect([...fixture.nativeElement.querySelectorAll('.subclass-option')]
+      .filter((button: any) => button.textContent.includes(original.name))).toHaveLength(1);
+    // Old links to the original record resolve to the visible choice as well.
+    await screen.chooseSubclass(original); fixture.detectChanges();
+    expect(screen.selectedSubclass()?.key).toBe(copy.key);
+    expect(select.value).toBe(copy.key);
+    expect(screen.missingCount()).toBe(0);
+    expect(screen.subclassFeatures().map(row => [row.record.name, row.level])).toEqual([['Alternative Gift', 3]]);
+    await screen.chooseClass(f.find('class', 'Mage')); screen.setSubclassSources([]);
+    expect(screen.visibleSubclasses().find(record => record.name === original.name)?.key).toBe(original.key);
+    fixture.destroy();
   });
 
   it('reports missing references and supports legacy parent-only progressions without including subclasses', async () => {
