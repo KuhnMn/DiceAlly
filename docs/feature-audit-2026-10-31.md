@@ -55,6 +55,14 @@ Empfehlung:
 
 Belege: [Entry-Schema](../schemas/5etools/site/entry.json), [Klassen-Schema](../schemas/5etools/site/class/class.json), [Referenz-Traversal](../src/app/content/class-reference.ts), [Feature-Regeln](../src/app/rules/feature-rules.ts).
 
+Nachtrag zum ursprünglichen Audit: Punkt A wurde anschließend umgesetzt.
+Permanente Auswahlgruppen einschließlich Paketen und verschachtelten Entscheidungen
+werden im Wizard angeboten; temporäre Optionen gewähren keine dauerhaften Features.
+Verzögerte Features verlangen am nächsten expliziten Subklassen-Feature-Level eine
+Hinzufügen-/Nicht-hinzufügen-Entscheidung. Antworten werden gespeichert und bei
+geänderten Alternativen erneut geprüft. Die Befunde B und C bleiben separate
+Vorschläge; dieser Fix erweitert keine allgemeinen Prerequisite-Handler.
+
 ### B. Voraussetzungen: erfüllt, nicht erfüllt oder nicht prüfbar
 
 **Priorität: hoch. Aufwand: mittel.**

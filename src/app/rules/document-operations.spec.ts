@@ -1,4 +1,5 @@
 import { mapContent } from '../content/content-adapter';
+import { deriveClassFeatures } from './feature-rules';
 import { CharacterDocument, parseCharacterDocument, validateCharacterDocument } from './character-document';
 import { acceptDocumentPreview, performDocumentAction, performSpellResourceUse, previewContentUpdate, previewDocument } from './document-operations';
 function fixture() {
@@ -20,6 +21,38 @@ function fixture() {
   return { document,index };
 }
 describe('Native documents and preview acceptance', () => {
+  it('persists feature decisions and requires confirmation when an update changes their alternatives', () => {
+    const f = fixture();
+    const records = mapContent({ classFeature: ['Choose Gift', 'First Gift', 'Second Gift'].map(name => ({
+      name, source: 'TEST', className: 'Mage', classSource: 'TEST', level: 1, entries: [],
+    })) }, 'choices.json').records;
+    const [root, first, second] = records;
+    root.data['entries'] = [{ type: 'options', name: 'Gift choice', count: 1, entries: [first, second].map(record => ({
+      type: 'refClassFeature', classFeature: `${record.name}|Mage|TEST|1`,
+    })) }];
+    const parent = f.index.records.get(f.document.creation.classes.selections[0].classKey)!;
+    parent.data['classFeatures'] = ['Choose Gift|Mage|TEST|1'];
+    records.forEach(record => f.index.records.set(record.key, record));
+    const pending = previewDocument(f.document, f.index);
+    expect(pending.canAccept).toBe(false); expect(pending.diagnostics.join()).toContain('Finish feature choice');
+    const choices = deriveClassFeatures(f.document.creation.classes.selections, f.index).choices;
+    f.document.creation.classes.featureAnswers = { [choices[0].id]: [first.key] };
+    const saved = acceptDocumentPreview(f.document, previewDocument(f.document, f.index));
+    expect(saved.instances.features.map(instance => instance.contentKey)).toEqual([root.key, first.key]);
+    expect(parseCharacterDocument(JSON.stringify(saved)).creation.classes.featureAnswers).toEqual(f.document.creation.classes.featureAnswers);
+    const nextIndex = { ...f.index, revisionId: 'feature-choice-update' };
+    const target = { ...saved.contentBindings[0], revisionId: nextIndex.revisionId, commit: 'd'.repeat(40) };
+    expect(previewContentUpdate(saved, nextIndex, target).canAccept).toBe(true);
+    root.data['entries'] = [{ type: 'options', name: 'Gift choice', count: 1,
+      entries: [{ type: 'refClassFeature', classFeature: 'Second Gift|Mage|TEST|1' }] }];
+    const before = JSON.stringify(saved), changed = previewContentUpdate(saved, nextIndex, target);
+    expect(changed.canAccept).toBe(false); expect(changed.diagnostics.join()).toContain('Finish feature choice');
+    expect(JSON.stringify(saved)).toBe(before);
+    saved.creation.classes.featureAnswers = { ...saved.creation.classes.featureAnswers, [choices[0].id]: [second.key] };
+    const accepted = acceptDocumentPreview(saved, previewContentUpdate(saved, nextIndex, target));
+    expect(accepted.instances.features.map(instance => instance.contentKey)).toEqual([root.key, second.key]);
+  });
+
   it('recomputes referenced subclass grants on library updates and preserves their IDs and personal state', () => {
     const f = fixture();
     const records = mapContent({ subclass: [{ name: 'Stars', shortName: 'Stars', source: 'TEST', className: 'Mage', classSource: 'TEST',

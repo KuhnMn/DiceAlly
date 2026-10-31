@@ -99,7 +99,10 @@ export function validateCharacterDocument(value: unknown): CharacterDocument {
     if (choice['chosen'] !== undefined && requireArray(choice['chosen'],'species ability allocations').some(v => !['str','dex','con','int','wis','cha'].includes(String(v)))) throw new Error('Invalid species ability allocation.');
   }
   for (const ability of ['str','dex','con','int','wis','cha']) if (!Number.isSafeInteger(abilities[ability]) || Number(abilities[ability]) < 1 || Number(abilities[ability]) > 30) throw new Error('Invalid ability score.');
-  for (const field of ['spellAnswers','optionalAnswers','ownerOptions']) if (classes[field] !== undefined) requireObject(classes[field],field);
+  for (const field of ['spellAnswers','optionalAnswers','featureAnswers','ownerOptions']) if (classes[field] !== undefined) requireObject(classes[field],field);
+  if (classes['featureAnswers'] !== undefined) for (const answer of Object.values(requireObject(classes['featureAnswers'], 'feature answers'))) {
+    if (requireArray(answer, 'feature answer').some(value => typeof value !== 'string' || !value)) throw new Error('Invalid feature answer.');
+  }
   if (classes['optionalPrerequisites'] !== undefined) throw new Error('Prerequisite context must be reconstructed from saved selections, not serialized runtime Sets.');
   const overrides = requireObject(root['overrides'],'overrides'); requireArray(overrides['pools'],'resource overrides'); requireArray(overrides['sources'],'source overrides');
   for (const field of ['maxHp','armorClass','initiative']) if (overrides[field] != null && !Number.isSafeInteger(overrides[field])) throw new Error('Invalid scalar override.');

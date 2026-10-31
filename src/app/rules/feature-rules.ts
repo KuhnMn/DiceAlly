@@ -2,7 +2,8 @@ import { canonicalClassRecord, classDefinition } from '../content/class-adapter'
 import { ContentRecord, JsonObject } from '../content/content.model';
 import { ClassCasting } from '../content/class.model';
 import { subclassFeatureLevel, subclassFeatureMatchesClass, subclassMatchesClass } from '../content/class-compatibility';
-import { featureEntryReferences } from '../content/class-reference';
+import { FeatureEntryPlan, featureEntryPlan } from '../content/class-reference';
+import { isCompleteSelection } from './spell-choice';
 import { CasterProgression, ClassLevelInput } from './level-rules';
 
 export interface ContentRulesIndex {
@@ -41,14 +42,26 @@ export interface FeaturePreview {
   instances: FeatureInstance[];
   removed: FeatureInstance[];
   diagnostics: { selectionId?: string; message: string }[];
+  choices: FeatureAcquisitionChoice[];
+  unresolved: FeatureAcquisitionChoice[];
+}
+export interface FeatureAcquisitionChoice {
+  id: string;
+  selectionId: string;
+  ownerKey: string;
+  label: string;
+  count: number;
+  candidates: { value: string; label: string }[];
 }
 const CASTERS: Record<NonNullable<ClassCasting['progression']>, CasterProgression> = { full: 'full', '1/2': 'half', '1/3': 'third', artificer: 'artificer', pact: 'pact' };
 /** Pure selection preview over pinned records and explicit class/subclass compatibility. */
 export function deriveClassFeatures(selections: ContentClassSelection[], index: ContentRulesIndex,
-  previous: FeatureInstance[] = [], suppressedGrantIds: readonly string[] = []): FeaturePreview {
+  previous: FeatureInstance[] = [], suppressedGrantIds: readonly string[] = [],
+  answers: Readonly<Record<string, readonly string[]>> = {}): FeaturePreview {
   const diagnostics: FeaturePreview['diagnostics'] = [];
   const classInputs: ClassLevelInput[] = [];
   const wanted = new Map<string, { record: ContentRecord; grants: FeatureGrant[] }>();
+  const choices = new Map<string, FeatureAcquisitionChoice>();
   const ids = new Set<string>(); const classes = new Set<string>(); const suppressed = new Set(suppressedGrantIds);
   const report = (selectionId: string, message: string) => diagnostics.push({ selectionId, message });
   if (!index.sourceIdentity || !index.revisionId) diagnostics.push({ message: 'Content source and pinned revision are required.' });
@@ -70,6 +83,10 @@ export function deriveClassFeatures(selections: ContentClassSelection[], index: 
         report(selection.selectionId, 'Selected subclass is missing or belongs to a different class/publication.'); continue;
       }
       const parentDefinition = classDefinition(parent);
+      const subclassLevels = parentDefinition.features.filter(reference => reference.gainSubclassFeature).map(reference => {
+        const feature = index.records.get(reference.key);
+        return feature?.kind === 'classFeature' && classDefinition(feature).parent?.key === parent.key ? classDefinition(feature).level : undefined;
+      }).filter((level): level is number => Number.isInteger(level)).sort((a, b) => a - b);
       const die = parentDefinition.hitDice;
       if (!die || die.number !== 1 || ![4,6,8,10,12].includes(die.faces)) {
         report(selection.selectionId, 'Class hit-die definition requires a supported handler.'); continue;
@@ -103,22 +120,49 @@ export function deriveClassFeatures(selections: ContentClassSelection[], index: 
           if (typeof sourceLevel !== 'number' || !Number.isInteger(sourceLevel) || sourceLevel < 0 || sourceLevel > 20) {
             report(selection.selectionId, `Invalid feature level: ${key}`); continue;
           }
-          const level = Math.max(acquiredAt, role === 'subclassFeature' ? subclassFeatureLevel(sourceLevel, parent, owner) : sourceLevel);
+          let level = Math.max(acquiredAt, role === 'subclassFeature' ? subclassFeatureLevel(sourceLevel, parent, owner) : sourceLevel);
           if (level > selection.level) continue;
+          const grantId = JSON.stringify(['feature-grant', index.sourceIdentity, selection.selectionId, owner.key, role, key]);
+          if (suppressed.has(grantId)) continue;
+          if (role === 'subclassFeature' && record.data['isGainAtNextFeatureLevel'] === true) {
+            const nextLevel = subclassLevels.find(candidate => candidate > subclassFeatureLevel(sourceLevel, parent, owner));
+            if (nextLevel === undefined) {
+              report(selection.selectionId, `Deferred subclass feature handler requires the next gainSubclassFeature level: ${key}`); continue;
+            }
+            level = Math.max(level, nextLevel);
+            if (level > selection.level) continue;
+            const id = JSON.stringify(['deferred-feature', index.sourceIdentity, selection.selectionId, owner.key, key]);
+            choices.set(id, { id, selectionId: selection.selectionId, ownerKey: owner.key,
+              label: `${record.name} · Optional at Level ${nextLevel}`, count: 1,
+              candidates: [{ value: key, label: `Add ${record.name}` },
+                { value: JSON.stringify(['skip-feature', key]), label: 'Do not add' }] });
+            if (!isCompleteSelection(answers[id] ?? [], 1, choices.get(id)!.candidates.map(candidate => candidate.value))
+              || answers[id][0] !== key) continue;
+          }
           if ((visited.get(key) ?? Infinity) <= level) continue;
           visited.set(key, level);
-          const grant: FeatureGrant = { id: JSON.stringify(['feature-grant', index.sourceIdentity, selection.selectionId, owner.key, role, key]),
+          const grant: FeatureGrant = { id: grantId,
             selectionId: selection.selectionId, ownerKey: owner.key, role,
             ...(level !== sourceLevel ? { level } : {}) };
-          if (suppressed.has(grant.id)) continue;
           const entry = wanted.get(key) ?? { record, grants: [] };
           const existingGrant = entry.grants.findIndex(g => g.id === grant.id);
           if (existingGrant < 0) entry.grants.push(grant);
           else entry.grants[existingGrant] = grant;
           wanted.set(key, entry);
-          for (const reference of featureEntryReferences(record, role)) {
-            pending.push({ key: reference.target, acquiredAt: level });
-          }
+          const expand = (plan: FeatureEntryPlan) => {
+            for (const reference of plan.references) pending.push({ key: reference.target, acquiredAt: level });
+            for (const choice of plan.choices) {
+              const id = JSON.stringify(['feature-choice', index.sourceIdentity, selection.selectionId, owner.key, key, choice.id]);
+              choices.set(id, { id, selectionId: selection.selectionId, ownerKey: key,
+                label: `${record.name}: ${choice.label}`, count: choice.count,
+                candidates: choice.options.map(({ value, label }) => ({ value, label })) });
+              const answer = answers[id] ?? [];
+              if (isCompleteSelection(answer, choice.count, choice.options.map(option => option.value))) {
+                for (const option of choice.options) if (answer.includes(option.value)) expand(option.plan);
+              }
+            }
+          };
+          expand(featureEntryPlan(record, role));
         }
       }
     } catch (error) { report(selection.selectionId, String(error)); }
@@ -143,7 +187,10 @@ export function deriveClassFeatures(selections: ContentClassSelection[], index: 
     if (position < 0) instances.push(instance); else instances[position] = instance;
   }
   const retained = new Set(instances.map(i => i.id));
+  const availableChoices = [...choices.values()];
+  const unresolved = availableChoices.filter(choice => !isCompleteSelection(answers[choice.id] ?? [], choice.count, choice.candidates.map(candidate => candidate.value)));
   // Invalid references never produce an apparently usable partial replacement of existing features.
-  return { canAccept: diagnostics.length === 0, classInputs, instances: diagnostics.length ? structuredClone(previous) : instances,
+  return { canAccept: diagnostics.length === 0 && unresolved.length === 0, classInputs, choices: availableChoices, unresolved,
+    instances: diagnostics.length ? structuredClone(previous) : instances,
     removed: diagnostics.length ? [] : structuredClone(previous.filter(p => !retained.has(p.id))), diagnostics };
 }

@@ -57,8 +57,10 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
   const index: ContentRulesIndex = { records, sourceIdentity: revision.sourceIdentity, revisionId: revision.id };
   const values: PrefillValue[] = []; const choices: WizardChoice[] = []; const warnings: string[] = []; const errors: string[] = [];
   const put = (scope: string, label: string, path: string[], value: unknown, origin?: string) => values.push({ scope, label, path, value, origin });
-  const features = deriveClassFeatures(state.classes, index);
+  const features = deriveClassFeatures(state.classes, index, [], [], state.answers);
   errors.push(...features.diagnostics.map(issue => issue.message));
+  choices.push(...features.choices.map(choice => ({ id: choice.id, ownerKey: choice.ownerKey, scope: 'features' as const,
+    label: choice.label, count: choice.count, candidates: choice.candidates })));
   const sourceNames = new Map<string, string>();
   const spellLevels = new Map<string, number>();
   const owners: { owner: SpellGrantOwner; label: string; source: string }[] = [];

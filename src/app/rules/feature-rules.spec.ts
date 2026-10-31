@@ -39,6 +39,111 @@ describe('Content-bound feature previews', () => {
       selection: { ...f.selection, subclassKey: f.find('subclass', 'School A').key } };
   }
 
+  function choiceFixture() {
+    const f = referencedFixture();
+    f.root.data['entries'] = [
+      { type: 'options', name: 'Star gifts', count: 1, entries: f.extra.map(record => ({
+        type: 'refSubclassFeature', subclassFeature: `${record.name}|Mage|TEST|A|TEST|3`,
+      })) },
+      { type: 'options', entries: [{ type: 'refSubclassFeature', subclassFeature: 'Temporary|Mage|TEST|A|TEST|3' }] },
+    ];
+    f.extra.forEach(record => record.data['entries'] = []);
+    return f;
+  }
+
+  it('requires a counted choice, ignores transient alternatives, and rejects invalid or excessive answers', () => {
+    const f = choiceFixture(), first = deriveClassFeatures([f.selection], f.index);
+    expect(first.canAccept).toBe(false); expect(first.diagnostics).toEqual([]);
+    expect(first.choices).toHaveLength(1); expect(first.unresolved).toHaveLength(1);
+    expect(first.instances.some(instance => f.extra.some(record => record.key === instance.contentKey))).toBe(false);
+    const choice = first.choices[0];
+    for (const answer of [[f.extra[0].key, f.extra[1].key], [f.extra[0].key, f.extra[0].key], ['missing']]) {
+      const result = deriveClassFeatures([f.selection], f.index, [], [], { [choice.id]: answer });
+      expect(result.canAccept).toBe(false); expect(result.unresolved).toHaveLength(1);
+      expect(result.instances.some(instance => f.extra.some(record => record.key === instance.contentKey))).toBe(false);
+    }
+    const selected = deriveClassFeatures([f.selection], f.index, [], [], { [choice.id]: [f.extra[0].key] });
+    expect(selected.canAccept).toBe(true);
+    expect(selected.instances.filter(instance => f.extra.some(record => record.key === instance.contentKey)).map(instance => instance.snapshot.name)).toEqual(['Star Map']);
+    const old = selected.instances.find(instance => instance.contentKey === f.extra[0].key)!;
+    old.customization = { notes: ['Keep'] };
+    expect(deriveClassFeatures([f.selection], f.index, selected.instances, [], { [choice.id]: [f.extra[0].key] }).instances).toEqual(selected.instances);
+    const changed = deriveClassFeatures([f.selection], f.index, selected.instances, [], { [choice.id]: [f.extra[1].key] });
+    expect(changed.removed.map(instance => instance.contentKey)).toEqual([f.extra[0].key]);
+    expect(changed.instances.some(instance => instance.contentKey === f.extra[1].key)).toBe(true);
+  });
+
+  it('preserves chosen bundles and conditional nested decisions, including after harmless entry/option reordering', () => {
+    const f = choiceFixture();
+    const group = f.root.data['entries'] as Record<string, unknown>[];
+    group[0]['entries'] = [
+      { type: 'entries', name: 'Both gifts', entries: f.extra.map(record => ({
+        type: 'refSubclassFeature', subclassFeature: `${record.name}|Mage|TEST|A|TEST|3`,
+      })) },
+      { type: 'entries', name: 'One gift', entries: [{ type: 'options', name: 'Inner gifts', count: 1,
+        entries: f.extra.map(record => ({ type: 'refSubclassFeature', subclassFeature: `${record.name}|Mage|TEST|A|TEST|3` })) }] },
+    ];
+    const initial = deriveClassFeatures([f.selection], f.index), choice = initial.choices[0];
+    expect(initial.choices).toHaveLength(1);
+    const bundle = choice.candidates.find(candidate => candidate.label === 'Both gifts')!;
+    const answers = { [choice.id]: [bundle.value] };
+    const result = deriveClassFeatures([f.selection], f.index, [], [], answers);
+    expect(result.canAccept).toBe(true); expect(result.choices).toHaveLength(1);
+    expect(result.instances.filter(instance => f.extra.some(record => record.key === instance.contentKey))).toHaveLength(2);
+    (group[0]['entries'] as unknown[]).reverse();
+    f.root.data['entries'] = ['New introductory text.', ...group];
+    expect(deriveClassFeatures([f.selection], f.index, result.instances, [], answers).instances).toEqual(result.instances);
+    const nestedAnswers = { [choice.id]: [choice.candidates.find(candidate => candidate.label === 'One gift')!.value] };
+    const nested = deriveClassFeatures([f.selection], f.index, [], [], nestedAnswers);
+    expect(nested.choices).toHaveLength(2); expect(nested.unresolved).toHaveLength(1);
+    const inner = nested.unresolved[0];
+    expect(deriveClassFeatures([f.selection], f.index, [], [], { ...nestedAnswers, [inner.id]: [f.extra[1].key] }).canAccept).toBe(true);
+  });
+
+  it('handles multi-select counts and fails safely when an update removes a chosen option or changes the count', () => {
+    const f = choiceFixture(), entries = f.root.data['entries'] as Record<string, unknown>[];
+    entries[0]['count'] = 2;
+    const initial = deriveClassFeatures([f.selection], f.index), choice = initial.choices[0];
+    const answers = { [choice.id]: f.extra.map(record => record.key) };
+    const selected = deriveClassFeatures([f.selection], f.index, [], [], answers);
+    expect(selected.canAccept).toBe(true); expect(selected.instances).toHaveLength(5);
+    entries[0]['count'] = 1;
+    const changed = deriveClassFeatures([f.selection], f.index, selected.instances, [], answers);
+    expect(changed.canAccept).toBe(false); expect(changed.unresolved).toHaveLength(1);
+    entries[0]['entries'] = [{ type: 'refSubclassFeature', subclassFeature: 'Starry Form|Mage|TEST|A|TEST|3' }];
+    expect(deriveClassFeatures([f.selection], f.index, [], [], { [choice.id]: [f.extra[0].key] }).canAccept).toBe(false);
+    entries[0]['count'] = 3;
+    const malformed = deriveClassFeatures([f.selection], f.index, selected.instances, [], answers);
+    expect(malformed.canAccept).toBe(false); expect(malformed.instances).toEqual(selected.instances);
+    expect(malformed.diagnostics[0].message).toContain('Invalid feature choice count');
+  });
+
+  it('offers deferred subclass features only at the next marked class level and remembers accept or decline', () => {
+    const f = referencedFixture(); f.root.data['isGainAtNextFeatureLevel'] = true;
+    f.find('class', 'Mage').data['classFeatures'] = [
+      { classFeature: 'Gift|Mage|TEST|1', gainSubclassFeature: true },
+      { classFeature: 'Gift|Mage|TEST|3', gainSubclassFeature: true },
+      { classFeature: 'Later|Mage|TEST|5', gainSubclassFeature: true },
+    ];
+    const early = deriveClassFeatures([f.selection], f.index);
+    expect(early.canAccept).toBe(true); expect(early.choices).toEqual([]);
+    expect(early.instances.some(instance => instance.snapshot.kind === 'subclassFeature')).toBe(false);
+    const selection = { ...f.selection, level: 5 }, pending = deriveClassFeatures([selection], f.index);
+    const choice = pending.choices[0];
+    expect(pending.canAccept).toBe(false); expect(choice.label).toContain('Level 5');
+    const accepted = deriveClassFeatures([selection], f.index, [], [], { [choice.id]: [f.root.key] });
+    expect(accepted.canAccept).toBe(true);
+    expect(accepted.instances.filter(instance => instance.snapshot.kind === 'subclassFeature').map(instance => instance.grants[0].level)).toEqual([5, 5, 5]);
+    const declined = deriveClassFeatures([selection], f.index, [], [], { [choice.id]: [choice.candidates[1].value] });
+    expect(declined.canAccept).toBe(true);
+    expect(declined.instances.some(instance => instance.snapshot.kind === 'subclassFeature')).toBe(false);
+    expect(deriveClassFeatures([f.selection], f.index, accepted.instances, [], { [choice.id]: [f.root.key] }).removed).toHaveLength(4);
+    f.find('class', 'Mage').data['classFeatures'] = ['Gift|Mage|TEST|1'];
+    const missingMarker = deriveClassFeatures([selection], f.index);
+    expect(missingMarker.canAccept).toBe(false);
+    expect(missingMarker.diagnostics[0].message).toContain('next gainSubclassFeature level');
+  });
+
   it('expands structured feature grants recursively, deduplicates shared/cyclic references and ignores prose links', () => {
     const f = referencedFixture(), before = JSON.stringify([...f.index.records]);
     const result = deriveClassFeatures([f.selection], f.index);

@@ -16,6 +16,7 @@ export interface ClassRulesInput {
   previousSpells?: SpellInstance[];
   previousPools?: ResourcePool[];
   featureSuppressions?: string[];
+  featureAnswers?: Readonly<Record<string, readonly string[]>>;
   spellSuppressions?: string[];
   spellAnswers?: Readonly<Record<string,readonly string[]>>;
   ownerOptions?: Readonly<Record<string,Pick<SpellGrantOwner,'blocks' | 'ability' | 'maxSpellLevel'>>>;
@@ -33,8 +34,9 @@ function activeSpellKeys(instances: SpellInstance[],sourceIdentity: string): str
 /** Build a detached proposal. Any failure returns the previous state, never a partial update. */
 export function previewClassRules(input: ClassRulesInput, index: ContentRulesIndex) {
   // Class levels determine mandatory features and how many optional selections are available.
-  const features = deriveClassFeatures(input.selections,index,input.previousFeatures,input.featureSuppressions);
+  const features = deriveClassFeatures(input.selections,index,input.previousFeatures,input.featureSuppressions,input.featureAnswers);
   const diagnostics = features.diagnostics.map(d => d.message);
+  diagnostics.push(...features.unresolved.map(choice => `Finish feature choice: ${choice.label}`));
   const slots = features.canAccept ? deriveOptionalSlots(input.selections,index,input.optionalAnswers) : undefined;
   if (slots) diagnostics.push(...slots.diagnostics);
   const previousFeatureCandidates = [...features.instances,...(input.previousFeatures ?? []).filter(f => f.snapshot.kind === 'optionalfeature')];

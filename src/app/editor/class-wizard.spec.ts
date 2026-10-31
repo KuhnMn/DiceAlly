@@ -80,6 +80,67 @@ describe('Classic subclasses with revised classes', () => {
     expect(matchesSubclass(f.subclass, f.find('class', 'Fighter').key, new Map([...f.index, ...f.records.map(record => [record.key, record] as const)]))).toBe(false);
   });
 
+  it('presents feature choices in the wizard and retains answers, IDs and notes across reopens and updates', () => {
+    const f = mixedFixture();
+    const root = f.records.find(record => record.kind === 'subclassFeature' && classDefinition(record).level === 1)!;
+    const children = f.records.filter(record => record.kind === 'subclassFeature' && [2, 3].includes(classDefinition(record).level!));
+    f.subclass.data['subclassFeatures'] = ['School Gift 1|Wizard|PHB|School|TCE|1'];
+    root.data['entries'] = [{ type: 'options', name: 'Choose a gift', count: 1, entries: children.map(record => ({
+      type: 'refSubclassFeature', subclassFeature: `${record.name}|Wizard|PHB|School|TCE|${classDefinition(record).level}`,
+    })) }];
+    const initial = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+    expect(initial.errors).toEqual([]); expect(initial.unresolved).toHaveLength(1);
+    expect(initial.sheet.features!.filter(feature => children.some(record => record.name === feature.name))).toEqual([]);
+    const choice = initial.unresolved[0];
+    f.state.answers[choice.id] = [children[0].key];
+    const first = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+    expect(first.unresolved).toEqual([]);
+    const selected = first.sheet.features!.find(feature => feature.name === children[0].name)!;
+    selected.notes = [{ tag: 'Keep', notes: ['Personal note'] }];
+    expect(first.sheet.features!.some(feature => feature.name === children[1].name)).toBe(false);
+    // The saved wizard state contains the confirmed choice; a new revision uses the same identity.
+    const saved = JSON.parse(JSON.stringify(first.sheet));
+    const next = previewClassWizard(saved, saved.creatorWizard, { ...f.revision, id: 'next-revision' }, f.index);
+    expect(next.unresolved).toEqual([]);
+    const retained = next.sheet.features!.find(feature => feature.name === selected.name)!;
+    expect(retained.editorId).toBe(selected.editorId); expect(retained.notes).toEqual(selected.notes);
+    f.state.options['features'] = false;
+    expect(previewClassWizard(first.sheet, f.state, f.revision, f.index).choices.some(entry => entry.id === choice.id)).toBe(false);
+    expect(f.state.answers[choice.id]).toEqual([children[0].key]);
+    f.state.options['features'] = true;
+    const fixture = TestBed.createComponent(ClassWizardComponent), wizard = fixture.componentInstance;
+    fixture.componentRef.setInput('sheet', saved);
+    for (const record of f.records) wizard.records.set(record.key, record);
+    wizard.state = structuredClone(f.state); wizard.revision.set(f.revision);
+    wizard.toggleChoice(choice, children[1].key);
+    expect(wizard.proposal()!.unresolved).toEqual([]);
+    expect(wizard.proposal()!.sheet.features!.some(feature => feature.name === children[1].name)).toBe(true);
+    expect(wizard.state.answers[choice.id]).toEqual([children[1].key]);
+    fixture.destroy();
+  });
+
+  it('offers legacy deferred subclass features at the next revised-class opportunity, never at level 3', () => {
+    const f = mixedFixture();
+    const root = f.records.find(record => record.kind === 'subclassFeature' && classDefinition(record).level === 1)!;
+    root.data['isGainAtNextFeatureLevel'] = true;
+    f.subclass.data['subclassFeatures'] = ['School Gift 1|Wizard|PHB|School|TCE|1'];
+    const marker = mapContent({ classFeature: [{ name: 'Subclass Gift', source: 'XPHB', className: 'Wizard', classSource: 'XPHB', level: 6 }] }, 'markers.json').records[0];
+    f.index.set(marker.key, marker);
+    f.parent.data['classFeatures'] = [{ classFeature: 'Basics|Wizard|XPHB|1', gainSubclassFeature: true },
+      { classFeature: 'Subclass Gift|Wizard|XPHB|6', gainSubclassFeature: true }];
+    const early = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+    expect(early.errors).toEqual([]); expect(early.choices).toEqual([]);
+    expect(early.sheet.features!.some(feature => feature.name === root.name)).toBe(false);
+    f.state.classes[0].level = 6;
+    const later = previewClassWizard(f.sheet, f.state, f.revision, f.index), choice = later.unresolved[0];
+    expect(choice.label).toContain('Level 6');
+    f.state.answers[choice.id] = [root.key];
+    const selected = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+    expect(selected.sheet.features!.find(feature => feature.name === root.name)!.acquiredAtLevel).toBe(6);
+    f.state.answers[choice.id] = [choice.candidates[1].value];
+    expect(previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet.features!.some(feature => feature.name === root.name)).toBe(false);
+  });
+
   it('shows one choice per legacy subclass and keeps saved identities and feature grants intact', () => {
     const f = mixedFixture();
     const copy = mapContent({ subclass: [{ ...f.subclass.data, classSource: 'XPHB' }] }, 'mixed-edition.json').records[0];

@@ -53,3 +53,15 @@ overridden. `wizard-review.ts` formats the changes and their sources;
 `wizard-guidance.ts` provides optional suggestions based on observable omissions.
 The wizard's typed `editRequested` event follows `applied`, so Apply & Open hands
 the accepted draft to a shared editor page without saving or losing wizard history.
+
+Structured class/subclass references retain their acquisition context. Fixed
+references grant features recursively; `options.count` produces a permanent
+choice, including bundled and nested alternatives. Options without a count are
+transient and do not add permanent features. Decisions use the existing wizard
+answers and survive reopening, section toggles and compatible content updates.
+Native documents store the equivalent decisions in optional
+`creation.classes.featureAnswers`; unresolved or invalidated decisions prevent
+accepting a native preview. A feature marked `isGainAtNextFeatureLevel` is offered
+as Add/Do Not Add only at the next explicitly marked `gainSubclassFeature` level
+of the selected class. Missing progression metadata is diagnosed instead of
+guessing a level or granting the feature early.
