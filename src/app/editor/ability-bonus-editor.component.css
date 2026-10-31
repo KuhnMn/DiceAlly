@@ -1,0 +1,93 @@
+.bonus-editor {
+  min-width: 0;
+  font-size: .8125rem;
+}
+.bonus-editor-standalone {
+  overflow: hidden;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: .5rem;
+  background: var(--md-sys-color-surface-container-low);
+}
+.bonus-controls {
+  display: grid;
+  min-width: 0;
+  gap: .5rem;
+}
+.bonus-editor-standalone > .bonus-controls {
+  padding: .5rem;
+}
+.bonus-editor .editor-input {
+  min-height: 2rem;
+  padding: .25rem .5rem;
+  font-size: .8125rem;
+  border-width: 1px;
+}
+.bonus-editor .field-label {
+  margin-bottom: .125rem;
+  font-size: .6875rem;
+}
+.bonus-allocation {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .5rem;
+}
+.bonus-ability {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: .375rem;
+}
+.bonus-amount {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--md-sys-color-primary);
+}
+.bonus-fixed {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .375rem;
+}
+.bonus-maximum {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  font-size: .75rem;
+}
+.bonus-note {
+  font-size: .75rem;
+  color: var(--md-sys-color-on-surface-variant);
+  overflow-wrap: anywhere;
+}
+.bonus-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .25rem;
+  min-height: 2rem;
+  padding: .25rem .5rem;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: .375rem;
+  font-size: .75rem;
+  cursor: pointer;
+}
+.bonus-config > summary {
+  width: fit-content;
+  list-style: none;
+}
+.bonus-config > summary::-webkit-details-marker {
+  display: none;
+}
+.bonus-config[open] > summary app-ui-icon {
+  transform: rotate(180deg);
+}
+.bonus-config-field {
+  display: block;
+  margin-top: .5rem;
+  max-width: 24rem;
+}
+@media (min-width: 640px) {
+  .bonus-fixed {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}

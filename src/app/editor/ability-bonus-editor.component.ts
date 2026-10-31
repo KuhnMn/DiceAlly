@@ -10,10 +10,10 @@ import { AbilityBonusSelection, abilityBonusSources, resolveAbilityBonus, abilit
   selector: 'app-ability-bonus-editor',
   imports: [FormsModule, UiIconComponent],
   host: { class: 'block min-w-0', '[style.display]': 'sheet().abilityBonuses?.enabled ? null : "none"' },
-  styleUrl: './editor.css',
+  styleUrls: ['./editor.css', './ability-bonus-editor.component.css'],
   template: `
     @if (sheet().abilityBonuses?.enabled && source; as value) {
-      <section class="min-w-0 overflow-hidden rounded-lg border-2 border-outline-variant bg-surface-container-low text-sm" [attr.aria-label]="value.name + ' ability bonuses'">
+      <section class="bonus-editor" [class.bonus-editor-standalone]="showSource()" [attr.aria-label]="value.name + ' ability bonuses'">
         @if (showSource()) {
           <header class="flex flex-wrap items-center justify-between gap-2 border-b border-outline-variant bg-surface-container-high px-3 py-2">
             <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
@@ -22,24 +22,24 @@ import { AbilityBonusSelection, abilityBonusSources, resolveAbilityBonus, abilit
             </div>
           </header>
         }
-        <div class="space-y-3 p-3">
+        <div class="bonus-controls">
         @if (!value.options.length && !value.error) {
-          <button type="button" class="secondary-button inline-flex items-center gap-2" (click)="setPreset('one')"><app-ui-icon name="plus" />Add Stat Bonus</button>
+          <button type="button" class="bonus-button inline-flex items-center gap-1" (click)="setPreset('one')"><app-ui-icon name="plus" />Add Stat Bonus</button>
         } @else {
           @if (!selection.disabled) {
-            <div class="space-y-3">
+            <div class="bonus-controls">
               @if (value.options.length > 1) {
-                <label class="block"><span class="field-label">Bonus Alternative</span>
+                <label class="block"><span class="sr-only">Bonus Alternative</span>
                   <select class="editor-input" [ngModel]="selection.optionIndex ?? ''" [ngModelOptions]="{standalone: true}" (ngModelChange)="setAlternative($event)">
                     <option value="">Choose an alternative</option>
                     @for (option of value.options; track $index) { <option [ngValue]="$index">{{ optionLabel(option) }}</option> }
                   </select>
                 </label>
-              } @else if (value.options.length === 1) { <p class="rounded-lg border border-outline-variant bg-surface-container-high px-2.5 py-2 text-xs font-medium text-on-surface-variant">{{ optionLabel(value.options[0]) }}</p> }
+              } @else if (value.options.length === 1) { <p class="bonus-note">{{ optionLabel(value.options[0]) }}</p> }
               @if (choiceDefinition; as choice) {
-                  <div class="grid grid-cols-1 gap-2 sm:grid-cols-2" role="group" aria-label="Ability allocation">
+                  <div class="bonus-allocation" role="group" aria-label="Ability allocation">
                     @for (amount of choiceWeights; track $index; let position = $index) {
-                      <label class="block min-w-0 rounded-lg border border-outline-variant bg-surface-container p-2"><span class="field-label">{{ amount >= 0 ? '+' : '' }}{{ amount }} Ability Bonus</span>
+                      <label class="bonus-ability"><span class="bonus-amount">{{ amount >= 0 ? '+' : '' }}{{ amount }}<span class="sr-only"> Ability Bonus</span></span>
                         <select class="editor-input" [ngModel]="selection.chosen?.[position] ?? ''" [ngModelOptions]="{standalone: true}" (ngModelChange)="setAbility(position, $event)">
                           <option value="">Choose ability</option>
                           @for (ability of abilities; track ability.key) {
@@ -51,19 +51,19 @@ import { AbilityBonusSelection, abilityBonusSources, resolveAbilityBonus, abilit
                   </div>
               }
               @if (preset === 'fixed') {
-                <div class="grid grid-cols-3 gap-2 rounded-lg border border-outline-variant bg-surface-container p-2 sm:grid-cols-6" role="group" aria-label="Fixed ability bonuses">
+                <div class="bonus-fixed" role="group" aria-label="Fixed ability bonuses">
                   @for (ability of abilities; track ability.key) {
                     <label><span class="field-label">{{ ability.key.toUpperCase() }}</span><input type="number" min="-30" max="30" step="1" class="editor-input" [ngModel]="value.options[0].fixed[ability.key] ?? 0" [ngModelOptions]="{standalone: true}" (ngModelChange)="setFixed(ability.key, $event)" /></label>
                   }
                 </div>
-                <label class="flex items-center justify-between gap-2 rounded-lg border border-outline-variant bg-surface-container px-2 py-1.5 text-xs"><span class="font-semibold">Maximum Score</span><input type="number" min="1" max="30" step="1" class="editor-input !w-20" [ngModel]="value.options[0].maximum" [ngModelOptions]="{standalone: true}" (ngModelChange)="setMaximum($event)" /></label>
+                <label class="bonus-maximum"><span class="font-semibold">Maximum Score</span><input type="number" min="1" max="30" step="1" class="editor-input !w-20" [ngModel]="value.options[0].maximum" [ngModelOptions]="{standalone: true}" (ngModelChange)="setMaximum($event)" /></label>
               }
-              @if (!resolved.ready) { <p role="status" class="rounded-lg border border-outline-variant bg-surface-container-high px-2.5 py-2 text-xs text-on-surface-variant">{{ resolved.status }}</p> }
+              @if (!resolved.ready) { <p role="status" class="bonus-note">{{ resolved.status }}</p> }
             </div>
           }
         }
-          <details class="overflow-hidden rounded-lg border border-outline-variant text-xs"><summary class="flex min-h-11 cursor-pointer items-center justify-between gap-2 bg-surface-container-high px-2.5 font-semibold text-primary">Configure Bonus <app-ui-icon name="chevron-down" /></summary>
-            <label class="block border-t border-outline-variant p-2"><span class="field-label">Bonus Type</span><select class="editor-input" [ngModel]="preset" [ngModelOptions]="{standalone: true}" (ngModelChange)="setPreset($event)">
+          <details class="bonus-config"><summary class="bonus-button text-primary">Configure Bonus <app-ui-icon name="chevron-down" /></summary>
+            <label class="bonus-config-field"><span class="field-label">Bonus Type</span><select class="editor-input" [ngModel]="preset" [ngModelOptions]="{standalone: true}" (ngModelChange)="setPreset($event)">
               <option value="none">No bonus</option><option value="content">From Content</option><option value="one">+2 to one ability</option><option value="two">+1 to two abilities</option><option value="fixed">Custom fixed bonuses</option>
             </select></label>
           </details>
