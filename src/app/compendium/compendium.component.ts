@@ -4,7 +4,7 @@ import { loadRelatedEntries } from './related-entries';
 import { EntryHistory } from './entry-history';
 import { ActiveFilterChipsComponent, ActiveFilterGroup } from './active-filter-chips.component';
 import { sourceChipValues, sourceFilterCount } from './compendium-sources';
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, effect, inject, signal, untracked } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { map } from 'rxjs';
@@ -96,6 +96,49 @@ export class CompendiumComponent implements OnInit, OnDestroy {
   get pages() { return Math.max(1, Math.ceil(this.total() / this.pageSize)); }
   count(type: ContentType) { return type.id === 'class' ? this.counts()['class'] ?? 0 : type.kinds.reduce((sum, kind) => sum + (this.counts()[kind] ?? 0), 0); }
 
+  constructor() {
+    let observed = this.sourceDefaults.hideReprinted();
+    effect(() => {
+      const hidden = this.sourceDefaults.hideReprinted();
+      if (hidden === observed) return;
+      observed = hidden;
+      untracked(() => void this.refreshReprintFilter());
+    });
+  }
+  private async refreshReprintFilter() {
+    const type = this.type(), revision = this.revision();
+    if (!type || !revision || this.destroyed) return;
+    clearTimeout(this.timer); this.offset = 0; this.closeDetails();
+    ++this.navigationVersion;
+    const version = ++this.version;
+    this.loading.set(true);
+    try {
+      if (await this.readFacets(type, revision.id, () => version === this.version && !this.destroyed)) await this.search();
+    } catch (error) { if (version === this.version) this.error.set(`Could not filter the library: ${String(error)}`); }
+    finally { if (version === this.version) this.loading.set(false); }
+  }
+  private async readFacets(type: ContentType, revisionId: string, current: () => boolean) {
+    const options = new Map<Facet, Set<string>>();
+    const hidden = this.sourceDefaults.hideReprinted();
+    const summary = await readBrowseSummary(this.cache, revisionId);
+    const addOptions = (fields: Filters) => {
+      for (const [key, values] of Object.entries(fields) as [Facet, string[]][]) {
+        if (!options.has(key)) options.set(key, new Set());
+        values.forEach(value => options.get(key)!.add(value));
+      }
+    };
+    if (summary && !hidden) for (const kind of type.kinds) addOptions(summary.facets[kind] ?? {});
+    else await this.cache.searchCategory(revisionId, type.kinds, '', 0, 0, record => {
+      if (this.sourceDefaults.isVisible(record, hidden)) addOptions(recordFacets(record));
+      return false;
+    });
+    if (!current()) return;
+    this.facets.set((Object.keys(FACET_LABELS) as Facet[]).flatMap(key => {
+      const values = [...options.get(key) ?? []].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+      return values.length ? [{ key, label: FACET_LABELS[key], values }] : [];
+    }));
+    return options;
+  }
   async ngOnInit() {
     let ready = false, category: string | null = null;
     // Reflect navigation before IndexedDB work, so a list never shows clickable home tiles.
@@ -161,24 +204,8 @@ export class CompendiumComponent implements OnInit, OnDestroy {
     if (!type || !revision) { this.loading.set(false); if (!type) void this.loadCounts(); return; }
     this.loading.set(true);
     try {
-      const options = new Map<Facet, Set<string>>();
-      const summary = await readBrowseSummary(this.cache, revision.id);
-      const addOptions = (fields: Filters) => {
-        for (const [key, values] of Object.entries(fields) as [Facet, string[]][]) {
-          if (!options.has(key)) options.set(key, new Set());
-          values.forEach(value => options.get(key)!.add(value));
-        }
-      };
-      if (summary) for (const kind of type.kinds) addOptions(summary.facets[kind] ?? {});
-      else await this.cache.searchCategory(revision.id, type.kinds, '', 0, 0, record => {
-        addOptions(recordFacets(record));
-        return false;
-      });
-      if (version !== this.version) return;
-      this.facets.set((Object.keys(FACET_LABELS) as Facet[]).flatMap(key => {
-        const values = [...options.get(key) ?? []].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-        return values.length ? [{ key, label: FACET_LABELS[key], values }] : [];
-      }));
+      const options = await this.readFacets(type, revision.id, () => version === this.version && !this.destroyed);
+      if (!options) return;
       const requestedSource = requested?.get('source');
       if (requestedSource && requestedBooks === null) this.filters.source = [[...options.get('source') ?? []].find(source => source.toLowerCase() === requestedSource.toLowerCase()) ?? requestedSource];
       await this.search();
@@ -187,7 +214,7 @@ export class CompendiumComponent implements OnInit, OnDestroy {
         try {
           const record = await this.cache.get(revision.id, entry);
           if (navigation !== this.navigationVersion || this.destroyed) return;
-          if (!record || !(type.kinds as readonly string[]).includes(record.kind) || !this.sourceDefaults.allows(record.publication, this.filters.source ?? [])) {
+          if (!record || !(type.kinds as readonly string[]).includes(record.kind) || !this.sourceDefaults.allowsRecord(record, this.filters.source ?? [])) {
             this.navigationError.set('The requested entry is unavailable in this category or excluded by Source Books.');
           } else {
             if (navigation === this.navigationVersion && !this.destroyed) await this.openDetails(record);
@@ -223,7 +250,7 @@ export class CompendiumComponent implements OnInit, OnDestroy {
     this.loading.set(true); this.error.set('');
     try {
       const page = await this.cache.searchCategory(revision.id, type.kinds, this.query, this.offset, this.pageSize,
-        record => matchesFilters(record, filters) && (record.kind !== 'spell' || !spellEffectFilterCount(effects) || matchesSpellEffects(spellEffectsFromRecord(record), effects)),
+        record => this.sourceDefaults.isVisible(record) && matchesFilters(record, filters) && (record.kind !== 'spell' || !spellEffectFilterCount(effects) || matchesSpellEffects(spellEffectsFromRecord(record), effects)),
         (a, b) => this.sort === 'source' ? a.publication.localeCompare(b.publication) : this.sort === 'level'
           ? Number(recordFacets(a).level?.[0] ?? -1) - Number(recordFacets(b).level?.[0] ?? -1) : a.name.localeCompare(b.name));
       if (version !== this.version) return;

@@ -6,12 +6,14 @@ import { IndexedDbContentCache } from '../content/content-cache';
 import { ADAPTER_VERSION, ContentRecord, DEFAULT_CONTENT_SOURCE, ImportRevision, sourceIdentity } from '../content/content.model';
 import { CompendiumSearchComponent } from './compendium-search.component';
 import { compendiumDestination, requestedSourceBooks } from './compendium-navigation';
+import { SourceBookFilterService } from '../editor/source-book-filter.service';
 
 const record = (kind: string, name: string, source: string): ContentRecord => ({ key: JSON.stringify([kind, name, source]), kind, name, publication: source, file: 'test.json', data: {}, links: [] });
 
 describe('Compendium-wide search', () => {
   let cache: IndexedDbContentCache, revision: ImportRevision;
   beforeEach(async () => {
+    localStorage.removeItem('ally-hide-reprinted-content');
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
     const source = { ...DEFAULT_CONTENT_SOURCE, owner: crypto.randomUUID() };
     revision = { id: crypto.randomUUID(), namespace: 'development-local', source, sourceIdentity: sourceIdentity(source), commit: 'a'.repeat(40), adapterVersion: ADAPTER_VERSION, status: 'staging', createdAt: new Date().toISOString(), files: [], diagnostics: [], metrics: { bytes: 0, records: 0, mappedBytes: 0, elapsedMs: 0 } };
@@ -24,6 +26,19 @@ describe('Compendium-wide search', () => {
     fixture.componentRef.setInput('revision', revision); fixture.componentRef.setInput('sources', sources); fixture.componentRef.setInput('compact', compact); fixture.detectChanges();
     return { fixture, search: fixture.componentInstance };
   }
+
+  it('applies the global reprint switch before paginating search results', async () => {
+    const old = record('class', 'Druid old', 'PHB'), current = record('class', 'Druid current', 'XPHB');
+    old.data['isReprinted'] = true;
+    await cache.put(revision.id, [old, current]);
+    const { fixture, search } = setup(); search.setQuery('Druid'); fixture.detectChanges(); await search.search();
+    expect(search.total()).toBe(2);
+    const preferences = TestBed.inject(SourceBookFilterService); preferences.setHideReprinted(true);
+    fixture.detectChanges(); await search.search();
+    expect(search.total()).toBe(1); expect(search.results().map(record => record.key)).toEqual([current.key]);
+    preferences.setHideReprinted(false); fixture.detectChanges(); await search.search();
+    expect(search.total()).toBe(2); fixture.destroy();
+  });
 
   it('closes compact results outside the header or with Escape and restores them on focus', async () => {
     await cache.put(revision.id, [record('feat', 'Shared Feat', 'XPHB')]);

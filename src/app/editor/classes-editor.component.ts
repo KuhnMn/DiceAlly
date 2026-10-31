@@ -53,7 +53,7 @@ export class ClassesEditorComponent implements OnInit {
     catch { /* Custom classes remain available without imported content. */ }
   }
   classOptions(entry: CharacterClassEntry): SelectOption[] {
-    const options = [{ value: 'CUSTOM', label: 'Custom class' }, ...this.records.filter(record => record.kind === 'class' && this.books.allows(record.publication))
+    const options = [{ value: 'CUSTOM', label: 'Custom class' }, ...this.records.filter(record => record.kind === 'class' && this.books.allowsRecord(record))
       .map(record => ({ value: record.key, label: `${record.name} (${record.publication})` }))];
     if (entry.classKey && !options.some(option => option.value === entry.classKey)) options.push({ value: entry.classKey, label: entry.name });
     return options;
@@ -61,7 +61,7 @@ export class ClassesEditorComponent implements OnInit {
   subclassOptions(entry: CharacterClassEntry): SelectOption[] {
     const parent = this.records.find(record => record.key === entry.classKey);
     const candidates = parent ? this.records.filter(record => subclassMatchesClass(record, parent)
-      && (record.key === entry.subclassKey || this.books.allows(record.publication))) : [];
+      && (record.key === entry.subclassKey || this.books.allowsRecord(record))) : [];
     const options = [{ value: '', label: 'None' }, ...(parent ? subclassChoices(candidates, parent, entry.subclassKey) : [])
       .map(record => ({ value: record.key, label: `${record.name} (${record.publication})` }))];
     if (entry.subclassKey && !options.some(option => option.value === entry.subclassKey)) options.push({ value: entry.subclassKey, label: entry.subclass ?? 'Saved subclass' });

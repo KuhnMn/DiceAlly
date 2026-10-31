@@ -31,7 +31,7 @@ import { SourceBookFilterService } from './source-book-filter.service';
 export class ItemsEditorComponent implements DoCheck, OnInit, OnDestroy {
   itemTypes: ContentRecord[] = [];
   readonly books = inject(SourceBookFilterService);
-  get filteredItemTypes() { return this.itemTypes.filter(type => this.books.allows(type.publication)); }
+  get filteredItemTypes() { return this.itemTypes.filter(type => this.books.allowsRecord(type)); }
   typesMessage = '';
   readonly invalidValues = new Set<InventoryItem>();
   private disposed = false;

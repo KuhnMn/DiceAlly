@@ -73,7 +73,7 @@ export class MonstersEditorComponent implements OnInit, OnDestroy, DoCheck {
   constructor() {
     let initial = true;
     effect(() => {
-      this.books.selected();
+      this.books.selected(); this.books.hideReprinted();
       if (initial) { initial = false; return; }
       untracked(() => this.searchChanged());
     });
@@ -87,7 +87,7 @@ export class MonstersEditorComponent implements OnInit, OnDestroy, DoCheck {
   openCatalog() { this.catalogAdded = 0; this.catalogOpen = true; }
   private query(): CatalogQuery {
     const books = this.books.selected();
-    return { kinds: [this.selectedType], search: this.search, includes: record => this.books.allows(record.publication, books) };
+    return { kinds: [this.selectedType], search: this.search, includes: record => this.books.allowsRecord(record, books) };
   }
   refreshContent() { return this.catalog.refresh(`Import game data to browse ${this.label.toLowerCase()}. Your saved companions remain editable.`, () => this.query()); }
   searchChanged() { this.catalog.scheduleSearch(() => this.query()); }

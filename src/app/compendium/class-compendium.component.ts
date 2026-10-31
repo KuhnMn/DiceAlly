@@ -64,20 +64,19 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
   readonly query = signal('');
   readonly selectedSources = signal(this.filterPreferences.load('class')?.filters.source ?? [...this.sourceDefaults.selected()]);
   readonly subclassSources = signal([...this.selectedSources()]);
-  readonly subclassBooks = computed(() => [...new Set(this.subclasses().map(record => record.publication))].sort());
+  readonly subclassBooks = computed(() => [...new Set(this.subclasses().filter(record => this.sourceDefaults.isVisible(record)).map(record => record.publication))].sort());
   readonly visibleSubclasses = computed(() => {
     const owner = this.selectedClass();
-    return owner ? subclassChoices(this.subclasses(), owner)
-      .filter(record => this.sourceDefaults.allows(record.publication, this.subclassSources())) : [];
+    return owner ? subclassChoices(this.subclasses().filter(record => this.sourceDefaults.allowsRecord(record, this.subclassSources())), owner) : [];
   });
   readonly featureQuery = signal('');
-  readonly sources = computed(() => [...new Set(this.classes().map(record => record.publication))].sort());
+  readonly sources = computed(() => [...new Set(this.classes().filter(record => this.sourceDefaults.isVisible(record)).map(record => record.publication))].sort());
   readonly sourceCount = computed(() => sourceFilterCount(this.selectedSources(), this.sources()));
   readonly sourceChips = computed(() => sourceChipValues(this.selectedSources(), this.sources()));
   readonly subclassSourceChips = computed(() => sourceChipValues(this.subclassSources(), this.subclassBooks()));
   readonly visibleClasses = computed(() => {
     const terms = this.query().trim().toLowerCase().split(/\s+/).filter(Boolean);
-    return this.classes().filter(record => this.sourceDefaults.allows(record.publication, this.selectedSources())
+    return this.classes().filter(record => this.sourceDefaults.allowsRecord(record, this.selectedSources())
       && terms.every(term => `${record.name} ${record.publication}`.toLowerCase().includes(term)));
   });
   readonly levels = computed(() => groupProgression(this.baseFeatures(), this.subclassFeatures(), this.featureQuery()));
@@ -118,7 +117,7 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
       const requestedBooks = requestedSourceBooks(requested);
       const sources = requestedBooks ?? this.selectedSources();
       this.setSources(sources);
-      if (!entry || !['class', 'subclass'].includes(entry.kind) || !this.sourceDefaults.allows(entry.publication, sources)) {
+      if (!entry || !['class', 'subclass'].includes(entry.kind) || !this.sourceDefaults.allowsRecord(entry, sources)) {
         ++this.version; this.resetClass();
         this.navigationError.set('The requested class or subclass is unavailable or excluded by Source Books.'); return;
       }
@@ -150,7 +149,7 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
     const owner = this.selectedClass();
     if (owner) this.filterPreferences.save(`class:${owner.key}`, { filters: { source: [...sources] }, effects: {} });
     const selected = this.selectedSubclass();
-    if (selected && !this.sourceDefaults.allows(selected.publication, sources)) {
+    if (selected && !this.sourceDefaults.allowsRecord(selected, sources)) {
       this.closeDetails();
       void this.chooseSubclass(null);
     }
@@ -179,7 +178,7 @@ export class ClassCompendiumComponent implements OnInit, OnDestroy {
   }
   async chooseSubclass(subclass: ContentRecord | null) {
     const owner = this.selectedClass(), revision = this.revision();
-    if (!owner || !revision || (subclass && (!belongsToClass(subclass, owner) || !this.sourceDefaults.allows(subclass.publication, this.subclassSources())))) return;
+    if (!owner || !revision || (subclass && (!belongsToClass(subclass, owner) || !this.sourceDefaults.allowsRecord(subclass, this.subclassSources())))) return;
     if (subclass) {
       const key = subclassChoiceKey(subclass, owner);
       subclass = this.visibleSubclasses().find(record => subclassChoiceKey(record, owner) === key) ?? subclass;

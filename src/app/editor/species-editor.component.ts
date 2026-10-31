@@ -50,7 +50,7 @@ export class SpeciesEditorComponent implements OnDestroy {
   pendingChange?: { name: string; action: string; apply: () => void };
   constructor() {
     effect(() => {
-      this.books.selected();
+      this.books.selected(); this.books.hideReprinted();
       untracked(() => { if (this.catalogOpen) this.searchChanged(); });
     });
   }
@@ -74,7 +74,7 @@ export class SpeciesEditorComponent implements OnDestroy {
     return {
       kinds: ['species'],
       search: this.search,
-      includes: record => this.books.allows(record.publication, books),
+      includes: record => this.books.allowsRecord(record, books),
     };
   }
   isSelected(record: ContentRecord) {

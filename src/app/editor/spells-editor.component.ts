@@ -101,7 +101,7 @@ export class SpellsEditorComponent implements OnInit, OnDestroy, DoCheck {
   constructor() {
     let initial = true;
     effect(() => {
-      this.sourceBooks.selected();
+      this.sourceBooks.selected(); this.sourceBooks.hideReprinted();
       if (initial) { initial = false; return; }
       untracked(() => { void this.refreshContent(); });
     });
@@ -251,7 +251,7 @@ export class SpellsEditorComponent implements OnInit, OnDestroy, DoCheck {
     this.adding.set(true);
     try {
       const result = await this.cache.searchCategory(revision.id, ['spell'], '', 0, Number.MAX_SAFE_INTEGER,
-        record => this.sourceBooks.allows(record.publication, books) && matchesSpell(record, filter));
+        record => this.sourceBooks.allowsRecord(record, books) && matchesSpell(record, filter));
       if (this.destroyed || this.sheet() !== sheet || !this.sources.some(entry => entry.name === source)) return;
       const additions = result.records.filter(record => !this.isAdded(record, source)).map(record => this.entry(record, revision, source));
       (sheet.spells ??= []).push(...additions);
@@ -289,7 +289,7 @@ export class SpellsEditorComponent implements OnInit, OnDestroy, DoCheck {
         const classes = new Set<string>(), levels = new Set<number>(), schools = new Set<SpellSchool>();
         // Collect filter options without retaining the entire spell catalog.
         await this.cache.searchCategory(revision.id, ['spell'], '', 0, 0, record => {
-          if (!this.sourceBooks.allows(record.publication, books)) return false;
+          if (!this.sourceBooks.allowsRecord(record, books)) return false;
           spellRecordClasses(record).filter(entry => this.sourceBooks.allows(entry.source ?? record.publication, books)).forEach(entry => classes.add(entry.name));
           if (record.kind === 'spell') levels.add(spellDefinition(record).level);
           SPELL_SCHOOLS.filter(school => matchesSpellSchool(spellDefinition(record).school, [school.value])).forEach(school => schools.add(school.value));
@@ -317,7 +317,7 @@ export class SpellsEditorComponent implements OnInit, OnDestroy, DoCheck {
       kinds: ['spell'],
       order: (a, b) => spellDefinition(a).level - spellDefinition(b).level,
       search: filter.search,
-      includes: record => this.sourceBooks.allows(record.publication, books) && matchesSpell(record, filter),
+      includes: record => this.sourceBooks.allowsRecord(record, books) && matchesSpell(record, filter),
     };
   }
 }

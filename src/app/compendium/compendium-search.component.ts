@@ -1,4 +1,5 @@
 import { Component, ElementRef, OnDestroy, effect, inject, input, signal } from '@angular/core';
+import { SourceBookFilterService } from '../editor/source-book-filter.service';
 import { RouterLink } from '@angular/router';
 import { IndexedDbContentCache } from '../content/content-cache';
 import { ContentRecord, ImportRevision } from '../content/content.model';
@@ -60,6 +61,7 @@ export class CompendiumSearchComponent implements OnDestroy {
   readonly pageSize = 12;
   offset = 0;
   private readonly cache = new IndexedDbContentCache();
+  private readonly sourceDefaults = inject(SourceBookFilterService);
   private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
   private version = 0;
   private destroyed = false;
@@ -68,6 +70,7 @@ export class CompendiumSearchComponent implements OnDestroy {
   constructor() {
     effect(() => {
       this.revision(); this.sources(); const query = this.query().trim();
+      this.sourceDefaults.hideReprinted();
       clearTimeout(this.timer); ++this.version; this.offset = 0;
       this.results.set([]); this.total.set(0); this.error.set('');
       this.loading.set(!!query && !!this.revision());
@@ -89,7 +92,7 @@ export class CompendiumSearchComponent implements OnDestroy {
     this.loading.set(true); this.error.set(''); this.results.set([]);
     try {
       const page = await this.cache.searchCategory(revision.id, COMPENDIUM_SEARCH_KINDS, query, this.offset, this.pageSize,
-        record => !sources.length || sources.includes(record.publication));
+        record => this.sourceDefaults.isVisible(record) && (!sources.length || sources.includes(record.publication)));
       if (version !== this.version || this.destroyed) return;
       this.results.set(page.records); this.total.set(page.total);
     } catch { if (version === this.version && !this.destroyed) this.error.set('Could not search the content library.'); }

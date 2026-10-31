@@ -121,7 +121,7 @@ export class OtherProficienciesComponent implements OnInit {
   get toolNames() { return Object.keys(this.character.proficiencies?.tools ?? {}); }
   get sources() { return this.character.featureSources ?? []; }
   get availableTools() {
-    return this.tools().filter(tool => this.sourceBooks.allows(tool.publication));
+    return this.tools().filter(tool => this.sourceBooks.allowsRecord(tool));
   }
   get toolChoices(): SelectOption[] {
     return this.availableTools.map(tool => ({ value: tool.key, label: `${tool.name} (${tool.publication})` }));

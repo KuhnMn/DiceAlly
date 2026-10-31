@@ -87,6 +87,7 @@ describe('Compendium screen', () => {
 
   beforeEach(async () => {
     localStorage.removeItem('ally-creator-source-books');
+    localStorage.removeItem('ally-hide-reprinted-content');
     localStorage.removeItem('ally-compendium-filters-v1');
     params = new BehaviorSubject(convertToParamMap({}));
     breakpoint.next({ matches: false, breakpoints: {} });
@@ -114,6 +115,27 @@ describe('Compendium screen', () => {
     if (waitForCounts && !fixture.componentInstance.type()) await vi.waitFor(() => expect(fixture.componentInstance.countsLoading()).toBe(false));
     return { fixture, screen: fixture.componentInstance };
   }
+
+  it('filters reprints before paging and facet counts while preserving the category query and local filters', async () => {
+    for (const record of data) if (record.publication === 'PHB') record.data['isReprinted'] = true;
+    await cache.put(revision.id, data);
+    await ensureBrowseSummary(cache, revision.id);
+    const { fixture, screen } = await setup();
+    await screen.chooseType('spell'); expect(screen.total()).toBe(32);
+    screen.query = 'Spell 0'; screen.filters.school = ['A']; await screen.search();
+    expect(screen.total()).toBeGreaterThan(0);
+    const preferences = TestBed.inject(SourceBookFilterService);
+    preferences.setHideReprinted(true); fixture.detectChanges();
+    await vi.waitFor(() => expect(screen.total()).toBe(0));
+    expect(screen.query).toBe('Spell 0'); expect(screen.filters.school).toEqual(['A']);
+    expect(screen.facets().find(facet => facet.key === 'source')!.values).toEqual(['XPHB']);
+    screen.query = ''; screen.filters = {}; await screen.search();
+    expect(screen.total()).toBe(16); expect(screen.results()).toHaveLength(16);
+    preferences.setHideReprinted(false); fixture.detectChanges();
+    await vi.waitFor(() => expect(screen.total()).toBe(32));
+    expect(screen.facets().find(facet => facet.key === 'source')!.values).toEqual(['PHB', 'XPHB']);
+    fixture.destroy();
+  });
 
   it.each([false, true])('opens global search results directly and handles another entry in the same category with mobile=%s', async mobile => {
     params.next(convertToParamMap({ type: 'spell' }));

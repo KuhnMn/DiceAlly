@@ -69,11 +69,11 @@ export class BackgroundEditorComponent implements OnDestroy {
   catalogOpen = false;
   get summary() { return characterDescription(this.sheet(), true); }
   constructor() {
-    effect(() => { this.books.selected(); untracked(() => { if (this.catalogOpen) this.searchChanged(); }); });
+    effect(() => { this.books.selected(); this.books.hideReprinted(); untracked(() => { if (this.catalogOpen) this.searchChanged(); }); });
   }
   query() {
     const books = this.books.selected();
-    return { kinds: ['background'], search: this.search, includes: (record: ContentRecord) => this.books.allows(record.publication, books) };
+    return { kinds: ['background'], search: this.search, includes: (record: ContentRecord) => this.books.allowsRecord(record, books) };
   }
   async openCatalog() {
     this.catalogOpen = true;

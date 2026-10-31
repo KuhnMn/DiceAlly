@@ -58,9 +58,34 @@ async function catalog() {
 describe('Class compendium progression', () => {
   beforeEach(() => {
     localStorage.removeItem('ally-creator-source-books');
+    localStorage.removeItem('ally-hide-reprinted-content');
     localStorage.removeItem('ally-compendium-filters-v1');
   });
   afterEach(() => vi.restoreAllMocks());
+
+  it('filters reprinted classes/subclasses before deduplicating legacy choices', async () => {
+    const f = await catalog(), owner = f.find('class', 'Mage', 'XPHB');
+    const old = f.find('class', 'Mage'), hiddenSubclass = f.find('subclass', 'Alternative School', 'XGE');
+    old.data['isReprinted'] = true; hiddenSubclass.data['isReprinted'] = true;
+    const original = f.find('subclass', 'School', 'TCE'), copy = structuredClone(original);
+    copy.key = entityKey('subclass', { name: copy.name, source: copy.publication, className: owner.name, classSource: owner.publication, shortName: 'School' });
+    copy.classDefinition!.parent = { key: owner.key, name: owner.name, source: owner.publication };
+    copy.data['isReprinted'] = true;
+    await f.cache.put(f.revision.id, [old, hiddenSubclass, copy]);
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const preferences = TestBed.inject(SourceBookFilterService); preferences.setHideReprinted(true);
+    const fixture = TestBed.createComponent(ClassCompendiumComponent), screen = fixture.componentInstance;
+    fixture.detectChanges(); await vi.waitFor(() => expect(screen.loading()).toBe(false));
+    expect(screen.visibleClasses().some(record => record.key === old.key)).toBe(false);
+    await screen.chooseClass(owner); screen.setSubclassSources([]);
+    expect(screen.visibleSubclasses().some(record => record.key === hiddenSubclass.key)).toBe(false);
+    expect(screen.visibleSubclasses().find(record => record.name === original.name)?.key).toBe(original.key);
+    expect(screen.subclassBooks()).not.toContain('XGE');
+    preferences.setHideReprinted(false);
+    expect(screen.visibleClasses().some(record => record.key === old.key)).toBe(true);
+    expect(screen.visibleSubclasses().find(record => record.name === original.name)?.key).toBe(copy.key);
+    fixture.destroy();
+  });
 
   it('navigates from a global subclass search result to its exact class with that subclass active', async () => {
     const f = await catalog(), school = f.find('subclass', 'School', 'TCE');

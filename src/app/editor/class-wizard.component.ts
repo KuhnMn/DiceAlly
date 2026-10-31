@@ -88,7 +88,7 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
 
   constructor() {
     effect(() => {
-      this.sourceBooks.selected();
+      this.sourceBooks.selected(); this.sourceBooks.hideReprinted();
       untracked(() => { if (this.revision()) this.rebuild(); });
     });
   }
@@ -154,7 +154,7 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
     catch { return 'Content unavailable'; }
   }
   get classes() { return [...this.records.values()].filter(record => record.kind === 'class'
-    && this.sourceBooks.allows(record.publication))
+    && this.sourceBooks.allowsRecord(record))
     .sort((a, b) => this.label(a.key).localeCompare(this.label(b.key))); }
   classOptions(selection: WizardClass) {
     const choices = this.classes;
@@ -164,16 +164,16 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
   subclasses(selection: WizardClass) {
     const owner = this.records.get(selection.classKey);
     const candidates = [...this.records.values()].filter(record => matchesSubclass(record, selection.classKey, this.records)
-      && (record.key === selection.subclassKey || this.sourceBooks.allows(record.publication)));
+      && (record.key === selection.subclassKey || this.sourceBooks.allowsRecord(record)));
     return (owner ? subclassChoices(candidates, owner, selection.subclassKey) : candidates)
       .sort((a, b) => this.label(a.key).localeCompare(this.label(b.key)));
   }
   get species() {
     return [...this.records.values()].filter(record => record.kind === 'species'
-      && (record.key === this.state.speciesKey || this.sourceBooks.allows(record.publication)))
+      && (record.key === this.state.speciesKey || this.sourceBooks.allowsRecord(record)))
       .sort((a, b) => this.label(a.key).localeCompare(this.label(b.key)));
   }
-  get spellLists() { return [...new Set([...this.records.values()].filter(record => record.kind === 'spell' && this.sourceBooks.allows(record.publication))
+  get spellLists() { return [...new Set([...this.records.values()].filter(record => record.kind === 'spell' && this.sourceBooks.allowsRecord(record))
     .flatMap(record => spellRecordClasses(record).filter(entry => this.sourceBooks.allows(entry.source ?? record.publication)).map(entry => entry.name)))].sort(); }
   classChoices(selection: WizardClass): SelectOption[] {
     return [{ value: '', label: 'Select a class' }, ...this.classOptions(selection).map(record => ({
@@ -187,7 +187,7 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
   get speciesChoices(): SelectOption[] { return [{ value: '', label: 'Do not prefill a species' }, ...this.species.map(record => ({ value: record.key, label: this.label(record.key) }))]; }
   get backgroundChoices(): SelectOption[] {
     return [{ value: '', label: 'No background' }, { value: 'CUSTOM', label: 'Custom background' }, ...[...this.records.values()]
-      .filter(record => record.kind === 'background' && (record.key === this.state.backgroundKey || this.sourceBooks.allows(record.publication)))
+      .filter(record => record.kind === 'background' && (record.key === this.state.backgroundKey || this.sourceBooks.allowsRecord(record)))
       .sort((a, b) => a.name.localeCompare(b.name)).map(record => ({ value: record.key, label: this.label(record.key) }))];
   }
   get backgroundChoice() { return this.state.backgroundKey ?? (this.state.customBackgroundName !== undefined ? 'CUSTOM' : ''); }
@@ -214,7 +214,8 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
   }
   rebuild() {
     const revision = this.revision(); if (!revision) return;
-    try { this.proposal.set(previewClassWizard(this.sheet(), this.state, revision, this.records, this.sourceBooks.selected(), this.overrideSections)); this.error.set(''); }
+    try { this.proposal.set(previewClassWizard(this.sheet(), this.state, revision, this.records, this.sourceBooks.selected(), this.overrideSections,
+      record => this.sourceBooks.isVisible(record))); this.error.set(''); }
     catch (error) { this.proposal.set(null); this.error.set(error instanceof Error ? error.message : String(error)); }
   }
   choiceComplete(choice: WizardChoice) {
@@ -222,7 +223,11 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
   }
   choices(choice: WizardChoice) {
     const query = choice.searchable === false ? '' : normalize(this.choiceSearch[choice.id] ?? '');
-    return rankSearchResults(choice.candidates.filter(candidate => normalize(candidate.label).includes(query) || this.state.answers[choice.id]?.includes(candidate.value)), query, candidate => candidate.label);
+    return rankSearchResults(choice.candidates.filter(candidate => {
+      const selected = this.state.answers[choice.id]?.includes(candidate.value);
+      const record = this.records.get(candidate.value);
+      return (selected || !record || this.sourceBooks.isVisible(record)) && (selected || normalize(candidate.label).includes(query));
+    }), query, candidate => candidate.label);
   }
   friendlyMessage(message: string) {
     if (message.includes('Missing qualified feature')) return 'A selected class feature is missing from this import. Refresh your content or select another class version.';

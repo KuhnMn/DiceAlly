@@ -1,10 +1,14 @@
 <details class="selector-panel mb-4">
   <summary class="selector-summary cursor-pointer flex items-center justify-between gap-2 text-sm font-semibold">
     <span class="selector-heading flex items-center gap-2"><span class="selector-arrow" aria-hidden="true"><app-ui-icon name="chevron" /></span>{{ heading() }}</span>
-    <span class="text-xs font-normal text-on-surface-variant" [title]="filter.selected().join(', ')">{{ filter.selected().length ? filter.selected().length + ' selected' : 'All Books' }}</span>
+    <span class="text-right text-xs font-normal text-on-surface-variant" [title]="filter.selected().join(', ')">{{ filter.selected().length ? filter.selected().length + ' selected' : 'All Books' }}@if (filter.hideReprinted()) { · Reprints hidden }</span>
   </summary>
   <div class="mt-3 space-y-2">
     <p class="text-xs text-on-surface-variant">{{ description() }}</p>
+    <label class="flex min-h-11 cursor-pointer items-center gap-2 rounded border border-outline-variant px-2 py-1.5 text-sm">
+      <input type="checkbox" [checked]="filter.hideReprinted()" (change)="filter.setHideReprinted($any($event.target).checked)" />
+      <span>Hide Reprinted Content<span class="mt-0.5 block text-xs text-on-surface-variant">Applies to catalogs and the compendium on this device. Already added entries stay available.</span></span>
+    </label>
     <div class="flex flex-wrap gap-2">
       <label class="flex-1 min-w-32"><span class="sr-only">Search source books</span><input class="editor-input !py-1.5" [ngModel]="search" (ngModelChange)="search = $event" [ngModelOptions]="{standalone: true}" placeholder="Search source books…" /></label>
       <button type="button" class="secondary-button compact-button" (click)="filter.setSelection([])">All Books</button>

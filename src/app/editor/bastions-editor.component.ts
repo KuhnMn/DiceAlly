@@ -65,7 +65,7 @@ export class BastionsEditorComponent implements OnInit, OnDestroy {
   constructor() {
     let initial = true;
     effect(() => {
-      this.sourceBooks.selected();
+      this.sourceBooks.selected(); this.sourceBooks.hideReprinted();
       if (initial) { initial = false; return; }
       untracked(() => { void this.refreshContent(); });
     });
@@ -87,7 +87,7 @@ export class BastionsEditorComponent implements OnInit, OnDestroy {
       const levels = new Set<number>();
       await this.cache.searchCategory(revision.id, ['facility'], '', 0, 0, record => {
         const level = record.referenceDefinition?.kind === 'facility' ? record.referenceDefinition.level : record.data['level'];
-        if (this.sourceBooks.allows(record.publication, books) && typeof level === 'number') levels.add(level);
+        if (this.sourceBooks.allowsRecord(record, books) && typeof level === 'number') levels.add(level);
         return false;
       });
       if (isCurrent()) { this.catalogLevels = [...levels].sort((a, b) => a - b); if (this.level && !levels.has(Number(this.level))) this.level = ''; }
@@ -96,7 +96,7 @@ export class BastionsEditorComponent implements OnInit, OnDestroy {
   private catalogQuery(): CatalogQuery {
     const books = this.sourceBooks.selected(), filters = { type: this.type, level: this.level, order: this.order };
     return { kinds: ['facility'], search: this.search, includes: record => {
-      return this.sourceBooks.allows(record.publication, books) && matchesFacilityFilters(this.catalogEntry(record).entity, filters);
+      return this.sourceBooks.allowsRecord(record, books) && matchesFacilityFilters(this.catalogEntry(record).entity, filters);
     } };
   }
   searchChanged() { this.catalog.scheduleSearch(() => this.catalogQuery()); }

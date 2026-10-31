@@ -54,7 +54,8 @@ export function matchesSubclass(record: ContentRecord, classKey: string, records
  * Rules read structured imported data; they do not interpret description text.
  */
 export function previewClassWizard(sheet: ExportedCharacter, state: WizardState, revision: ImportRevision,
-  records: ReadonlyMap<string, ContentRecord>, sourceBooks: readonly string[] = [], overrideSections: readonly string[] = []) {
+  records: ReadonlyMap<string, ContentRecord>, sourceBooks: readonly string[] = [], overrideSections: readonly string[] = [],
+  catalogVisible: (record: ContentRecord) => boolean = () => true) {
   const index: ContentRulesIndex = { records, sourceIdentity: revision.sourceIdentity, revisionId: revision.id };
   const values: PrefillValue[] = []; const choices: WizardChoice[] = []; const warnings: string[] = []; const errors: string[] = [];
   const put = (scope: string, label: string, path: string[], value: unknown, origin?: string) => values.push({ scope, label, path, value, origin });
@@ -152,6 +153,8 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     if (selection.spellList && classInput.caster !== 'none') for (const record of records.values()) {
       if (record.kind !== 'spell' || (sourceBooks.length && !sourceBooks.includes(record.publication))
         || spellDefinition(record).level > maxSpellLevel) continue;
+      if (!catalogVisible(record) && !sheet.spells?.some(spell => spell.castingSourceName === castingSource
+        && (spell.contentReference?.key === record.key || !spell.contentReference && spell.name === record.name && spell.source === record.publication))) continue;
       if (spellRecordClasses(record).some(entry => normalize(entry.name) === normalize(selection.spellList!))) addSpell(record, castingSource);
     }
   }
@@ -197,7 +200,8 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     const owner = records.get(slot.ownerKey)!;
     const candidates = [...records.values()].filter(record => record.kind === 'optionalfeature'
       && characterOption(record).featureTypes.some(type => slot.featureTypes.includes(type))
-      && (!sourceBooks.length || sourceBooks.includes(record.publication)));
+      && (!sourceBooks.length || sourceBooks.includes(record.publication))
+      && (catalogVisible(record) || slot.selectedKeys.includes(record.key)));
     choices.push({ scope: 'features', ownerKey: owner.key, id: slot.id, label: `${owner.name}: optional features`, count: slot.count,
       candidates: candidates.map(record => ({ value: record.key, label: `${record.name} (${record.publication})` })) });
     for (const key of slot.selectedKeys) {

@@ -101,7 +101,7 @@ export class FeaturesEditorComponent implements OnInit, OnDestroy, DoCheck {
   constructor() {
     let initial = true;
     effect(() => {
-      this.sourceBooks.selected();
+      this.sourceBooks.selected(); this.sourceBooks.hideReprinted();
       if (initial) { initial = false; return; }
       untracked(() => { void this.refreshContent(); });
     });
@@ -145,7 +145,7 @@ export class FeaturesEditorComponent implements OnInit, OnDestroy, DoCheck {
       async (revision, isCurrent) => {
         const classes = new Set<string>(), levels = new Set<number>(), categories = new Set<string>();
         await this.cache.searchCategory(revision.id, FEATURE_TYPES.find(type => type.value === kind)!.kinds, '', 0, 0, record => {
-          if (!this.sourceBooks.allows(record.publication, books)) return false;
+          if (!this.sourceBooks.allowsRecord(record, books)) return false;
           if (kind === 'CLASS_FEATURE') {
             const values = featureRecordMetadata(record);
             values.classes.forEach(name => classes.add(name)); values.levels.forEach(level => levels.add(level));
@@ -184,7 +184,7 @@ export class FeaturesEditorComponent implements OnInit, OnDestroy, DoCheck {
       kinds: this.types.find(type => type.value === this.selectedType)!.kinds,
       order: (a, b) => Math.min(...featureRecordMetadata(a).levels, Infinity) - Math.min(...featureRecordMetadata(b).levels, Infinity),
       search: this.search,
-      includes: record => this.sourceBooks.allows(record.publication, books) && (kind === 'CLASS_FEATURE' ? matchesFeatureRecord(record, classes, levels) : matchesFeatureRecordCategories(record, categories)),
+      includes: record => this.sourceBooks.allowsRecord(record, books) && (kind === 'CLASS_FEATURE' ? matchesFeatureRecord(record, classes, levels) : matchesFeatureRecordCategories(record, categories)),
     };
   }
   isSelected(record: ContentRecord) {

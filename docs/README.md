@@ -16,6 +16,7 @@ plans and measurements.
 | Supported schema fields and coverage | [Schema coverage](migration/SCHEMA_CONTENT_COVERAGE.md) |
 | Feature-use tracker contract | [Feature uses](feature-uses.md) |
 | Manual/automatic ability scores, source choices and persistence | [Ability bonuses](ability-bonuses.md) |
+| Global reprint visibility and retained character selections | [Content visibility](content-visibility.md) |
 | Lazy loading and retained release assets | [Loading and bundles](loading-and-bundles.md) |
 | Test audit, fast checks and affected-file selection | [Testing](testing.md) |
 | Repository cleanup decisions and remaining structural concerns | [Maintenance review](maintenance-review.md) |

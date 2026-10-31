@@ -46,7 +46,7 @@ export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
   customType = '';
   itemTypes: ContentRecord[] = [];
   private itemProperties = new Map<string, ContentRecord>();
-  get filteredItemTypes() { return this.itemTypes.filter(type => this.books.allows(type.publication)); }
+  get filteredItemTypes() { return this.itemTypes.filter(type => this.books.allowsRecord(type)); }
   get customValueValid() {
     return this.customValue == null || (Number.isSafeInteger(this.customValue) && this.customValue >= 0);
   }
@@ -59,7 +59,7 @@ export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
   constructor() {
     let initial = true;
     effect(() => {
-      this.books.selected();
+      this.books.selected(); this.books.hideReprinted();
       if (this.customType && !this.filteredItemTypes.some(type => type.key === this.customType)) this.customType = '';
       if (initial) { initial = false; return; }
       untracked(() => this.searchChanged());
@@ -69,7 +69,7 @@ export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
   ngOnDestroy() { this.disposed = true; this.catalog.dispose(); }
   private query(): CatalogQuery {
     const selection = this.books.selected();
-    return { kinds: ['item'], search: this.search, includes: record => this.books.allows(record.publication, selection) };
+    return { kinds: ['item'], search: this.search, includes: record => this.books.allowsRecord(record, selection) };
   }
   refreshContent() {
     this.itemTypes = []; this.customType = '';

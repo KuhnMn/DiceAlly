@@ -370,6 +370,19 @@ describe('Subclass-granted spell prefill', () => {
 });
 
 describe('Optional class wizard prefill', () => {
+  it('excludes new reprinted spell-list suggestions but retains existing spells and explicit subclass grants', () => {
+    const f = fixture();
+    f.find('spell', 'Spark').data['isReprinted'] = true;
+    f.find('spell', 'Shield').data['isReprinted'] = true;
+    const visible = (record: import('../content/content.model').ContentRecord) => record.data['isReprinted'] !== true;
+    const filtered = previewClassWizard(f.sheet, f.state, f.revision, f.index, [], [], visible);
+    expect(filtered.sheet.spells!.some(spell => spell.name === 'Spark')).toBe(false);
+    expect(filtered.sheet.spells!.some(spell => spell.name === 'Shield' && spell.listType === 'PREPARED')).toBe(true);
+    const all = previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet;
+    const retained = previewClassWizard(all, all.creatorWizard!, f.revision, f.index, [], [], visible);
+    expect(retained.sheet.spells!.some(spell => spell.name === 'Spark' && spell.listType === 'KNOWN')).toBe(true);
+  });
+
   beforeEach(() => { localStorage.removeItem('ally-creator-source-books'); TestBed.configureTestingModule({ providers: [provideRouter([])] }); });
 
   it('keeps disabled-section choices out of the open decisions and restores saved answers when enabled again', () => {
