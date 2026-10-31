@@ -23,6 +23,7 @@ export class EntryAnnotationsComponent extends EntryAnnotationsEditor {
   readonly entry = input.required<AnnotatedEntry>();
   readonly annotationsEnabled = input(true);
   readonly showUses = input(true);
+  readonly showNotes = input(true);
   readonly showBonus = input(false);
   activePanel: 'uses' | 'notes' | 'bonus' | null = null;
   togglePanel(panel: 'uses' | 'notes' | 'bonus') { this.activePanel = this.activePanel === panel ? null : panel; }

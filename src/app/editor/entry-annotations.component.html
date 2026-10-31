@@ -3,7 +3,9 @@
     @if (showUses()) {
       <button type="button" class="annotation-button disabled:opacity-50" [disabled]="!annotationsEnabled()" [title]="annotationsEnabled() ? 'Edit use trackers' : 'Prepare this spell to edit uses'" [attr.aria-expanded]="activePanel === 'uses' && annotationsEnabled()" [attr.aria-pressed]="activePanel === 'uses'" [attr.aria-controls]="'uses-panel-' + i" [class.bg-secondary-container]="activePanel === 'uses'" (click)="togglePanel('uses')"><app-ui-icon name="tally" /> Uses @if (entry().uses?.length) { <span>({{ entry().uses?.length }})</span> }</button>
     }
+    @if (showNotes()) {
     <button type="button" class="annotation-button disabled:opacity-50" [disabled]="!annotationsEnabled()" [title]="annotationsEnabled() ? 'Edit notes' : 'Prepare this spell to edit notes'" [attr.aria-expanded]="activePanel === 'notes' && annotationsEnabled()" [attr.aria-pressed]="activePanel === 'notes'" [attr.aria-controls]="'notes-panel-' + i" [class.bg-secondary-container]="activePanel === 'notes'" (click)="togglePanel('notes')"><app-ui-icon name="file" /> Notes @if (entry().notes?.length) { <span>({{ entry().notes?.length }})</span> }</button>
+    }
     @if (showBonus()) {
       <button type="button" class="annotation-button disabled:opacity-50" title="Edit stat bonuses" [disabled]="!annotationsEnabled()" [attr.aria-pressed]="activePanel === 'bonus'" [attr.aria-expanded]="activePanel === 'bonus' && annotationsEnabled()" [attr.aria-controls]="'bonus-panel-' + i" [class.bg-secondary-container]="activePanel === 'bonus'" (click)="togglePanel('bonus')"><app-ui-icon name="plus" /> Stat Bonuses</button>
     }
@@ -55,7 +57,7 @@
     </div>
   </section>
   }
-  <section class="annotation-panel" [hidden]="activePanel !== 'notes' || !annotationsEnabled()" [id]="'notes-panel-' + i" aria-label="Notes editor">
+  <section class="annotation-panel" [hidden]="!showNotes() || activePanel !== 'notes' || !annotationsEnabled()" [id]="'notes-panel-' + i" aria-label="Notes editor">
     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
       <h3 class="font-semibold">Notes</h3>
       <button type="button" class="annotation-button" aria-label="Add note group" (click)="addNote(entry())"><app-ui-icon name="plus" /> Note group</button>

@@ -47,6 +47,28 @@ async function catalog() {
 describe('Feature editor', () => {
   beforeEach(() => TestBed.configureTestingModule({ imports: [FeaturesEditorComponent], providers: [provideRouter([])] }));
 
+  it('shows configured bonuses beside the feature name and removes the indicator when disabled', async () => {
+    const fixture = TestBed.createComponent(FeaturesEditorComponent), sheet = featureSheet();
+    sheet.features = [{ editorId: 'strong', name: 'Strong feat', featureType: 'FEAT', source: 'TEST', featureSourceName: 'General',
+      featEntity: { name: 'Strong feat', source: 'TEST', entries: [], ability: [{ str: 2 }] } }];
+    fixture.componentRef.setInput('sheet', sheet);
+    fixture.componentInstance.setType('FEAT'); await fixture.whenStable();
+    const row = fixture.nativeElement.querySelector('app-editor-entry-row') as HTMLElement;
+    const indicator = row.querySelector<HTMLElement>('[role="img"][aria-label^="Stat bonuses:"]')!;
+    expect(indicator.title).toContain('+2 STR');
+    const name = row.querySelector('p[title="Strong feat"]')!;
+    expect(name.parentElement!.querySelector('[role="img"][aria-label^="Stat bonuses:"]')).toBe(indicator);
+    expect(row.textContent).not.toContain('+2 STR');
+    indicator.click(); await fixture.whenStable();
+    const bonusButton = [...row.querySelectorAll<HTMLButtonElement>('[aria-label="Entry tools"] button')]
+      .find(button => button.textContent!.includes('Stat Bonuses'))!;
+    bonusButton.click(); await fixture.whenStable();
+    const type = row.querySelector<HTMLSelectElement>('[aria-label="Stat bonuses editor"] select')!;
+    type.value = 'none'; type.dispatchEvent(new Event('change')); await fixture.whenStable();
+    expect(row.querySelector('[role="img"][aria-label^="Stat bonuses:"]')).toBeNull();
+    fixture.destroy();
+  });
+
   it('shows requirements before adding feats and optional features without enforcing eligibility', async () => {
     const data = await catalog();
     const fixture = TestBed.createComponent(FeaturesEditorComponent), sheet = featureSheet();

@@ -19,8 +19,8 @@
   <div class="rounded-lg bg-surface-container">
     @for (feature of selected; track feature.editorId ?? $index; let i = $index) {
       <app-editor-entry-row [sheet]="sheet()" [resource]="feature" [name]="feature.name" [expanded]="expanded.has(feature)" (detailsRequested)="toggle(feature)" (removeRequested)="remove(feature)" [notesCount]="feature.notes?.length || 0" [usesCount]="feature.uses?.length || 0">
+        <app-ability-bonus-summary entry-indicator [indicator]="true" [sheet]="sheet()" [sourceId]="bonusSourceId(feature)" />
         <ng-container entry-metadata>
-          <app-ability-bonus-summary [sheet]="sheet()" [sourceId]="bonusSourceId(feature)" />
           @if (selectedType === 'CLASS_FEATURE') {
             @if (feature.featureEntity?.level) { <span class="shrink-0 rounded bg-secondary-container px-1 text-on-secondary-container">Level {{ feature.featureEntity?.level }}</span> }
             @if (feature.featureEntity?.className) { <span class="min-w-0 truncate rounded bg-secondary-container px-1 text-on-secondary-container" [title]="feature.featureEntity?.className">{{ feature.featureEntity?.className }}</span> }

@@ -66,11 +66,14 @@ background editor. Source names and types appear on standalone Ability Scores
 cards; embedded editors reuse the surrounding feature or background heading.
 Feature bonus editing opens from Stat Bonuses in the Uses/Notes toolbar.
 Feature tools open the Bonus Type selector directly in the same panel layout as
-Uses and Notes, without another Configure Bonus disclosure. Feature detail dialogs
+Uses and Notes, without another Configure Bonus disclosure. A compact plus icon
+beside the feature name indicates configured bonuses, with details in its tooltip,
+rather than showing bonus values among the source tags. Feature detail dialogs
 place applied bonus cards after the description so separators divide content.
 Backgrounds additionally offer +1 to three distinct abilities and +2 / +1 to two
 distinct abilities, storing explicit uniform or weighted definitions.
-Backgrounds have one Configure Bonus control; custom sources omit From Content,
+Backgrounds use the same Stat Bonuses tool and panel as features, with the
+Bonus Type selector shown directly; custom sources omit From Content,
 and No bonus hides all allocation fields. Incomplete-choice prompts are omitted.
 `AbilityBonusSummaryComponent` shows applied feature increases as read-only note
 cards on the Feature Page. Both overview layouts show base + named contributions

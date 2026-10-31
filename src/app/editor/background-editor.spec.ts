@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import { applyAbilityBonuses, backgroundBonusSourceId } from '../models/ability-score-bonuses';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { BackgroundEditorComponent } from './background-editor.component';
@@ -53,6 +54,37 @@ describe('Optional backgrounds', () => {
     details.nativeElement.querySelector('button').click(); await details.whenStable();
     expect(details.nativeElement.querySelector('[role="dialog"]').textContent).toContain('Background reference text.');
     expect(details.nativeElement.querySelector('app-catalog-dialog').classList.contains('compact')).toBe(true);
+  });
+
+  it('opens the shared Stat Bonuses panel without Uses or Notes tools and edits a background allocation', async () => {
+    const fixture = TestBed.createComponent(BackgroundEditorComponent), sheet = emptyBasicCharacter();
+    sheet.background = { name: 'Custom background' };
+    fixture.componentRef.setInput('sheet', sheet);
+    fixture.componentInstance.edited.subscribe(() => applyAbilityBonuses(sheet));
+    await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    const tools = root.querySelector('[aria-label="Entry tools"]')!;
+    const buttons = tools.querySelectorAll<HTMLButtonElement>('button');
+    expect(buttons.length).toBe(1);
+    expect(buttons[0].textContent).toContain('Stat Bonuses');
+    const panel = root.querySelector<HTMLElement>('[aria-label="Stat bonuses editor"]')!;
+    expect(panel.hidden).toBe(true);
+    buttons[0].click(); await fixture.whenStable();
+    expect(panel.hidden).toBe(false);
+    expect(panel.querySelector('details')).toBeNull();
+    const type = panel.querySelector<HTMLSelectElement>('select')!;
+    expect(type.value).toBe('none');
+    type.value = 'three'; type.dispatchEvent(new Event('change')); await fixture.whenStable();
+    const choices = panel.querySelectorAll<HTMLSelectElement>('[aria-label="Ability allocation"] select');
+    expect(choices.length).toBe(3);
+    for (const [index, ability] of ['str', 'dex', 'con'].entries()) {
+      choices[index].value = ability; choices[index].dispatchEvent(new Event('change')); await fixture.whenStable();
+    }
+    expect(sheet.character!.abilityScores).toMatchObject({ strength: 11, dexterity: 11, constitution: 11 });
+    buttons[0].click(); await fixture.whenStable();
+    expect(panel.hidden).toBe(true);
+    expect(sheet.abilityBonuses!.choices[backgroundBonusSourceId(sheet.background)].chosen).toEqual(['str', 'dex', 'con']);
+    fixture.destroy();
   });
 
   it('generates identity text from name, wizard classes, species and an optional background', () => {

@@ -1,3 +1,4 @@
+import { EntryAnnotationsComponent } from './entry-annotations.component';
 import { AbilityBonusEditorComponent } from './ability-bonus-editor.component';
 import { backgroundBonusSourceId } from '../models/ability-score-bonuses';
 import { contentEntries } from '../content/content-entries';
@@ -23,7 +24,7 @@ import { characterDescription } from '../character-description';
 
 @Component({
   selector: 'app-editor-background',
-  imports: [AbilityBonusEditorComponent, FormsModule, RouterLink, UiIconComponent, BackgroundDetailsComponent, EntryRendererComponent, ListControlsComponent, CatalogDialogComponent, CatalogResultRowComponent, DescriptionDialogComponent, SourceBookFilterComponent],
+  imports: [EntryAnnotationsComponent, AbilityBonusEditorComponent, FormsModule, RouterLink, UiIconComponent, BackgroundDetailsComponent, EntryRendererComponent, ListControlsComponent, CatalogDialogComponent, CatalogResultRowComponent, DescriptionDialogComponent, SourceBookFilterComponent],
   styleUrl: './editor.css',
   template: `
     <span class="field-label">Background (optional)</span>
@@ -35,7 +36,11 @@ import { characterDescription } from '../character-description';
     @if (sheet().background?.entity) {
       <div class="mt-1 flex items-center gap-2 text-xs"><app-background-details [sheet]="sheet()" [background]="sheet().background" label="Details" /><span class="rounded bg-surface-container-highest px-1">{{ sheet().background?.source }}</span></div>
     }
-    @if (sheet().abilityBonuses?.enabled && sheet().background; as background) { <div class="mt-2"><app-ability-bonus-editor [showSource]="false" [sheet]="sheet()" [sourceId]="bonusSourceId(background)" (edited)="edited.emit()" /></div> }
+    @if (sheet().abilityBonuses?.enabled && sheet().background; as background) { <div class="mt-2">
+      <app-entry-annotations-editor [entry]="{}" [showUses]="false" [showNotes]="false" [showBonus]="true">
+        <app-ability-bonus-editor annotation-bonus [inlineConfiguration]="true" [showSource]="false" [sheet]="sheet()" [sourceId]="bonusSourceId(background)" (edited)="edited.emit()" />
+      </app-entry-annotations-editor>
+    </div> }
     <p class="mt-2 text-xs text-on-surface-variant" aria-label="Generated character description">{{ summary }}</p>
     @if (catalogOpen) {
       <app-catalog-dialog title="Choose Background" subtitle="Choose a library background, or close and enter any custom name. Background is optional." (closed)="catalogOpen = false">
