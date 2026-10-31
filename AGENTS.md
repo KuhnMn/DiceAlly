@@ -1,5 +1,16 @@
 # Working preferences
 
+## Versions and releases
+
+- Work on a separate branch. Merge to `main` only when the user asks for it.
+- Use semantic versioning. The initial versioned release is **1.0.0**.
+- `package.json` is the version authority. Keep the root versions in `package-lock.json` synchronized; the small fixed footer on every route reads this version directly. Never maintain a separate hardcoded UI version.
+- Every successful publication must use a new version. For the first release of a new feature, increment **minor** and reset patch to zero. Further releases, fixes and refinements within that same feature increment **patch**. Breaking changes require a **major** increment, following semantic versioning. An explicit version requested by the user takes precedence, including the initial 1.0.0 release.
+- Before building the release, update the version with `npm version <minor|patch|major|explicit-version> --no-git-tag-version --ignore-scripts`. Do not automatically increment during ordinary builds or deploy preparation. A retry of a failed publication may reuse its still-unreleased version.
+- Prepare concise notes in `.github/release-notes/X.Y.Z.md`. Commit the reviewed release source, deploy that exact commit and verify the published files. Push the source branch and an annotated `vX.Y.Z` tag pointing to that source commit. `.github/workflows/release.yml` creates the matching **GitHub Release**, checking tag/package/lockfile versions first; verify the workflow/release when GitHub API access is available. Do not tag the generated `gh-pages` commit, overwrite existing release tags, or merge to main implicitly.
+- A Git tag alone is not a GitHub Release. If GitHub authentication or network access prevents release creation, report the incomplete step explicitly and retain the correct tag/source identity for retrying it.
+- After each release, always tell the user the **current version**, along with the published URL and any incomplete release step.
+
 ## Keep verification proportional
 
 - `npm test` runs the small core safety group. It is not full product coverage.

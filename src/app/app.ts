@@ -12,6 +12,7 @@ import { SyncStatusComponent } from './characters/sync/sync-status.component';
 import { CharacterSyncService } from './characters/sync/character-sync.service';
 import { CharacterStore } from './stores/character.store';
 import { UnsavedChangesGuard } from './guards/unsaved-changes.guard';
+import { version as appVersion } from '../../package.json';
 
 @Component({
   selector: 'app-root',
@@ -22,6 +23,7 @@ import { UnsavedChangesGuard } from './guards/unsaved-changes.guard';
   host: { class: 'block min-w-0 w-full', '(window:beforeunload)': 'warnBeforeUnload($event)' }
 })
 export class App {
+  readonly version = appVersion;
   readonly navigation = inject(NavigationLoadingService);
   readonly account = inject(AccountService);
   readonly sync = inject(CharacterSyncService);

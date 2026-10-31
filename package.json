@@ -1,6 +1,6 @@
 {
   "name": "ally-sheet-viewer",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "scripts": {
     "schemas:snapshot": "node scripts/snapshot-content-schemas.mjs",
     "schemas:generate": "node scripts/generate-content-schemas.mjs",
