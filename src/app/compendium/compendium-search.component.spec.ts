@@ -29,7 +29,7 @@ describe('Compendium-wide search', () => {
 
   it('applies the global reprint switch before paginating search results', async () => {
     const old = record('class', 'Druid old', 'PHB'), current = record('class', 'Druid current', 'XPHB');
-    old.data['isReprinted'] = true;
+    old.data['reprintedAs'] = [{ uid: 'Druid|XPHB', edition: 'one' }];
     await cache.put(revision.id, [old, current]);
     const { fixture, search } = setup(); search.setQuery('Druid'); fixture.detectChanges(); await search.search();
     expect(search.total()).toBe(2);

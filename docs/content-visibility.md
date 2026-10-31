@@ -5,10 +5,13 @@ and persists as the device-wide `ally-hide-reprinted-content` browsing preferenc
 The existing account-synced source-book array and category-local book selections
 keep their current format and behavior. This new flag is not cloud-synced.
 
-`isReprinted` in `content/content-visibility.ts` recognizes only explicit boolean
-`isReprinted: true` or historical `reprinted: true`. It reads both ordinary record
-payloads and canonical reference definitions, such as vehicles. `legacy`, editions,
-`reprintedAs` links, numeric values and strings do not implicitly hide an entry.
+`isReprinted` in `content/content-visibility.ts` recognizes boolean
+`isReprinted: true`, historical `reprinted: true`, and nonempty `reprintedAs`
+targets. The source schema explicitly prefers `reprintedAs`; targets may be UID
+strings or objects containing a UID and edition/tag metadata. Both ordinary record
+payloads and canonical reference definitions, such as vehicles, are supported.
+`legacy`, editions, empty/malformed targets and truthy nonboolean flags do not
+implicitly hide an entry.
 
 The preference applies to creator catalogs, class/subclass choices, tools,
 Compendium category lists and cross-category search. Filtering happens before

@@ -117,7 +117,7 @@ describe('Compendium screen', () => {
   }
 
   it('filters reprints before paging and facet counts while preserving the category query and local filters', async () => {
-    for (const record of data) if (record.publication === 'PHB') record.data['isReprinted'] = true;
+    for (const record of data) if (record.publication === 'PHB') record.data['reprintedAs'] = [`${record.name}|XPHB`];
     await cache.put(revision.id, data);
     await ensureBrowseSummary(cache, revision.id);
     const { fixture, screen } = await setup();

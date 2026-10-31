@@ -7,7 +7,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { CompendiumComponent } from './compendium.component';
 import { CompendiumSearchComponent } from './compendium-search.component';
 import { vi } from 'vitest';
-import { mapContent } from '../content/content-adapter';
+import { inheritCopy, mapContent } from '../content/content-adapter';
 import { canonicalClassRecord } from '../content/class-adapter';
 import { canonicalSpeciesRecord } from '../content/species-adapter';
 import { ADAPTER_VERSION, ContentRecord, DEFAULT_CONTENT_SOURCE, ImportRevision, sourceIdentity, entityKey } from '../content/content.model';
@@ -62,6 +62,41 @@ describe('Class compendium progression', () => {
     localStorage.removeItem('ally-compendium-filters-v1');
   });
   afterEach(() => vi.restoreAllMocks());
+
+  it('hides the old Druid and Stars originals/copies using the preferred reprintedAs metadata', async () => {
+    const f = await catalog();
+    // Identity/reprint/copy metadata follows the public class-druid.json source;
+    // feature descriptions are deliberately omitted from this regression fixture.
+    const records = mapContent({
+      class: [{ name: 'Druid', source: 'PHB', edition: 'classic', classFeatures: [], reprintedAs: ['Druid|XPHB'] },
+        { name: 'Druid', source: 'XPHB', edition: 'one', classFeatures: [] }],
+      subclass: [
+        { name: 'Circle of Stars', shortName: 'Stars', source: 'TCE', className: 'Druid', classSource: 'PHB', edition: 'classic',
+          subclassFeatures: [], reprintedAs: ['Stars|Druid|XPHB|XPHB'] },
+        { name: 'Circle of Stars', shortName: 'Stars', source: 'TCE', className: 'Druid', classSource: 'XPHB',
+          _copy: { name: 'Circle of Stars', shortName: 'Stars', source: 'TCE', className: 'Druid', classSource: 'PHB', _preserve: { reprintedAs: true } } },
+        { name: 'Circle of the Stars', shortName: 'Stars', source: 'XPHB', className: 'Druid', classSource: 'XPHB', edition: 'one', subclassFeatures: [] },
+        { name: 'Circle of Dreams', shortName: 'Dreams', source: 'XGE', className: 'Druid', classSource: 'PHB', edition: 'classic', subclassFeatures: [] },
+      ],
+    }, 'class/class-druid.json').records;
+    const original = records.find(record => record.kind === 'subclass' && record.data['classSource'] === 'PHB' && record.publication === 'TCE')!;
+    const canonical = records.map(record => canonicalClassRecord(record.data['_copy']
+      ? { ...record, data: inheritCopy(original.data, record.data, [], 'subclass') } : record));
+    await f.cache.put(f.revision.id, canonical);
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const preferences = TestBed.inject(SourceBookFilterService); preferences.setHideReprinted(true);
+    const fixture = TestBed.createComponent(ClassCompendiumComponent), screen = fixture.componentInstance;
+    fixture.detectChanges(); await vi.waitFor(() => expect(screen.loading()).toBe(false));
+    expect(screen.visibleClasses().filter(record => record.name === 'Druid').map(record => record.publication)).toEqual(['XPHB']);
+    await screen.chooseClass(canonical.find(record => record.kind === 'class' && record.publication === 'XPHB')!);
+    screen.setSubclassSources([]);
+    expect(screen.visibleSubclasses().map(record => record.name)).toEqual(['Circle of Dreams', 'Circle of the Stars']);
+    expect(screen.subclassBooks()).toEqual(['XGE', 'XPHB']);
+    preferences.setHideReprinted(false);
+    expect(screen.visibleClasses().filter(record => record.name === 'Druid')).toHaveLength(2);
+    expect(screen.visibleSubclasses().map(record => record.name)).toContain('Circle of Stars');
+    fixture.destroy();
+  });
 
   it('filters reprinted classes/subclasses before deduplicating legacy choices', async () => {
     const f = await catalog(), owner = f.find('class', 'Mage', 'XPHB');
