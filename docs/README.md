@@ -32,3 +32,8 @@ The [UI guide](ui-improvement-guide.md), [usability findings](usability-review-f
 [feature audit](feature-audit.md) cover different review passes. Their proposed work
 is not a current completion checklist. Keep the original evidence instead of
 duplicating it in new setup documentation.
+
+The [feature and data audit from 31 October 2026](feature-audit-2026-10-31.md)
+checks the newer implementation against the schemas and repository examples,
+distinguishes remaining data opportunities from shipped features, and prioritizes
+correctness, small improvements, creator work and larger architectural changes.
