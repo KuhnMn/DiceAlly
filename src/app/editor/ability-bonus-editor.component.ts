@@ -2,40 +2,45 @@ import { Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ExportedCharacter } from '../models/character.model';
 import { SpeciesAbility } from '../content/species.model';
+import { UiIconComponent } from '../ui-icon.component';
 import { AbilityBonusSelection, abilityBonusSources, resolveAbilityBonus, abilityBonusOptionLabel, asiBonusOptions, BONUS_ABILITIES } from '../models/ability-score-bonuses';
 
 /** One source editor, shared by Ability Scores and the owning feature/background. */
 @Component({
   selector: 'app-ability-bonus-editor',
-  imports: [FormsModule],
+  imports: [FormsModule, UiIconComponent],
   host: { class: 'block min-w-0', '[style.display]': 'sheet().abilityBonuses?.enabled ? null : "none"' },
   styleUrl: './editor.css',
   template: `
     @if (sheet().abilityBonuses?.enabled && source; as value) {
-      <div class="min-w-0 border-l-2 border-outline-variant pl-3 text-sm" [attr.aria-label]="value.name + ' ability bonuses'">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <span class="min-w-0 font-semibold [overflow-wrap:anywhere]">{{ value.name }} <span class="text-xs font-normal text-on-surface-variant">· {{ value.kind }}</span></span>
+      <section class="min-w-0 overflow-hidden rounded-lg border-2 border-outline-variant bg-surface-container-low text-sm" [attr.aria-label]="value.name + ' ability bonuses'">
+        <header class="flex flex-wrap items-center justify-between gap-2 border-b border-outline-variant bg-surface-container-high px-3 py-2">
+          <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+            <span class="min-w-0 font-semibold [overflow-wrap:anywhere]">{{ value.name }}</span>
+            <span class="rounded border border-outline-variant bg-surface-container px-1.5 py-0.5 text-xs text-on-surface-variant">{{ value.kind }}</span>
+          </div>
           @if (value.options.length || value.error) {
-            <label class="flex min-h-8 items-center gap-2 text-xs"><input type="checkbox" [ngModel]="!selection.disabled" [ngModelOptions]="{standalone: true}" (ngModelChange)="setEnabled($event)" />Apply bonus</label>
+            <label class="flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-outline-variant bg-surface px-2 text-xs"><input type="checkbox" [ngModel]="!selection.disabled" [ngModelOptions]="{standalone: true}" (ngModelChange)="setEnabled($event)" />Use Bonus</label>
           }
-        </div>
+        </header>
+        <div class="space-y-3 p-3">
         @if (!value.options.length && !value.error) {
-          <button type="button" class="mt-1 min-h-9 text-xs text-primary underline" (click)="setPreset('one')">Add ability score bonus</button>
+          <button type="button" class="secondary-button inline-flex items-center gap-2" (click)="setPreset('one')"><app-ui-icon name="plus" />Add Stat Bonus</button>
         } @else {
           @if (!selection.disabled) {
-            <div class="mt-2 space-y-2">
+            <div class="space-y-3">
               @if (value.options.length > 1) {
-                <label class="block"><span class="field-label">Bonus alternative</span>
+                <label class="block"><span class="field-label">Bonus Alternative</span>
                   <select class="editor-input" [ngModel]="selection.optionIndex ?? ''" [ngModelOptions]="{standalone: true}" (ngModelChange)="setAlternative($event)">
                     <option value="">Choose an alternative</option>
                     @for (option of value.options; track $index) { <option [ngValue]="$index">{{ optionLabel(option) }}</option> }
                   </select>
                 </label>
-              } @else if (value.options.length === 1) { <p class="text-xs text-on-surface-variant">{{ optionLabel(value.options[0]) }}</p> }
+              } @else if (value.options.length === 1) { <p class="rounded-lg border border-outline-variant bg-surface-container-high px-2.5 py-2 text-xs font-medium text-on-surface-variant">{{ optionLabel(value.options[0]) }}</p> }
               @if (choiceDefinition; as choice) {
-                  <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <div class="grid grid-cols-1 gap-2 sm:grid-cols-2" role="group" aria-label="Ability allocation">
                     @for (amount of choiceWeights; track $index; let position = $index) {
-                      <label class="block"><span class="field-label">{{ amount >= 0 ? '+' : '' }}{{ amount }} to</span>
+                      <label class="block min-w-0 rounded-lg border border-outline-variant bg-surface-container p-2"><span class="field-label">{{ amount >= 0 ? '+' : '' }}{{ amount }} Ability Bonus</span>
                         <select class="editor-input" [ngModel]="selection.chosen?.[position] ?? ''" [ngModelOptions]="{standalone: true}" (ngModelChange)="setAbility(position, $event)">
                           <option value="">Choose ability</option>
                           @for (ability of abilities; track ability.key) {
@@ -47,23 +52,24 @@ import { AbilityBonusSelection, abilityBonusSources, resolveAbilityBonus, abilit
                   </div>
               }
               @if (preset === 'fixed') {
-                <div class="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                <div class="grid grid-cols-3 gap-2 rounded-lg border border-outline-variant bg-surface-container p-2 sm:grid-cols-6" role="group" aria-label="Fixed ability bonuses">
                   @for (ability of abilities; track ability.key) {
                     <label><span class="field-label">{{ ability.key.toUpperCase() }}</span><input type="number" min="-30" max="30" step="1" class="editor-input" [ngModel]="value.options[0].fixed[ability.key] ?? 0" [ngModelOptions]="{standalone: true}" (ngModelChange)="setFixed(ability.key, $event)" /></label>
                   }
                 </div>
-                <label class="flex items-center gap-2 text-xs">Maximum score <input type="number" min="1" max="30" step="1" class="editor-input !w-20" [ngModel]="value.options[0].maximum" [ngModelOptions]="{standalone: true}" (ngModelChange)="setMaximum($event)" /></label>
+                <label class="flex items-center justify-between gap-2 rounded-lg border border-outline-variant bg-surface-container px-2 py-1.5 text-xs"><span class="font-semibold">Maximum Score</span><input type="number" min="1" max="30" step="1" class="editor-input !w-20" [ngModel]="value.options[0].maximum" [ngModelOptions]="{standalone: true}" (ngModelChange)="setMaximum($event)" /></label>
               }
-              @if (!resolved.ready) { <p role="status" class="text-xs text-on-surface-variant">{{ resolved.status }}. This bonus is not applied yet.</p> }
+              @if (!resolved.ready) { <p role="status" class="rounded-lg border border-outline-variant bg-surface-container-high px-2.5 py-2 text-xs text-on-surface-variant">{{ resolved.status }}</p> }
             </div>
           }
-          <details class="mt-2 text-xs"><summary class="min-h-8 cursor-pointer text-primary">Configure bonus</summary>
-            <label class="block mt-1"><span class="sr-only">Bonus definition</span><select class="editor-input" [ngModel]="preset" [ngModelOptions]="{standalone: true}" (ngModelChange)="setPreset($event)">
-              <option value="content">Use content definition</option><option value="one">+2 to one ability</option><option value="two">+1 to two abilities</option><option value="fixed">Custom fixed bonuses</option>
+          <details class="overflow-hidden rounded-lg border border-outline-variant text-xs"><summary class="flex min-h-11 cursor-pointer items-center justify-between gap-2 bg-surface-container-high px-2.5 font-semibold text-primary">Configure Bonus <app-ui-icon name="chevron-down" /></summary>
+            <label class="block border-t border-outline-variant p-2"><span class="field-label">Bonus Type</span><select class="editor-input" [ngModel]="preset" [ngModelOptions]="{standalone: true}" (ngModelChange)="setPreset($event)">
+              <option value="content">From Content</option><option value="one">+2 to one ability</option><option value="two">+1 to two abilities</option><option value="fixed">Custom fixed bonuses</option>
             </select></label>
           </details>
         }
-      </div>
+        </div>
+      </section>
     }
   `,
 })

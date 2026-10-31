@@ -1,22 +1,29 @@
 @let editor = model();
 <section class="editor-card">
-  <h2>Ability Scores</h2>
-  <div class="mb-3 flex flex-wrap gap-2" role="group" aria-label="Ability score calculation">
-    <button type="button" class="editor-filter" [class.bg-secondary-container]="!editor.automatic" [attr.aria-pressed]="!editor.automatic" (click)="editor.setAutomatic(false)">Completely Manual</button>
-    <button type="button" class="editor-filter" [class.bg-secondary-container]="editor.automatic" [attr.aria-pressed]="editor.automatic" (click)="editor.setAutomatic(true)">Automatically Apply Bonuses</button>
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <span class="text-sm font-semibold text-on-surface">Use Feature Stat Bonuses</span>
+    <div class="inline-flex shrink-0 overflow-hidden rounded-lg border-2 border-outline-variant" role="group" aria-label="Use Feature Stat Bonuses">
+      <button type="button" class="min-h-11 min-w-14 border-r border-outline-variant px-4 text-sm font-semibold" [class.bg-secondary-container]="editor.automatic" [class.text-on-secondary-container]="editor.automatic" [class.bg-surface]="!editor.automatic" [attr.aria-pressed]="editor.automatic" (click)="editor.setAutomatic(true)">Yes</button>
+      <button type="button" class="min-h-11 min-w-14 px-4 text-sm font-semibold" [class.bg-secondary-container]="!editor.automatic" [class.text-on-secondary-container]="!editor.automatic" [class.bg-surface]="editor.automatic" [attr.aria-pressed]="!editor.automatic" (click)="editor.setAutomatic(false)">No</button>
+    </div>
   </div>
-  @if (editor.automatic) { <p class="mb-2 text-xs text-on-surface-variant">Enter base scores below. Feature, feat and background bonuses are added separately. Switching to manual removes these automatic bonuses and keeps the base scores.</p> }
+</section>
+<section class="editor-card">
+  <div class="flex flex-wrap items-baseline justify-between gap-2">
+    <h2>Ability Scores</h2>
+    @if (editor.automatic) { <span class="rounded border border-outline-variant bg-surface-container-high px-2 py-1 text-xs text-on-surface-variant">Base Scores</span> }
+  </div>
   <div class="divide-y divide-outline-variant">
     @for (ability of editor.defenseAbilities; track ability.key) {
       <div class="grid grid-cols-[minmax(0,1fr)_8.25rem] items-center gap-2 py-3">
         <div>
           <label [for]="'ability-' + ability.key" class="font-medium text-sm">{{ ability.label }}</label>
-          @if (editor.automatic) { <p class="mt-1 text-xs text-primary">Total {{ editor.bonusResult.effective[ability.key] }} · Base {{ editor.abilityScores[ability.key] }}</p> }
+          @if (editor.automatic) { <span class="ml-2 inline-block rounded border border-outline-variant bg-secondary-container px-1.5 py-0.5 text-xs font-semibold text-on-secondary-container">Total {{ editor.bonusResult.effective[ability.key] }}</span> }
           <p class="text-xs text-on-surface-variant mt-1">Modifier <span class="font-semibold text-secondary">{{ editor.abilityModifier(ability.key) }}</span></p>
         </div>
         <div class="stat-stepper">
           <button type="button" class="stepper-button" [attr.aria-label]="'Decrease ' + ability.label" (click)="editor.adjustAbility(ability.key, -1)"><app-ui-icon name="minus" /></button>
-          <input [id]="'ability-' + ability.key" [name]="'ability-' + ability.key" type="number" required min="0" step="1" class="editor-input text-center" [(ngModel)]="editor.abilityScores[ability.key]" (ngModelChange)="editor.changed()" />
+          <input [id]="'ability-' + ability.key" [name]="'ability-' + ability.key" [attr.aria-label]="ability.label + (editor.automatic ? ' base score' : ' score')" type="number" required min="0" step="1" class="editor-input text-center" [(ngModel)]="editor.abilityScores[ability.key]" (ngModelChange)="editor.changed()" />
           <button type="button" class="stepper-button" [attr.aria-label]="'Increase ' + ability.label" (click)="editor.adjustAbility(ability.key, 1)"><app-ui-icon name="plus" /></button>
         </div>
       </div>
@@ -28,6 +35,6 @@
     <h2>Ability Bonuses</h2>
     @for (source of editor.bonusSources; track source.id) {
       <app-ability-bonus-editor [sheet]="editor.sheet" [sourceId]="source.id" (edited)="editor.changed()" />
-    } @empty { <p class="text-sm text-on-surface-variant">No ability bonuses are configured. Bonuses can be added on a feature or background.</p> }
+    } @empty { <p class="text-sm text-on-surface-variant">No configured bonuses.</p> }
   </section>
 }

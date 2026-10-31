@@ -1,7 +1,8 @@
 # Optional automatic ability bonuses
 
 Existing characters remain completely manual. The Ability Scores editor offers
-Completely Manual and Automatically Apply Bonuses. Current active sources are
+Use Feature Stat Bonuses with Yes / No options. Bonus sources and their allocation
+controls are grouped in bordered cards. Current active sources are
 features, feats and backgrounds. Species sources are implemented behind the pure
 helper's explicit `includeSpecies` parameter but are not enabled by any app caller;
 an edition/profile selector is outside this change.

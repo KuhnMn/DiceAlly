@@ -37,7 +37,8 @@ describe('Ability bonuses in editor, viewer and saved characters', () => {
     const host = fixture.componentInstance, root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('[aria-label="Ability bonus sources"]')).toBeNull();
     expect(root.querySelector('[aria-label="Applied ability bonuses"]')).toBeNull();
-    const automatic = [...root.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes('Automatically Apply Bonuses'))!;
+    const modeButtons = [...root.querySelectorAll<HTMLButtonElement>('[aria-label="Use Feature Stat Bonuses"] button')];
+    const automatic = modeButtons.find(button => button.textContent?.trim() === 'Yes')!;
     automatic.click(); await fixture.whenStable();
     expect(host.sheet.character!.abilityScores!.strength).toBe(12);
     const strength = root.querySelector<HTMLInputElement>('#ability-strength')!;
@@ -47,7 +48,7 @@ describe('Ability bonuses in editor, viewer and saved characters', () => {
     expect(host.sheet.character!.abilityScores!.strength).toBe(16);
     expect(root.textContent).toContain('Total 16');
     expect(root.querySelector('[aria-label="Applied ability bonuses"]')?.textContent).toContain('Strong feat');
-    [...root.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes('Completely Manual'))!.click();
+    modeButtons.find(button => button.textContent?.trim() === 'No')!.click();
     await fixture.whenStable();
     expect(strength.value).toBe('14'); expect(host.sheet.character!.abilityScores!.strength).toBe(14);
     expect(root.querySelector('[aria-label="Ability bonus sources"]')).toBeNull();
