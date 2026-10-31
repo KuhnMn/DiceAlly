@@ -23,8 +23,9 @@ export class EntryAnnotationsComponent extends EntryAnnotationsEditor {
   readonly entry = input.required<AnnotatedEntry>();
   readonly annotationsEnabled = input(true);
   readonly showUses = input(true);
-  activePanel: 'uses' | 'notes' | null = null;
-  togglePanel(panel: 'uses' | 'notes') { this.activePanel = this.activePanel === panel ? null : panel; }
+  readonly showBonus = input(false);
+  activePanel: 'uses' | 'notes' | 'bonus' | null = null;
+  togglePanel(panel: 'uses' | 'notes' | 'bonus') { this.activePanel = this.activePanel === panel ? null : panel; }
   override addUses(entry: AnnotatedEntry) { super.addUses(entry); this.activePanel = 'uses'; }
   override addNote(entry: AnnotatedEntry) { super.addNote(entry); this.activePanel = 'notes'; }
   readonly edited = output<void>();

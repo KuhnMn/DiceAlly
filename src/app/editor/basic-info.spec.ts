@@ -298,7 +298,7 @@ describe('Basic Info editor', () => {
     const fixture = TestBed.createComponent(LocalEditorComponent);
     await fixture.whenStable();
     const editor = fixture.componentInstance;
-    editor.character.abilityScores!.dexterity = 14; editor.character.abilityScores!.wisdom = 18;
+    editor.sheet.abilityBonuses!.base.dexterity = 14; editor.sheet.abilityBonuses!.base.wisdom = 18;
     editor.character.armorClass = 17;
     editor.basicInfo.setAutomaticAc(true); editor.basicInfo.setUnarmoredDefense(true); editor.basicInfo.setDefenseAbility('wisdom');
     fixture.changeDetectorRef.markForCheck();

@@ -1,6 +1,7 @@
 # Optional automatic ability bonuses
 
-Existing characters remain completely manual. The Ability Scores editor offers
+New characters enable automatic bonuses by default. Existing characters keep
+their saved setting; legacy characters without a setting remain manual. The Ability Scores editor offers
 Use Feature Stat Bonuses with Yes / No options. Bonus sources and their allocation
 controls are grouped in bordered cards. Current active sources are
 features, feats and backgrounds. Species sources are implemented behind the pure
@@ -41,9 +42,15 @@ resolved; other valid sources still work and the character can remain a draft.
 Each source can be explicitly disabled with No bonus under Configure Bonus.
 Definition overrides are authored state,
 not edits to cached library content. The source editor offers +2 to one ability,
-+1 to two abilities, or fixed custom changes and a maximum. The exact standard
-name Ability Score Improvement offers the two normal allocation alternatives
-when structured data is absent. No arbitrary numbers are extracted from prose;
++1 to two abilities, or fixed custom changes and a maximum. Every feature can
+be configured manually. Only sources with structured content
+bonuses start with an active content suggestion; content-free sources start at
+No bonus, including class ASI entries and feats named Ability Score Improvement.
+No bonuses are inferred from a name. Class ASI increases come from the chosen
+feat unless the user explicitly configures a manual bonus on the class feature.
+The class feature schema has no structured ability field for Primal Champion,
+so its description is not converted into automatic bonuses. No arbitrary numbers
+are extracted from prose;
 features without structured data can be configured explicitly on their editor row.
 
 Positive increases respect each source's cap without lowering a base already over
@@ -57,15 +64,20 @@ deterministic bonus projection, not a full chronological feat-eligibility engine
 `AbilityBonusEditorComponent` is shared by Ability Scores, feature rows and the
 background editor. Source names and types appear on standalone Ability Scores
 cards; embedded editors reuse the surrounding feature or background heading.
-`AbilityBonusSummaryComponent` provides compact feature and
-background details plus a collapsible breakdown in mobile and desktop overviews.
-Both are hidden when the mode is manual.
+Feature bonus editing opens from Stat Bonuses in the Uses/Notes toolbar.
+Backgrounds have one Configure Bonus control; custom sources omit From Content,
+and No bonus hides all allocation fields. Incomplete-choice prompts are omitted.
+`AbilityBonusSummaryComponent` shows applied feature increases as read-only note
+cards on the Feature Page. Both overview layouts show base + named contributions
+= total in the shared hover/focus tooltip at each ability score, including caps,
+instead of a separate Ability Bonuses section. Bonus summaries and editors are
+hidden when the mode is manual.
 
 Editor changes, viewer store loads and portable normalization update the effective
 projection. Wizard output and description refresh do the same when the mode is
 enabled. Source definitions can update while source choices, bases, notes and IDs
-remain authored state. Changed choice eligibility yields a visible pending status
-instead of choosing a different ability silently.
+remain authored state. Changed choice eligibility leaves the allocation incomplete rather than
+choosing a different ability silently.
 
 Portable validation checks stored configuration. The existing local repository and
 cloud codec preserve it without a new character file format or content schema.

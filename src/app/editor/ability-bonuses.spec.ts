@@ -6,6 +6,8 @@ import { By } from '@angular/platform-browser';
 import { AbilityScoresEditorComponent } from './ability-scores-editor.component';
 import { AbilityScoresEditorModel } from './ability-scores-editor-model';
 import { AbilityBonusEditorComponent } from './ability-bonus-editor.component';
+import { EntryAnnotationsComponent } from './entry-annotations.component';
+import { abilityScoreFormula } from '../models/ability-score-bonuses';
 import { AbilityBonusSummaryComponent } from '../sheet/ability-bonus-summary.component';
 import { CharacterHelpersService } from '../sheet/character-helpers.service';
 import { emptyBasicCharacter } from './basic-info';
@@ -28,12 +30,30 @@ class AbilityTestHost {
     this.sheet.features = [{ editorId: 'feat', name: 'Strong feat', featureType: 'FEAT',
       featEntity: { name: 'Strong feat', source: 'TEST', entries: [], ability: [{ str: 2 }] } }];
     this.sheet.background = { name: 'Background', entity: { ability: [{ choose: { weighted: { from: ['wis', 'int', 'cha'], weights: [2, 1] } } }] } };
+    applyAbilityBonuses(this.sheet);
   }
+}
+
+@Component({
+  imports: [EntryAnnotationsComponent, AbilityBonusEditorComponent],
+  template: `<app-entry-annotations-editor [entry]="sheet.features![0]" [showBonus]="true">
+    <app-ability-bonus-editor annotation-bonus [sheet]="sheet" sourceId="feature:feat" [showSource]="false" (edited)="update()" />
+  </app-entry-annotations-editor>`,
+})
+class BonusToolsHost {
+  readonly sheet = emptyBasicCharacter();
+  constructor() {
+    this.sheet.features = [{ editorId: 'feat', name: 'Choice feat', featureType: 'FEAT',
+      featEntity: { name: 'Choice feat', source: 'TEST', entries: [], ability: [{ choose: { from: ['str', 'dex'], amount: 1 } }] } }];
+  }
+  update() { applyAbilityBonuses(this.sheet); }
 }
 
 describe('Ability bonuses in editor, viewer and saved characters', () => {
   it('keeps manual UI unchanged, edits base values separately, and hides all bonus controls when switched off', async () => {
-    const fixture = TestBed.createComponent(AbilityTestHost); await fixture.whenStable();
+    const fixture = TestBed.createComponent(AbilityTestHost);
+    fixture.componentInstance.editor.setAutomatic(false);
+    await fixture.whenStable();
     const host = fixture.componentInstance, root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('[aria-label="Ability bonus sources"]')).toBeNull();
     expect(root.querySelector('[aria-label="Applied ability bonuses"]')).toBeNull();
@@ -107,6 +127,47 @@ describe('Ability bonuses in editor, viewer and saved characters', () => {
     await selectType('content');
     expect(host.sheet.abilityBonuses!.choices[sourceId].disabled).toBe(false);
     expect(host.sheet.character!.abilityScores!.strength).toBe(12);
+    fixture.destroy();
+  });
+
+  it('opens stat bonuses from the entry tools and closes them when Notes opens', async () => {
+    const fixture = TestBed.createComponent(BonusToolsHost); await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    const panel = root.querySelector<HTMLElement>('[aria-label="Stat bonuses editor"]')!;
+    expect(panel.hidden).toBe(true);
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>('[aria-label="Entry tools"] button')];
+    buttons.find(button => button.textContent!.includes('Stat Bonuses'))!.click(); await fixture.whenStable();
+    expect(panel.hidden).toBe(false);
+    const select = panel.querySelector<HTMLSelectElement>('[aria-label="Ability allocation"] select')!;
+    select.value = 'str'; select.dispatchEvent(new Event('change')); await fixture.whenStable();
+    expect(abilityScoreFormula(fixture.componentInstance.sheet, 'strength')).toContain('+ 1 Choice feat');
+    expect(panel.textContent).not.toContain('Choose 1 distinct ability');
+    buttons.find(button => button.textContent!.includes('Notes'))!.click(); await fixture.whenStable();
+    expect(panel.hidden).toBe(true);
+    fixture.destroy();
+  });
+
+  it('defaults new characters to automatic and offers one configuration route for a custom background', async () => {
+    const sheet = emptyBasicCharacter();
+    expect(sheet.abilityBonuses!.enabled).toBe(true);
+    expect(sheet.abilityBonuses!.base).toEqual(sheet.character!.abilityScores);
+    expect(sheet.abilityBonuses!.base).not.toBe(sheet.character!.abilityScores);
+    sheet.background = { name: 'Custom background' };
+    const fixture = TestBed.createComponent(AbilityBonusEditorComponent);
+    fixture.componentRef.setInput('sheet', sheet);
+    fixture.componentRef.setInput('sourceId', backgroundBonusSourceId(sheet.background));
+    fixture.componentInstance.edited.subscribe(() => applyAbilityBonuses(sheet));
+    await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    const type = root.querySelector<HTMLSelectElement>('details select')!;
+    expect(type.value).toBe('none');
+    expect(type.querySelector('option[value="content"]')).toBeNull();
+    expect(root.textContent).not.toContain('Add Stat Bonus');
+    type.value = 'two'; type.dispatchEvent(new Event('change')); await fixture.whenStable();
+    expect(root.querySelector('[aria-label="Ability allocation"]')).not.toBeNull();
+    type.value = 'none'; type.dispatchEvent(new Event('change')); await fixture.whenStable();
+    expect(root.querySelector('[aria-label="Ability allocation"]')).toBeNull();
+    expect(root.querySelector('p[role="status"]')).toBeNull();
     fixture.destroy();
   });
 

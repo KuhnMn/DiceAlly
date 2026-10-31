@@ -1,6 +1,6 @@
 import type { ExportedCharacter, FeatureEntryFull } from './character.model';
 import { abilityBonusSources, applyAbilityBonuses, calculateAbilityBonuses, featureBonusSourceId, backgroundBonusSourceId,
-  setAbilityBonusesEnabled, asiBonusOptions } from './ability-score-bonuses';
+  setAbilityBonusesEnabled, asiBonusOptions, abilityScoreFormula } from './ability-score-bonuses';
 import { portableCharacter } from '../characters/portable-character';
 
 function feat(id: string, ability: unknown[]): FeatureEntryFull {
@@ -85,7 +85,7 @@ describe('Opt-in ability score bonuses', () => {
   });
 
   it('supports ASI presets and explicit custom feature definitions without parsing description prose', () => {
-    const value = sheet(); value.features = [{ name: 'Ability Score Improvement', editorId: 'asi' }, { name: 'Custom effect', editorId: 'custom' }];
+    const value = sheet(); value.features = [feat('asi', [{ choose: { from: ['str', 'dex', 'con', 'int', 'wis', 'cha'], count: 1, amount: 2 } }, { choose: { from: ['str', 'dex', 'con', 'int', 'wis', 'cha'], count: 2, amount: 1 } }]), { name: 'Custom effect', editorId: 'custom' }];
     setAbilityBonusesEnabled(value, true);
     const asi = abilityBonusSources(value).find(source => source.id === 'feature:asi')!;
     expect(asi.options).toEqual(asiBonusOptions());
@@ -94,6 +94,30 @@ describe('Opt-in ability score bonuses', () => {
     applyAbilityBonuses(value); expect(value.character!.abilityScores).toMatchObject({ strength: 12, dexterity: 11 });
     const before = structuredClone(value), result = calculateAbilityBonuses(value);
     expect(result.sources.every(source => source.ready)).toBe(true); expect(value).toEqual(before);
+  });
+
+  it('starts every content-free feature at no bonus and applies ASIs only after explicit configuration', () => {
+    const value = sheet(); value.background = undefined;
+    value.features = [{ name: 'Ability Score Improvement', featureType: 'CLASS_FEATURE', editorId: 'class-asi' },
+      feat('Ability Score Improvement', []), { name: 'Primal Champion', featureType: 'CLASS_FEATURE', editorId: 'capstone',
+        featureEntity: { name: 'Primal Champion', level: 20, source: 'XPHB', className: 'Barbarian', classSource: 'XPHB',
+          entries: ['Your Strength and Constitution scores increase by 4.'] } }];
+    delete value.features![1].featEntity!.ability;
+    setAbilityBonusesEnabled(value, true);
+    expect(abilityBonusSources(value).every(source => source.options.length === 0 && !source.hasContent)).toBe(true);
+    expect(value.character!.abilityScores!.strength).toBe(10);
+    value.abilityBonuses!.custom['feature:class-asi'] = [{ fixed: { str: 2 }, maximum: 20, hidden: false }];
+    applyAbilityBonuses(value);
+    expect(value.character!.abilityScores!.strength).toBe(12);
+    expect(abilityBonusSources(value).find(source => source.id === 'feature:capstone')!.options).toEqual([]);
+  });
+
+  it('explains actual capped contributions and leaves legacy manual scores unchanged', () => {
+    const value = sheet(); value.background = undefined; value.character!.abilityScores!.strength = 19;
+    setAbilityBonusesEnabled(value, true);
+    expect(abilityScoreFormula(value, 'strength')).toBe('19 Base + 1 Feat A (capped) = 20');
+    setAbilityBonusesEnabled(value, false);
+    expect(abilityScoreFormula(value, 'strength')).toBe('19 Base = 19');
   });
 
   it('preserves configuration and totals across portable export/import, and validates malformed saved state', () => {

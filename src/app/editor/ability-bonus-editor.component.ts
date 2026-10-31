@@ -23,10 +23,7 @@ import { AbilityBonusSelection, abilityBonusSources, resolveAbilityBonus, abilit
           </header>
         }
         <div class="bonus-controls">
-        @if (!value.options.length && !value.error) {
-          <button type="button" class="bonus-button inline-flex items-center gap-1" (click)="setPreset('one')"><app-ui-icon name="plus" />Add Stat Bonus</button>
-        } @else {
-          @if (!selection.disabled) {
+          @if (preset !== 'none') {
             <div class="bonus-controls">
               @if (value.options.length > 1) {
                 <label class="block"><span class="sr-only">Bonus Alternative</span>
@@ -58,13 +55,12 @@ import { AbilityBonusSelection, abilityBonusSources, resolveAbilityBonus, abilit
                 </div>
                 <label class="bonus-maximum"><span class="font-semibold">Maximum Score</span><input type="number" min="1" max="30" step="1" class="editor-input !w-20" [ngModel]="value.options[0].maximum" [ngModelOptions]="{standalone: true}" (ngModelChange)="setMaximum($event)" /></label>
               }
-              @if (!resolved.ready) { <p role="status" class="bonus-note">{{ resolved.status }}</p> }
+              @if (!resolved.ready && !resolved.status.startsWith('Choose ')) { <p role="status" class="bonus-note">{{ resolved.status }}</p> }
             </div>
           }
-        }
           <details class="bonus-config"><summary class="bonus-button text-primary">Configure Bonus <app-ui-icon name="chevron-down" /></summary>
             <label class="bonus-config-field"><span class="field-label">Bonus Type</span><select class="editor-input" [ngModel]="preset" [ngModelOptions]="{standalone: true}" (ngModelChange)="setPreset($event)">
-              <option value="none">No bonus</option><option value="content">From Content</option><option value="one">+2 to one ability</option><option value="two">+1 to two abilities</option><option value="fixed">Custom fixed bonuses</option>
+              <option value="none">No bonus</option>@if (value.hasContent) { <option value="content">From Content</option> }<option value="one">+2 to one ability</option><option value="two">+1 to two abilities</option><option value="fixed">Custom fixed bonuses</option>
             </select></label>
           </details>
         </div>
@@ -91,7 +87,7 @@ export class AbilityBonusEditorComponent {
     return choice?.kind === 'weighted' ? choice.weights : choice?.kind === 'uniform' ? Array.from({ length: Math.max(0, Math.min(6, choice.count)) }, () => choice.amount) : [];
   }
   get preset() {
-    if (this.selection.disabled) return 'none';
+    if (this.selection.disabled || !this.source?.options.length && !this.source?.error) return 'none';
     const custom = this.sheet().abilityBonuses?.custom[this.sourceId()];
     return !custom ? 'content' : !custom[0]?.choice ? 'fixed' : custom[0].choice.kind === 'uniform' && custom[0].choice.count === 2 ? 'two' : 'one';
   }

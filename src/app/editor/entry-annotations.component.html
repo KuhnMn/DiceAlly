@@ -4,9 +4,15 @@
       <button type="button" class="annotation-button disabled:opacity-50" [disabled]="!annotationsEnabled()" [title]="annotationsEnabled() ? 'Edit use trackers' : 'Prepare this spell to edit uses'" [attr.aria-expanded]="activePanel === 'uses' && annotationsEnabled()" [attr.aria-pressed]="activePanel === 'uses'" [attr.aria-controls]="'uses-panel-' + i" [class.bg-secondary-container]="activePanel === 'uses'" (click)="togglePanel('uses')"><app-ui-icon name="tally" /> Uses @if (entry().uses?.length) { <span>({{ entry().uses?.length }})</span> }</button>
     }
     <button type="button" class="annotation-button disabled:opacity-50" [disabled]="!annotationsEnabled()" [title]="annotationsEnabled() ? 'Edit notes' : 'Prepare this spell to edit notes'" [attr.aria-expanded]="activePanel === 'notes' && annotationsEnabled()" [attr.aria-pressed]="activePanel === 'notes'" [attr.aria-controls]="'notes-panel-' + i" [class.bg-secondary-container]="activePanel === 'notes'" (click)="togglePanel('notes')"><app-ui-icon name="file" /> Notes @if (entry().notes?.length) { <span>({{ entry().notes?.length }})</span> }</button>
+    @if (showBonus()) {
+      <button type="button" class="annotation-button" [attr.aria-expanded]="activePanel === 'bonus'" [attr.aria-controls]="'bonus-panel-' + i" [class.bg-secondary-container]="activePanel === 'bonus'" (click)="togglePanel('bonus')"><app-ui-icon name="plus" /> Stat Bonuses</button>
+    }
     <ng-content select="[annotation-combat]" />
     <ng-content select="[annotation-description]" />
   </div>
+  <section class="annotation-panel" [hidden]="!showBonus() || activePanel !== 'bonus'" [id]="'bonus-panel-' + i" aria-label="Stat bonuses editor">
+    <ng-content select="[annotation-bonus]" />
+  </section>
   @if (showUses()) {
   <section class="annotation-panel" [hidden]="activePanel !== 'uses' || !annotationsEnabled()" [id]="'uses-panel-' + i" aria-label="Uses editor">
     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">

@@ -16,7 +16,7 @@ export interface AbilityBonusState {
 }
 export interface AbilityBonusSource {
   id: string; name: string; kind: 'Feature' | 'Feat' | 'Background' | 'Species';
-  options: SpeciesAbilityOption[]; custom: boolean; error?: string;
+  options: SpeciesAbilityOption[]; custom: boolean; hasContent?: boolean; error?: string;
 }
 export interface ResolvedAbilityBonus {
   source: AbilityBonusSource; selected?: SpeciesAbilityOption;
@@ -45,15 +45,14 @@ export function abilityBonusSources(sheet: ExportedCharacter, includeSpecies = f
       if (custom != null && !Array.isArray(custom)) throw new Error('Custom bonuses must be an array.');
       if (raw != null && !Array.isArray(raw)) throw new Error('Ability bonuses must be an array.');
       const options = custom ?? (raw == null ? fallback : (raw as unknown[]).map(adaptAbilityBonusOption));
-      sources.push({ id, name, kind, options, custom: !!custom });
+      sources.push({ id, name, kind, options, custom: !!custom, hasContent: Array.isArray(raw) && raw.length > 0 || fallback.length > 0 });
     } catch (error) { sources.push({ id, name, kind, options: [], custom: !!custom, error: String(error) }); }
   };
   if (sheet.background) add(backgroundBonusSourceId(sheet.background), sheet.background.name, 'Background', sheet.background.entity?.['ability']);
   for (const feature of sheet.features ?? []) {
     const entity = feature.featEntity ?? feature.optionalFeatureEntity ?? feature.featureEntity;
-    const standardAsi = feature.name.trim().toLowerCase() === 'ability score improvement';
-    add(featureBonusSourceId(feature), feature.name, feature.featEntity || feature.featureType === 'FEAT' ? 'Feat' : 'Feature', entity?.ability,
-      standardAsi ? asiBonusOptions() : []);
+    const isFeat = !!feature.featEntity || feature.featureType === 'FEAT';
+    add(featureBonusSourceId(feature), feature.name, isFeat ? 'Feat' : 'Feature', entity?.ability);
   }
   if (includeSpecies && sheet.species) {
     const species = sheet.species;
@@ -167,4 +166,14 @@ export function validateAbilityBonusState(sheet: ExportedCharacter): void {
     if (!Array.isArray(options) || options.some(option => !record(option) || !record(option['fixed'])
       || option['choice'] !== undefined && !record(option['choice']))) throw new Error('Invalid custom ability bonuses.');
   }
+}
+
+/** Explain actual contributions, including score caps, using the same projection as the sheet. */
+export function abilityScoreFormula(sheet: ExportedCharacter, field: keyof AbilityScores): string {
+  const ability = BONUS_ABILITIES.find(entry => entry.field === field);
+  const result = calculateAbilityBonuses(sheet);
+  const base = result.base[field];
+  if (!ability || base === undefined) return 'Score unavailable';
+  const changes = result.contributions.filter(entry => entry.ability === ability.key);
+  return `${base} Base${changes.map(entry => ` ${entry.applied >= 0 ? '+' : '−'} ${Math.abs(entry.applied)} ${entry.name}${entry.applied !== entry.requested ? ' (capped)' : ''}`).join('')} = ${result.effective[field]}`;
 }

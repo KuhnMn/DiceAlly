@@ -1,4 +1,6 @@
-import { AbilityBonusSummaryComponent } from './ability-bonus-summary.component';
+import { abilityScoreFormula } from '../models/ability-score-bonuses';
+import { AbilityScores } from '../models/character.model';
+import { SheetStatTooltipComponent } from './sheet-stat-tooltip.component';
 import { SheetSavingThrowComponent } from './sheet-saving-throw.component';
 import { ItemEffectRemindersComponent } from './item-effect-reminders.component';
 import { isSheetPageVisible, sheetPageForAnchor } from '../models/sheet-pages';
@@ -29,7 +31,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
 
 @Component({
   selector: 'app-character-info-page',
-  imports: [AbilityBonusSummaryComponent, SheetSavingThrowComponent, ItemEffectRemindersComponent, CombatActionColumnsComponent, CombatActionComponent, BasicCombatActionsComponent, RuleReferenceComponent, SheetSpeedControlComponent, SheetSpeedDescriptionComponent, BackgroundDetailsComponent, ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
+  imports: [SheetStatTooltipComponent, SheetSavingThrowComponent, ItemEffectRemindersComponent, CombatActionColumnsComponent, CombatActionComponent, BasicCombatActionsComponent, RuleReferenceComponent, SheetSpeedControlComponent, SheetSpeedDescriptionComponent, BackgroundDetailsComponent, ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
   styleUrl: './sheet-stat-tooltip.css',
   styles: [`
     .round-tracker-input::-webkit-outer-spin-button,
@@ -113,7 +115,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
             @for (ability of abilities(); track ability.name) {
               <div class="border-2 border-surface rounded-lg sm:rounded-xl p-2 bg-surface-container-low text-center shadow-lg">
                 <div class="text-xs font-bold text-on-surface-variant uppercase">{{ ability.abbr }}</div>
-                <div class="text-2xl font-bold my-0.5 text-primary">{{ ability.score }}</div>
+                <app-sheet-stat-tooltip [text]="ability.formula" [focusable]="true"><div class="text-2xl font-bold my-0.5 text-primary">{{ ability.score }}</div></app-sheet-stat-tooltip>
                 <div class="text-lg font-semibold text-tertiary">
                   {{ helpers.formatSigned(ability.modifier) }}
                 </div>
@@ -124,7 +126,6 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
             }
           </div>
 
-          <app-ability-bonus-summary [sheet]="characterData()" />
           <!-- Skills -->
           <div class="border-4 border-surface rounded-lg p-4 bg-surface-container-low shadow-lg">
             <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
@@ -699,6 +700,7 @@ export class CharacterInfoPageComponent {
         modifier: modifier,
         proficient,
         savingThrow,
+        formula: abilityScoreFormula(this.characterData() ?? {}, key as keyof AbilityScores),
       };
     });
   });

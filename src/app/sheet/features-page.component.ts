@@ -135,7 +135,7 @@ import { referenceDescription } from '../models/character-references';
                   <div class="space-y-3 border-t border-outline-variant pt-3 md:border-t-0 md:pt-0">
                     <app-prerequisite-details [prerequisites]="feature.featEntity?.prerequisite ?? feature.optionalFeatureEntity?.prerequisite" />
                     <div [attr.id]="feature.featureSourceName ? 'source-' + helpers.sourceId(feature.featureSourceName) : null">
-                      <app-ability-bonus-summary [sheet]="characterData()" [sourceId]="bonusSourceId(feature)" /><app-entry-renderer [entries]="helpers.featureEntries(feature)"></app-entry-renderer>
+                      <app-ability-bonus-summary [card]="true" [sheet]="characterData()" [sourceId]="bonusSourceId(feature)" /><app-entry-renderer [entries]="helpers.featureEntries(feature)"></app-entry-renderer>
                     </div>
 
                   </div>

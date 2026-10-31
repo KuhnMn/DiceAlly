@@ -1,16 +1,22 @@
+import { FeatureNotesComponent } from './feature-notes.component';
 import { Component, input } from '@angular/core';
 import { ExportedCharacter } from '../models/character.model';
 import { BONUS_ABILITIES, calculateAbilityBonuses, abilityBonusSources, resolveAbilityBonus } from '../models/ability-score-bonuses';
 
 @Component({
   selector: 'app-ability-bonus-summary',
+  imports: [FeatureNotesComponent],
   host: { class: 'block min-w-0', '[style.display]': 'visible ? null : "none"' },
   template: `
-    @if (sheet()?.abilityBonuses?.enabled) {
+    @if (visible) {
       @if (sourceId()) {
         @if (source; as value) {
           @if (value.options.length || value.error) {
-            <p class="text-xs text-on-surface-variant [overflow-wrap:anywhere]">Ability bonus: <span class="text-primary">{{ sourceSummary }}</span></p>
+            @if (card()) {
+              <app-feature-notes [notes]="[{ tag: 'Ability Bonuses', notes: sourceSummary.split(' · '), isEditable: false }]" />
+            } @else {
+              <p class="text-xs text-primary [overflow-wrap:anywhere]">{{ sourceSummary }}</p>
+            }
           }
         }
       } @else {
@@ -32,13 +38,15 @@ import { BONUS_ABILITIES, calculateAbilityBonuses, abilityBonusSources, resolveA
 export class AbilityBonusSummaryComponent {
   readonly sheet = input<ExportedCharacter | null | undefined>();
   readonly sourceId = input('');
+  readonly card = input(false);
   readonly abilities = BONUS_ABILITIES;
-  get visible() { return !!this.sheet()?.abilityBonuses?.enabled && (!this.sourceId() || !!(this.source?.options.length || this.source?.error)); }
+  get visible() { return !!this.sheet()?.abilityBonuses?.enabled && (!this.sourceId() || !!this.sourceSummary); }
   get result() { return calculateAbilityBonuses(this.sheet() ?? {}); }
   get source() { return abilityBonusSources(this.sheet() ?? {}).find(source => source.id === this.sourceId()); }
   get sourceSummary() {
-    const resolved = resolveAbilityBonus(this.source!, this.sheet()?.abilityBonuses?.choices[this.sourceId()]);
-    if (!resolved.ready || resolved.status === 'Not applied') return resolved.status;
+    if (!this.source) return '';
+    const resolved = resolveAbilityBonus(this.source, this.sheet()?.abilityBonuses?.choices[this.sourceId()]);
+    if (!resolved.ready || resolved.status === 'Not applied') return '';
     const contributions = this.result.contributions.filter(entry => entry.sourceId === this.sourceId());
     return contributions.map(entry => `${entry.applied >= 0 ? '+' : ''}${entry.applied} ${entry.ability.toUpperCase()}${entry.applied !== entry.requested ? ' (capped)' : ''}`).join(' · ') || 'No increase';
   }

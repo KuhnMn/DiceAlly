@@ -1,4 +1,5 @@
 import { ExportedCharacter, AbilityScores } from '../models/character.model';
+import { setAbilityBonusesEnabled } from '../models/ability-score-bonuses';
 import { canonicalDocument } from '../rules/canonical-document';
 import { primaryWalkingSpeed, validateCharacterSpeeds, walkingSpeedEntry } from '../models/character-speed';
 import { validateObjectCompanions } from '../models/companions';
@@ -11,10 +12,12 @@ export const DEFENSE_ABILITIES: { key: keyof AbilityScores; label: string }[] = 
 ];
 
 export function emptyBasicCharacter(): ExportedCharacter {
-  return { character: { characterUuid: crypto.randomUUID(), name: '', description: '', level: 1,
+  const sheet: ExportedCharacter = { character: { characterUuid: crypto.randomUUID(), name: '', description: '', level: 1,
     maxHp: 0, armorClass: 10, calculateAC: false,
     abilityScores: { strength: 10, dexterity: 10, constitution: 10, intelligence: 10, wisdom: 10, charisma: 10 },
     resistances: [], senses: {}, speeds: [walkingSpeedEntry()] } };
+  setAbilityBonusesEnabled(sheet, true);
+  return sheet;
 }
 
 export function validateBasicInfo(sheet: ExportedCharacter): void {

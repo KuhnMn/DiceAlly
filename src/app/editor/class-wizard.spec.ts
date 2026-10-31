@@ -1,3 +1,4 @@
+import { applyAbilityBonuses, setAbilityBonusesEnabled } from '../models/ability-score-bonuses';
 import 'fake-indexeddb/auto';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -48,7 +49,7 @@ function fixture() {
     { selectionId: 'fighter', classKey: find('class', 'Fighter').key, level: 1 },
   ], answers: {}, options: {}, baseline: [], protectedPaths: [] };
   const index = new Map(records.map(record => [record.key, record]));
-  const sheet = emptyBasicCharacter(); sheet.character!.abilityScores!.constitution = 14;
+  const sheet = emptyBasicCharacter(); sheet.abilityBonuses!.base.constitution = 14; applyAbilityBonuses(sheet);
   return { revision, records, find, state, index, sheet };
 }
 
@@ -268,8 +269,8 @@ describe('Subclass-granted spell prefill', () => {
     f.state.classes[0].level = 8;
     expect(previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet.spells!.some(spell => spell.name === 'Shield' && spell.uses?.length)).toBe(false);
   });
-  it('offers selected-background proficiency choices without granting its feats, abilities, equipment or spells', () => {
-    const f = fixture(); f.state.classes = [];
+  it('offers background proficiencies without creating grants and respects the automatic ability setting', () => {
+    const f = fixture(); f.state.classes = []; setAbilityBonusesEnabled(f.sheet, false);
     const record = mapContent({ background: [{ name: 'Sage', source: 'TEST', entries: ['Reference'],
       skillProficiencies: [{ arcana: true, choose: { from: ['history', 'religion'], count: 1 } }],
       languageProficiencies: [{ elvish: true }], feats: [{ 'alert|phb': true }], ability: [{ int: 2 }], additionalSpells: [{ known: { '1': ['Shield|TEST'] } }],
@@ -290,6 +291,11 @@ describe('Subclass-granted spell prefill', () => {
     expect(result.sheet.features ?? []).toHaveLength(0); expect(result.sheet.spells ?? []).toHaveLength(0);
     expect(result.sheet.character!.abilityScores).toEqual(f.sheet.character!.abilityScores);
     expect(result.sheet.inventory ?? []).toHaveLength(0);
+    setAbilityBonusesEnabled(f.sheet, true);
+    const automatic = previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet;
+    expect(automatic.abilityBonuses!.base.intelligence).toBe(10);
+    expect(automatic.character!.abilityScores!.intelligence).toBe(12);
+    expect(automatic.character!.abilityScores!.constitution).toBe(14);
   });
   it('replaces display selections while preserving custom class text, without taking editor rows as wizard inputs', () => {
     const f = fixture();
