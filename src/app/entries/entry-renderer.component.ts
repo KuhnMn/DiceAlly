@@ -154,16 +154,16 @@ type StyleType = 'TAG' | 'BONUS' | 'LINK' | 'BOLD';
           <app-entry-renderer [entries]="asSectionEntry(entry()!)?.entries ?? []" [compact]="compact()"></app-entry-renderer>
         }
         @case ('refSubclassFeature') {
-          <div class="text-sm text-secondary">Subclass Feature: {{ asRefSubclassEntry(entry()!)?.subclassFeature }}</div>
+          <div class="text-sm [overflow-wrap:anywhere]"><span class="text-on-surface-variant">Subclass Feature:</span> <span class="font-semibold text-primary">{{ referenceName(asRefSubclassEntry(entry()!)?.subclassFeature) }}</span></div>
         }
         @case ('refClassFeature') {
-          <div class="text-sm text-secondary">Class Feature: {{ asRefClassEntry(entry()!)?.classFeature }}</div>
+          <div class="text-sm [overflow-wrap:anywhere]"><span class="text-on-surface-variant">Class Feature:</span> <span class="font-semibold text-primary">{{ referenceName(asRefClassEntry(entry()!)?.classFeature) }}</span></div>
         }
         @case ('refFeat') {
-          <div class="text-sm text-secondary">Feat: {{ asRefFeatEntry(entry()!)?.feat }}</div>
+          <div class="text-sm [overflow-wrap:anywhere]"><span class="text-on-surface-variant">Feat:</span> <span class="font-semibold text-primary">{{ referenceName(asRefFeatEntry(entry()!)?.feat) }}</span></div>
         }
         @case ('refOptionalfeature') {
-          <div class="text-sm text-secondary">Optional Feature: {{ asRefOptionalEntry(entry()!)?.optionalfeature }}</div>
+          <div class="text-sm [overflow-wrap:anywhere]"><span class="text-on-surface-variant">Optional Feature:</span> <span class="font-semibold text-primary">{{ referenceName(asRefOptionalEntry(entry()!)?.optionalfeature) }}</span></div>
         }
         @default {
           <div class="whitespace-pre-wrap" [class.text-sm]="!inline()" [class.inline]="inline()">
@@ -273,6 +273,10 @@ export class EntryRendererComponent {
 
   asRefSubclassEntry(entry: Entry): RenderEntry<'refSubclassFeature', RefSubclassEntry> | null {
     return this.detectType(entry) === 'refSubclassFeature' ? (entry as RenderEntry<'refSubclassFeature', RefSubclassEntry>) : null;
+  }
+
+  referenceName(reference: string | undefined): string {
+    return reference?.split('|')[0].trim() || 'Unnamed feature';
   }
 
   asRefClassEntry(entry: Entry): RenderEntry<'refClassFeature', RefClassEntry> | null {

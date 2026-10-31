@@ -4,6 +4,24 @@ import { higherLevelEntries } from './entry-compatibility';
 import { SourceEntries } from '../content/content-entries';
 
 describe('Source descriptions and Android entry compatibility', () => {
+  it('renders structured feature references as readable names inside nested source and saved Android entries', () => {
+    const fixture = TestBed.createComponent(EntryRendererComponent);
+    fixture.componentRef.setInput('entries', [{ type: 'entries', name: 'Granted features', entries: [
+      { type: 'refSubclassFeature', subclassFeature: 'Star Map|Druid|XPHB|Stars|XPHB|3' },
+      { type: 'refSubclassFeature', subclassFeature: 'Starry Form|Druid|XPHB|Stars|XPHB|3' },
+      { type: 'com.ltx.data.refClassFeature', classFeature: 'Wild Shape|Druid|PHB|2' },
+      { type: 'refFeat', feat: 'Magic Initiate|XPHB' },
+      { type: 'refOptionalfeature', optionalfeature: 'Agonizing Blast|XPHB' },
+    ] }]);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect([...root.querySelectorAll('.text-primary')].map(element => element.textContent?.trim()))
+      .toEqual(['Star Map', 'Starry Form', 'Wild Shape', 'Magic Initiate', 'Agonizing Blast']);
+    expect(root.textContent).toContain('Granted features');
+    expect(root.textContent).not.toMatch(/\||XPHB|PHB|Druid/);
+    fixture.destroy();
+  });
+
   it('renders nested note references without exposing tags or changing sentence capitalization', () => {
     const fixture = TestBed.createComponent(EntryRendererComponent);
     fixture.componentRef.setInput('entry', 'Before. {@note Created by the {@subclassFeature Eldritch Cannon|Artificer|EFA|Artillerist|EFA|3} subclass feature; casting {@spell Mending|XPHB} restores {@dice 2d6} hit points.} After.');
