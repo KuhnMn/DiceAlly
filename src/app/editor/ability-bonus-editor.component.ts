@@ -14,15 +14,14 @@ import { AbilityBonusSelection, abilityBonusSources, resolveAbilityBonus, abilit
   template: `
     @if (sheet().abilityBonuses?.enabled && source; as value) {
       <section class="min-w-0 overflow-hidden rounded-lg border-2 border-outline-variant bg-surface-container-low text-sm" [attr.aria-label]="value.name + ' ability bonuses'">
-        <header class="flex flex-wrap items-center justify-between gap-2 border-b border-outline-variant bg-surface-container-high px-3 py-2">
-          <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-            <span class="min-w-0 font-semibold [overflow-wrap:anywhere]">{{ value.name }}</span>
-            <span class="rounded border border-outline-variant bg-surface-container px-1.5 py-0.5 text-xs text-on-surface-variant">{{ value.kind }}</span>
-          </div>
-          @if (value.options.length || value.error) {
-            <label class="flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-outline-variant bg-surface px-2 text-xs"><input type="checkbox" [ngModel]="!selection.disabled" [ngModelOptions]="{standalone: true}" (ngModelChange)="setEnabled($event)" />Use Bonus</label>
-          }
-        </header>
+        @if (showSource()) {
+          <header class="flex flex-wrap items-center justify-between gap-2 border-b border-outline-variant bg-surface-container-high px-3 py-2">
+            <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+              <span class="min-w-0 font-semibold [overflow-wrap:anywhere]">{{ value.name }}</span>
+              <span class="rounded border border-outline-variant bg-surface-container px-1.5 py-0.5 text-xs text-on-surface-variant">{{ value.kind }}</span>
+            </div>
+          </header>
+        }
         <div class="space-y-3 p-3">
         @if (!value.options.length && !value.error) {
           <button type="button" class="secondary-button inline-flex items-center gap-2" (click)="setPreset('one')"><app-ui-icon name="plus" />Add Stat Bonus</button>
@@ -62,12 +61,12 @@ import { AbilityBonusSelection, abilityBonusSources, resolveAbilityBonus, abilit
               @if (!resolved.ready) { <p role="status" class="rounded-lg border border-outline-variant bg-surface-container-high px-2.5 py-2 text-xs text-on-surface-variant">{{ resolved.status }}</p> }
             </div>
           }
+        }
           <details class="overflow-hidden rounded-lg border border-outline-variant text-xs"><summary class="flex min-h-11 cursor-pointer items-center justify-between gap-2 bg-surface-container-high px-2.5 font-semibold text-primary">Configure Bonus <app-ui-icon name="chevron-down" /></summary>
             <label class="block border-t border-outline-variant p-2"><span class="field-label">Bonus Type</span><select class="editor-input" [ngModel]="preset" [ngModelOptions]="{standalone: true}" (ngModelChange)="setPreset($event)">
-              <option value="content">From Content</option><option value="one">+2 to one ability</option><option value="two">+1 to two abilities</option><option value="fixed">Custom fixed bonuses</option>
+              <option value="none">No bonus</option><option value="content">From Content</option><option value="one">+2 to one ability</option><option value="two">+1 to two abilities</option><option value="fixed">Custom fixed bonuses</option>
             </select></label>
           </details>
-        }
         </div>
       </section>
     }
@@ -76,6 +75,7 @@ import { AbilityBonusSelection, abilityBonusSources, resolveAbilityBonus, abilit
 export class AbilityBonusEditorComponent {
   readonly sheet = input.required<ExportedCharacter>();
   readonly sourceId = input.required<string>();
+  readonly showSource = input(true);
   readonly edited = output<void>();
   readonly abilities = BONUS_ABILITIES;
   readonly optionLabel = abilityBonusOptionLabel;
@@ -91,6 +91,7 @@ export class AbilityBonusEditorComponent {
     return choice?.kind === 'weighted' ? choice.weights : choice?.kind === 'uniform' ? Array.from({ length: Math.max(0, Math.min(6, choice.count)) }, () => choice.amount) : [];
   }
   get preset() {
+    if (this.selection.disabled) return 'none';
     const custom = this.sheet().abilityBonuses?.custom[this.sourceId()];
     return !custom ? 'content' : !custom[0]?.choice ? 'fixed' : custom[0].choice.kind === 'uniform' && custom[0].choice.count === 2 ? 'two' : 'one';
   }
@@ -98,7 +99,6 @@ export class AbilityBonusEditorComponent {
     const state = this.sheet().abilityBonuses!;
     state.choices[this.sourceId()] = { ...this.selection, ...value }; this.edited.emit();
   }
-  setEnabled(enabled: boolean) { this.change({ disabled: !enabled }); }
   setAlternative(index: number | '') { this.change({ optionIndex: index === '' ? undefined : Number(index), chosen: [] }); }
   setAbility(position: number, key: SpeciesAbility | '') {
     const chosen = [...this.selection.chosen ?? []]; chosen[position] = key as SpeciesAbility;
@@ -106,6 +106,7 @@ export class AbilityBonusEditorComponent {
   }
   alreadyChosen(key: SpeciesAbility, position: number) { return this.selection.chosen?.some((chosen, index) => index !== position && chosen === key) ?? false; }
   setPreset(preset: string) {
+    if (preset === 'none') { this.change({ disabled: true }); return; }
     const state = this.sheet().abilityBonuses!;
     if (preset === 'content') delete state.custom[this.sourceId()];
     else state.custom[this.sourceId()] = preset === 'fixed' ? [{ fixed: {}, maximum: 20, hidden: false }] : [asiBonusOptions()[preset === 'two' ? 1 : 0]];

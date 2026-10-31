@@ -75,6 +75,41 @@ describe('Ability bonuses in editor, viewer and saved characters', () => {
     fixture.destroy();
   });
 
+  it('disables and re-enables a source through Bonus Type and preserves overrides while disabled', async () => {
+    const fixture = TestBed.createComponent(AbilityTestHost), host = fixture.componentInstance;
+    host.editor.setAutomatic(true);
+    const sourceId = featureBonusSourceId(host.sheet.features![0]);
+    host.sheet.abilityBonuses!.choices[sourceId] = { disabled: true };
+    applyAbilityBonuses(host.sheet);
+    await fixture.whenStable();
+    const feature = fixture.debugElement.queryAll(By.directive(AbilityBonusEditorComponent)).find(entry =>
+      entry.componentInstance.sourceId() === sourceId)!;
+    const root = feature.nativeElement as HTMLElement;
+    const bonusType = () => root.querySelector<HTMLSelectElement>('details select')!;
+    const selectType = async (value: string) => {
+      bonusType().value = value;
+      bonusType().dispatchEvent(new Event('change'));
+      await fixture.whenStable();
+    };
+    expect(bonusType().value).toBe('none');
+    expect(host.sheet.character!.abilityScores!.strength).toBe(10);
+    await selectType('content');
+    expect(host.sheet.character!.abilityScores!.strength).toBe(12);
+    await selectType('fixed');
+    const strength = root.querySelector<HTMLInputElement>('[aria-label="Fixed ability bonuses"] input')!;
+    strength.value = '3'; strength.dispatchEvent(new Event('input')); await fixture.whenStable();
+    expect(host.sheet.character!.abilityScores!.strength).toBe(13);
+    const custom = structuredClone(host.sheet.abilityBonuses!.custom[sourceId]);
+    await selectType('none');
+    expect(host.sheet.character!.abilityScores!.strength).toBe(10);
+    expect(host.sheet.abilityBonuses!.custom[sourceId]).toEqual(custom);
+    expect(root.querySelector('[aria-label="Fixed ability bonuses"]')).toBeNull();
+    await selectType('content');
+    expect(host.sheet.abilityBonuses!.choices[sourceId].disabled).toBe(false);
+    expect(host.sheet.character!.abilityScores!.strength).toBe(12);
+    fixture.destroy();
+  });
+
   it('persists choices through local/cloud serialization and recalculates refreshed definitions without replacing bases', async () => {
     const source = DEFAULT_CONTENT_SOURCE;
     const revision: ImportRevision = { id: 'ability-revision', namespace: 'development-local', source, sourceIdentity: sourceIdentity(source),

@@ -38,7 +38,8 @@ Alternatives and chosen abilities must be valid and distinct as required by thei
 definition. A source with an unfinished/invalid choice contributes nothing until
 resolved; other valid sources still work and the character can remain a draft.
 
-Each source can be explicitly disabled. Definition overrides are authored state,
+Each source can be explicitly disabled with No bonus under Configure Bonus.
+Definition overrides are authored state,
 not edits to cached library content. The source editor offers +2 to one ability,
 +1 to two abilities, or fixed custom changes and a maximum. The exact standard
 name Ability Score Improvement offers the two normal allocation alternatives
@@ -54,7 +55,9 @@ deterministic bonus projection, not a full chronological feat-eligibility engine
 ## UI, updates and persistence
 
 `AbilityBonusEditorComponent` is shared by Ability Scores, feature rows and the
-background editor. `AbilityBonusSummaryComponent` provides compact feature and
+background editor. Source names and types appear on standalone Ability Scores
+cards; embedded editors reuse the surrounding feature or background heading.
+`AbilityBonusSummaryComponent` provides compact feature and
 background details plus a collapsible breakdown in mobile and desktop overviews.
 Both are hidden when the mode is manual.
 
