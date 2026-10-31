@@ -37,7 +37,7 @@ class AbilityTestHost {
 @Component({
   imports: [EntryAnnotationsComponent, AbilityBonusEditorComponent],
   template: `<app-entry-annotations-editor [entry]="sheet.features![0]" [showBonus]="true">
-    <app-ability-bonus-editor annotation-bonus [sheet]="sheet" sourceId="feature:feat" [showSource]="false" (edited)="update()" />
+    <app-ability-bonus-editor annotation-bonus [inlineConfiguration]="true" [sheet]="sheet" sourceId="feature:feat" [showSource]="false" (edited)="update()" />
   </app-entry-annotations-editor>`,
 })
 class BonusToolsHost {
@@ -138,6 +138,8 @@ describe('Ability bonuses in editor, viewer and saved characters', () => {
     const buttons = [...root.querySelectorAll<HTMLButtonElement>('[aria-label="Entry tools"] button')];
     buttons.find(button => button.textContent!.includes('Stat Bonuses'))!.click(); await fixture.whenStable();
     expect(panel.hidden).toBe(false);
+    expect(panel.querySelector('details')).toBeNull();
+    expect(panel.querySelector('select')?.closest('label')?.textContent).toContain('Bonus Type');
     const select = panel.querySelector<HTMLSelectElement>('[aria-label="Ability allocation"] select')!;
     select.value = 'str'; select.dispatchEvent(new Event('change')); await fixture.whenStable();
     expect(abilityScoreFormula(fixture.componentInstance.sheet, 'strength')).toContain('+ 1 Choice feat');
@@ -170,6 +172,35 @@ describe('Ability bonuses in editor, viewer and saved characters', () => {
     expect(root.querySelector('p[role="status"]')).toBeNull();
     fixture.destroy();
   });
+
+  for (const allocation of [
+    { preset: 'three', abilities: ['str', 'dex', 'con'], expected: { strength: 11, dexterity: 11, constitution: 11 } },
+    { preset: 'two-one', abilities: ['str', 'dex'], expected: { strength: 12, dexterity: 11, constitution: 10 } },
+  ]) {
+    it(`configures and reloads the ${allocation.preset} custom background allocation`, async () => {
+      const sheet = emptyBasicCharacter(); sheet.background = { name: 'Custom background' };
+      const sourceId = backgroundBonusSourceId(sheet.background);
+      const fixture = TestBed.createComponent(AbilityBonusEditorComponent);
+      fixture.componentRef.setInput('sheet', sheet); fixture.componentRef.setInput('sourceId', sourceId);
+      fixture.componentInstance.edited.subscribe(() => applyAbilityBonuses(sheet));
+      await fixture.whenStable();
+      const root = fixture.nativeElement as HTMLElement;
+      const type = root.querySelector<HTMLSelectElement>('details select')!;
+      type.value = allocation.preset; type.dispatchEvent(new Event('change')); await fixture.whenStable();
+      const choices = root.querySelectorAll<HTMLSelectElement>('[aria-label="Ability allocation"] select');
+      expect(choices.length).toBe(allocation.abilities.length);
+      for (const [index, ability] of allocation.abilities.entries()) {
+        choices[index].value = ability; choices[index].dispatchEvent(new Event('change')); await fixture.whenStable();
+        if (index === 0) expect(choices[1].querySelector<HTMLOptionElement>('option[value="str"]')!.disabled).toBe(true);
+      }
+      expect(sheet.character!.abilityScores).toMatchObject(allocation.expected);
+      // Reload saved data to check that weighted allocations retain the correct editor type.
+      fixture.componentRef.setInput('sheet', structuredClone(sheet)); await fixture.whenStable();
+      expect(type.value).toBe(allocation.preset);
+      expect(fixture.componentInstance.selection.chosen).toEqual(allocation.abilities);
+      fixture.destroy();
+    });
+  }
 
   it('persists choices through local/cloud serialization and recalculates refreshed definitions without replacing bases', async () => {
     const source = DEFAULT_CONTENT_SOURCE;

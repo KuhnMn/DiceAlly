@@ -132,14 +132,17 @@ import { referenceDescription } from '../models/character-references';
                       <span class="text-xs bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">{{ feature.source }}</span>
                     }
                   </ng-template>
-                  <div class="space-y-3 border-t border-outline-variant pt-3 md:border-t-0 md:pt-0">
-                    <app-prerequisite-details [prerequisites]="feature.featEntity?.prerequisite ?? feature.optionalFeatureEntity?.prerequisite" />
+                  <div class="space-y-3">
+                    @if (feature.featEntity?.prerequisite?.length || feature.optionalFeatureEntity?.prerequisite?.length) {
+                      <app-prerequisite-details [prerequisites]="feature.featEntity?.prerequisite ?? feature.optionalFeatureEntity?.prerequisite" />
+                    }
                     <div [attr.id]="feature.featureSourceName ? 'source-' + helpers.sourceId(feature.featureSourceName) : null">
-                      <app-ability-bonus-summary [card]="true" [sheet]="characterData()" [sourceId]="bonusSourceId(feature)" /><app-entry-renderer [entries]="helpers.featureEntries(feature)"></app-entry-renderer>
+                      <app-entry-renderer [entries]="helpers.featureEntries(feature)"></app-entry-renderer>
                     </div>
 
                   </div>
 
+                    <app-ability-bonus-summary [card]="true" [sheet]="characterData()" [sourceId]="bonusSourceId(feature)" />
                     @if (feature.uses?.length) {
                       <div class="mt-2 sm:mt-4 border-t border-outline-variant pt-2 sm:pt-4">
                         <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">

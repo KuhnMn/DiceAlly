@@ -36,6 +36,15 @@ export function asiBonusOptions(): SpeciesAbilityOption[] {
   ];
 }
 
+/** Explicit manual background allocations; never inferred from a source name. */
+export function backgroundBonusOptions(): SpeciesAbilityOption[] {
+  const from = BONUS_ABILITIES.map(ability => ability.key);
+  return [
+    { fixed: {}, hidden: false, maximum: 20, choice: { kind: 'uniform', from, count: 3, amount: 1 } },
+    { fixed: {}, hidden: false, maximum: 20, choice: { kind: 'weighted', from, weights: [2, 1] } },
+  ];
+}
+
 /** Species support is prepared for a later edition profile; current callers leave it disabled. */
 export function abilityBonusSources(sheet: ExportedCharacter, includeSpecies = false): AbilityBonusSource[] {
   const sources: AbilityBonusSource[] = [];

@@ -35,7 +35,7 @@
 
 
             <app-entry-annotations-editor [showBonus]="sheet().abilityBonuses?.enabled ?? false" [entry]="feature" (edited)="change()">
-              <app-ability-bonus-editor annotation-bonus [showSource]="false" [sheet]="sheet()" [sourceId]="bonusSourceId(feature)" (edited)="change()" />
+              <app-ability-bonus-editor annotation-bonus [inlineConfiguration]="true" [showSource]="false" [sheet]="sheet()" [sourceId]="bonusSourceId(feature)" (edited)="change()" />
               <app-combat-bookmark annotation-combat [sheet]="sheet()" [resource]="feature" [type]="feature.featureType === 'FEAT' ? 'FEAT' : feature.featureType === 'OPTIONAL_FEATURE' ? 'OPTIONAL_FEATURE' : 'CLASS_FEATURE'" (edited)="change()" />
               <app-description-dialog annotation-description [dense]="true" [title]="feature.name" label="Description"><div class="space-y-3 p-3"><app-prerequisite-details [prerequisites]="featurePrerequisites(feature)" /><app-entry-renderer [entries]="entries(feature)" /></div></app-description-dialog>
             </app-entry-annotations-editor>

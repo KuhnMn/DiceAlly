@@ -1,14 +1,15 @@
 import { Component, input, output } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ExportedCharacter } from '../models/character.model';
 import { SpeciesAbility } from '../content/species.model';
 import { UiIconComponent } from '../ui-icon.component';
-import { AbilityBonusSelection, abilityBonusSources, resolveAbilityBonus, abilityBonusOptionLabel, asiBonusOptions, BONUS_ABILITIES } from '../models/ability-score-bonuses';
+import { AbilityBonusSelection, abilityBonusSources, resolveAbilityBonus, abilityBonusOptionLabel, asiBonusOptions, backgroundBonusOptions, BONUS_ABILITIES } from '../models/ability-score-bonuses';
 
 /** One source editor, shared by Ability Scores and the owning feature/background. */
 @Component({
   selector: 'app-ability-bonus-editor',
-  imports: [FormsModule, UiIconComponent],
+  imports: [FormsModule, UiIconComponent, NgTemplateOutlet],
   host: { class: 'block min-w-0', '[style.display]': 'sheet().abilityBonuses?.enabled ? null : "none"' },
   styleUrls: ['./editor.css', './ability-bonus-editor.component.css'],
   template: `
@@ -22,7 +23,24 @@ import { AbilityBonusSelection, abilityBonusSources, resolveAbilityBonus, abilit
             </div>
           </header>
         }
+        <ng-template #configuration>
+          <label class="bonus-config-field" [class.bonus-config-inline]="inlineConfiguration()">
+            <span class="field-label">Bonus Type</span>
+            <select class="editor-input" [ngModel]="preset" [ngModelOptions]="{standalone: true}" (ngModelChange)="setPreset($event)">
+              <option value="none">No bonus</option>
+              @if (value.hasContent) { <option value="content">From Content</option> }
+              <option value="one">+2 to one ability</option>
+              <option value="two">+1 to two abilities</option>
+              @if (value.kind === 'Background') {
+                <option value="three">+1 to three abilities</option>
+                <option value="two-one">+2 and +1 to two abilities</option>
+              }
+              <option value="fixed">Custom fixed bonuses</option>
+            </select>
+          </label>
+        </ng-template>
         <div class="bonus-controls">
+          @if (inlineConfiguration()) { <ng-container [ngTemplateOutlet]="configuration" /> }
           @if (preset !== 'none') {
             <div class="bonus-controls">
               @if (value.options.length > 1) {
@@ -58,11 +76,12 @@ import { AbilityBonusSelection, abilityBonusSources, resolveAbilityBonus, abilit
               @if (!resolved.ready && !resolved.status.startsWith('Choose ')) { <p role="status" class="bonus-note">{{ resolved.status }}</p> }
             </div>
           }
-          <details class="bonus-config"><summary class="bonus-button text-primary">Configure Bonus <app-ui-icon name="chevron-down" /></summary>
-            <label class="bonus-config-field"><span class="field-label">Bonus Type</span><select class="editor-input" [ngModel]="preset" [ngModelOptions]="{standalone: true}" (ngModelChange)="setPreset($event)">
-              <option value="none">No bonus</option>@if (value.hasContent) { <option value="content">From Content</option> }<option value="one">+2 to one ability</option><option value="two">+1 to two abilities</option><option value="fixed">Custom fixed bonuses</option>
-            </select></label>
-          </details>
+          @if (!inlineConfiguration()) {
+            <details class="bonus-config">
+              <summary class="bonus-button text-primary">Configure Bonus <app-ui-icon name="chevron-down" /></summary>
+              <ng-container [ngTemplateOutlet]="configuration" />
+            </details>
+          }
         </div>
       </section>
     }
@@ -72,6 +91,7 @@ export class AbilityBonusEditorComponent {
   readonly sheet = input.required<ExportedCharacter>();
   readonly sourceId = input.required<string>();
   readonly showSource = input(true);
+  readonly inlineConfiguration = input(false);
   readonly edited = output<void>();
   readonly abilities = BONUS_ABILITIES;
   readonly optionLabel = abilityBonusOptionLabel;
@@ -89,7 +109,11 @@ export class AbilityBonusEditorComponent {
   get preset() {
     if (this.selection.disabled || !this.source?.options.length && !this.source?.error) return 'none';
     const custom = this.sheet().abilityBonuses?.custom[this.sourceId()];
-    return !custom ? 'content' : !custom[0]?.choice ? 'fixed' : custom[0].choice.kind === 'uniform' && custom[0].choice.count === 2 ? 'two' : 'one';
+    if (!custom) return 'content';
+    const choice = custom[0]?.choice;
+    if (!choice) return 'fixed';
+    if (choice.kind === 'weighted' && choice.weights.length === 2 && choice.weights[0] === 2 && choice.weights[1] === 1) return 'two-one';
+    return choice.kind === 'uniform' && choice.count === 3 ? 'three' : choice.kind === 'uniform' && choice.count === 2 ? 'two' : 'one';
   }
   private change(value: Partial<AbilityBonusSelection>) {
     const state = this.sheet().abilityBonuses!;
@@ -105,6 +129,7 @@ export class AbilityBonusEditorComponent {
     if (preset === 'none') { this.change({ disabled: true }); return; }
     const state = this.sheet().abilityBonuses!;
     if (preset === 'content') delete state.custom[this.sourceId()];
+    else if (preset === 'three' || preset === 'two-one') state.custom[this.sourceId()] = [backgroundBonusOptions()[preset === 'three' ? 0 : 1]];
     else state.custom[this.sourceId()] = preset === 'fixed' ? [{ fixed: {}, maximum: 20, hidden: false }] : [asiBonusOptions()[preset === 'two' ? 1 : 0]];
     this.change({ optionIndex: undefined, chosen: [], disabled: false });
   }

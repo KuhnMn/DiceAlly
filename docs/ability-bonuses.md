@@ -65,6 +65,11 @@ deterministic bonus projection, not a full chronological feat-eligibility engine
 background editor. Source names and types appear on standalone Ability Scores
 cards; embedded editors reuse the surrounding feature or background heading.
 Feature bonus editing opens from Stat Bonuses in the Uses/Notes toolbar.
+Feature tools open the Bonus Type selector directly in the same panel layout as
+Uses and Notes, without another Configure Bonus disclosure. Feature detail dialogs
+place applied bonus cards after the description so separators divide content.
+Backgrounds additionally offer +1 to three distinct abilities and +2 / +1 to two
+distinct abilities, storing explicit uniform or weighted definitions.
 Backgrounds have one Configure Bonus control; custom sources omit From Content,
 and No bonus hides all allocation fields. Incomplete-choice prompts are omitted.
 `AbilityBonusSummaryComponent` shows applied feature increases as read-only note

@@ -91,3 +91,8 @@
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
+
+.bonus-config-field.bonus-config-inline {
+  margin-top: 0;
+  max-width: none;
+}

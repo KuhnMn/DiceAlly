@@ -5,12 +5,13 @@
     }
     <button type="button" class="annotation-button disabled:opacity-50" [disabled]="!annotationsEnabled()" [title]="annotationsEnabled() ? 'Edit notes' : 'Prepare this spell to edit notes'" [attr.aria-expanded]="activePanel === 'notes' && annotationsEnabled()" [attr.aria-pressed]="activePanel === 'notes'" [attr.aria-controls]="'notes-panel-' + i" [class.bg-secondary-container]="activePanel === 'notes'" (click)="togglePanel('notes')"><app-ui-icon name="file" /> Notes @if (entry().notes?.length) { <span>({{ entry().notes?.length }})</span> }</button>
     @if (showBonus()) {
-      <button type="button" class="annotation-button" [attr.aria-expanded]="activePanel === 'bonus'" [attr.aria-controls]="'bonus-panel-' + i" [class.bg-secondary-container]="activePanel === 'bonus'" (click)="togglePanel('bonus')"><app-ui-icon name="plus" /> Stat Bonuses</button>
+      <button type="button" class="annotation-button disabled:opacity-50" title="Edit stat bonuses" [disabled]="!annotationsEnabled()" [attr.aria-pressed]="activePanel === 'bonus'" [attr.aria-expanded]="activePanel === 'bonus' && annotationsEnabled()" [attr.aria-controls]="'bonus-panel-' + i" [class.bg-secondary-container]="activePanel === 'bonus'" (click)="togglePanel('bonus')"><app-ui-icon name="plus" /> Stat Bonuses</button>
     }
     <ng-content select="[annotation-combat]" />
     <ng-content select="[annotation-description]" />
   </div>
-  <section class="annotation-panel" [hidden]="!showBonus() || activePanel !== 'bonus'" [id]="'bonus-panel-' + i" aria-label="Stat bonuses editor">
+  <section class="annotation-panel" [hidden]="!showBonus() || !annotationsEnabled() || activePanel !== 'bonus'" [id]="'bonus-panel-' + i" aria-label="Stat bonuses editor">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-2"><h3 class="font-semibold">Stat Bonuses</h3></div>
     <ng-content select="[annotation-bonus]" />
   </section>
   @if (showUses()) {
