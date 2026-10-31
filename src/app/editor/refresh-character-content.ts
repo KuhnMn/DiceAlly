@@ -11,6 +11,7 @@ import { createMonsterEntry } from './monster-selection';
 import { spellSnapshot } from './spell-selection';
 import { prepareCharacterReferenceDescriptions } from '../content/character-reference-descriptions';
 import { createObjectEntry } from './object-selection';
+import { applyAbilityBonuses } from '../models/ability-score-bonuses';
 
 export interface DescriptionRefreshResult {
   sheet: ExportedCharacter;
@@ -122,8 +123,10 @@ export async function refreshCharacterDescriptions(
     updated(facility, record);
   }
   result.refreshed += await prepareCharacterReferenceDescriptions(result.sheet, cache, revision, true);
-  // No recalculation: wizard baselines, manual character fields and combat overrides remain untouched.
+  // Authored wizard baselines, manual fields and combat overrides remain untouched;
+  // only the explicitly enabled ability projection is recalculated below.
   // Exercise the same bounded serializer used by the editor before committing the replacement draft.
+  applyAbilityBonuses(result.sheet);
   canonicalDocument(result.sheet);
   return result;
 }

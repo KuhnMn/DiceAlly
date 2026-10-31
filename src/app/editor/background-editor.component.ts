@@ -1,3 +1,5 @@
+import { AbilityBonusEditorComponent } from './ability-bonus-editor.component';
+import { backgroundBonusSourceId } from '../models/ability-score-bonuses';
 import { contentEntries } from '../content/content-entries';
 import { characterOptionSourceData } from '../content/character-option-adapter';
 import { ChangeDetectorRef, Component, OnDestroy, effect, inject, input, output, untracked } from '@angular/core';
@@ -21,7 +23,7 @@ import { characterDescription } from '../character-description';
 
 @Component({
   selector: 'app-editor-background',
-  imports: [FormsModule, RouterLink, UiIconComponent, BackgroundDetailsComponent, EntryRendererComponent, ListControlsComponent, CatalogDialogComponent, CatalogResultRowComponent, DescriptionDialogComponent, SourceBookFilterComponent],
+  imports: [AbilityBonusEditorComponent, FormsModule, RouterLink, UiIconComponent, BackgroundDetailsComponent, EntryRendererComponent, ListControlsComponent, CatalogDialogComponent, CatalogResultRowComponent, DescriptionDialogComponent, SourceBookFilterComponent],
   styleUrl: './editor.css',
   template: `
     <span class="field-label">Background (optional)</span>
@@ -31,8 +33,9 @@ import { characterDescription } from '../character-description';
       @if (sheet().background) { <button type="button" class="secondary-button compact-button icon-button shrink-0" title="Clear background" aria-label="Clear background" (click)="setCustom('')"><app-ui-icon name="close" /></button> }
     </div>
     @if (sheet().background?.entity) {
-      <div class="mt-1 flex items-center gap-2 text-xs"><app-background-details [background]="sheet().background" label="Details" /><span class="rounded bg-surface-container-highest px-1">{{ sheet().background?.source }}</span></div>
+      <div class="mt-1 flex items-center gap-2 text-xs"><app-background-details [sheet]="sheet()" [background]="sheet().background" label="Details" /><span class="rounded bg-surface-container-highest px-1">{{ sheet().background?.source }}</span></div>
     }
+    @if (sheet().abilityBonuses?.enabled && sheet().background; as background) { <div class="mt-2"><app-ability-bonus-editor [sheet]="sheet()" [sourceId]="bonusSourceId(background)" (edited)="edited.emit()" /></div> }
     <p class="mt-2 text-xs text-on-surface-variant" aria-label="Generated character description">{{ summary }}</p>
     @if (catalogOpen) {
       <app-catalog-dialog title="Choose Background" subtitle="Choose a library background, or close and enter any custom name. Background is optional." (closed)="catalogOpen = false">
@@ -55,6 +58,7 @@ import { characterDescription } from '../character-description';
   `,
 })
 export class BackgroundEditorComponent implements OnDestroy {
+  readonly bonusSourceId = backgroundBonusSourceId;
   readonly catalogEntries = contentEntries;
   readonly sheet = input.required<ExportedCharacter>();
   readonly edited = output<void>();

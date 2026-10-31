@@ -23,6 +23,7 @@ import { PrefillValue, WizardState, mergeWizardPrefill } from './wizard-prefill'
 import { averageClassHp, contentReference, sourceAbilityFlags, speciesSnapshot, spellUseTrackers } from './editor-content-helpers';
 import { isCompleteSelection } from '../rules/spell-choice';
 import { createFeatureEntry } from './feature-selection';
+import { applyAbilityBonuses } from '../models/ability-score-bonuses';
 
 export interface WizardChoice { ownerKey?: string; scope?: 'features' | 'spells' | 'species' | 'proficiencies'; id: string; label: string; count: number; searchable?: boolean; candidates: { value: string; label: string }[]; }
 export interface WizardHpContribution { label: string; level: number; hitDie: number; starting: boolean; constitutionModifier: number; total: number; }
@@ -328,6 +329,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     updateSpeciesChoiceNotes(proposal.sheet.species,
       uniqueChoices.filter(choice => choice.ownerKey === state.speciesKey), state.answers);
   }
+  applyAbilityBonuses(proposal.sheet);
   return { ...proposal, values, hpContributions, errors: [...new Set(errors)], warnings: [...new Set(warnings)], choices: uniqueChoices, unresolved,
     summary: { level: proposal.sheet.character?.level ?? state.classes.reduce((sum, entry) => sum + entry.level, 0), maxHp: Math.max(0, maxHp),
       features: values.filter(entry => entry.path[0] === 'features').length, spells: spells.size } };

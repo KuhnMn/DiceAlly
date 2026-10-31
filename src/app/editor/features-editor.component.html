@@ -20,6 +20,7 @@
     @for (feature of selected; track feature.editorId ?? $index; let i = $index) {
       <app-editor-entry-row [sheet]="sheet()" [resource]="feature" [name]="feature.name" [expanded]="expanded.has(feature)" (detailsRequested)="toggle(feature)" (removeRequested)="remove(feature)" [notesCount]="feature.notes?.length || 0" [usesCount]="feature.uses?.length || 0">
         <ng-container entry-metadata>
+          <app-ability-bonus-summary [sheet]="sheet()" [sourceId]="bonusSourceId(feature)" />
           @if (selectedType === 'CLASS_FEATURE') {
             @if (feature.featureEntity?.level) { <span class="shrink-0 rounded bg-secondary-container px-1 text-on-secondary-container">Level {{ feature.featureEntity?.level }}</span> }
             @if (feature.featureEntity?.className) { <span class="min-w-0 truncate rounded bg-secondary-container px-1 text-on-secondary-container" [title]="feature.featureEntity?.className">{{ feature.featureEntity?.className }}</span> }
@@ -33,6 +34,7 @@
           <div class="space-y-3">
 
 
+            <app-ability-bonus-editor [sheet]="sheet()" [sourceId]="bonusSourceId(feature)" (edited)="change()" />
             <app-entry-annotations-editor [entry]="feature" (edited)="change()">
               <app-combat-bookmark annotation-combat [sheet]="sheet()" [resource]="feature" [type]="feature.featureType === 'FEAT' ? 'FEAT' : feature.featureType === 'OPTIONAL_FEATURE' ? 'OPTIONAL_FEATURE' : 'CLASS_FEATURE'" (edited)="change()" />
               <app-description-dialog annotation-description [dense]="true" [title]="feature.name" label="Description"><div class="space-y-3 p-3"><app-prerequisite-details [prerequisites]="featurePrerequisites(feature)" /><app-entry-renderer [entries]="entries(feature)" /></div></app-description-dialog>

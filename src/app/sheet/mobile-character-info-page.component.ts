@@ -1,3 +1,4 @@
+import { AbilityBonusSummaryComponent } from './ability-bonus-summary.component';
 import { SheetSavingThrowComponent } from './sheet-saving-throw.component';
 import { SheetProficienciesComponent } from './sheet-proficiencies.component';
 import { AdvantageBadgeComponent } from './advantage-badge.component';
@@ -11,7 +12,7 @@ import { BackgroundDetailsComponent } from '../background-details.component';
 /** Mobile composition reuses the full sheet's calculations and editing actions. */
 @Component({
   selector: 'app-mobile-character-info-page',
-  imports: [SheetSavingThrowComponent, BackgroundDetailsComponent, RuleReferenceComponent, SheetSpeedDescriptionComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent],
+  imports: [AbilityBonusSummaryComponent, SheetSavingThrowComponent, BackgroundDetailsComponent, RuleReferenceComponent, SheetSpeedDescriptionComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent],
   styles: [`
     :host { display: block; min-width: 0; }
     .overview-primary, .overview-secondary { min-width: 0; }
@@ -29,7 +30,7 @@ import { BackgroundDetailsComponent } from '../background-details.component';
         @if (characterData()?.background; as background) {
           <span class="inline-flex min-w-0 items-center gap-2 [overflow-wrap:anywhere]">
             <span aria-hidden="true" class="text-on-surface-variant">·</span>
-            <app-background-details [background]="background" />
+            <app-background-details [sheet]="characterData()" [background]="background" />
           </span>
         }
       </section>
@@ -52,6 +53,7 @@ import { BackgroundDetailsComponent } from '../background-details.component';
 
 
 
+          <app-ability-bonus-summary [sheet]="characterData()" />
           <section aria-label="Skills" class="border-2 border-surface rounded-lg p-2 bg-surface-container-low shadow-lg">
             <h3 class="text-sm font-bold uppercase text-center mb-2 border-b-2 border-outline-variant pb-1">
               Skills

@@ -1,3 +1,6 @@
+import { AbilityBonusEditorComponent } from './ability-bonus-editor.component';
+import { AbilityBonusSummaryComponent } from '../sheet/ability-bonus-summary.component';
+import { featureBonusSourceId } from '../models/ability-score-bonuses';
 import { contentEntries } from '../content/content-entries';
 import { characterOption, isCharacterOptionKind } from '../content/character-option-adapter';
 import { PrerequisiteDetailsComponent } from '../sheet/prerequisite-details.component';
@@ -35,10 +38,11 @@ import { FEATURE_TYPES, FeatureType, classFeatureKey, createFeatureEntry, featur
 
 @Component({
   providers: [EditorCombatIndex],
-  selector: 'app-editor-features', imports: [PrerequisiteDetailsComponent, EditorEntryRowComponent, FeatureFiltersComponent, HorizontalRowDirective, CatalogResultRowComponent, ListControlsComponent, EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
+  selector: 'app-editor-features', imports: [AbilityBonusEditorComponent, AbilityBonusSummaryComponent, PrerequisiteDetailsComponent, EditorEntryRowComponent, FeatureFiltersComponent, HorizontalRowDirective, CatalogResultRowComponent, ListControlsComponent, EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
   templateUrl: './features-editor.component.html', styleUrls: ['./editor.css', './editor-feature-fields.css', './editor-filters.css'],
 })
 export class FeaturesEditorComponent implements OnInit, OnDestroy, DoCheck {
+  readonly bonusSourceId = featureBonusSourceId;
   readonly catalogEntries = contentEntries;
   private readonly combatIndex = inject(EditorCombatIndex);
   readonly sheet = input.required<ExportedCharacter>();

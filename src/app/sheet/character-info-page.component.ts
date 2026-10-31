@@ -1,3 +1,4 @@
+import { AbilityBonusSummaryComponent } from './ability-bonus-summary.component';
 import { SheetSavingThrowComponent } from './sheet-saving-throw.component';
 import { ItemEffectRemindersComponent } from './item-effect-reminders.component';
 import { isSheetPageVisible, sheetPageForAnchor } from '../models/sheet-pages';
@@ -28,7 +29,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
 
 @Component({
   selector: 'app-character-info-page',
-  imports: [SheetSavingThrowComponent, ItemEffectRemindersComponent, CombatActionColumnsComponent, CombatActionComponent, BasicCombatActionsComponent, RuleReferenceComponent, SheetSpeedControlComponent, SheetSpeedDescriptionComponent, BackgroundDetailsComponent, ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
+  imports: [AbilityBonusSummaryComponent, SheetSavingThrowComponent, ItemEffectRemindersComponent, CombatActionColumnsComponent, CombatActionComponent, BasicCombatActionsComponent, RuleReferenceComponent, SheetSpeedControlComponent, SheetSpeedDescriptionComponent, BackgroundDetailsComponent, ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
   styleUrl: './sheet-stat-tooltip.css',
   styles: [`
     .round-tracker-input::-webkit-outer-spin-button,
@@ -65,7 +66,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
           <div class="text-xs text-on-secondary-container uppercase font-semibold">Background</div>
           <div class="text-sm font-medium text-on-secondary-container">
                     @if (characterData()?.background; as background) {
-                      <app-background-details [background]="background" />
+                      <app-background-details [sheet]="characterData()" [background]="background" />
                     } @else {
                      Unknown
                     }
@@ -123,6 +124,7 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
             }
           </div>
 
+          <app-ability-bonus-summary [sheet]="characterData()" />
           <!-- Skills -->
           <div class="border-4 border-surface rounded-lg p-4 bg-surface-container-low shadow-lg">
             <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">

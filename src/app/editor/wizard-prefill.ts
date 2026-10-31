@@ -149,6 +149,14 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
       if (replacement) {
         const list = collection(sheet, entry.path)!.list;
         list.splice(list.indexOf(replacement), 1);
+        // Adopting a portable feature must keep its separately authored bonus configuration.
+        if (entry.path[0] === 'features' && replacement.editorId && sheet.abilityBonuses) {
+          const oldId = `feature:${replacement.editorId}`, newId = `feature:${entry.path[1]}`;
+          const bonuses = sheet.abilityBonuses;
+          if (bonuses.choices[oldId] && !bonuses.choices[newId]) bonuses.choices[newId] = bonuses.choices[oldId];
+          if (bonuses.custom[oldId] && !bonuses.custom[newId]) bonuses.custom[newId] = bonuses.custom[oldId];
+          delete bonuses.choices[oldId]; delete bonuses.custom[oldId];
+        }
         // Combat bookmarks must continue to resolve after adopting the wizard identity.
         for (const action of sheet.combatActions ?? []) if (replacement.editorId && action.linkedResource?.editorId === replacement.editorId) {
           action.linkedResource.editorId = entry.path[1];

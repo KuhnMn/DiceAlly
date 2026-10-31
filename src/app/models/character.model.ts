@@ -356,6 +356,7 @@ export interface SpellEntity extends SpellEffectFields {
 }
 
 export interface FeatureEntity {
+  ability?: Ability[] | null;
   id?: number;
   name: string;
   level: number;
@@ -389,6 +390,7 @@ export interface Consumes {
 }
 
 export interface OptionalFeatureEntity {
+  ability?: Ability[] | null;
   id?: number;
   name: string;
   source: string;
@@ -878,6 +880,7 @@ export interface Note {
 export type ConditionName = string;
 
 export interface ExportedCharacter {
+  abilityBonuses?: import('./ability-score-bonuses').AbilityBonusState;
   bastion?: import('./bastion').CharacterBastion;
   sheetSettings?: import('./sheet-pages').SheetSettings;
   basicActions?: import('./character-references').BasicActionDescription[];
@@ -908,7 +911,7 @@ export interface ExportedCharacter {
   notes?: Note[];
 }
 
-/** A name-only custom background or a detached library reference, without automatic grants. */
+/** A name-only custom background or detached library reference; ability bonuses are an explicit opt-in projection. */
 export interface Background {
   name: string;
   source?: string;

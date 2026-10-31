@@ -1,0 +1,69 @@
+# Optional automatic ability bonuses
+
+Existing characters remain completely manual. The Ability Scores editor offers
+Completely Manual and Automatically Apply Bonuses. Current active sources are
+features, feats and backgrounds. Species sources are implemented behind the pure
+helper's explicit `includeSpecies` parameter but are not enabled by any app caller;
+an edition/profile selector is outside this change.
+
+## Stored and calculated values
+
+`sheet.abilityBonuses` contains the enabled flag, authored base scores, source
+choices and explicitly configured bonus definitions. `character.abilityScores`
+contains effective values so the existing AC, save, skill, initiative and casting
+helpers continue reading one consistent set of scores.
+
+- First enabling copies the currently entered scores as bases. Users who already
+  included bonuses manually must enter their unmodified bases in automatic mode.
+- Editing in automatic mode changes bases, not previously calculated totals.
+- Disabling restores the bases as ordinary manual scores and hides the new bonus
+  controls and summaries. Choices and custom definitions remain stored.
+- Re-enabling uses the current manual scores as bases and retains source choices.
+- Recalculation always starts from bases. Repeated loading, saving, refreshing and
+  casting cannot compound bonuses.
+- Manual HP, resource totals, combat overrides and wizard baselines are not
+  independently recalculated by this feature.
+
+Features use their instance editor IDs; legacy entries receive IDs when the user
+first enables the mode. Backgrounds use their qualified reference identity, with a
+name/source fallback for custom backgrounds. Removed sources stop contributing;
+their saved choices do not apply to unrelated new entries.
+
+## Supported definitions and decisions
+
+The shared adapter reads the schema's `ability` alternatives, fixed changes,
+uniform choices, weighted allocations, and per-option `max` (default 20).
+Alternatives and chosen abilities must be valid and distinct as required by their
+definition. A source with an unfinished/invalid choice contributes nothing until
+resolved; other valid sources still work and the character can remain a draft.
+
+Each source can be explicitly disabled. Definition overrides are authored state,
+not edits to cached library content. The source editor offers +2 to one ability,
++1 to two abilities, or fixed custom changes and a maximum. The exact standard
+name Ability Score Improvement offers the two normal allocation alternatives
+when structured data is absent. No arbitrary numbers are extracted from prose;
+features without structured data can be configured explicitly on their editor row.
+
+Positive increases respect each source's cap without lowering a base already over
+that cap. Negative changes apply before positive increases; ordinary-cap increases
+precede higher-cap increases so rearranging the feature list cannot alter totals.
+The summary shows actual applied changes, including cap reductions. This is a
+deterministic bonus projection, not a full chronological feat-eligibility engine.
+
+## UI, updates and persistence
+
+`AbilityBonusEditorComponent` is shared by Ability Scores, feature rows and the
+background editor. `AbilityBonusSummaryComponent` provides compact feature and
+background details plus a collapsible breakdown in mobile and desktop overviews.
+Both are hidden when the mode is manual.
+
+Editor changes, viewer store loads and portable normalization update the effective
+projection. Wizard output and description refresh do the same when the mode is
+enabled. Source definitions can update while source choices, bases, notes and IDs
+remain authored state. Changed choice eligibility yields a visible pending status
+instead of choosing a different ability silently.
+
+Portable validation checks stored configuration. The existing local repository and
+cloud codec preserve it without a new character file format or content schema.
+Targeted tests cover the mathematics, toggle lifecycle, disabled species support,
+real editor interactions, viewer summaries, local/cloud round trips and refresh.

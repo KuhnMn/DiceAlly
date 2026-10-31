@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { ExportedCharacter, Note } from '../models/character.model';
+import { applyAbilityBonuses } from '../models/ability-score-bonuses';
 
 @Injectable({ providedIn: 'root' })
 export class CharacterStore {
@@ -32,6 +33,7 @@ export class CharacterStore {
   }
 
   setCharacter(data: ExportedCharacter | null) {
+    if (data) applyAbilityBonuses(data);
     if (data?.character?.characterUuid !== this.characterData()?.character?.characterUuid) this.noteDraft.set(null);
     if (data?.character?.characterUuid !== this.nativeCharacterId()) {
       this.nativeCharacterId.set(null);

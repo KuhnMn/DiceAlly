@@ -1,3 +1,5 @@
+import { AbilityBonusSummaryComponent } from './ability-bonus-summary.component';
+import { featureBonusSourceId } from '../models/ability-score-bonuses';
 import { compareSearchMatches } from '../search-ranking';
 import { FEATURE_TYPES, FeatureType, featureCategories, featureCategoryLabel, matchesFeatureCategories } from '../editor/feature-selection';
 import { FeatureFiltersComponent } from '../feature-filters.component';
@@ -24,7 +26,7 @@ import { referenceDescription } from '../models/character-references';
 
 @Component({
   selector: 'app-features-page',
-  imports: [RuleReferenceComponent, PrerequisiteDetailsComponent, FeatureFiltersComponent, ListControlsComponent, SheetListLayoutComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [AbilityBonusSummaryComponent, RuleReferenceComponent, PrerequisiteDetailsComponent, FeatureFiltersComponent, ListControlsComponent, SheetListLayoutComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: feature-flash 1.6s ease-out;
@@ -133,7 +135,7 @@ import { referenceDescription } from '../models/character-references';
                   <div class="space-y-3 border-t border-outline-variant pt-3 md:border-t-0 md:pt-0">
                     <app-prerequisite-details [prerequisites]="feature.featEntity?.prerequisite ?? feature.optionalFeatureEntity?.prerequisite" />
                     <div [attr.id]="feature.featureSourceName ? 'source-' + helpers.sourceId(feature.featureSourceName) : null">
-                      <app-entry-renderer [entries]="helpers.featureEntries(feature)"></app-entry-renderer>
+                      <app-ability-bonus-summary [sheet]="characterData()" [sourceId]="bonusSourceId(feature)" /><app-entry-renderer [entries]="helpers.featureEntries(feature)"></app-entry-renderer>
                     </div>
 
                   </div>
@@ -315,6 +317,7 @@ import { referenceDescription } from '../models/character-references';
   `,
 })
 export class FeaturesPageComponent {
+  readonly bonusSourceId = featureBonusSourceId;
   /** Render the same source dialog in place, without mounting the catalog or consuming navigation. */
   readonly detailEntry = input<FeatureEntryFull | null>(null);
   readonly detailNavigation = input<TemplateRef<unknown> | null>(null);

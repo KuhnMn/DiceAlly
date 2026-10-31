@@ -1,10 +1,31 @@
 import { emptyBasicCharacter } from './basic-info';
 import { mergeWizardPrefill, PrefillValue, WizardState } from './wizard-prefill';
+import { applyAbilityBonuses, asiBonusOptions, setAbilityBonusesEnabled } from '../models/ability-score-bonuses';
 
 const state = (): WizardState => ({ revisionId: 'test', classes: [], answers: {}, options: {}, baseline: [], protectedPaths: [] });
 const hp: PrefillValue = { path: ['character', 'maxHp'], value: 20, scope: 'hp', label: 'Maximum HP' };
 
 describe('Wizard manual edit override', () => {
+  it('transfers ability bonus choices and custom definitions when adopting a feature under a wizard identity', () => {
+    const original = emptyBasicCharacter();
+    original.features = [{ editorId: 'manual', name: 'Gift', source: 'TEST', featureType: 'FEAT', notes: [{ tag: 'Keep', notes: ['My note'] }] }];
+    setAbilityBonusesEnabled(original, true);
+    original.abilityBonuses!.choices['feature:manual'] = { chosen: ['str'] };
+    original.abilityBonuses!.custom['feature:manual'] = [asiBonusOptions()[0]];
+    applyAbilityBonuses(original);
+    const feature: PrefillValue = { path: ['features', 'wizard'], value: { ...original.features[0], editorId: 'wizard' }, scope: 'features', label: 'Gift' };
+    const adopted = mergeWizardPrefill(original, state(), [feature], ['features']).sheet;
+    applyAbilityBonuses(adopted);
+    expect(adopted.features).toHaveLength(1);
+    expect(adopted.features![0].editorId).toBe('wizard');
+    expect(adopted.abilityBonuses!.choices['feature:wizard'].chosen).toEqual(['str']);
+    expect(adopted.abilityBonuses!.custom['feature:wizard']).toEqual(original.abilityBonuses!.custom['feature:manual']);
+    expect(adopted.abilityBonuses!.choices['feature:manual']).toBeUndefined();
+    expect(adopted.character!.abilityScores!.strength).toBe(12);
+    expect(adopted.features![0].notes).toEqual(original.features[0].notes);
+    expect(original.features[0].editorId).toBe('manual');
+  });
+
   it('distinguishes existing values without wizard history from detected edits to generated values', () => {
     const imported = emptyBasicCharacter(); imported.character!.maxHp = 20;
     const existing = mergeWizardPrefill(imported, state(), [hp]);
