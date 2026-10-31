@@ -20,6 +20,73 @@ function fixture() {
   return { records, find, index, selection };
 }
 describe('Content-bound feature previews', () => {
+  function referencedFixture() {
+    const f = fixture(), root = structuredClone(f.find('subclassFeature', 'School Gift'));
+    root.data['entries'] = [{ type: 'entries', name: 'Gifts', entries: [
+      { type: 'refSubclassFeature', subclassFeature: 'Star Map|Mage|TEST|A|TEST|3' },
+      { type: 'refSubclassFeature', subclassFeature: 'Starry Form|Mage|TEST|A|TEST|3' },
+      'See {@subclassFeature Other School|Mage|TEST|B|TEST|3} for comparison.',
+    ] }];
+    const extra = mapContent({ subclassFeature: [
+      { name: 'Star Map', source: 'TEST', className: 'Mage', classSource: 'TEST', subclassShortName: 'A', subclassSource: 'TEST', level: 3,
+        entries: [{ type: 'refSubclassFeature', subclassFeature: 'Starry Form|Mage|TEST|A|TEST|3' }] },
+      { name: 'Starry Form', source: 'TEST', className: 'Mage', classSource: 'TEST', subclassShortName: 'A', subclassSource: 'TEST', level: 3,
+        entries: [{ type: 'refSubclassFeature', subclassFeature: 'School Gift|Mage|TEST|A|TEST|3' }] },
+    ] }, 'nested-features.json').records;
+    const records = new Map(f.index.records); records.set(root.key, root);
+    extra.forEach(record => records.set(record.key, record));
+    return { ...f, root, extra, index: { ...f.index, records },
+      selection: { ...f.selection, subclassKey: f.find('subclass', 'School A').key } };
+  }
+
+  it('expands structured feature grants recursively, deduplicates shared/cyclic references and ignores prose links', () => {
+    const f = referencedFixture(), before = JSON.stringify([...f.index.records]);
+    const result = deriveClassFeatures([f.selection], f.index);
+    expect(result.diagnostics).toEqual([]);
+    expect(result.instances.filter(instance => instance.snapshot.kind === 'subclassFeature').map(instance => instance.snapshot.name))
+      .toEqual(['School Gift', 'Star Map', 'Starry Form']);
+    expect(result.instances.every(instance => instance.grants.length === 1)).toBe(true);
+    expect(deriveClassFeatures([f.selection], f.index, result.instances).instances).toEqual(result.instances);
+    expect(JSON.stringify([...f.index.records])).toBe(before);
+  });
+
+  it('gates referenced features by the granting and referenced levels and removes them when the subclass changes', () => {
+    const f = referencedFixture();
+    const early = f.extra[0]; early.data['level'] = 1;
+    // Keep the qualified identity consistent when testing an earlier-level child.
+    const earlyRecords = mapContent({ subclassFeature: [early.data] }, early.file).records;
+    f.index.records.delete(early.key); f.index.records.set(earlyRecords[0].key, earlyRecords[0]);
+    f.root.data['entries'] = [{ type: 'refSubclassFeature', subclassFeature: 'Star Map|Mage|TEST|A|TEST|1' }];
+    const beforeLevel = deriveClassFeatures([{ ...f.selection, level: 2 }], f.index);
+    expect(beforeLevel.canAccept).toBe(true);
+    expect(beforeLevel.instances.some(instance => instance.snapshot.kind === 'subclassFeature')).toBe(false);
+    const first = deriveClassFeatures([f.selection], f.index);
+    const child = first.instances.find(instance => instance.snapshot.name === 'Star Map')!;
+    expect(child.grants[0].level).toBe(3);
+    const suppressed = deriveClassFeatures([f.selection], f.index, first.instances, [child.grants[0].id]);
+    expect(suppressed.instances.some(instance => instance.snapshot.name === 'Star Map')).toBe(false);
+    const switched = deriveClassFeatures([{ ...f.selection, subclassKey: f.find('subclass', 'School B').key }], f.index, first.instances);
+    expect(switched.removed.map(instance => instance.snapshot.name)).toEqual(['School Gift', 'Star Map', 'Starry Form']);
+    f.root.data['entries'] = [{ type: 'refSubclassFeature', subclassFeature: 'Later|Mage|TEST|A|TEST|5' }];
+    const later = mapContent({ subclassFeature: [{ ...f.extra[1].data, name: 'Later', level: 5, entries: [] }] }, 'later.json').records[0];
+    f.index.records.set(later.key, later);
+    expect(deriveClassFeatures([f.selection], f.index).instances.some(instance => instance.snapshot.name === 'Later')).toBe(false);
+    expect(deriveClassFeatures([{ ...f.selection, level: 5 }], f.index).instances.some(instance => instance.snapshot.name === 'Later')).toBe(true);
+  });
+
+  it('blocks missing or wrong-subclass granted features without replacing existing character state', () => {
+    const f = referencedFixture(), first = deriveClassFeatures([f.selection], f.index);
+    f.index.records.delete(f.extra[0].key);
+    const missing = deriveClassFeatures([f.selection], f.index, first.instances);
+    expect(missing.canAccept).toBe(false); expect(missing.diagnostics[0].message).toContain('Missing qualified feature');
+    expect(missing.instances).toEqual(first.instances); expect(missing.removed).toEqual([]);
+    f.root.data['entries'] = [{ type: 'refSubclassFeature', subclassFeature: 'School Gift|Mage|TEST|B|TEST|3' }];
+    const wrongSubclass = deriveClassFeatures([f.selection], f.index, first.instances);
+    expect(wrongSubclass.canAccept).toBe(false);
+    expect(wrongSubclass.diagnostics[0].message).toContain('different subclass');
+    expect(wrongSubclass.instances).toEqual(first.instances);
+  });
+
   it('B04/W01: selects by level and qualified identity, never name alone', () => {
     const f = fixture();
     const result = deriveClassFeatures([f.selection, { selectionId: 'fighter-selection', classKey: f.find('class','Fighter').key, level: 1 }], f.index);

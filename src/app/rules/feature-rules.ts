@@ -2,6 +2,7 @@ import { canonicalClassRecord, classDefinition } from '../content/class-adapter'
 import { ContentRecord, JsonObject } from '../content/content.model';
 import { ClassCasting } from '../content/class.model';
 import { subclassFeatureLevel, subclassFeatureMatchesClass, subclassMatchesClass } from '../content/class-compatibility';
+import { featureEntryReferences } from '../content/class-reference';
 import { CasterProgression, ClassLevelInput } from './level-rules';
 
 export interface ContentRulesIndex {
@@ -85,8 +86,10 @@ export function deriveClassFeatures(selections: ContentClassSelection[], index: 
       for (const owner of [parent, ...(subclass ? [subclass] : [])]) {
         const role = owner.kind === 'class' ? 'classFeature' : 'subclassFeature';
         const ownerDefinition = classDefinition(owner);
-        for (const reference of ownerDefinition.features) {
-          const key = reference.key;
+        const pending = ownerDefinition.features.map(reference => ({ key: reference.key, acquiredAt: 0 }));
+        const visited = new Map<string, number>();
+        for (let position = 0; position < pending.length; position++) {
+          const { key, acquiredAt } = pending[position];
           const record = index.records.get(key);
           if (!record || record.kind !== role) { report(selection.selectionId, `Missing qualified feature: ${key}`); continue; }
           const definition = classDefinition(record);
@@ -100,15 +103,22 @@ export function deriveClassFeatures(selections: ContentClassSelection[], index: 
           if (typeof sourceLevel !== 'number' || !Number.isInteger(sourceLevel) || sourceLevel < 0 || sourceLevel > 20) {
             report(selection.selectionId, `Invalid feature level: ${key}`); continue;
           }
-          const level = role === 'subclassFeature' ? subclassFeatureLevel(sourceLevel, parent, owner) : sourceLevel;
+          const level = Math.max(acquiredAt, role === 'subclassFeature' ? subclassFeatureLevel(sourceLevel, parent, owner) : sourceLevel);
           if (level > selection.level) continue;
+          if ((visited.get(key) ?? Infinity) <= level) continue;
+          visited.set(key, level);
           const grant: FeatureGrant = { id: JSON.stringify(['feature-grant', index.sourceIdentity, selection.selectionId, owner.key, role, key]),
             selectionId: selection.selectionId, ownerKey: owner.key, role,
             ...(level !== sourceLevel ? { level } : {}) };
           if (suppressed.has(grant.id)) continue;
           const entry = wanted.get(key) ?? { record, grants: [] };
-          if (!entry.grants.some(g => g.id === grant.id)) entry.grants.push(grant);
+          const existingGrant = entry.grants.findIndex(g => g.id === grant.id);
+          if (existingGrant < 0) entry.grants.push(grant);
+          else entry.grants[existingGrant] = grant;
           wanted.set(key, entry);
+          for (const reference of featureEntryReferences(record, role)) {
+            pending.push({ key: reference.target, acquiredAt: level });
+          }
         }
       }
     } catch (error) { report(selection.selectionId, String(error)); }

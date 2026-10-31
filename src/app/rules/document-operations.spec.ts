@@ -20,6 +20,37 @@ function fixture() {
   return { document,index };
 }
 describe('Native documents and preview acceptance', () => {
+  it('recomputes referenced subclass grants on library updates and preserves their IDs and personal state', () => {
+    const f = fixture();
+    const records = mapContent({ subclass: [{ name: 'Stars', shortName: 'Stars', source: 'TEST', className: 'Mage', classSource: 'TEST',
+      subclassFeatures: ['Stars Gifts|Mage|TEST|Stars|TEST|3'] }],
+      subclassFeature: ['Stars Gifts', 'Star Map'].map(name => ({ name, source: 'TEST', className: 'Mage', classSource: 'TEST',
+        subclassShortName: 'Stars', subclassSource: 'TEST', level: 3, entries: [`${name} description.`] })),
+    }, 'stars.json').records;
+    records.forEach(record => f.index.records.set(record.key, record));
+    f.document.creation.classes.selections[0].subclassKey = records.find(record => record.kind === 'subclass')!.key;
+    const original = acceptDocumentPreview(f.document, previewDocument(f.document, f.index));
+    expect(original.instances.features.map(instance => instance.snapshot.name)).toEqual(['Stars Gifts']);
+    const root = records.find(record => record.name === 'Stars Gifts')!, child = records.find(record => record.name === 'Star Map')!;
+    root.data['entries'] = [{ type: 'refSubclassFeature', subclassFeature: 'Star Map|Mage|TEST|Stars|TEST|3' }];
+    const nextIndex = { ...f.index, revisionId: 'stars-v2' };
+    const target = { ...original.contentBindings[0], revisionId: nextIndex.revisionId, commit: 'b'.repeat(40) };
+    const added = acceptDocumentPreview(original, previewContentUpdate(original, nextIndex, target));
+    const map = added.instances.features.find(instance => instance.contentKey === child.key)!;
+    expect(map.revisionId).toBe('stars-v2'); expect(map.grants).toHaveLength(1);
+    map.customization = { notes: ['Keep my note'], used: 1 };
+    added.session.annotations[map.id] = ['Map annotation'];
+    child.data['entries'] = ['Updated map description.'];
+    const finalIndex = { ...f.index, revisionId: 'stars-v3' };
+    const updated = acceptDocumentPreview(added, previewContentUpdate(added, finalIndex,
+      { ...target, revisionId: finalIndex.revisionId, commit: 'c'.repeat(40) }));
+    const fresh = updated.instances.features.find(instance => instance.contentKey === child.key)!;
+    expect(fresh.id).toBe(map.id); expect(fresh.snapshot.data['entries']).toEqual(['Updated map description.']);
+    expect(fresh.customization).toEqual(map.customization);
+    expect(updated.session.annotations[map.id]).toEqual(['Map annotation']);
+    expect(updated.instances.features).toHaveLength(2);
+  });
+
   it('round-trips native documents and preserves unknown identity/extension/session state', () => {
     const f = fixture(); const parsed = parseCharacterDocument(JSON.stringify(f.document));
     expect(parsed).toEqual(f.document);

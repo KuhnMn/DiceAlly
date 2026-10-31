@@ -130,6 +130,36 @@ describe('Classic subclasses with revised classes', () => {
     expect(early.grants[0].level).toBe(3);
   });
 
+  it('adds referenced subclass features in both editions and refreshes their descriptions without losing notes', async () => {
+    const f = mixedFixture();
+    const root = f.records.find(record => record.kind === 'subclassFeature' && classDefinition(record).level === 1)!;
+    root.data['entries'] = [{ type: 'refSubclassFeature', subclassFeature: 'Star Map|Wizard|PHB|School|TCE|1' },
+      { type: 'refSubclassFeature', subclassFeature: 'Starry Form|Wizard|PHB|School|TCE|1' }];
+    const children = mapContent({ subclassFeature: ['Star Map', 'Starry Form'].map(name => ({ name, source: 'TCE',
+      className: 'Wizard', classSource: 'PHB', subclassShortName: 'School', subclassSource: 'TCE', level: 1,
+      entries: [`${name} description.`] })) }, 'stars.json').records;
+    children.forEach(record => f.index.set(record.key, record));
+    for (const [parent, level] of [[f.parent, 3], [f.classic, 1]] as const) {
+      const state = { ...f.state, classes: [{ ...f.state.classes[0], classKey: parent.key, level }] };
+      const result = previewClassWizard(f.sheet, state, f.revision, f.index);
+      expect(result.errors).toEqual([]);
+      const map = result.sheet.features!.find(feature => feature.name === 'Star Map')!;
+      expect(map.featureEntity!.level).toBe(level);
+      expect(result.sheet.features!.filter(feature => ['Star Map', 'Starry Form'].includes(feature.name))).toHaveLength(2);
+      map.notes = [{ tag: 'Keep', notes: ['Personal map note'] }];
+      const repeated = previewClassWizard(result.sheet, state, f.revision, f.index);
+      expect(repeated.sheet.features!.find(feature => feature.name === 'Star Map')!.editorId).toBe(map.editorId);
+      children[0].data['entries'] = ['Updated star map description.'];
+      const refreshed = await refreshCharacterDescriptions(result.sheet, { get: async (_revision, key) => f.index.get(key) },
+        { ...f.revision, id: 'updated-stars' });
+      const updated = refreshed.sheet.features!.find(feature => feature.name === 'Star Map')!;
+      expect(updated.featureEntity!.entries).toEqual(['Updated star map description.']);
+      expect(updated.featureEntity!.level).toBe(level);
+      expect(updated.editorId).toBe(map.editorId); expect(updated.notes).toEqual(map.notes);
+      expect(updated.contentReference!.revisionId).toBe('updated-stars');
+    }
+  });
+
   it('keeps original acquisition levels when the same subclass uses its classic class', () => {
     const f = mixedFixture();
     f.state.classes[0] = { ...f.state.classes[0], classKey: f.classic.key, level: 2 };

@@ -1,4 +1,18 @@
 import { ContentLink, entityKey, JsonObject, object, string } from './content.model';
+import type { ContentRecord } from './content.model';
+import { contentEntries, visitEntryTree } from './content-entries';
+
+/** Structured feature entries grant features; inline prose tags only link descriptions. */
+export function featureEntryReferences(record: ContentRecord, kind: 'classFeature' | 'subclassFeature'): ContentLink[] {
+  const references = new Map<string, ContentLink>();
+  const type = kind === 'classFeature' ? 'refClassFeature' : 'refSubclassFeature';
+  visitEntryTree(contentEntries(record), 'entries', () => {}, entry => {
+    if (entry.type !== type) return;
+    const reference = featureReference(entry[kind], kind, {});
+    references.set(reference.target, reference);
+  });
+  return [...references.values()];
+}
 
 export function featureReference(value: unknown, kind: 'classFeature' | 'subclassFeature', _parent: JsonObject): ContentLink {
   const token = typeof value === 'string' ? value : string(object(value)?.[kind]);
