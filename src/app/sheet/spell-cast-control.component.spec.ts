@@ -26,6 +26,29 @@ function setup(entry = spell(), value = sheet()) {
 }
 
 describe('Cast from spell details', () => {
+  it('never offers slot sources for cantrips but allows linked resources and checks the complete cost', async () => {
+    const entry=spell(0), value=sheet();value.spells=[entry];
+    value.character!.featureSources=[{editorId:'psi-source',name:'Soulknife'}];
+    value.resources=[{id:'psi',sourceId:'psi-source',name:'Psionic Energy Dice',mode:'counter',note:'',total:5,used:0,recovery:'LONG_REST',features:true,spells:true}];
+    entry.resourceLinks=[{resourceId:'psi',amount:3}];
+    const {fixture,control,store}=setup(entry,value);
+    expect(control.resources().some(resource=>resource.kind==='slot')).toBe(false);
+    const select=fixture.nativeElement.querySelector('[aria-label="Casting resource"]') as HTMLSelectElement;
+    expect([...select.options].some(option=>option.textContent?.includes('Spell Slots'))).toBe(false);
+    const slotKey=control.pools()[0].key;
+    control.setResource(slotKey);expect(control.canCast()).toBe(false);
+    control.setResource('resource:psi');fixture.detectChanges();
+    expect(control.resource()?.label).toBe('Soulknife · Psionic Energy Dice');
+    expect(control.level()).toBe(0);expect(control.canCast()).toBe(true);
+    await control.cast();fixture.detectChanges();
+    expect(store.characterData()!.resources![0].used).toBe(3);
+    expect(control.resource()?.remaining).toBe(2);
+    expect(control.canCast()).toBe(false);
+    await control.cast();expect(store.characterData()!.resources![0].used).toBe(3);
+    expect(store.characterData()!.character!.spellSlots).toEqual(value.character!.spellSlots);
+    control.setResource('cantrip');expect(control.canCast()).toBe(true);
+    fixture.destroy();
+  });
   it('casts using a linked source resource instead of spending a spell slot', async () => {
     const entry=spell(), value=sheet(); value.spells=[entry];
     value.character!.featureSources=[{editorId:'wizard',name:'Wizard'}];
@@ -37,9 +60,12 @@ describe('Cast from spell details', () => {
     control.setResource('resource:points');expect(control.canCast()).toBe(true);
     fixture.detectChanges();
     const resourceControl=fixture.nativeElement.querySelector('[aria-label="Casting resource"]').closest('app-resource-select') as HTMLElement;
-    expect(resourceControl.querySelector('output .tabular-nums')?.textContent).toBe('2/2');
+    expect(resourceControl.querySelector('output .tabular-nums')?.textContent).toBe('7/7');
+    expect(resourceControl.textContent).toContain('Wizard · Sorcery Points');
+    expect(resourceControl.textContent).not.toContain('Cost 3');
+    expect(fixture.nativeElement.querySelector('button[aria-label="Cast Test Spell"]').textContent).toContain('(3)');
     await control.cast();expect(store.characterData()!.resources![0].used).toBe(3);
-    fixture.detectChanges();expect(resourceControl.querySelector('output .tabular-nums')?.textContent).toBe('1/2');
+    fixture.detectChanges();expect(resourceControl.querySelector('output .tabular-nums')?.textContent).toBe('4/7');
     expect(store.characterData()!.character!.spellSlots).toEqual(value.character!.spellSlots);
     await control.cast();expect(store.characterData()!.resources![0].used).toBe(6);expect(control.canCast()).toBe(false);
     await control.cast();expect(store.characterData()!.resources![0].used).toBe(6);fixture.destroy();
@@ -145,6 +171,8 @@ describe('Cast from spell details', () => {
     expect(control.pool()).toMatchObject({ source: 'Artificer', index: 2 });
     const select = fixture.nativeElement.querySelector('select[aria-label="Casting resource"]') as HTMLSelectElement;
     expect(select.value).toBe(key);
+    expect(select.closest('app-resource-select')!.querySelector('[role="img"][aria-label="Regain: Short Rest"]')).not.toBeNull();
+    expect(select.selectedOptions[0].textContent).toContain('Short Rest');
     control.setLevel('3');
     expect(control.resource()?.key).toBe(key); expect(control.levels()).toEqual([1, 2]); expect(control.canCast()).toBe(false);
     await control.cast(); expect(store.characterData()).toBe(value);
@@ -196,8 +224,8 @@ describe('Cast from spell details', () => {
   it('keeps lower-level resources listed even when they have no applicable level for this spell', () => {
     const value = sheet(); value.character!.spellSlots!['Warlock'] = [{ level: 5, total: 1, used: 0 }];
     const { fixture, control } = setup(spell(4), value);
-    expect(control.resources().map(resource => resource.label)).toEqual(['Wizard · Long Rest', 'Warlock · Long Rest']);
-    expect(control.resource()?.label).toBe('Wizard · Long Rest');
+    expect(control.resources().map(resource => resource.label)).toEqual(['Wizard · Spell Slots', 'Warlock · Spell Slots']);
+    expect(control.resource()?.label).toBe('Wizard · Spell Slots');
     expect(control.levels()).toEqual([]); expect(control.level()).toBeNull(); expect(control.canCast()).toBe(false);
     control.setResource(control.resources()[1].key);
     expect(control.levels()).toEqual([5]); expect(control.level()).toBe(5); expect(control.canCast()).toBe(true);

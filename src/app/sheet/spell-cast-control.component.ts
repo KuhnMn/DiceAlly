@@ -3,7 +3,6 @@ import { Component, DestroyRef, computed, effect, inject, input, linkedSignal, s
 import { ExportedCharacter, SpellEntryFull, SpellSlot } from '../models/character.model';
 import { CharacterStore } from '../stores/character.store';
 import { preparedVersion, spellIdentity } from '../editor/spell-selection';
-import { regainLabel } from './regain-label';
 import { UiIconComponent } from '../ui-icon.component';
 import { AppDialogService } from '../services/app-dialog.service';
 import { ResourceSelectComponent, ResourceSelectOption } from './resource-select.component';
@@ -17,6 +16,7 @@ interface CastingResource {
   useIndex?: number;
   cost?: ResourceCost;
   pools?: CastingPool[];
+  recovery?: string;
 }
 
 interface CastingPool {
@@ -35,24 +35,28 @@ interface CastingPool {
   imports: [UiIconComponent, ResourceSelectComponent],
   template: `
     <section aria-label="Cast spell" class="space-y-2">
-      <app-resource-select label="Casting Resource" ariaLabel="Casting resource" [value]="resource()?.key ?? ''"
-        [options]="resourceOptions()" [disabled]="pending()" (changed)="setResource($event)"
-        [placeholder]="resources().length ? 'Choose a Resource' : 'No Resources Available'" />
+      @let slots = !resource() || resource()?.kind === 'slot';
       <div class="flex flex-wrap items-end gap-2">
-        <app-resource-select class="min-w-24 flex-1" label="Cast Level" ariaLabel="Cast level" [value]="level() === null ? '' : '' + level()"
+        <app-resource-select class="min-w-24 flex-1" [class.basis-full]="slots" label="Casting Resource" ariaLabel="Casting resource" [value]="resource()?.key ?? ''"
+          [options]="resourceOptions()" [disabled]="pending()" (changed)="setResource($event)"
+          [placeholder]="resources().length ? 'Choose a Resource' : 'No Resources Available'" />
+        <app-resource-select class="min-w-24 flex-1" [class.order-3]="!slots" [class.basis-full]="!slots" label="Cast Level" ariaLabel="Cast level" [value]="level() === null ? '' : '' + level()"
           [options]="levelOptions()" [disabled]="pending() || levels().length <= 1" (changed)="setLevel($event)" placeholder="No Applicable Level" />
+        <div class="flex shrink-0 items-end gap-2">
         @if (requiresConcentration()) {
           <button type="button" (click)="trackConcentration.set(!trackConcentration())" [disabled]="pending()" [attr.aria-pressed]="trackConcentration()" aria-label="Track concentration after casting" [title]="trackConcentration() ? 'Track Concentration After Casting: On' : 'Track Concentration After Casting: Off'"
             class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg border border-outline-variant text-lg disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-primary" [class.bg-tertiary-container]="trackConcentration()" [class.text-on-tertiary-container]="trackConcentration()" [class.text-on-surface-variant]="!trackConcentration()"><app-ui-icon name="head" [filled]="trackConcentration()" /></button>
         }
-        <button type="button" (click)="cast()" [disabled]="!canCast()" [attr.aria-label]="'Cast ' + spell().name"
-          class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 font-semibold text-on-primary disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="wand" /> Cast</button>
+        <button type="button" (click)="cast()" [disabled]="!canCast()" [attr.aria-label]="'Cast ' + spell().name" [attr.aria-describedby]="castCost() !== null ? castCostId : null" [title]="castCost() !== null ? 'Cost: ' + castCost() : 'Cast spell'"
+          class="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 font-semibold text-on-primary disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="wand" /> Cast @if (castCost() !== null) { <span [id]="castCostId" class="tabular-nums"><span class="sr-only">Cost: </span>({{ castCost() }})</span> }</button>
+        </div>
       </div>
       @if (!resource() || resource()?.kind !== 'slot' || level() === null) {
       <p class="text-xs text-on-surface-variant" aria-live="polite">
         @if (baseLevel() === null) { The spell level is unavailable. }
         @else if (!resource()) { {{ resources().length ? 'Choose a casting resource.' : 'No spell slots available for this spell.' }} }
         @else if (resource()?.kind === 'use') { Uses one selected use; no spell slot. Cast at the spell's base level. }
+        @else if (resource()?.kind === 'resource') { Uses the selected resource; no spell slot. Cast at the spell's base level. }
         @else if (resource()?.kind === 'ritual') { Ritual casting uses no spell slot or Uses. }
         @else if (baseLevel() === 0) { Cantrips do not use spell slots. }
         @else { Choose an applicable cast level. }
@@ -63,6 +67,7 @@ interface CastingPool {
   `,
 })
 export class SpellCastControlComponent {
+  readonly castCostId = 'cast-cost-' + crypto.randomUUID();
   readonly spell = input.required<SpellEntryFull>();
   readonly sheet = input.required<ExportedCharacter>();
   private readonly store = inject(CharacterStore);
@@ -106,7 +111,7 @@ export class SpellCastControlComponent {
       const recovery = slot.regainCondition || 'LONG_REST';
       const ordinal = slots.slice(0, index).filter(previous => previous.level === slot.level && (previous.regainCondition || 'LONG_REST') === recovery).length;
       return [{ key: JSON.stringify([source, recovery, ordinal]), source, index, slot, remaining: Math.max(0, slot.total - (slot.used ?? 0)),
-        label: source + ' · ' + regainLabel(slot.regainCondition) + (ordinal ? ' · Pool ' + (ordinal + 1) : '') }];
+        label: source + ' · Spell Slots' + (ordinal ? ' · Pool ' + (ordinal + 1) : '') }];
     }));
   };
   readonly poolForLevel = (level: number): CastingPool | null => this.resource()?.pools?.find(pool => pool.slot.level === level) ?? null;
@@ -127,23 +132,24 @@ export class SpellCastControlComponent {
       if (resource) {
         resource.pools!.push(pool); resource.remaining += pool.remaining; resource.total += pool.slot.total;
       } else {
-        resources.set(pool.key, { key: pool.key, kind: 'slot', label: pool.label, remaining: pool.remaining, total: pool.slot.total, pools: [pool] });
+        resources.set(pool.key, { key: pool.key, kind: 'slot', label: pool.label, recovery: pool.slot.regainCondition || 'LONG_REST', remaining: pool.remaining, total: pool.slot.total, pools: [pool] });
       }
     }
     return [...resources.values()];
   }
   readonly resources = (): CastingResource[] => [
     ...(this.baseLevel() === 0 ? [{ key: 'cantrip', kind: 'cantrip' as const, label: 'Cantrip · No Resource', remaining: 1, total: 1 }] : []),
-    ...this.slotResources(),
+    ...(this.baseLevel() === 0 ? [] : this.slotResources()),
     ...resourceCosts(this.liveSheet() ?? {}, (this.trackedSpell()?.spell ?? this.spell()).resourceLinks).map(cost => {
       const pool = this.liveSheet()!.resources!.find(resource => resource.id === cost.resourceId)!;
-      return {key:'resource:' + pool.id,kind:'resource' as const,label:pool.name + ' · Cost ' + cost.amount,remaining:Math.floor(remainingResource(pool)/cost.amount),total:Math.floor(pool.total/cost.amount),cost};
+      const source = this.liveSheet()!.character?.featureSources?.find(source => source.editorId === pool.sourceId);
+      return {key:'resource:' + pool.id,kind:'resource' as const,label:(source?.name || 'Removed source') + ' · ' + pool.name,remaining:remainingResource(pool),total:pool.total,cost};
     }),
     ...(this.spell().entity?.meta?.ritual === true ? [{ key: 'ritual', kind: 'ritual' as const, label: 'Ritual - Free', remaining: 1, total: 1 }] : []),
     ...(this.trackedSpell()?.spell.uses ?? []).flatMap((use, index) => {
       const total = use.totalFreeUses ?? 1, used = use.usedFreeUses ?? 0;
       if (!Number.isSafeInteger(total) || total < 0 || !Number.isSafeInteger(used) || used < 0) return [];
-      return [{ key: 'use:' + index, kind: 'use' as const, label: (use.tag || 'Uses') + ' · ' + regainLabel(use.freeUsesRegainCondition), remaining: Math.max(0, total - used), total, useIndex: index }];
+      return [{ key: 'use:' + index, kind: 'use' as const, label: (this.spell().castingSourceName || 'Unassigned Source') + ' · ' + (use.tag || 'Uses'), remaining: Math.max(0, total - used), total, useIndex: index }];
     }),
   ];
   readonly resource = (): CastingResource | null => {
@@ -156,7 +162,7 @@ export class SpellCastControlComponent {
   };
   resourceOptions(): ResourceSelectOption[] {
     return this.resources().map(resource => ({ value: resource.key, label: resource.label,
-      balance: resource.kind === 'use' || resource.kind === 'resource' ? `${resource.remaining}/${resource.total}` : undefined }));
+      recovery: resource.recovery, balance: resource.kind === 'use' || resource.kind === 'resource' ? `${resource.remaining}/${resource.total}` : undefined }));
   }
   levelOptions(): ResourceSelectOption[] {
     return this.levels().map(value => {
@@ -166,10 +172,15 @@ export class SpellCastControlComponent {
     });
   }
   readonly upcasting = () => this.resource()?.kind === 'slot' && this.level()! > this.baseLevel()!;
+  castCost(): number | null {
+    const resource = this.resource();
+    return resource?.kind === 'resource' ? resource.cost!.amount : resource?.kind === 'use' ? 1 : null;
+  }
   private available() {
     const resource = this.resource();
     const remaining = resource?.kind === 'slot' ? this.pool()?.remaining ?? 0 : resource?.remaining ?? 0;
-    return !!this.liveSheet()?.character && this.level() !== null && this.levels().includes(this.level()!) && remaining > 0
+    return !!this.liveSheet()?.character && this.level() !== null && this.levels().includes(this.level()!)
+      && (resource?.kind === 'resource' ? remaining >= resource.cost!.amount : remaining > 0)
       && (resource?.kind !== 'use' || this.level() === this.baseLevel());
   }
   readonly canCast = () => !this.pending() && this.available();

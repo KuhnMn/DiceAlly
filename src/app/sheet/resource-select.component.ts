@@ -1,12 +1,14 @@
 import { Component, input, output } from '@angular/core';
 import { UiIconComponent } from '../ui-icon.component';
+import { RecoveryIndicatorComponent } from '../recovery-indicator.component';
+import { regainLabel } from './regain-label';
 
-export interface ResourceSelectOption { value: string; label: string; balance?: string; }
+export interface ResourceSelectOption { value: string; label: string; balance?: string; recovery?: string; }
 
 /** Native selection with a flexible name and a balance that never gets truncated. */
 @Component({
   selector: 'app-resource-select',
-  imports: [UiIconComponent],
+  imports: [UiIconComponent, RecoveryIndicatorComponent],
   host: { class: 'block min-w-0' },
   template: `
     <p class="text-xs font-semibold text-on-surface-variant">{{ label() }}</p>
@@ -14,6 +16,7 @@ export interface ResourceSelectOption { value: string; label: string; balance?: 
       <output aria-live="polite" [attr.aria-label]="selected() ? fullLabel(selected()!) : placeholder()"
         class="flex min-h-11 items-center gap-2 rounded-lg border border-outline-variant bg-surface-container px-2 py-2 text-base text-on-surface sm:text-sm">
         <span class="min-w-0 flex-1 truncate" [title]="selected()?.label ?? placeholder()">{{ selected()?.label ?? placeholder() }}</span>
+        @if (selected()?.recovery; as recovery) { <app-recovery-indicator [condition]="recovery" /> }
         @if (selected()?.balance; as balance) { <span class="shrink-0 tabular-nums">{{ balance }}</span> }
         @if (selectable()) { <app-ui-icon name="chevron-down" /> }
       </output>
@@ -39,10 +42,12 @@ export class ResourceSelectComponent {
   readonly placeholder = input('Choose a Resource');
   readonly changed = output<string>();
   selected() { return this.options().find(option => option.value === this.value()); }
-  fullLabel(option: ResourceSelectOption) { return option.balance ? `${option.label} · ${option.balance} available` : option.label; }
+  fullLabel(option: ResourceSelectOption) {
+    return [option.label, option.recovery ? regainLabel(option.recovery) : '', option.balance ? `${option.balance} available` : ''].filter(Boolean).join(' · ');
+  }
   optionLabel(option: ResourceSelectOption) {
     const characters = Array.from(option.label);
     const name = characters.length > 24 ? characters.slice(0, 23).join('') + '…' : option.label;
-    return option.balance ? `${name} · ${option.balance}` : name;
+    return [name, option.recovery ? regainLabel(option.recovery) : '', option.balance ?? ''].filter(Boolean).join(' · ');
   }
 }
