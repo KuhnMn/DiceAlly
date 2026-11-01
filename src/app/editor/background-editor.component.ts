@@ -37,7 +37,7 @@ import { characterDescription } from '../character-description';
       <div class="mt-1 flex items-center gap-2 text-xs"><app-background-details [sheet]="sheet()" [background]="sheet().background" label="Details" /><span class="rounded bg-surface-container-highest px-1">{{ sheet().background?.source }}</span></div>
     }
     @if (sheet().abilityBonuses?.enabled && sheet().background; as background) { <div class="mt-2">
-      <app-entry-annotations-editor [entry]="{}" [showUses]="false" [showNotes]="false" [showBonus]="true">
+      <app-entry-annotations-editor [entry]="{}" [showUses]="false" [showNotes]="false" [showBonus]="true" [showVisibility]="false">
         <app-ability-bonus-editor annotation-bonus [inlineConfiguration]="true" [showSource]="false" [sheet]="sheet()" [sourceId]="bonusSourceId(background)" (edited)="edited.emit()" />
       </app-entry-annotations-editor>
     </div> }

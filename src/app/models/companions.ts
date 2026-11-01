@@ -1,5 +1,6 @@
 import type { ContentReference, FeatureNotes, FeatureUses, Monster } from './character.model';
 import type { ObjectDefinition } from '../content/object.model';
+import type { ViewerEntryVisibility } from './entry-visibility';
 
 export interface CompanionHitPoints {
   enabled: boolean;
@@ -10,7 +11,7 @@ export interface CompanionHitPoints {
 }
 
 /** Detached object definition plus player-authored companion state. */
-export interface ObjectCompanion {
+export interface ObjectCompanion extends ViewerEntryVisibility {
   kind: 'object';
   editorId?: string;
   contentReference?: ContentReference;

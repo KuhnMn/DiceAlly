@@ -40,6 +40,22 @@ describe('Spell creator and playing sheet', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
   });
 
+  it('hides all memberships of a spell while keeping another casting source independent and the editor row available', async () => {
+    const sheet = emptyBasicCharacter();
+    sheet.character!.featureSources = [{ name: 'Wizard', isSpellcastingSource: true, useSpellbook: true }];
+    sheet.spells = ['KNOWN', 'PREPARED', 'SPELLBOOK'].map(listType => ({ name: 'Shared Spell', castingSourceName: 'Wizard', listType }));
+    sheet.spells.push({ name: 'Shared Spell', castingSourceName: 'Bard', listType: 'KNOWN' });
+    const fixture = TestBed.createComponent(SpellsEditorComponent); fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
+    fixture.componentInstance.toggle(sheet.spells[0]); fixture.changeDetectorRef.markForCheck(); fixture.detectChanges();
+    const hide = fixture.nativeElement.querySelector('[aria-label="Hide in viewer"]') as HTMLButtonElement;
+    expect(hide).not.toBeNull(); hide.click(); fixture.detectChanges();
+    expect(sheet.spells.slice(0, 3).every(spell => spell.hidden)).toBe(true);
+    expect(sheet.spells[3].hidden).toBeUndefined();
+    expect(fixture.nativeElement.textContent).toContain('Shared Spell');
+    fixture.nativeElement.querySelector('[aria-label="Show in viewer"]').click(); fixture.detectChanges();
+    expect(sheet.spells.every(spell => !spell.hidden)).toBe(true);
+  });
+
   it('indexes membership lookups once for large lists and refreshes after in-place edits', () => {
     const fixture = TestBed.createComponent(SpellsEditorComponent), sheet = emptyBasicCharacter();
     let nameReads = 0;

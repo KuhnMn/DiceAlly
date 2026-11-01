@@ -3,6 +3,8 @@ import { Component, input } from '@angular/core';
 const ICON_PATHS: Record<string, string | undefined> = {
   walk: 'M15 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM7 21l3-6M16 21l-2-5-3-3 1-6M7 12l2-4 3-1 4 5h4',
   search: 'm21 21-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',
+  eye: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
+  'eye-off': 'm3 3 18 18M10.6 5.1 12 5c6.5 0 10 7 10 7a19 19 0 0 1-3 3.8M6.2 6.2A23 23 0 0 0 2 12s3.5 7 10 7a13 13 0 0 0 5.8-1.8M9.9 9.9a3 3 0 0 0 4.2 4.2',
   filter: 'M4 6h16M7 12h10M10 18h4',
   list: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
   'list-plus': 'M8 6h13M8 12h7M8 18h5M3 6h.01M3 12h.01M3 18h.01M19 15v6M16 18h6',

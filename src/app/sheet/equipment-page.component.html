@@ -7,7 +7,7 @@
           @if (getItemProp(item, 'rarity') && getItemProp(item, 'rarity') !== 'none') { <span class="inline-block whitespace-nowrap rounded bg-purple-container px-2 py-0.5 text-xs font-normal capitalize text-on-purple-container">{{ getItemProp(item, 'rarity') }}</span> }
         </ng-template>
 <ng-template #itemDetail let-item>
-<app-sheet-detail-dialog [title]="item.name" [tags]="itemDialogTags" (closed)="closeDetail(itemKey(item))">
+<app-sheet-detail-dialog [reference]="item.contentReference" [title]="item.name" [tags]="itemDialogTags" (closed)="closeDetail(itemKey(item))">
             <ng-template #itemDialogTags>
               <ng-container [ngTemplateOutlet]="itemTypeTag" [ngTemplateOutletContext]="{ $implicit: item }" />
               <ng-container [ngTemplateOutlet]="itemTags" [ngTemplateOutletContext]="{ $implicit: item }" />

@@ -10,7 +10,7 @@
         </ng-template>
 <ng-template #companionDetail let-monster>
 <ng-template #dialogTags><ng-container [ngTemplateOutlet]="monsterDetailTags" [ngTemplateOutletContext]="{ $implicit: monster }" /></ng-template>
-<app-sheet-detail-dialog [title]="monster.name || 'Unnamed creature'" [tags]="dialogTags" (closed)="closeDetail(monsterKey(monster))">
+<app-sheet-detail-dialog [reference]="monster.contentReference" [title]="monster.name || 'Unnamed creature'" [tags]="dialogTags" (closed)="closeDetail(monsterKey(monster))">
         @if (monster.uses?.length) { <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">@for (use of monster.uses; track use) { <app-feature-uses tone="companions" [uses]="use" (usesUpdated)="use.usedFreeUses = $event.usedFreeUses" /> }</div> }
         @if (health(monster).enabled) {
           <div class="my-2 flex flex-wrap items-stretch gap-2">

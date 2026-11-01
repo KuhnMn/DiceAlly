@@ -6,6 +6,15 @@ const state = (): WizardState => ({ revisionId: 'test', classes: [], answers: {}
 const hp: PrefillValue = { path: ['character', 'maxHp'], value: 20, scope: 'hp', label: 'Maximum HP' };
 
 describe('Wizard manual edit override', () => {
+  it('retains hidden presentation state while updating generated definitions', () => {
+    const original = emptyBasicCharacter();
+    const feature: PrefillValue = { path: ['features', 'gift'], value: { editorId: 'gift', name: 'Gift' }, scope: 'features', label: 'Gift' };
+    const initial = mergeWizardPrefill(original, state(), [feature]).sheet;
+    initial.features![0].hidden = true;
+    const updated = mergeWizardPrefill(initial, initial.creatorWizard!, [{ ...feature, value: { editorId: 'gift', name: 'Updated Gift' } }]).sheet;
+    expect(updated.features![0]).toMatchObject({ name: 'Updated Gift', hidden: true });
+    expect(mergeWizardPrefill(updated, updated.creatorWizard!, []).sheet.features![0].hidden).toBe(true);
+  });
   it('transfers ability bonus choices and custom definitions when adopting a feature under a wizard identity', () => {
     const original = emptyBasicCharacter();
     original.features = [{ editorId: 'manual', name: 'Gift', source: 'TEST', featureType: 'FEAT', notes: [{ tag: 'Keep', notes: ['My note'] }] }];

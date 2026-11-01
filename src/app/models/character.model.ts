@@ -1,4 +1,5 @@
 import type { SourceEntry } from '../content/content-entries';
+import type { ViewerEntryVisibility } from './entry-visibility';
 import type { CharacterSpeed } from './character-speed';
 import type { ItemChargeDefinition, ItemVehicleDefinition } from '../content/item.model';
 import type { SpellEffectFields } from '../content/spell-effects';
@@ -573,7 +574,7 @@ export interface ContentReference {
   commit: string;
 }
 
-export interface SpellEntryFull {
+export interface SpellEntryFull extends ViewerEntryVisibility {
   resourceLinks?: import('./source-resources').ResourceCost[];
   editorId?: string;
   contentReference?: ContentReference;
@@ -587,7 +588,7 @@ export interface SpellEntryFull {
   entity?: SpellEntity | null;
 }
 
-export interface FeatureEntryFull {
+export interface FeatureEntryFull extends ViewerEntryVisibility {
   resourceLinks?: import('./source-resources').ResourceCost[];
   /** Character acquisition level when compatibility rules defer a source feature. */
   acquiredAtLevel?: number;
@@ -605,7 +606,7 @@ export interface FeatureEntryFull {
   optionalFeatureEntity?: OptionalFeatureEntity | null;
 }
 
-export interface InventoryItem {
+export interface InventoryItem extends ViewerEntryVisibility {
   editorId?: string;
   contentReference?: ContentReference;
   name: string;
@@ -620,7 +621,7 @@ export interface InventoryItem {
   isDummy?: boolean; // Marks items created by user without full data
 }
 
-export interface Species {
+export interface Species extends ViewerEntryVisibility {
   editorId?: string;
   userAdded?: boolean;
   contentReference?: ContentReference;
@@ -709,7 +710,7 @@ export interface CombatSourceSnapshot {
   actionType?: string;
 }
 
-export interface CombatAction {
+export interface CombatAction extends ViewerEntryVisibility {
   editorId?: string;
   name?: string;
   range?: string;
@@ -855,7 +856,7 @@ export interface MonsterEntity {
   hasFluff?: boolean;
 }
 
-export interface Monster {
+export interface Monster extends ViewerEntryVisibility {
   editorId?: string;
   contentReference?: ContentReference;
   uses?: FeatureUses[];

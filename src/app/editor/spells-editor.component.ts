@@ -200,6 +200,7 @@ export class SpellsEditorComponent implements OnInit, OnDestroy, DoCheck {
     this.expanded.has(row) ? this.expanded.delete(row) : this.expanded.add(row);
   }
   preparedEntry(spell: SpellEntryFull) { return this.spellIndex.memberships.get(spellIdentity(spell))?.get('PREPARED'); }
+  visibilityEntries(spell: SpellEntryFull) { return this.spells.filter(entry => spellIdentity(entry) === spellIdentity(spell)); }
   addToList(spell: SpellEntryFull, list: SpellList) {
     if (this.hasList(spell, list) || (list === 'SPELLBOOK' && !this.usesSpellbook(spell))) return;
     const copy = copySpellToList(spell, list);

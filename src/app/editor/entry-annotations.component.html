@@ -1,5 +1,6 @@
 <div class="min-w-0">
   <div appHorizontalRow role="group" aria-label="Entry tools" class="flex flex-wrap items-center gap-1.5">
+    <ng-content select="[annotation-description]" />
     @if (showUses()) {
       <button type="button" class="annotation-button disabled:opacity-50" [disabled]="!annotationsEnabled()" [title]="annotationsEnabled() ? 'Edit use trackers' : 'Prepare this spell to edit uses'" [attr.aria-expanded]="activePanel === 'uses' && annotationsEnabled()" [attr.aria-pressed]="activePanel === 'uses'" [attr.aria-controls]="'uses-panel-' + i" [class.bg-secondary-container]="activePanel === 'uses'" (click)="togglePanel('uses')"><app-ui-icon name="tally" /> Uses @if (entry().uses?.length) { <span>({{ entry().uses?.length }})</span> }</button>
     }
@@ -11,7 +12,7 @@
     }
     @if (showResources()) { <button type="button" class="annotation-button" [attr.aria-pressed]="activePanel === 'resources'" [attr.aria-controls]="'resource-panel-' + i" [attr.aria-expanded]="activePanel === 'resources'" (click)="togglePanel('resources')"><app-ui-icon name="link" /> Resources</button> }
     <ng-content select="[annotation-combat]" />
-    <ng-content select="[annotation-description]" />
+    @if (showVisibility()) { <button appEntryVisibility class="annotation-button" [entries]="visibilityEntries() ?? [entry()]" (edited)="change()"></button> }
   </div>
   <section class="annotation-panel" [hidden]="!showResources() || activePanel !== 'resources'" [id]="'resource-panel-' + i" aria-label="Resource links editor">
     <h3 class="mb-2 font-semibold">Resources</h3><ng-content select="[annotation-resources]" />

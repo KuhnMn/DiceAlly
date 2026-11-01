@@ -5,6 +5,7 @@ import { SheetSavingThrowComponent } from './sheet-saving-throw.component';
 import { ItemEffectRemindersComponent } from './item-effect-reminders.component';
 import { isSheetPageVisible, sheetPageForAnchor } from '../models/sheet-pages';
 import { CombatActionColumnsComponent } from './combat-action-columns.component';
+import { visibleInViewer } from '../models/entry-visibility';
 import { CombatActionComponent } from './combat-action.component';
 import { characterClasses } from '../character-description';
 import { BackgroundDetailsComponent } from '../background-details.component';
@@ -723,7 +724,13 @@ export class CharacterInfoPageComponent {
     });
   });
 
-  combatActions = computed(() => this.characterData()?.combatActions ?? []);
+  combatActions = computed(() => {
+    const sheet = this.characterData();
+    return (sheet?.combatActions ?? []).filter(action => {
+      const source = sheet ? resolveCombatResource(sheet, action) : undefined;
+      return visibleInViewer(action) && (!source || visibleInViewer(source));
+    });
+  });
   groupedBasicActions = computed(() => {
     const groups: Record<string, BasicActionDescription[]> = { ACTION: [], BONUS: [], REACTION: [], OTHER: [] };
     for (const action of this.characterData()?.basicActions ?? []) {
@@ -758,7 +765,7 @@ export class CharacterInfoPageComponent {
     return grouped;
   });
   
-  features = computed(() => this.characterData()?.features ?? []);
+  features = computed(() => (this.characterData()?.features ?? []).filter(visibleInViewer));
 
   toolProficiencies = computed(() => {
     const tools = this.character()?.proficiencies?.tools;

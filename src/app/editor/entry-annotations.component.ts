@@ -4,10 +4,12 @@ import { Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AnnotatedEntry, EntryAnnotationsEditor } from './entry-annotations-editor';
 import { HorizontalRowDirective } from '../sheet/horizontal-row.directive';
+import { EntryVisibilityComponent } from './entry-visibility.component';
+import type { ViewerEntryVisibility } from '../models/entry-visibility';
 
 @Component({
   selector: 'app-entry-annotations-editor',
-  imports: [HorizontalRowDirective, RecoveryIndicatorComponent, UiIconComponent, FormsModule],
+  imports: [EntryVisibilityComponent, HorizontalRowDirective, RecoveryIndicatorComponent, UiIconComponent, FormsModule],
   templateUrl: './entry-annotations.component.html',
   styleUrls: ['./editor.css', './editor-annotations.css'],
   host: { class: 'block min-w-0' },
@@ -26,6 +28,8 @@ export class EntryAnnotationsComponent extends EntryAnnotationsEditor {
   readonly showNotes = input(true);
   readonly showBonus = input(false);
   readonly showResources = input(false);
+  readonly showVisibility = input(true);
+  readonly visibilityEntries = input<readonly ViewerEntryVisibility[]>();
   activePanel: 'uses' | 'notes' | 'bonus' | 'resources' | null = null;
   togglePanel(panel: 'uses' | 'notes' | 'bonus' | 'resources') { this.activePanel = this.activePanel === panel ? null : panel; }
   override addUses(entry: AnnotatedEntry) { super.addUses(entry); this.activePanel = 'uses'; }

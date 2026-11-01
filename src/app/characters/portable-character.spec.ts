@@ -5,6 +5,18 @@ import { IndexedDbCharacterRepository } from './indexeddb-character-repository';
 import { encodeCloudCharacter } from './sync/character-cloud';
 
 describe('Portable character metadata', () => {
+  it('preserves hidden entries through local persistence and cloud serialization', async () => {
+    const sheet = emptyBasicCharacter();
+    sheet.features = [{ editorId: 'feat', name: 'Hidden Feat', featureType: 'FEAT', hidden: true }];
+    sheet.spells = [{ name: 'Hidden Spell', listType: 'PREPARED', hidden: true }];
+    sheet.inventory = [{ name: 'Hidden Item', isEquipped: true, hidden: true, count: 2 }];
+    sheet.monsters = [{ name: 'Hidden Companion', hidden: true, hpEnabled: true, monsterCurrentHP: 3 }];
+    const repository = new IndexedDbCharacterRepository(`visibility-${crypto.randomUUID()}`);
+    await repository.save(sheet, 0);
+    const record = (await repository.get(sheet.character!.characterUuid!))!;
+    const cloud = await encodeCloudCharacter(record, 1), saved = JSON.parse(cloud.body!);
+    for (const kind of ['features', 'spells', 'inventory', 'monsters'] as const) expect(saved[kind]).toEqual(sheet[kind]);
+  });
   it('ignores legacy installation identity on import, local persistence, and cloud upload', async () => {
     const sheet = Object.assign(emptyBasicCharacter(), { installationId: 'old-android-device' });
     const imported = normalizeCharacterEditorIdentity(sheet);

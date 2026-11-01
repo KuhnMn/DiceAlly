@@ -6,7 +6,7 @@ export function comparableWizardValue(value: unknown, excludeAnnotations = false
   if (!value || typeof value !== 'object') return value;
   return Object.fromEntries(Object.entries(value)
     .filter(([key, entry]) => entry !== undefined && key !== 'used' && key !== 'usedFreeUses' && key !== 'overrideFeet'
-      && (!excludeAnnotations || (key !== 'notes' && key !== 'uses' && key !== 'resourceLinks')))
+      && (!excludeAnnotations || (key !== 'notes' && key !== 'uses' && key !== 'resourceLinks' && key !== 'hidden')))
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, entry]) => [key, comparableWizardValue(entry)]));
 }

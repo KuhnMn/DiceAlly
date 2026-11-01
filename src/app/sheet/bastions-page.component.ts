@@ -1,4 +1,5 @@
 import { Component, computed, input, signal } from '@angular/core';
+import { visibleInViewer } from '../models/entry-visibility';
 import { NgTemplateOutlet } from '@angular/common';
 import type { ExportedCharacter, FeatureNotes } from '../models/character.model';
 import type { FacilityEntry } from '../models/bastion';
@@ -48,7 +49,7 @@ import { FacilityFiltersComponent } from '../facility-filters.component';
           <ng-container [ngTemplateOutlet]="facilityTags" [ngTemplateOutletContext]="{$implicit: facility}" />
           @if (facility.source) { <span class="inline-block max-w-full truncate rounded bg-surface-container-highest px-2 py-0.5 text-xs text-on-surface" [title]="facility.source">{{ facility.source }}</span> }
       </ng-template>
-      <app-sheet-detail-dialog [title]="facility.name" [tags]="dialogTags" (closed)="detail.set(null)">
+      <app-sheet-detail-dialog [reference]="facility.contentReference" [title]="facility.name" [tags]="dialogTags" (closed)="detail.set(null)">
         <app-facility-details [facility]="facility" [showMetadata]="false" />
         <app-feature-notes [notes]="facility.notes" (notesChanged)="updateNotes(facility, $event)" />
       </app-sheet-detail-dialog>
@@ -66,7 +67,7 @@ export class BastionsPageComponent {
   readonly levels = computed(() => [...new Set((this.characterData()?.bastion?.facilities ?? []).flatMap(entry => entry.entity.level == null ? [] : [entry.entity.level]))].sort((a, b) => a - b));
   clearFilters() { this.filters.set(emptyFacilityFilters()); }
   readonly selected = computed(() => [...this.characterData()?.bastion?.facilities ?? []]
-    .filter(entry => entry.name.toLowerCase().includes(this.query().trim().toLowerCase()) && matchesFacilityFilters(entry.entity, this.filters()))
+    .filter(visibleInViewer).filter(entry => entry.name.toLowerCase().includes(this.query().trim().toLowerCase()) && matchesFacilityFilters(entry.entity, this.filters()))
     .sort((a, b) => compareSearchMatches(a.name, b.name, this.query())));
   updateNotes(facility: FacilityEntry, notes: FeatureNotes[]) { facility.notes = notes; }
 }

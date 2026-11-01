@@ -61,7 +61,7 @@ const LINK_STYLES = {
       } @else { <ng-container [ngTemplateOutlet]="customDetail" /> }
     }
     <ng-template #customDetail>
-      <app-sheet-detail-dialog [title]="action().name || 'Combat Action'" (closed)="opened.set(false)">
+      <app-sheet-detail-dialog [reference]="resource()?.contentReference" [title]="action().name || 'Combat Action'" (closed)="opened.set(false)">
         <dl class="grid gap-3 rounded-lg bg-surface-container p-3 text-sm sm:grid-cols-2" aria-label="Combat action details">
           <div><dt class="font-semibold text-on-surface-variant">Action Type</dt><dd>{{ actionType() }}</dd></div>
           @if (action().range) { <div><dt class="font-semibold text-on-surface-variant">Range</dt><dd>{{ action().range }}</dd></div> }

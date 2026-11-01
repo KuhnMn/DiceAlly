@@ -1,4 +1,5 @@
 import { rankSearchResults } from '../search-ranking';
+import { visibleInViewer } from '../models/entry-visibility';
 import { ListControlsComponent } from '../list-controls.component';
 import { SheetListLayoutComponent } from './sheet-list-layout.component';
 import { SheetDetailDialogComponent } from './sheet-detail-dialog.component';
@@ -80,7 +81,7 @@ export class MonstersPageComponent extends MonsterPresentation {
     const query = this.searchQuery().trim().toLowerCase();
     const filter = this.monsterFilter();
     const entries: Companion[] = this.companionType() === 'object' ? [...this.characterData()?.objects ?? []].sort((a, b) => Number(b.hitPoints.enabled) - Number(a.hitPoints.enabled) || (a.name ?? '').localeCompare(b.name ?? '')) : this.monsters();
-    return rankSearchResults(entries.filter(monster => (monster.name ?? '').toLowerCase().includes(query) && (filter === 'all' || filter === 'companions' && this.health(monster).enabled || filter === 'reference' && !this.health(monster).enabled)), query, monster => monster.name ?? '');
+    return rankSearchResults(entries.filter(visibleInViewer).filter(monster => (monster.name ?? '').toLowerCase().includes(query) && (filter === 'all' || filter === 'companions' && this.health(monster).enabled || filter === 'reference' && !this.health(monster).enabled)), query, monster => monster.name ?? '');
   });
   monsterKey(monster: Companion) { return (isObjectCompanion(monster) ? 'object-' : 'monster-') + (monster.editorId ?? this.helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? ''))); }
   characterData = input.required<ExportedCharacter | null>();

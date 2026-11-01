@@ -1,8 +1,9 @@
 import type { BastionDefinition } from '../content/bastion.model';
+import type { ViewerEntryVisibility } from './entry-visibility';
 import type { ContentReference, FeatureNotes } from './character.model';
 
 /** Each facility is an independent instance; its definition remains usable offline. */
-export interface FacilityEntry {
+export interface FacilityEntry extends ViewerEntryVisibility {
   editorId: string;
   name: string;
   source?: string;

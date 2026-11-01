@@ -103,7 +103,7 @@ function collisions(sheet: ExportedCharacter, entry: PrefillValue): { editorId?:
 }
 function hasAnnotations(value: unknown): boolean {
   const entry = value as FeatureEntryFull | undefined;
-  return !!((value as { used?: number } | undefined)?.used || entry?.notes?.length || entry?.resourceLinks?.length || entry?.uses?.some(use => (use.usedFreeUses ?? 0) > 0));
+  return !!((value as { used?: number } | undefined)?.used || entry?.hidden || entry?.notes?.length || entry?.resourceLinks?.length || entry?.uses?.some(use => (use.usedFreeUses ?? 0) > 0));
 }
 
 /** Detached, repeatable prefill. Selected resources replace definitions; other manual edits stay protected. */
@@ -147,6 +147,7 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
         for (const counter of ['used', 'usedFreeUses', 'overrideFeet']) if (existing[counter] !== undefined) next[counter] = existing[counter];
         if (['features', 'spells', 'species'].includes(entry.path[0])) {
           next['resourceLinks'] = structuredClone(existing['resourceLinks']);
+          if (existing['hidden'] !== undefined) next['hidden'] = existing['hidden'];
           next['notes'] = structuredClone(existing['notes'] ?? []);
           if (Array.isArray(existing['uses']) && existing['uses'].length) next['uses'] = structuredClone(existing['uses']);
         }

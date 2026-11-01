@@ -43,7 +43,7 @@ let nextReferenceId = 0;
       </div>
     </ng-template>
     @if (dialogOpen() && reference(); as definition) {
-      <app-sheet-detail-dialog [title]="definition.name" [tags]="sourceTag" (closed)="dialogOpen.set(false)">
+      <app-sheet-detail-dialog [reference]="definition.contentReference" [title]="definition.name" [tags]="sourceTag" (closed)="dialogOpen.set(false)">
         <ng-template #sourceTag><span class="rounded bg-surface-container-highest px-1.5 py-0.5 text-xs">{{ definition.source }}</span></ng-template>
         <app-entry-renderer [entries]="definition.entries" />
       </app-sheet-detail-dialog>

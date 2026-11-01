@@ -121,6 +121,7 @@ export function projectSheet(document: CharacterDocument): ExportedCharacter {
     const id = entry.notes?.[0]?.tag;
     const authored = authoredSheet?.[kind]?.find(previous => id && previous.notes?.[0]?.tag === id);
     if (authored?.resourceLinks) entry.resourceLinks = structuredClone(authored.resourceLinks);
+    if (authored?.hidden !== undefined) entry.hidden = authored.hidden;
   }
   return sheet;
 }

@@ -1,4 +1,5 @@
 import { Component, computed, input, output } from '@angular/core';
+import { RelatedEntriesListComponent } from './related-entries-list.component';
 import { ContentRecord, ImportRevision, JsonObject, object as asObject } from '../content/content.model';
 import { contentEntries, SourceEntries, tablePresentation } from '../content/content-entries';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
@@ -33,7 +34,7 @@ import { vehicleItemStatistics } from '../sheet/vehicle-item-presentation';
     :host(.compact-reference) .gap-3 { gap: .5rem; }
     :host(.compact-reference) .text-base { font-size: .875rem; line-height: 1.4; }
   `],
-  imports: [VehicleItemDetailsComponent, EntryRendererComponent, SpellDetailsComponent, MonsterStatBlockComponent, ObjectStatBlockComponent, PrerequisiteDetailsComponent, FacilityInformationComponent],
+  imports: [RelatedEntriesListComponent, VehicleItemDetailsComponent, EntryRendererComponent, SpellDetailsComponent, MonsterStatBlockComponent, ObjectStatBlockComponent, PrerequisiteDetailsComponent, FacilityInformationComponent],
   template: `
     @if (!overview()) {
     <p class="mb-3 text-sm text-on-surface-variant">{{ kindLabel(record().kind) }} · {{ record().publication }}
@@ -69,17 +70,7 @@ import { vehicleItemStatistics } from '../sheet/vehicle-item-presentation';
       }
       @if (!sections().length && !overview()) { <p class="mt-3 text-sm text-on-surface-variant">No description is included in this entry.</p> }
     }
-    @if (related().length) {
-      <section class="mt-5 border-t border-outline-variant pt-3"><h3 class="mb-2 font-semibold">Related Entries</h3>
-        <div class="grid gap-1">
-          @for (entry of related(); track entry.key) {
-            <button type="button" (click)="opened.emit(entry)" class="min-h-11 rounded-lg bg-surface-container px-3 py-2 text-left text-sm text-primary hover:bg-surface-container-high">
-              {{ entry.name }} <span class="text-xs text-on-surface-variant">· {{ kindLabel(entry.kind) }} · {{ entry.publication }}</span>
-            </button>
-          }
-        </div>
-      </section>
-    }
+    <app-related-entries-list [entries]="related()" (opened)="opened.emit($event)" />
   `,
 })
 export class CompendiumDetailsComponent {

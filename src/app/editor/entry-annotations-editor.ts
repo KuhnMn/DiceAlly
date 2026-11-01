@@ -1,7 +1,8 @@
 import { Directive, ElementRef, ViewChild } from '@angular/core';
 import { FeatureNotes, FeatureUses } from '../models/character.model';
 import { RECOVERY_OPTIONS } from './recovery-options';
-export interface AnnotatedEntry {
+import type { ViewerEntryVisibility } from '../models/entry-visibility';
+export interface AnnotatedEntry extends ViewerEntryVisibility {
   notes?: FeatureNotes[];
   uses?: FeatureUses[];
 }

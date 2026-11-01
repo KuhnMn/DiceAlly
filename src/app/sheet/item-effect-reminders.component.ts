@@ -6,6 +6,7 @@ import { itemEffectReminders, itemReminderKey, ItemReminderScope } from './item-
 import { EquipmentPageComponent } from './equipment-page.component';
 import { CharacterHelpersService } from './character-helpers.service';
 import { UiIconComponent } from '../ui-icon.component';
+import { visibleInViewer } from '../models/entry-visibility';
 
 @Component({
   selector: 'app-item-effect-reminders',
@@ -52,7 +53,7 @@ export class ItemEffectRemindersComponent {
   readonly openedKey = signal<string | null>(null);
   private readonly helpers = inject(CharacterHelpersService);
   readonly heading = computed(() => this.scope() === 'spells' ? 'Item Spell Bonuses' : 'Magic Item Bonuses');
-  readonly reminders = computed(() => itemEffectReminders(this.sheet()?.inventory ?? [], this.scope()));
+  readonly reminders = computed(() => itemEffectReminders((this.sheet()?.inventory ?? []).filter(visibleInViewer), this.scope()));
   // Changing equipment or attunement hides the card, but must not destroy its open modal.
   readonly openedItem = computed(() => this.sheet()?.inventory?.find(
     (item, index) => itemReminderKey(item, index) === this.openedKey(),

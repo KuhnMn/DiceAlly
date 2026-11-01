@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto';
 import { TestBed } from '@angular/core/testing';
+import { Component } from '@angular/core';
 import { EntryAnnotationsComponent } from './entry-annotations.component';
 import { EditorEntryRowComponent } from './editor-entry-row.component';
 import { AnnotatedEntry } from './entry-annotations-editor';
@@ -8,7 +9,31 @@ import { prefillCombatAction } from './combat-actions';
 import { CharacterHelpersService } from '../sheet/character-helpers.service';
 import { CatalogResultRowComponent } from './catalog-result-row.component';
 
+@Component({
+  imports: [EntryAnnotationsComponent],
+  template: `<app-entry-annotations-editor [entry]="entry" [annotationsEnabled]="false" (edited)="edits = edits + 1">
+    <button annotation-description type="button">Description</button>
+    <button annotation-combat type="button">Combat</button>
+  </app-entry-annotations-editor>`,
+})
+class VisibilityToolsHost {
+  entry: AnnotatedEntry = { uses: [{ totalFreeUses: 5, usedFreeUses: 2 }], notes: [{ tag: 'Keep', notes: ['Reminder'] }] };
+  edits = 0;
+}
+
 describe('Compact entry tools', () => {
+  it('puts Description first and toggles viewer visibility without changing annotations or preparation', () => {
+    const fixture = TestBed.createComponent(VisibilityToolsHost); fixture.detectChanges();
+    const host = fixture.componentInstance, before = structuredClone(host.entry);
+    const tools = fixture.nativeElement.querySelector('[aria-label="Entry tools"]') as HTMLElement;
+    expect(tools.querySelector('button')!.textContent).toBe('Description');
+    const hide = tools.querySelector<HTMLButtonElement>('[aria-label="Hide in viewer"]')!;
+    expect(hide.disabled).toBe(false); hide.click(); fixture.detectChanges();
+    expect(host.entry).toEqual({ ...before, hidden: true });
+    expect(tools.querySelector('[aria-label="Show in viewer"]')?.getAttribute('aria-pressed')).toBe('true');
+    tools.querySelector<HTMLButtonElement>('[aria-label="Show in viewer"]')!.click(); fixture.detectChanges();
+    expect(host.entry).toEqual(before); expect(host.edits).toBe(2);
+  });
   it('indicates existing repeatable entries while keeping Add active, and locks unique entries', () => {
     const fixture = TestBed.createComponent(CatalogResultRowComponent);
     fixture.componentRef.setInput('name', 'Wolf'); fixture.componentRef.setInput('alreadyAdded', true);

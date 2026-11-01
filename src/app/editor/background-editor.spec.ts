@@ -14,6 +14,14 @@ import { MobileCharacterInfoPageComponent } from '../sheet/mobile-character-info
 import { CharacterInfoPageComponent } from '../sheet/character-info-page.component';
 
 describe('Optional backgrounds', () => {
+  const showModal = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, 'showModal');
+  beforeAll(() => Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+    configurable: true, value: function (this: HTMLDialogElement) { this.open = true; },
+  }));
+  afterAll(() => {
+    if (showModal) Object.defineProperty(HTMLDialogElement.prototype, 'showModal', showModal);
+    else Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal');
+  });
   beforeEach(() => TestBed.configureTestingModule({ providers: [provideRouter([])] }));
   const revision = (): ImportRevision => ({ id: crypto.randomUUID(), namespace: 'development-local', source: DEFAULT_CONTENT_SOURCE,
     sourceIdentity: sourceIdentity(DEFAULT_CONTENT_SOURCE), commit: 'a'.repeat(40), adapterVersion: ADAPTER_VERSION,
@@ -52,8 +60,8 @@ describe('Optional backgrounds', () => {
     expect(saved.background).toEqual(sheet.background);
     const details = TestBed.createComponent(BackgroundDetailsComponent); details.componentRef.setInput('background', saved.background); details.detectChanges();
     details.nativeElement.querySelector('button').click(); await details.whenStable();
-    expect(details.nativeElement.querySelector('[role="dialog"]').textContent).toContain('Background reference text.');
-    expect(details.nativeElement.querySelector('app-catalog-dialog').classList.contains('compact')).toBe(true);
+    expect(details.nativeElement.querySelector('dialog').textContent).toContain('Background reference text.');
+    expect(details.nativeElement.querySelector('dialog h2').textContent).toBe('Sage');
   });
 
   it('opens the shared Stat Bonuses panel without Uses or Notes tools and edits a background allocation', async () => {
@@ -104,7 +112,7 @@ describe('Optional backgrounds', () => {
     const sheet = emptyBasicCharacter(); sheet.background = { name: 'Sage', source: 'PHB', entity: { entries: [{ text: 'Saved background entry.' }] } };
     const fixture = TestBed.createComponent(component); fixture.componentRef.setInput('characterData', sheet); fixture.detectChanges();
     fixture.nativeElement.querySelector('[aria-label="View background Sage"]').click(); await fixture.whenStable();
-    expect(fixture.nativeElement.querySelector('app-background-details [role="dialog"]').textContent).toContain('Saved background entry.');
+    expect(fixture.nativeElement.querySelector('app-background-details dialog').textContent).toContain('Saved background entry.');
     fixture.componentRef.setInput('characterData', { ...sheet, background: { name: 'Custom origin' } }); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[aria-label^="View background"]')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Custom origin');

@@ -1,4 +1,5 @@
 import { ResourceLinkTagsComponent } from './resource-link-tags.component';
+import { visibleInViewer } from '../models/entry-visibility';
 import { ResourceUseComponent } from './resource-use.component';
 import { SourceResourcesComponent } from './source-resources.component';
 import { AbilityBonusSummaryComponent } from './ability-bonus-summary.component';
@@ -89,7 +90,7 @@ import { referenceDescription } from '../models/character-references';
         }
       </ng-template>
 <ng-template #speciesDetail>
-<app-sheet-detail-dialog [title]="species()?.name ?? 'Species'" [tags]="species()?.source ? speciesSourceTag : null" (closed)="closeDetail('species')">
+<app-sheet-detail-dialog [reference]="species()?.contentReference" [title]="species()?.name ?? 'Species'" [tags]="species()?.source ? speciesSourceTag : null" (closed)="closeDetail('species')">
             <div appHorizontalRow role="region" aria-label="Species details" tabindex="0" class="flex flex-nowrap items-center gap-4 overflow-x-auto overscroll-x-contain py-1 text-sm [&>*]:shrink-0 [&>*]:whitespace-nowrap">
               <span>Size: {{ speciesSize() || '—' }}</span>
               <span>Speed: {{ speciesMovement() }}</span>
@@ -125,7 +126,7 @@ import { referenceDescription } from '../models/character-references';
 </app-sheet-detail-dialog>
 </ng-template>
 <ng-template #featureDetail let-feature>
-<app-sheet-detail-dialog [title]="feature.name" [tags]="featureDialogTags" (closed)="closeDetail(featureAnchorId(feature) ?? 'feature')">
+<app-sheet-detail-dialog [reference]="feature.contentReference" [title]="feature.name" [tags]="featureDialogTags" (closed)="closeDetail(featureAnchorId(feature) ?? 'feature')">
                   <ng-template #featureDialogTags>
                     <ng-container [ngTemplateOutlet]="featureTags" [ngTemplateOutletContext]="{ $implicit: feature }" />
                     @if (feature.featureSourceName) {
@@ -358,14 +359,14 @@ export class FeaturesPageComponent {
   readonly featureLevels = signal<number[]>([]);
   readonly featureFilterOptions = computed(() => featureFilterOptions(this.featuresInContext().map(featureFilterData)));
   readonly featureCategoryOptions = computed(() => [...new Set(this.featuresInContext().flatMap(feature => featureCategories(featureFilterData(feature), this.featureTypeFilter() === 'FEAT' ? 'FEAT' : 'OPTIONAL_FEATURE')))].sort());
-  private readonly featuresInContext = computed(() => (this.characterData()?.features ?? []).filter(feature => (this.featureTypeFilter() === 'ALL' || this.helpers.featureTypeLabel(feature) === this.featureTypeFilter()) && (this.featureSourceFilter() === 'ALL' || feature.featureSourceName === this.featureSourceFilter())));
+  private readonly featuresInContext = computed(() => (this.characterData()?.features ?? []).filter(visibleInViewer).filter(feature => (this.featureTypeFilter() === 'ALL' || this.helpers.featureTypeLabel(feature) === this.featureTypeFilter()) && (this.featureSourceFilter() === 'ALL' || feature.featureSourceName === this.featureSourceFilter())));
   readonly activeFilterCount = computed(() => this.featureTypeFilter() === 'CLASS_FEATURE' ? this.featureLevels().length : this.featureCategoriesFilter().length);
   clearFilters() {
     this.searchQuery.set(''); this.featureCategoriesFilter.set([]); this.featureLevels.set([]);
   }
 
 
-  species = computed(() => this.characterData()?.species ?? null);
+  species = computed(() => { const species = this.characterData()?.species; return visibleInViewer(species) ? species : null; });
   readonly speciesMovement = computed(() => speciesMovementText(this.species()?.entity));
   readonly speciesSize = computed(() => formatSizeNames(this.species()?.entity?.size));
   readonly speciesSenses = computed(() => speciesSenseRanges(this.species()?.entity));
@@ -421,7 +422,7 @@ export class FeaturesPageComponent {
     const typeFilter = this.featureTypeFilter();
     const sourceFilter = this.featureSourceFilter();
     const levels = this.featureLevels(), categories = this.featureCategoriesFilter();
-    const filtered = items.filter((feature) => {
+    const filtered = items.filter(visibleInViewer).filter((feature) => {
       const matchesType = typeFilter === 'ALL' || this.helpers.featureTypeLabel(feature) === typeFilter;
       const matchesSource = sourceFilter === 'ALL' || feature.featureSourceName === sourceFilter;
       return matchesType && matchesSource && (typeFilter === 'CLASS_FEATURE' ? matchesFeatureFilters(featureFilterData(feature), [], levels) : typeFilter === 'ALL' || matchesFeatureCategories(featureFilterData(feature), typeFilter, categories)) && feature.name.toLowerCase().includes(this.searchQuery().trim().toLowerCase());

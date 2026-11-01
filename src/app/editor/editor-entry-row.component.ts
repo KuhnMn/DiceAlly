@@ -19,6 +19,7 @@ import { CombatResource, combatLinksForResource } from './combat-actions';
             @if (notesCount()) { <span role="img" [attr.aria-label]="notesCount() + ' note groups'" [title]="notesCount() + ' note groups'" class="inline-flex items-center gap-0.5"><app-ui-icon name="file" />{{ notesCount() }}</span> }
             @if (resourceLinksCount()) { <span role="img" [attr.aria-label]="'Linked resources: ' + resourceLinksCount()" [title]="'Linked resources: ' + resourceLinksCount()" class="inline-flex items-center gap-0.5 text-primary"><app-ui-icon name="link" />{{ resourceLinksCount() }}</span> }
             <ng-content select="[entry-indicator]" />
+            @if (resource()?.hidden) { <span role="img" aria-label="Hidden in viewer" title="Hidden in viewer" class="inline-flex items-center text-on-surface-variant"><app-ui-icon name="eye-off" /></span> }
             @if (combatCount()) { <span role="img" [attr.aria-label]="combatCount() + ' Combat entries'" [title]="combatCount() + ' Combat entries'" class="inline-flex items-center gap-0.5 text-primary"><app-ui-icon name="swords" />{{ combatCount() }}</span> }
           </span>
         </div>

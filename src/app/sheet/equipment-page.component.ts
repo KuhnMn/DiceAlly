@@ -1,4 +1,5 @@
 import { compareSearchMatches, rankSearchResults } from '../search-ranking';
+import { visibleInViewer } from '../models/entry-visibility';
 import { ListControlsComponent } from '../list-controls.component';
 import { SheetListLayoutComponent } from './sheet-list-layout.component';
 import { ItemRuleTagComponent } from './item-rule-tag.component';
@@ -99,7 +100,7 @@ export class EquipmentPageComponent {
     this.inventoryRevision();
     const query = this.searchQuery().trim().toLowerCase();
     const filter = this.inventoryFilter();
-    return rankSearchResults(this.inventory().filter(item => item.name.toLowerCase().includes(query) && (filter === 'all' || filter === 'equipped' && item.isEquipped || filter === 'attuned' && item.isAttuned)), query, item => item.name);
+    return rankSearchResults(this.inventory().filter(visibleInViewer).filter(item => item.name.toLowerCase().includes(query) && (filter === 'all' || filter === 'equipped' && item.isEquipped || filter === 'attuned' && item.isAttuned)), query, item => item.name);
   });
   readonly inventoryGroups = computed(() => {
     const groups = new Map<string, InventoryItem[]>();

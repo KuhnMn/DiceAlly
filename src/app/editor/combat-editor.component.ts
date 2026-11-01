@@ -7,10 +7,11 @@ import { COMBAT_TYPES, COMBAT_SNAPSHOT_FIELDS, combatSourceChanged, combatSource
 import { newEditorId } from './editor-identity';
 import { UiIconComponent } from '../ui-icon.component';
 import { InfoButtonComponent } from '../info-button.component';
+import { EntryVisibilityComponent } from './entry-visibility.component';
 
 @Component({
   selector: 'app-editor-combat',
-  imports: [ CombatActionDialogComponent, UiIconComponent, InfoButtonComponent],
+  imports: [EntryVisibilityComponent, CombatActionDialogComponent, UiIconComponent, InfoButtonComponent],
   styleUrl: './editor.css',
   template: `
     <section class="editor-card">
@@ -28,6 +29,7 @@ import { InfoButtonComponent } from '../info-button.component';
                     <span class="line-clamp-2 sm:line-clamp-none">{{ action.name }}<app-ui-icon name="edit" class="ml-1 text-xs text-on-surface-variant" /></span>
                   </button>
                   <div class="flex shrink-0 gap-0.5" role="group" [attr.aria-label]="'Manage ' + action.name">
+                    <button appEntryVisibility class="secondary-button compact-button icon-button !h-10 !w-9 !min-w-9 sm:!h-8 sm:!w-8 sm:!min-w-8" [entries]="[action]" (edited)="edited.emit()"></button>
                     <button type="button" class="secondary-button compact-button icon-button !h-10 !w-9 !min-w-9 sm:!h-8 sm:!w-8 sm:!min-w-8" [disabled]="i === 0" [attr.aria-label]="'Move ' + action.name + ' up'" title="Move up" (click)="move(action, -1)"><app-ui-icon name="up" /></button>
                     <button type="button" class="secondary-button compact-button icon-button !h-10 !w-9 !min-w-9 sm:!h-8 sm:!w-8 sm:!min-w-8" [disabled]="i === group.length - 1" [attr.aria-label]="'Move ' + action.name + ' down'" title="Move down" (click)="move(action, 1)"><app-ui-icon name="down" /></button>
                     <button type="button" class="secondary-button compact-button icon-button !h-10 !w-9 !min-w-9 sm:!h-8 sm:!w-8 sm:!min-w-8" [attr.aria-label]="'Remove ' + action.name" title="Remove entry" (click)="remove(action)"><app-ui-icon name="trash" /></button>

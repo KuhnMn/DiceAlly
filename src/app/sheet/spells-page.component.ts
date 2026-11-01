@@ -1,4 +1,5 @@
 import { ResourceLinkTagsComponent } from './resource-link-tags.component';
+import { visibleInViewer } from '../models/entry-visibility';
 import { SourceResourcesComponent } from './source-resources.component';
 import { ItemEffectRemindersComponent } from './item-effect-reminders.component';
 import { SpellCastControlComponent } from './spell-cast-control.component';
@@ -72,7 +73,7 @@ type SpellLevelFilter = 'ALL' | number;
     }
   `],
   template: `<ng-template #spellDetail let-spell>
-<app-sheet-detail-dialog [title]="spell.name" [tags]="spellDialogTags" (closed)="closeDetail(spellExpansionId(spell))">
+<app-sheet-detail-dialog [reference]="spell.contentReference" [title]="spell.name" [tags]="spellDialogTags" (closed)="closeDetail(spellExpansionId(spell))">
                       <ng-template #spellDialogTags>
                         @if (spell.entity?.level !== undefined) { <span class="rounded bg-purple-container px-2 py-0.5 text-xs font-normal text-on-purple-container">{{ helpers.spellLevelLabel(spell) }}</span> }
                         @if (spell.entity?.school) { <span class="rounded bg-teal-container px-2 py-0.5 text-xs text-on-teal-container">{{ helpers.spellSchoolLabel(spell.entity?.school ?? '') }}</span> }
@@ -359,7 +360,7 @@ export class SpellsPageComponent {
   readonly searchQuery = signal('');
   spellView = signal<'PREPARED' | 'KNOWN' | 'SPELLBOOK'>('PREPARED');
   readonly sourceSpellCounts = computed(() => {
-    return spellSourceCounts(this.characterData()?.spells ?? [], this.pickerSources(), this.spellCastingSourcesList().slice(1));
+    return spellSourceCounts((this.characterData()?.spells ?? []).filter(visibleInViewer), this.pickerSources(), this.spellCastingSourcesList().slice(1));
   });
   spellRitualFilter = signal<SpellRitualFilter>('ALL');
   readonly spellLevelFilters = signal<number[]>([]);
@@ -454,7 +455,7 @@ export class SpellsPageComponent {
     const castingTimes = this.spellCastingTimes();
     const schools = this.spellSchools();
     const effects = this.spellEffects();
-    const filtered = spells.filter((spell) => {
+    const filtered = spells.filter(visibleInViewer).filter((spell) => {
       const matchesListType = spell.listType === listTypeFilter;
       const isRitual = spell.entity?.meta?.ritual ?? false;
       const matchesRitual = ritualFilter === 'ALL'
