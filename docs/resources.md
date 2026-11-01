@@ -7,7 +7,11 @@ rules text remain display text; the app does not evaluate them.
 
 The viewer shares the Uses tracker. Pools of one to five show checkboxes; six or
 more show remaining/total with spend and restore buttons. Spell slots now use the
-same counter from six slots. Reminders never show a spend control. Category colors
+same counter from six slots. Spell slots and resources share the same source-grouped
+card layout, with one remaining/total count in the header and counter buttons
+aligned right below it. Restoring is on the left and spending is on the right,
+including Uses and hit dice. Resource notes have their own separated row.
+Reminders never show a spend control. Category colors
 match features and spellcasting. Pools survive source renames; removed sources
 are labelled so the user can reassign their retained resources. New resources
 start with their source's Features/Spellcasting selection; choosing another

@@ -14,9 +14,9 @@ import { UiIconComponent } from '../ui-icon.component';
         <div class="flex items-center justify-between gap-2 rounded-lg bg-surface-container p-3">
           <div><strong class="uppercase">{{ die.dieType }}</strong><p class="text-xs">Heal: 1{{ die.dieType }} {{ helpers.modifier(character().abilityScores?.constitution) || '+0' }}</p></div>
           <div class="flex items-center gap-1">
-            <button type="button" (click)="adjust(die, -1)" [disabled]="remaining(die) === 0" [attr.aria-label]="'Spend one ' + die.dieType + ' hit die'" class="flex min-h-11 min-w-11 items-center justify-center rounded-lg bg-primary-container text-on-primary-container disabled:opacity-40"><app-ui-icon name="down" /></button>
-            <output class="min-w-12 text-center tabular-nums" aria-live="polite">{{ remaining(die) }}/{{ die.total }}</output>
             <button type="button" (click)="adjust(die, 1)" [disabled]="remaining(die) === die.total" [attr.aria-label]="'Restore one ' + die.dieType + ' hit die'" class="flex min-h-11 min-w-11 items-center justify-center rounded-lg bg-primary-container text-on-primary-container disabled:opacity-40"><app-ui-icon name="up" /></button>
+            <output class="min-w-12 text-center tabular-nums" aria-live="polite">{{ remaining(die) }}/{{ die.total }}</output>
+            <button type="button" (click)="adjust(die, -1)" [disabled]="remaining(die) === 0" [attr.aria-label]="'Spend one ' + die.dieType + ' hit die'" class="flex min-h-11 min-w-11 items-center justify-center rounded-lg bg-primary-container text-on-primary-container disabled:opacity-40"><app-ui-icon name="down" /></button>
           </div>
         </div>
       } @empty { <p class="text-sm text-on-surface-variant">{{ legacyDescription() }}</p> }

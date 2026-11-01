@@ -38,12 +38,15 @@ describe('Use tracker controls', () => {
     expect(fixture.nativeElement.textContent).not.toContain('left');
   });
 
-  it('decreases remaining uses on the left and restores them on the right', () => {
+  it('restores remaining uses on the left and spends them on the right', () => {
     const { fixture, changes } = setup(10, 2);
     expect(fixture.nativeElement.querySelector('output').textContent.trim()).toBe('8/10');
-    fixture.nativeElement.querySelector('button[aria-label="Use one Charges"]').click(); fixture.detectChanges();
+    const buttons=[...fixture.nativeElement.querySelectorAll('button')] as HTMLButtonElement[];
+    expect(buttons[0].getAttribute('aria-label')).toBe('Restore one Charges');
+    expect(buttons[1].getAttribute('aria-label')).toBe('Use one Charges');
+    buttons[1].click(); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('output').textContent.trim()).toBe('7/10');
-    fixture.nativeElement.querySelector('button[aria-label="Restore one Charges"]').click(); fixture.detectChanges();
+    buttons[0].click(); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('output').textContent.trim()).toBe('8/10');
     expect(changes).toEqual([3, 2]);
   });

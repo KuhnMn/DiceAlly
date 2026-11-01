@@ -76,6 +76,8 @@ describe('Health panel hit dice', () => {
     const spend = () => fixture.nativeElement.querySelector('button[aria-label="Spend one d8 hit die"]') as HTMLButtonElement;
     const restore = () => fixture.nativeElement.querySelector('button[aria-label="Restore one d8 hit die"]') as HTMLButtonElement;
     expect(fixture.nativeElement.textContent).toContain('Heal: 1d8 +2');
+    const buttons=[...fixture.nativeElement.querySelectorAll('button')];
+    expect(buttons[0]).toBe(restore());expect(buttons[1]).toBe(spend());
     spend().click(); fixture.detectChanges();
     expect(character.hitDice[0].used).toBe(2);
     expect(spend().disabled).toBe(true);

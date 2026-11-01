@@ -10,7 +10,6 @@ import { SpellSchool, matchesSpellSchool, shortSpellSchoolLabel, SpellCastingTim
 import { SpellCastingTimeFilterComponent } from '../spell-casting-time-filter.component';
 import { ListControlsComponent } from '../list-controls.component';
 import { SheetListLayoutComponent } from './sheet-list-layout.component';
-import { RecoveryIndicatorComponent } from '../recovery-indicator.component';
 import { SpellDetailsComponent } from './spell-details.component';
 import { SpellEffectFilterComponent } from '../spell-effect-filter.component';
 import { SpellEffectFilter, matchesSpellEffects, spellEffectFilterCount } from '../content/spell-effects';
@@ -36,7 +35,7 @@ type SpellLevelFilter = 'ALL' | number;
 @Component({
   selector: 'app-spells-page',
   host: { class: 'block w-full min-w-0 max-w-full' },
-  imports: [SourceResourcesComponent,ItemEffectRemindersComponent, SpellCastControlComponent,SpellEffectFilterComponent, SpellSchoolFilterComponent, SpellViewSwitcherComponent, SpellCastingTimeFilterComponent, ListControlsComponent, SheetListLayoutComponent, RecoveryIndicatorComponent, SpellDetailsComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, SpellSummaryComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [SourceResourcesComponent,ItemEffectRemindersComponent, SpellCastControlComponent,SpellEffectFilterComponent, SpellSchoolFilterComponent, SpellViewSwitcherComponent, SpellCastingTimeFilterComponent, ListControlsComponent, SheetListLayoutComponent, SpellDetailsComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, SpellSummaryComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .spell-page-header app-spell-view-switcher { margin-bottom: 0; }
     .spell-page.spell-preparation-view { padding: .75rem; }
@@ -148,43 +147,9 @@ type SpellLevelFilter = 'ALL' | number;
                 <div class="text-sm font-semibold text-on-surface mb-1.5">{{ group.source }}</div>
                 <div appHorizontalRow class="grid gap-2 sm:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))]">
                   @for (slot of group.slots; track slot.level) {
-                    <div
-                      class="max-sm:w-44 border-2 border-surface rounded-md px-2 py-1 bg-surface-container-high"
-
-                    >
-                      <div class="flex items-center justify-between gap-2 text-sm font-semibold text-on-surface-container-high mb-0.5 sm:mb-1">
-                        <span>Level {{ slot.level }}</span>
-                        <span class="ml-auto whitespace-nowrap">{{ slot.total-spellSlotUsed(group.source, slot) }} / {{ slot.total }}</span>
-                        <app-recovery-indicator [condition]="slot.regainCondition" />
-                      </div>
-                      <div class="hidden sm:block w-full bg-outline-variant rounded-full h-1 mb-0.5">
-                        <div
-                          class="bg-purple h-full rounded-full transition-all"
-                          [style.width.%]="spellSlotProgress(group.source, slot)"
-                        ></div>
-                      </div>
-                      @if (slot.total >= 6) {
-                        <app-feature-uses [trackerOnly]="true" [uses]="{tag:group.source + ' level ' + slot.level,totalFreeUses:slot.total,usedFreeUses:spellSlotUsed(group.source,slot),freeUsesRegainCondition:slot.regainCondition}" (usesUpdated)="setSlotUsed(group.source,slot,$event.usedFreeUses)" />
-                      } @else if (slot.total > 0) {
-                        <div class="flex flex-wrap gap-0">
-                          @for (index of spellSlotIndexes(slot.total); track index) {
-                            <label class="flex min-h-8 min-w-9 items-center justify-center cursor-pointer">
-                              <input
-                                type="checkbox"
-                                [attr.aria-label]="group.source + ' level ' + slot.level + ' slot ' + (index + 1) + ' used'"
-                                [checked]="index < spellSlotUsed(group.source, slot)"
-                                (change)="toggleSpellSlot(group.source, slot, index)"
-                                class="w-4 h-4 text-purple on-surface-container-high border-surface-container-high rounded focus:ring-2 focus:ring-purple accent-purple"
-                              />
-                              <span class="ml-1 text-sm text-on-surface-container-high">{{ index + 1 }}</span>
-                            </label>
-                          }
-                        </div>
-                      } @else {
-                        <p class="text-xs text-on-surface-container-high italic">No slots available</p>
-                      }
-
-                    </div>
+                    <app-feature-uses class="max-sm:w-44" [poolLayout]="true" checkboxNoun="slot" [controlLabel]="group.source + ' level ' + slot.level"
+                      [uses]="{tag:'Level ' + slot.level,totalFreeUses:slot.total,usedFreeUses:spellSlotUsed(group.source,slot),freeUsesRegainCondition:slot.regainCondition}"
+                      (usesUpdated)="setSlotUsed(group.source,slot,$event.usedFreeUses)" />
                   }
                 </div>
               </div>

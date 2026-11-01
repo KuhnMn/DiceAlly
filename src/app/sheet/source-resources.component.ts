@@ -3,39 +3,30 @@ import { ExportedCharacter } from '../models/character.model';
 import { SourceResource } from '../models/source-resources';
 import { CharacterStore } from '../stores/character.store';
 import { FeatureUsesComponent } from './feature-uses.component';
+import { HorizontalRowDirective } from './horizontal-row.directive';
 @Component({
   selector: 'app-source-resources',
-  imports: [FeatureUsesComponent],
+  imports: [FeatureUsesComponent, HorizontalRowDirective],
   host: { class: 'block min-w-0' },
   template: `@if (resources.length) {
     <section
       class="mb-4"
       aria-label="Resources"
     >
-      <h3 class="mb-2 text-lg font-bold">Resources</h3>
-      <div class="grid gap-2 sm:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))]">
-        @for (resource of resources; track resource.id) {
-          <div class="min-w-0 rounded-lg border border-outline-variant bg-surface-container p-2">
-            <p class="mb-1 text-xs text-on-surface-variant">{{ sourceName(resource.sourceId) }}</p>
-            @if (resource.mode !== 'note') {
-              <app-feature-uses
-                [uses]="{
-                  tag: resource.name,
-                  totalFreeUses: resource.total,
-                  usedFreeUses: resource.used,
-                  freeUsesRegainCondition:
-                    resource.recovery === 'NONE' ? 'MANUAL' : resource.recovery,
-                }"
-                (usesUpdated)="update(resource.id, $event.usedFreeUses)"
-              />
-            } @else {
-              <h4 class="text-sm font-semibold">{{ resource.name }}</h4>
-            }
-            @if (resource.mode !== 'counter') {
-              <p class="mt-1 whitespace-pre-wrap text-sm text-on-surface-variant">
-                {{ resource.note }}
-              </p>
-            }
+      <h3 class="mb-2 text-xl font-bold sm:mb-3">Resources</h3>
+      <div class="space-y-2">
+        @for (group of groups; track group.sourceId) {
+          <div class="border border-surface border-2 rounded-lg p-2 bg-surface-container">
+            <div class="text-sm font-semibold text-on-surface mb-1.5">{{ sourceName(group.sourceId) }}</div>
+            <div appHorizontalRow class="grid gap-2 sm:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))]">
+              @for (resource of group.resources; track resource.id) {
+                <app-feature-uses class="max-sm:w-44" [poolLayout]="true" [tone]="page()" [trackUses]="resource.mode !== 'note'"
+                  [note]="resource.mode !== 'counter' ? resource.note : ''"
+                  [uses]="{tag:resource.name,totalFreeUses:resource.total,usedFreeUses:resource.used,
+                    freeUsesRegainCondition:resource.recovery === 'NONE' ? 'MANUAL' : resource.recovery}"
+                  (usesUpdated)="update(resource.id, $event.usedFreeUses)" />
+              }
+            </div>
           </div>
         }
       </div>
@@ -48,6 +39,14 @@ export class SourceResourcesComponent {
   private readonly store = inject(CharacterStore);
   get resources() {
     return (this.sheet().resources ?? []).filter((resource) => resource[this.page()]);
+  }
+  get groups() {
+    const groups = new Map<string, {sourceId:string; resources:SourceResource[]}>();
+    for (const resource of this.resources) {
+      if (!groups.has(resource.sourceId)) groups.set(resource.sourceId,{sourceId:resource.sourceId,resources:[]});
+      groups.get(resource.sourceId)!.resources.push(resource);
+    }
+    return [...groups.values()];
   }
   sourceName(id: string) {
     return (
