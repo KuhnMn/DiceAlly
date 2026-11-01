@@ -3,6 +3,15 @@ import { Component, input, output, computed, effect, signal } from '@angular/cor
 import { FeatureUses } from '../models/character.model';
 import { UiIconComponent } from '../ui-icon.component';
 
+type TrackerTone = 'features' | 'spells' | 'species' | 'items' | 'companions';
+const TRACKER_COLORS: Record<TrackerTone, { accent: string; fill: string; buttons: string }> = {
+  features: { accent: 'accent-blue', fill: 'bg-blue', buttons: 'bg-blue-container text-on-blue-container' },
+  spells: { accent: 'accent-purple', fill: 'bg-purple', buttons: 'bg-purple-container text-on-purple-container' },
+  species: { accent: 'accent-rose', fill: 'bg-rose', buttons: 'bg-rose-container text-on-rose-container' },
+  items: { accent: 'accent-green', fill: 'bg-green', buttons: 'bg-green-container text-on-green-container' },
+  companions: { accent: 'accent-teal', fill: 'bg-teal', buttons: 'bg-teal-container text-on-teal-container' },
+};
+
 @Component({
   selector: 'app-feature-uses',
   host: { class: 'block min-w-0' },
@@ -25,13 +34,13 @@ import { UiIconComponent } from '../ui-icon.component';
         }
         @if (trackUses()) {
         @if (totalCount() > 0) {
-          @if (!trackerOnly()) { <div class="mt-1 h-1 overflow-hidden rounded-full" [class]="poolLayout() ? 'hidden sm:block bg-outline-variant' : 'bg-surface-container-low'" role="progressbar" [attr.aria-label]="tag() + ' uses spent'" aria-valuemin="0" [attr.aria-valuemax]="totalCount()" [attr.aria-valuenow]="usedCount()"><div class="h-full transition-[width] duration-300 ease-out motion-reduce:transition-none" [class.bg-primary]="!poolLayout()" [class.bg-purple]="poolLayout() && tone() === 'spells'" [class.bg-blue]="poolLayout() && tone() === 'features'" [style.width.%]="progressPercent()"></div></div>
+          @if (!trackerOnly()) { <div class="mt-1 h-1 overflow-hidden rounded-full" [class]="poolLayout() ? 'hidden sm:block bg-outline-variant' : 'bg-surface-container-low'" role="progressbar" [attr.aria-label]="tag() + ' uses spent'" aria-valuemin="0" [attr.aria-valuemax]="totalCount()" [attr.aria-valuenow]="usedCount()"><div class="h-full transition-[width] duration-300 ease-out motion-reduce:transition-none" [class]="colors().fill" [style.width.%]="progressPercent()"></div></div>
           }
           @if (totalCount() <= 5) {
             <div class="flex flex-wrap gap-0">
               @for (index of availableUses(); track index) {
                 <label class="flex min-h-8 cursor-pointer items-center justify-center gap-1" [class.min-w-9]="poolLayout()" [class.min-w-10]="!poolLayout()">
-                  <input type="checkbox" [checked]="index < usedCount()" (change)="toggleUse(index)" [attr.aria-label]="checkboxNoun() === 'slot' ? controlTag() + ' slot ' + (index + 1) + ' used' : controlTag() + ' use ' + (index + 1) + ' spent'" class="h-4 w-4" [class.accent-primary]="!poolLayout()" [class.accent-purple]="poolLayout() && tone() === 'spells'" [class.accent-blue]="poolLayout() && tone() === 'features'" />
+                  <input type="checkbox" [checked]="index < usedCount()" (change)="toggleUse(index)" [attr.aria-label]="checkboxNoun() === 'slot' ? controlTag() + ' slot ' + (index + 1) + ' used' : controlTag() + ' use ' + (index + 1) + ' spent'" class="h-4 w-4" [class]="colors().accent" />
                   <span class="text-xs text-on-surface-variant">{{ index + 1 }}</span>
                 </label>
               }
@@ -39,11 +48,11 @@ import { UiIconComponent } from '../ui-icon.component';
           }
           @else {
               <div class="flex shrink-0 items-center gap-1 mt-1 sm:mt-0" [class.justify-end]="poolLayout() || trackerOnly()">
-              <button type="button" (click)="adjustRemaining(1)" [disabled]="usedCount() === 0" [attr.aria-label]="'Restore one ' + controlTag()" class="flex min-h-6 min-w-6 items-center justify-center rounded-lg bg-primary-container text-on-primary-container disabled:opacity-40 sm:min-h-7 sm:min-w-7"><app-ui-icon name="up" /></button>
+              <button type="button" (click)="adjustRemaining(1)" [disabled]="usedCount() === 0" [attr.aria-label]="'Restore one ' + controlTag()" class="flex min-h-6 min-w-6 items-center justify-center rounded-lg disabled:opacity-40 sm:min-h-7 sm:min-w-7" [class]="colors().buttons"><app-ui-icon name="up" /></button>
               @if (!poolLayout() && !trackerOnly()) {
               <output class="min-w-9 whitespace-nowrap text-center text-sm tabular-nums" aria-live="polite" [attr.aria-label]="remainingCount() + ' of ' + totalCount() + ' uses remaining'">{{ remainingCount() }}/{{ totalCount() }}</output>
               }
-              <button type="button" (click)="adjustRemaining(-1)" [disabled]="usedCount() >= totalCount()" [attr.aria-label]="'Use one ' + controlTag()" class="flex min-h-6 min-w-6 items-center justify-center rounded-lg bg-primary-container text-on-primary-container disabled:opacity-40 sm:min-h-7 sm:min-w-7"><app-ui-icon name="down" /></button>
+              <button type="button" (click)="adjustRemaining(-1)" [disabled]="usedCount() >= totalCount()" [attr.aria-label]="'Use one ' + controlTag()" class="flex min-h-6 min-w-6 items-center justify-center rounded-lg disabled:opacity-40 sm:min-h-7 sm:min-w-7" [class]="colors().buttons"><app-ui-icon name="down" /></button>
             </div>
           }
         } @else { <p class="my-2 text-xs text-on-surface-variant">{{ checkboxNoun() === 'slot' ? 'No slots available' : 'No uses available' }}</p> }
@@ -62,7 +71,8 @@ export class FeatureUsesComponent {
   readonly poolLayout = input(false);
   readonly trackUses = input(true);
   readonly note = input('');
-  readonly tone = input<'features' | 'spells'>('spells');
+  readonly tone = input<TrackerTone>('spells');
+  readonly colors = computed(() => TRACKER_COLORS[this.tone()]);
   readonly controlLabel = input<string>();
   readonly checkboxNoun = input<'use' | 'slot'>('use');
   uses = input<FeatureUses | undefined>(undefined);

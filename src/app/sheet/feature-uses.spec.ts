@@ -49,6 +49,12 @@ describe('Use tracker controls', () => {
     buttons[0].click(); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('output').textContent.trim()).toBe('8/10');
     expect(changes).toEqual([3, 2]);
+    for (const [tone, color] of [['features', 'blue'], ['spells', 'purple'], ['species', 'rose'], ['items', 'green'], ['companions', 'teal']]) {
+      fixture.componentRef.setInput('tone', tone); fixture.detectChanges();
+      expect(buttons.every(button => button.classList.contains('bg-' + color + '-container') && button.classList.contains('text-on-' + color + '-container'))).toBe(true);
+      expect(fixture.nativeElement.querySelector('output').textContent.trim()).toBe('8/10');
+    }
+    expect(changes).toEqual([3, 2]);
   });
 
   it('stays within zero and the total and updates after rest or an input replacement', () => {
