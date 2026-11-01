@@ -15,18 +15,22 @@ import { HorizontalRowDirective } from './horizontal-row.directive';
     >
       <h3 class="mb-2 text-xl font-bold sm:mb-3">Resources</h3>
       <div class="sheet-pool-groups" [style.--sheet-pool-columns]="columns()">
-        @for (group of groups; track group.sourceId) {
-          <div class="border border-surface border-2 rounded-lg p-2 bg-surface-container">
-            <div class="text-sm font-semibold text-on-surface mb-1.5">{{ sourceName(group.sourceId) }}</div>
-            <div appHorizontalRow class="grid gap-2 sm:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))]">
-              @for (resource of group.resources; track resource.id) {
-                <app-feature-uses class="max-sm:w-44" [poolLayout]="true" [tone]="page()" [trackUses]="resource.mode !== 'note'"
-                  [note]="resource.mode !== 'counter' ? resource.note : ''"
-                  [uses]="{tag:resource.name,totalFreeUses:resource.total,usedFreeUses:resource.used,
-                    freeUsesRegainCondition:resource.recovery === 'NONE' ? 'MANUAL' : resource.recovery}"
-                  (usesUpdated)="update(resource.id, $event.usedFreeUses)" />
-              }
-            </div>
+        @for (column of groupColumns; track $index) {
+          <div class="resource-group-column space-y-3">
+            @for (group of column; track group.sourceId) {
+              <div class="border border-surface border-2 rounded-lg p-2 bg-surface-container">
+                <div class="text-sm font-semibold text-on-surface mb-1.5">{{ sourceName(group.sourceId) }}</div>
+                <div appHorizontalRow class="grid gap-2 sm:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))]">
+                  @for (resource of group.resources; track resource.id) {
+                    <app-feature-uses class="max-sm:w-44" [poolLayout]="true" [tone]="page()" [trackUses]="resource.mode !== 'note'"
+                      [note]="resource.mode !== 'counter' ? resource.note : ''"
+                      [uses]="{tag:resource.name,totalFreeUses:resource.total,usedFreeUses:resource.used,
+                        freeUsesRegainCondition:resource.recovery === 'NONE' ? 'MANUAL' : resource.recovery}"
+                      (usesUpdated)="update(resource.id, $event.usedFreeUses)" />
+                  }
+                </div>
+              </div>
+            }
           </div>
         }
       </div>
@@ -48,6 +52,14 @@ export class SourceResourcesComponent {
       groups.get(resource.sourceId)!.resources.push(resource);
     }
     return [...groups.values()];
+  }
+  get groupColumns() {
+    const groups = this.groups;
+    const columns: (typeof groups)[] = Array.from(
+      { length: Math.min(groups.length, Math.max(1, this.columns())) }, () => [],
+    );
+    groups.forEach((group, index) => columns[index % columns.length].push(group));
+    return columns;
   }
   sourceName(id: string) {
     return (
