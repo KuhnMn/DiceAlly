@@ -446,6 +446,42 @@ describe('Cast from spell details', () => {
     expect(control.canCast()).toBe(false); expect(control.level()).toBeNull(); fixture.destroy();
   });
 
+  it.each(['Spells', 'Combat'])('keeps the %s dialog, focus and scroll position when casting with Uses updates the sheet', location => {
+    const value = sheet(), entry = spell();
+    entry.uses = [{ tag: 'Daily Gift', totalFreeUses: 3, usedFreeUses: 0 }]; value.spells = [entry];
+    const store = TestBed.inject(CharacterStore); store.setCharacter(value);
+    const fixture = location === 'Spells' ? TestBed.createComponent(SpellsPageComponent) : TestBed.createComponent(CombatActionComponent);
+    const sheetInput = location === 'Spells' ? 'characterData' : 'sheet';
+    fixture.componentRef.setInput(sheetInput, value);
+    if (fixture.componentInstance instanceof SpellsPageComponent) {
+      fixture.detectChanges();
+      fixture.componentInstance.toggleExpanded(fixture.componentInstance.spellExpansionId(entry));
+    } else {
+      fixture.componentRef.setInput('action', { name: entry.name, linkedResourceType: 'SPELL', linkedResource: { editorId: entry.editorId } });
+      fixture.detectChanges(); fixture.componentInstance.opened.set(true);
+    }
+    fixture.detectChanges();
+    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+    const scrollArea = dialog.querySelector('.overflow-auto') as HTMLElement;
+    scrollArea.scrollTop = 180;
+    const tracker = dialog.querySelector('app-feature-uses');
+    const control = fixture.debugElement.query(By.directive(SpellCastControlComponent)).componentInstance as SpellCastControlComponent;
+    control.setResource('use:0'); fixture.detectChanges();
+    const castButton = dialog.querySelector('button[aria-label="Cast Test Spell"]') as HTMLButtonElement;
+    castButton.focus(); castButton.click();
+    const updated = store.characterData()!;
+    expect(updated.spells![0].uses![0].usedFreeUses).toBe(1);
+    fixture.componentRef.setInput(sheetInput, updated); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('dialog')).toBe(dialog);
+    expect(scrollArea.scrollTop).toBe(180);
+    expect(document.activeElement).toBe(castButton);
+    expect(dialog.querySelector('app-feature-uses')).toBe(tracker);
+    expect(fixture.debugElement.query(By.directive(SpellCastControlComponent)).componentInstance).toBe(control);
+    expect(control.resource()?.key).toBe('use:0');
+    expect(dialog.querySelector('[role="status"]')!.textContent).toBe('Cast Test Spell using Daily Gift (1 use).');
+    fixture.destroy();
+  });
+
   it.each(['Spells', 'Combat'])('spends the same tracked slots from the %s detail dialog', location => {
     const value = sheet(), entry = spell(); value.spells = [entry];
     const store = TestBed.inject(CharacterStore); store.setCharacter(value);

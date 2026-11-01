@@ -100,7 +100,7 @@ type SpellLevelFilter = 'ALL' | number;
                         @if (spell.uses?.length) {
                           <div class="mt-2 sm:mt-4 border-t border-outline-variant pt-2 sm:pt-4">
                             <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
-                              @for (use of spell.uses; track use) {
+                              @for (use of spell.uses; track $index) {
                                                             <app-feature-uses tone="spells"
                                                               [uses]="use"
                                                               (usesUpdated)="use.usedFreeUses = $event.usedFreeUses"
@@ -240,7 +240,7 @@ type SpellLevelFilter = 'ALL' | number;
                 {{ spellLevelHeader(levelGroup.level) }}
               </h4>
               <div class="sheet-entry-list" [class.preparation-list]="spellView() !== 'PREPARED'" [class.sheet-entry-list-two-columns]="listLayout.displayColumns() === 2" [class.sheet-entry-list-three-columns]="listLayout.displayColumns() === 3">
-                @for (spell of levelGroup.spells; track spell) {
+                @for (spell of levelGroup.spells; track spell.editorId ?? spellExpansionId(spell)) {
                   <div class="min-w-0 border-2 border-purple rounded-lg px-3 py-1.5 sm:py-2 bg-surface-container" [attr.id]="'spell-' + (spell.editorId ?? helpers.sourceId(spell.name + '-' + (spell.source ?? '')))" [class.preparation-card]="spellView() !== 'PREPARED'" [class.flash-highlight]="highlightedId() === ('spell-' + (spell.editorId ?? helpers.sourceId(spell.name + '-' + (spell.source ?? ''))))">
                     @if (spellView() !== 'PREPARED') {
                       <div class="flex min-w-0 items-stretch gap-2">
@@ -313,7 +313,7 @@ type SpellLevelFilter = 'ALL' | number;
                     <!-- Expandable Content -->
                     @if (!isExpanded(spellExpansionId(spell)) && spellView() === 'PREPARED') {
                       <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
-                        @for (use of spell.uses ?? []; track use) {
+                        @for (use of spell.uses ?? []; track $index) {
                                                 <app-feature-uses tone="spells" [uses]="use" (usesUpdated)="use.usedFreeUses = $event.usedFreeUses" />
                                               }
                       </div>
