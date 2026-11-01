@@ -12,6 +12,27 @@ function row(index: number): ContentRecord {
   return { key: String(index).padStart(5, '0'), kind: 'class', name: `Synthetic ${index}`, publication: 'TEST', file: 'test.json', data: {}, links: [] };
 }
 describe('IndexedDB content cache', () => {
+  it('reads tools across item batches, retaining qualified tool types and revision isolation', async () => {
+    const cache = new IndexedDbContentCache(), selected = revision('tool-batch'), other = revision('tool-batch');
+    await cache.stage(selected); await cache.stage(other);
+    const records = Array.from({ length: 270 }, (_, index) => ({ ...row(index), kind: 'item',
+      data: { type: index === 0 ? 'T' : index === 128 ? 'AT|XPHB' : index === 256 ? 'GS' : index === 269 ? 'INS' : 'M' } }));
+    await cache.put(selected.id, [...records, { ...row(400), kind: 'monster', data: { type: 'T' } }]);
+    await cache.put(other.id, [{ ...row(500), kind: 'item', data: { type: 'T' } }]);
+    expect((await cache.tools(selected.id)).map(record => record.key).sort()).toEqual([0, 128, 256, 269].map(index => row(index).key));
+    expect(await cache.tools('missing-revision')).toEqual([]);
+  });
+  it('reads complete requested categories without unrelated records, duplicates or adjacent revisions', async () => {
+    const cache = new IndexedDbContentCache(), selected = revision('category-batch'), other = revision('category-batch');
+    await cache.stage(selected); await cache.stage(other);
+    const classes = Array.from({ length: 270 }, (_, index) => row(index));
+    await cache.put(selected.id, [...classes, { ...row(300), kind: 'spell' }, { ...row(301), kind: 'monster' }]);
+    await cache.put(other.id, [row(500)]);
+    const records = await cache.categories(selected.id, ['class', 'spell', 'class', 'missing']);
+    expect(records.map(record => record.key)).toEqual([...classes.map(record => record.key), row(300).key]);
+    expect(await cache.categories(selected.id, [])).toEqual([]);
+    expect(await cache.categories('missing-revision', ['class'])).toEqual([]);
+  });
   it('removes the complete revision range, reports completion after commit and preserves adjacent revisions', async () => {
     const cache = new IndexedDbContentCache(lockManager());
     const selected = revision('bulk-remove');

@@ -156,6 +156,15 @@ export class IndexedDbContentCache implements ContentCache {
     const tx = (await this.db()).transaction('records');
     return request(tx.objectStore('records').index('category').getAll([revisionId, kind], limit));
   }
+  /** Read complete requested categories through the existing index, without scanning unrelated payloads. */
+  async categories(revisionId: string, kinds: readonly string[]): Promise<ContentRecord[]> {
+    if (!kinds.length) return [];
+    const tx = (await this.db()).transaction('records');
+    const index = tx.objectStore('records').index('category');
+    const groups = await Promise.all([...new Set(kinds)].map(kind =>
+      request<ContentRecord[]>(index.getAll([revisionId, kind]))));
+    return groups.flat();
+  }
   /** Rank before paging, retaining at most offset + limit candidates for a search. */
   async searchCategory(revisionId: string, kinds: readonly string[], search: string, offset = 0, limit = 30, matches?: (record: ContentRecord) => boolean, order?: (a: ContentRecord, b: ContentRecord) => number): Promise<{ records: ContentRecord[]; total: number }> {
     const db = await this.db();
@@ -201,23 +210,20 @@ export class IndexedDbContentCache implements ContentCache {
       tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('Could not search content.'));
     });
   }
-  /** Filter the item index as a cursor, retaining only tools instead of loading the item corpus. */
+  /** Read item keys once, then bounded batches; retain tools without a cursor round trip per item. */
   async tools(revisionId: string): Promise<ContentRecord[]> {
     const db = await this.db();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction('records');
-      const result: ContentRecord[] = [];
-      const cursor = tx.objectStore('records').index('category').openCursor(IDBKeyRange.only([revisionId, 'item']));
-      cursor.onsuccess = () => {
-        const row = cursor.result;
-        if (!row) return;
-        const record = row.value as ContentRecord;
-        if (['T', 'AT', 'GS', 'INS'].includes(itemTypeCode(record))) result.push(record);
-        row.continue();
-      };
-      tx.oncomplete = () => resolve(result.sort((a, b) => a.name.localeCompare(b.name) || a.publication.localeCompare(b.publication)));
-      tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('Could not read tools.'));
-    });
+    const keys = await request(db.transaction('records').objectStore('records').index('category').getAllKeys([revisionId, 'item']));
+    const result: ContentRecord[] = [];
+    for (let offset = 0; offset < keys.length; offset += 128) {
+      const store = db.transaction('records').objectStore('records');
+      const records = await Promise.all(keys.slice(offset, offset + 128).map(key =>
+        request<ContentRecord | undefined>(store.get(key))));
+      for (const record of records) {
+        if (record && ['T', 'AT', 'GS', 'INS'].includes(itemTypeCode(record))) result.push(record);
+      }
+    }
+    return result.sort((a, b) => a.name.localeCompare(b.name) || a.publication.localeCompare(b.publication));
   }
   async saveSource(namespace: string, source: ContentSource): Promise<void> {
     const tx = (await this.db()).transaction('settings', 'readwrite');

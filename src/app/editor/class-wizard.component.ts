@@ -69,6 +69,8 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
   private focusRequest: AfterRenderRef | undefined;
   private readonly cache = new IndexedDbContentCache();
   readonly records = new Map<string, ContentRecord>();
+  // Imported records remain unchanged inside the wizard. Reuse validated spell memberships across UI checks.
+  private readonly spellMemberships = new WeakMap<ContentRecord, ReturnType<typeof spellRecordClasses>>();
   state: WizardState = { revisionId: '', classes: [], answers: {}, options: {}, baseline: [], protectedPaths: [] };
   private readonly currentStage = signal(0);
   get stage() { return this.currentStage(); }
@@ -111,10 +113,12 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
       const pinned = useCurrent ? undefined : saved;
       const revision = pinned ?? await activeContentRevision(this.cache);
       if (!revision) { this.error.set('Import content to use the wizard. Your current character stays editable.'); return; }
-      const kinds = new Set(['class', 'subclass', 'classFeature', 'subclassFeature', 'optionalfeature', 'species', 'background', 'spell']);
-      await this.cache.visit(revision.id, async record => { if (!this.destroyed && kinds.has(record.kind)) this.records.set(record.key, record); });
-      const tools = await this.cache.tools(revision.id); tools.forEach(record => this.records.set(record.key, record));
+      const kinds = ['class', 'subclass', 'classFeature', 'subclassFeature', 'optionalfeature', 'species', 'background', 'spell'];
+      const [records, tools] = await Promise.all([
+        this.cache.categories(revision.id, kinds), this.cache.tools(revision.id),
+      ]);
       if (this.destroyed) return;
+      for (const record of [...records, ...tools]) this.records.set(record.key, record);
       const savedRevision = this.sheet().creatorWizard?.revisionId;
       this.differentRevision = !!savedRevision && savedRevision !== revision.id;
       this.revision.set(revision);
@@ -177,7 +181,15 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
       .sort((a, b) => this.label(a.key).localeCompare(this.label(b.key)));
   }
   get spellLists() { return [...new Set([...this.records.values()].filter(record => record.kind === 'spell' && this.sourceBooks.allowsRecord(record))
-    .flatMap(record => spellRecordClasses(record).filter(entry => this.sourceBooks.allows(entry.source ?? record.publication)).map(entry => entry.name)))].sort(); }
+    .flatMap(record => this.spellClasses(record).filter(entry => this.sourceBooks.allows(entry.source ?? record.publication)).map(entry => entry.name)))].sort(); }
+  private spellClasses(record: ContentRecord) {
+    let memberships = this.spellMemberships.get(record);
+    if (!memberships) {
+      memberships = spellRecordClasses(record);
+      this.spellMemberships.set(record, memberships);
+    }
+    return memberships;
+  }
   classChoices(selection: WizardClass): SelectOption[] {
     return [{ value: '', label: 'Select a class' }, ...this.classOptions(selection).map(record => ({
       value: record.key, label: this.label(record.key), disabled: this.isTaken(record.key, selection),

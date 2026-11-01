@@ -478,6 +478,28 @@ describe('Optional class wizard prefill', () => {
 
   beforeEach(() => { localStorage.removeItem('ally-creator-source-books'); TestBed.configureTestingModule({ providers: [provideRouter([])] }); });
 
+  it('reuses validated spell memberships during UI checks while still respecting source filters', () => {
+    const f = fixture(), component = TestBed.createComponent(ClassWizardComponent);
+    component.componentRef.setInput('sheet', f.sheet);
+    const wizard = component.componentInstance, spell = f.find('spell', 'Shield');
+    const definition = spell.spellDefinition;
+    let reads = 0;
+    Object.defineProperty(spell, 'spellDefinition', { configurable: true, get: () => { reads++; return definition; } });
+    wizard.records.set(spell.key, spell);
+    expect(wizard.spellLists).toEqual(['Mage']);
+    const initialReads = reads;
+    expect(initialReads).toBeGreaterThan(0);
+    expect(wizard.spellLists).toEqual(['Mage']);
+    expect(wizard.spellListChoices.map(option => option.value)).toEqual(['', 'Mage']);
+    expect(reads).toBe(initialReads);
+    wizard.sourceBooks.setSelection(['OTHER']);
+    expect(wizard.spellLists).toEqual([]);
+    wizard.sourceBooks.setSelection(['TEST']);
+    expect(wizard.spellLists).toEqual(['Mage']);
+    expect(reads).toBe(initialReads);
+    component.destroy();
+  });
+
   it('seeds current resource settings once on opening and keeps wizard edits through later level previews', async () => {
     const f=fixture();
     f.find('class','Mage').data['classTableGroups']=[{colLabels:['Points'],rows:Array.from({length:20},(_,index)=>[index+1])}];
