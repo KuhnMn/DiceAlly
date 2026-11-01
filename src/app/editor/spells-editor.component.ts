@@ -1,3 +1,4 @@
+import { ResourceLinksEditorComponent } from './resource-links-editor.component';
 import { contentEntries } from '../content/content-entries';
 import { higherLevelEntries } from '../entries/entry-compatibility';
 import { spellDefinition, spellRecordClasses } from '../content/spell-adapter';
@@ -40,7 +41,7 @@ import { spellCastingStats } from './spell-source-stats';
 @Component({
   providers: [EditorCombatIndex],
   selector: 'app-editor-spells',
-  imports: [SpellEffectFilterComponent, SpellEffectSummaryComponent, EditorEntryRowComponent, CatalogResultRowComponent, SpellSchoolFilterComponent, SpellCastingTimeFilterComponent, ListControlsComponent, EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, HorizontalRowDirective, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
+  imports: [ResourceLinksEditorComponent,SpellEffectFilterComponent, SpellEffectSummaryComponent, EditorEntryRowComponent, CatalogResultRowComponent, SpellSchoolFilterComponent, SpellCastingTimeFilterComponent, ListControlsComponent, EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, HorizontalRowDirective, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
   templateUrl: './spells-editor.component.html',
   styleUrls: ['./editor.css', './editor-feature-fields.css', './editor-spell-filters.css'],
 })

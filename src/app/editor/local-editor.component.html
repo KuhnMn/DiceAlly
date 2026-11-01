@@ -72,6 +72,7 @@
         <app-editor-proficiencies [model]="proficiencies" />
       } @else if (pages[page] === 'Feature Sources') {
         <app-other-proficiencies [sheet]="sheet" panel="sources" (edited)="changed()" />
+        <app-source-resources-editor [sheet]="sheet" (edited)="changed()" />
         @if (hasCastingSources || hasSpellSlots) {
           <app-editor-spell-slots [sheet]="sheet" (edited)="changed()" />
         }

@@ -26,6 +26,19 @@ function setup(entry = spell(), value = sheet()) {
 }
 
 describe('Cast from spell details', () => {
+  it('casts using a linked source resource instead of spending a spell slot', async () => {
+    const entry=spell(), value=sheet(); value.spells=[entry];
+    value.character!.featureSources=[{editorId:'wizard',name:'Wizard'}];
+    value.resources=[{id:'points',sourceId:'wizard',name:'Sorcery Points',mode:'counter',note:'',total:7,used:0,recovery:'LONG_REST',features:true,spells:true,casting:true,defaultCost:2}];
+    entry.resourceLinks=[{resourceId:'points',amount:3}];
+    const {fixture,control,store}=setup(entry,value);
+    control.setResource('resource:points');expect(control.canCast()).toBe(true);
+    await control.cast();expect(store.characterData()!.resources![0].used).toBe(3);
+    expect(store.characterData()!.character!.spellSlots).toEqual(value.character!.spellSlots);
+    await control.cast();expect(store.characterData()!.resources![0].used).toBe(6);expect(control.canCast()).toBe(false);
+    await control.cast();expect(store.characterData()!.resources![0].used).toBe(6);fixture.destroy();
+  });
+
   it('offers Ritual - Free only for ritual spells, fixes its level to base and never spends slots or Uses', async () => {
     const entry = spell(), value = sheet(); value.spells = [entry];
     entry.entity!.meta = { ritual: true }; entry.uses = [{ totalFreeUses: 1, usedFreeUses: 0 }];

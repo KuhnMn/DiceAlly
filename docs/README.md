@@ -39,3 +39,5 @@ The [feature and data audit from 31 October 2026](feature-audit-2026-10-31.md)
 checks the newer implementation against the schemas and repository examples,
 distinguishes remaining data opportunities from shipped features, and prioritizes
 correctness, small improvements, creator work and larger architectural changes.
+
+- [Source resources](resources.md): Shared pools, reminders, costs and explicit wizard imports.

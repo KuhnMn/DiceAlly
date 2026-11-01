@@ -19,7 +19,8 @@ export function subclassMatchesClass(subclass: ContentRecord, parent: ContentRec
 }
 
 /** Retain the selected subclass's qualified ancestry, including synthetic classic copies. */
-export function subclassFeatureMatchesClass(feature: ContentRecord, parent: ContentRecord, subclass: ContentRecord): boolean {
+export function subclassFeatureMatchesClass(feature: ContentRecord, parent: ContentRecord, subclass: ContentRecord,
+  explicitlyReferenced = false): boolean {
   if (feature.kind !== 'subclassFeature' || !subclassMatchesClass(subclass, parent)) return false;
   const definition = classDefinition(feature), selected = classDefinition(subclass);
   const expectedParent = selected.parent?.key;
@@ -28,7 +29,8 @@ export function subclassFeatureMatchesClass(feature: ContentRecord, parent: Cont
     && normalize(definition.parent?.name ?? '') === normalize(parent.name);
   return (definition.parent?.key === expectedParent || legacyParent)
     && normalize(definition.subclass?.shortName ?? '') === normalize(selected.shortName ?? subclass.name)
-    && normalize(definition.subclass?.source ?? '') === normalize(subclass.publication);
+    // An exact nested reference can intentionally reuse an earlier publication of this subclass.
+    && (explicitlyReferenced || normalize(definition.subclass?.source ?? '') === normalize(subclass.publication));
 }
 
 export function subclassFeatureLevel(level: number, parent: ContentRecord, subclass: ContentRecord): number {

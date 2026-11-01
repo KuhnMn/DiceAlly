@@ -1,3 +1,5 @@
+import { ResourceUseComponent } from './resource-use.component';
+import { SourceResourcesComponent } from './source-resources.component';
 import { AbilityBonusSummaryComponent } from './ability-bonus-summary.component';
 import { featureBonusSourceId } from '../models/ability-score-bonuses';
 import { compareSearchMatches } from '../search-ranking';
@@ -26,7 +28,7 @@ import { referenceDescription } from '../models/character-references';
 
 @Component({
   selector: 'app-features-page',
-  imports: [AbilityBonusSummaryComponent, RuleReferenceComponent, PrerequisiteDetailsComponent, FeatureFiltersComponent, ListControlsComponent, SheetListLayoutComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [ResourceUseComponent,SourceResourcesComponent,AbilityBonusSummaryComponent, RuleReferenceComponent, PrerequisiteDetailsComponent, FeatureFiltersComponent, ListControlsComponent, SheetListLayoutComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: feature-flash 1.6s ease-out;
@@ -143,6 +145,7 @@ import { referenceDescription } from '../models/character-references';
                   </div>
 
                     <app-ability-bonus-summary [card]="true" [sheet]="characterData()" [sourceId]="bonusSourceId(feature)" />
+                    <app-resource-use [sheet]="characterData()!" [links]="feature.resourceLinks ?? []" />
                     @if (feature.uses?.length) {
                       <div class="mt-2 sm:mt-4 border-t border-outline-variant pt-2 sm:pt-4">
                         <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
@@ -169,6 +172,7 @@ import { referenceDescription } from '../models/character-references';
 } @else {
 
     <div class="bg-surface-container-highest p-3 sm:p-5 rounded-lg border-2 border-outline  shadow-lg">
+      @if (characterData(); as resourceSheet) { <app-source-resources [sheet]="resourceSheet" page="features" /> }
       <div class="mb-3 flex items-center justify-between gap-2">
         <h2 class="text-xl sm:text-3xl font-bold">Features & Traits</h2>
         <app-sheet-list-layout #listLayout />

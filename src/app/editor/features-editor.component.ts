@@ -1,3 +1,4 @@
+import { ResourceLinksEditorComponent } from './resource-links-editor.component';
 import { AbilityBonusEditorComponent } from './ability-bonus-editor.component';
 import { AbilityBonusSummaryComponent } from '../sheet/ability-bonus-summary.component';
 import { featureBonusSourceId } from '../models/ability-score-bonuses';
@@ -38,7 +39,7 @@ import { FEATURE_TYPES, FeatureType, classFeatureKey, createFeatureEntry, featur
 
 @Component({
   providers: [EditorCombatIndex],
-  selector: 'app-editor-features', imports: [AbilityBonusEditorComponent, AbilityBonusSummaryComponent, PrerequisiteDetailsComponent, EditorEntryRowComponent, FeatureFiltersComponent, HorizontalRowDirective, CatalogResultRowComponent, ListControlsComponent, EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
+  selector: 'app-editor-features', imports: [ResourceLinksEditorComponent,AbilityBonusEditorComponent, AbilityBonusSummaryComponent, PrerequisiteDetailsComponent, EditorEntryRowComponent, FeatureFiltersComponent, HorizontalRowDirective, CatalogResultRowComponent, ListControlsComponent, EditorListHeaderComponent, DescriptionDialogComponent, CombatBookmarkComponent, UiIconComponent, FormsModule, RouterLink, EntryRendererComponent, EntryAnnotationsComponent, CatalogDialogComponent, SourceBookFilterComponent, RemoveEntryDialogComponent, FeatureSourcePickerComponent],
   templateUrl: './features-editor.component.html', styleUrls: ['./editor.css', './editor-feature-fields.css', './editor-filters.css'],
 })
 export class FeaturesEditorComponent implements OnInit, OnDestroy, DoCheck {

@@ -75,7 +75,8 @@
               @if (spell.entity?.duration?.length) { <span>Duration: {{ helpers.spellDurationLabel(spell.entity?.duration ?? []) }}</span> }
             </div>
 
-            <app-entry-annotations-editor [entry]="prepared ?? spell" [annotationsEnabled]="!!prepared" (edited)="change()">
+            <app-entry-annotations-editor [showResources]="true" [entry]="prepared ?? spell" [annotationsEnabled]="!!prepared" (edited)="change()">
+              <app-resource-links-editor annotation-resources [sheet]="sheet()" [entry]="prepared ?? spell" (edited)="change()" />
               <app-combat-bookmark annotation-combat [sheet]="sheet()" [resource]="spell" type="SPELL" (edited)="change()" />
               <app-description-dialog annotation-description [dense]="true" [title]="spell.name" label="Description">
               <div class="p-3"><app-spell-effect-summary class="mb-3 block" [spell]="spell.entity" [castingStats]="castingStats(spell.castingSourceName)" /><app-entry-renderer [entries]="spell.entity?.entries ?? []" />

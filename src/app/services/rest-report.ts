@@ -6,6 +6,7 @@ export function summarizeRest(before: ExportedCharacter, after: ExportedCharacte
   const restored = (label: string, previous = 0, current = 0) => {
     if (previous > current) changes.push(`${label}: ${previous - current} restored`);
   };
+  for (const resource of before.resources ?? []) restored(resource.name, resource.used, after.resources?.find(entry => entry.id === resource.id)?.used);
   const oldCharacter = before.character;
   const character = after.character;
   const healing = (character?.currentHp ?? 0) - (oldCharacter?.currentHp ?? 0);

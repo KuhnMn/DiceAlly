@@ -103,17 +103,17 @@ export function deriveClassFeatures(selections: ContentClassSelection[], index: 
       for (const owner of [parent, ...(subclass ? [subclass] : [])]) {
         const role = owner.kind === 'class' ? 'classFeature' : 'subclassFeature';
         const ownerDefinition = classDefinition(owner);
-        const pending = ownerDefinition.features.map(reference => ({ key: reference.key, acquiredAt: 0 }));
+        const pending = ownerDefinition.features.map(reference => ({ key: reference.key, acquiredAt: 0, explicitlyReferenced: false }));
         const visited = new Map<string, number>();
         for (let position = 0; position < pending.length; position++) {
-          const { key, acquiredAt } = pending[position];
+          const { key, acquiredAt, explicitlyReferenced } = pending[position];
           const record = index.records.get(key);
           if (!record || record.kind !== role) { report(selection.selectionId, `Missing qualified feature: ${key}`); continue; }
           const definition = classDefinition(record);
           if (role === 'classFeature' && definition.parent?.key !== parent.key) {
             report(selection.selectionId, `Feature belongs to a different class: ${key}`); continue;
           }
-          if (role === 'subclassFeature' && !subclassFeatureMatchesClass(record, parent, owner)) {
+          if (role === 'subclassFeature' && !subclassFeatureMatchesClass(record, parent, owner, explicitlyReferenced)) {
             report(selection.selectionId, `Feature belongs to a different subclass: ${key}`); continue;
           }
           const sourceLevel = definition.level;
@@ -150,7 +150,7 @@ export function deriveClassFeatures(selections: ContentClassSelection[], index: 
           else entry.grants[existingGrant] = grant;
           wanted.set(key, entry);
           const expand = (plan: FeatureEntryPlan) => {
-            for (const reference of plan.references) pending.push({ key: reference.target, acquiredAt: level });
+            for (const reference of plan.references) pending.push({ key: reference.target, acquiredAt: level, explicitlyReferenced: true });
             for (const choice of plan.choices) {
               const id = JSON.stringify(['feature-choice', index.sourceIdentity, selection.selectionId, owner.key, key, choice.id]);
               choices.set(id, { id, selectionId: selection.selectionId, ownerKey: key,

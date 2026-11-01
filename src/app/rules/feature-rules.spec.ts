@@ -155,6 +155,24 @@ describe('Content-bound feature previews', () => {
     expect(JSON.stringify([...f.index.records])).toBe(before);
   });
 
+  it('follows an exact nested reference to an earlier publication of the same subclass but keeps root ownership strict', () => {
+    const f = referencedFixture();
+    const previous = mapContent({ subclassFeature: [{ name: 'Earlier Gift', source: 'OLD', className: 'Mage', classSource: 'TEST',
+      subclassShortName: 'A', subclassSource: 'OLD', level: 3, entries: [] }] }, 'earlier-subclass.json').records[0];
+    f.index.records.set(previous.key, previous);
+    f.root.data['entries'] = [{ type: 'refSubclassFeature', subclassFeature: 'Earlier Gift|Mage|TEST|A|OLD|3|OLD' }];
+    const reused = deriveClassFeatures([f.selection], f.index);
+    expect(reused.canAccept).toBe(true);
+    expect(reused.instances.find(instance => instance.contentKey === previous.key)?.grants[0].ownerKey).toBe(f.selection.subclassKey);
+    // A matching name alone is not enough to include another publication directly.
+    const subclass = structuredClone(f.index.records.get(f.selection.subclassKey!)!);
+    subclass.data['subclassFeatures'] = ['Earlier Gift|Mage|TEST|A|OLD|3|OLD'];
+    f.index.records.set(subclass.key, subclass);
+    const unrelated = deriveClassFeatures([f.selection], f.index);
+    expect(unrelated.canAccept).toBe(false);
+    expect(unrelated.diagnostics.some(issue => issue.message.includes('different subclass'))).toBe(true);
+  });
+
   it('gates referenced features by the granting and referenced levels and removes them when the subclass changes', () => {
     const f = referencedFixture();
     const early = f.extra[0]; early.data['level'] = 1;

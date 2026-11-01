@@ -1,3 +1,5 @@
+import { classResourceTables, resourceCell } from '../compendium/class-resources';
+import { SourceResource } from '../models/source-resources';
 import { additionalSpells, SPELL_GRANT_LISTS } from '../content/additional-spells';
 import { spellDefinition, spellRecordClasses } from '../content/spell-adapter';
 import { characterOption, characterOptionSourceData } from '../content/character-option-adapter';
@@ -137,6 +139,28 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
           useSpellbook: castingRecord === subclass && (selection.useSpellbook ?? false), ...sourceAbilityFlags(subclass, castingAbility) });
       sourceNames.set(`${selection.selectionId}:${subclass.key}`, name);
       if (castingRecord === subclass) castingSource = name;
+    }
+    if (state.options['resourceReminders'] === true) {
+      for (const table of classResourceTables(parent, subclass ?? null).filter(table => !table.spellSlots)) {
+        const row = table.rows[selection.level - 1];
+        if (!row) continue;
+        for (const [column, raw] of row.entries()) {
+          // Only literal numeric/dice cells: do not parse prose, formulas, recovery or spending rules.
+          const isDice = !!raw && typeof raw === 'object' && raw.type === 'dice';
+          if (typeof raw !== 'number' && !isDice) continue;
+          const text = resourceCell(raw);
+          if (typeof text !== 'string' && typeof text !== 'number') continue;
+          const label = table.labels[column]?.replace(/\{@\w+ ([^{}]*)\}/g, (_tag, body: string) => body.split('|')[0]);
+          if (!label) continue;
+          const resource: SourceResource = {
+            id: wizardEditorId('resource', revision.sourceIdentity, selection.selectionId, table.id, String(column)),
+            sourceId: table.subclass && subclass ? wizardEditorId('source', revision.sourceIdentity, selection.selectionId, subclass.key) : parentId,
+            name: label, mode: 'note', note: String(text), total: 0, used: 0, recovery: 'NONE',
+            features: true, spells: false, casting: false, defaultCost: 1,
+          };
+          put('resourceReminders', `${table.owner}: ${label}`, ['resources', resource.id], resource);
+        }
+      }
     }
     const singleLevel = deriveLevelRules({ classes: [classInput], constitution: 10, manualMaxHp: 0,
       applyHp: false, applyHitDice: false, manualPools: [] }, { currentHp: 0, annotations: {}, resources: {} });

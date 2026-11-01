@@ -574,6 +574,7 @@ export interface ContentReference {
 }
 
 export interface SpellEntryFull {
+  resourceLinks?: import('./source-resources').ResourceCost[];
   editorId?: string;
   contentReference?: ContentReference;
   name: string;
@@ -587,6 +588,7 @@ export interface SpellEntryFull {
 }
 
 export interface FeatureEntryFull {
+  resourceLinks?: import('./source-resources').ResourceCost[];
   /** Character acquisition level when compatibility rules defer a source feature. */
   acquiredAtLevel?: number;
   editorId?: string;
@@ -880,6 +882,7 @@ export interface Note {
 export type ConditionName = string;
 
 export interface ExportedCharacter {
+  resources?: import('./source-resources').SourceResource[];
   abilityBonuses?: import('./ability-score-bonuses').AbilityBonusState;
   bastion?: import('./bastion').CharacterBastion;
   sheetSettings?: import('./sheet-pages').SheetSettings;

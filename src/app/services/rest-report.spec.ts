@@ -11,6 +11,13 @@ describe('Rest reports', () => {
     features: [{ name: 'Manual', uses: [{ totalFreeUses: 1, usedFreeUses: 1, freeUsesRegainCondition: 'MANUAL' }] }],
   }) as ExportedCharacter;
 
+  it('restores source resources, reports them and retains manual and reminder pools', () => {
+    const character=sheet();
+    character.resources=['SHORT_REST','LONG_REST','NONE'].map((recovery,index)=>({id:String(index),sourceId:'s',name:recovery,mode:'counter' as const,note:'',total:10,used:3,recovery,features:true,spells:false,casting:false,defaultCost:1}));
+    const service=TestBed.inject(RestService);service.performShortRest(character);
+    expect(character.resources.map(pool=>pool.used)).toEqual([0,3,3]);expect(service.report()!.changes).toContain('SHORT_REST: 3 restored');
+    service.performLongRest(character);expect(character.resources.map(pool=>pool.used)).toEqual([0,0,3]);
+  });
   it('reports only changed resources and one-use recovery on short rests', () => {
     const service = TestBed.inject(RestService);
     const character = sheet();

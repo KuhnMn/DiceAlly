@@ -193,8 +193,8 @@ export class OtherProficienciesComponent implements OnInit {
   async removeSource(index: number) {
     const source = this.sources[index];
     const linked = (this.sheet().features ?? []).some(feature => feature.featureSourceName === source.name)
-      || (this.sheet().spells ?? []).some(spell => spell.castingSourceName === source.name) || !!this.character.spellSlots?.[source.name ?? ''];
-    if (linked && !await this.dialogs.confirm('Remove this source? Its existing features, spells and slots will be retained.')) return;
+      || (this.sheet().spells ?? []).some(spell => spell.castingSourceName === source.name) || !!this.character.spellSlots?.[source.name ?? ''] || (this.sheet().resources ?? []).some(resource => resource.sourceId === source.editorId);
+    if (linked && !await this.dialogs.confirm('Remove this source? Its existing features, spells, slots and resources will be retained.')) return;
     this.character.featureSources!.splice(index, 1); this.change();
   }
 }

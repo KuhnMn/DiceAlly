@@ -29,6 +29,9 @@ function collection(sheet: ExportedCharacter, path: string[], create = false): {
   if (kind === 'features' || kind === 'spells') {
     list = sheet[kind]; if (!list && create) list = sheet[kind] = [];
     index = list?.findIndex(entry => (entry as FeatureEntryFull).editorId === id) ?? -1;
+  } else if (kind === 'resources') {
+    list = sheet.resources; if (!list && create) list = sheet.resources = [];
+    index = sheet.resources?.findIndex(entry => entry.id === id) ?? -1;
   } else if (kind === 'speeds') {
     list = sheet.character?.speeds;
     if (!list && create) list = sheet.character!.speeds = [];
@@ -100,7 +103,7 @@ function collisions(sheet: ExportedCharacter, entry: PrefillValue): { editorId?:
 }
 function hasAnnotations(value: unknown): boolean {
   const entry = value as FeatureEntryFull | undefined;
-  return !!((value as { used?: number } | undefined)?.used || entry?.notes?.length || entry?.uses?.some(use => (use.usedFreeUses ?? 0) > 0));
+  return !!((value as { used?: number } | undefined)?.used || entry?.notes?.length || entry?.resourceLinks?.length || entry?.uses?.some(use => (use.usedFreeUses ?? 0) > 0));
 }
 
 /** Detached, repeatable prefill. Manual changes and removals become protected values. */
@@ -112,7 +115,7 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
   const protectedKeys = new Set(bookkeeping.protectedPaths.map(path => JSON.stringify(path)));
   const changes: PrefillChange[] = [];
   const defaults = emptyBasicCharacter();
-  const enabled = (scope: string) => scope === 'sources'
+  const enabled = (scope: string) => scope === 'resourceReminders' ? state.options['resourceReminders'] === true : scope === 'sources'
     ? state.options['features'] !== false || state.options['spells'] !== false
     : state.options[scope] !== false;
   const desired = new Map(values.filter(entry => enabled(entry.scope)).map(entry => [JSON.stringify(entry.path), entry]));
@@ -142,6 +145,7 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
         const next = proposed as MutableObject; const existing = current as MutableObject;
         for (const counter of ['used', 'usedFreeUses', 'overrideFeet']) if (existing[counter] !== undefined) next[counter] = existing[counter];
         if (['features', 'spells', 'species'].includes(entry.path[0])) {
+          next['resourceLinks'] = structuredClone(existing['resourceLinks']);
           next['notes'] = structuredClone(existing['notes'] ?? []);
           if (Array.isArray(existing['uses']) && existing['uses'].length) next['uses'] = structuredClone(existing['uses']);
         }
@@ -175,7 +179,7 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
     const path = JSON.parse(key) as string[]; const current = readWizardValue(sheet, path);
     const source = current as { name?: string } | undefined;
     const stillLinked = path[0] === 'sources' && source?.name && (sheet.features?.some(feature => feature.featureSourceName === source.name)
-      || sheet.spells?.some(spell => spell.castingSourceName === source.name) || sheet.character?.spellSlots?.[source.name]?.length);
+      || sheet.spells?.some(spell => spell.castingSourceName === source.name) || sheet.character?.spellSlots?.[source.name]?.length || sheet.resources?.some(resource => resource.sourceId === path[1]));
     if (current !== undefined && (hasAnnotations(current) || stillLinked
       || !overrideManualEdits && (protectedKeys.has(key) || wizardFingerprint(current) !== entry.fingerprint))) {
       const keepReason: PrefillKeepReason = hasAnnotations(current) ? 'annotations' : stillLinked ? 'linked'

@@ -60,12 +60,12 @@ export function projectSheet(document: CharacterDocument): ExportedCharacter {
       saveMiscBonuses: document.creation.stats.saveBonuses, custom: (stats?.contributions ?? []).filter(p => !['save', 'skill'].includes(p.kind)).map(p => `${p.kind}: ${p.target}`) },
     spellSlots: { 'Spell slots': document.instances.pools.filter(p => p.kind === 'spell-slots').map(p => ({ level: p.rank ?? 1, total: p.total,
         used: document.session.resources[p.id]?.used ?? 0, regainCondition: p.regain, userAdded: p.manual, nativePoolId: p.id })) },
-    featureSources: document.instances.sources.map(s => ({ name: s.label, isSpellcastingSource: true,
+    featureSources: document.instances.sources.map(s => ({ editorId: s.id, name: s.label, isSpellcastingSource: true,
       customDc: document.derived?.casting.find(c => c.sourceId === s.id)?.dc,
       customToHit: document.derived?.casting.find(c => c.sourceId === s.id)?.toHit,
       useSpellbook: s.useSpellbook, userAdded: s.manual, ...(s.ability ? { [`uses${names[s.ability as keyof typeof names][0].toUpperCase()}${names[s.ability as keyof typeof names].slice(1)}`]: true } : {}) })),
   };
-  sheet.features = document.instances.features.map(f => ({ name: f.snapshot.name, source: f.snapshot.publication,
+  sheet.features = document.instances.features.map(f => ({ editorId: f.id, name: f.snapshot.name, source: f.snapshot.publication,
     userAdded: f.manual, featureSourceName: 'Features',
     ...(f.snapshot.kind === 'feat' ? { featEntity: characterOptionSourceData(f.snapshot) as unknown as FeatEntity } : f.snapshot.kind === 'optionalfeature'
       ? { optionalFeatureEntity: characterOptionSourceData(f.snapshot) as unknown as OptionalFeatureEntity } : {
@@ -74,7 +74,7 @@ export function projectSheet(document: CharacterDocument): ExportedCharacter {
           ...(f.grants[0]?.level !== undefined ? { level: f.grants[0].level } : {}) } as unknown as FeatureEntity }),
     notes: [{ tag: f.id, notes: document.session.annotations[f.id] ?? [] }] }));
   sheet.features.push(...structuredClone(document.compatibility['legacyFeatures'] ?? []) as NonNullable<ExportedCharacter['features']>);
-  sheet.spells = document.instances.spells.map(s => ({ name: s.snapshot.name, source: s.snapshot.publication,
+  sheet.spells = document.instances.spells.map(s => ({ editorId: s.id, name: s.snapshot.name, source: s.snapshot.publication,
     userAdded: s.manual, castingSourceName: document.instances.sources.find(source => source.id === s.castingSourceId)?.label,
     listType: s.list === 'known' && document.instances.sources.find(source => source.id === s.castingSourceId)?.useSpellbook ? 'SPELLBOOK' : s.list.toUpperCase(), entity: projectSpellData(s.snapshot) as unknown as SpellEntity,
     notes: [{ tag: s.id, notes: document.session.annotations[s.id] ?? [] }] }));
@@ -115,6 +115,12 @@ export function projectSheet(document: CharacterDocument): ExportedCharacter {
   if (document.overrides.speedOverrides) for (const speed of speeds) {
     if (document.overrides.speedOverrides[speed.id] == null) delete speed.overrideFeet;
     else speed.overrideFeet = document.overrides.speedOverrides[speed.id];
+  }
+  const authoredSheet = document.presentation['sheet'] as ExportedCharacter | undefined;
+  for (const kind of ['features', 'spells'] as const) for (const entry of sheet[kind] ?? []) {
+    const id = entry.notes?.[0]?.tag;
+    const authored = authoredSheet?.[kind]?.find(previous => id && previous.notes?.[0]?.tag === id);
+    if (authored?.resourceLinks) entry.resourceLinks = structuredClone(authored.resourceLinks);
   }
   return sheet;
 }

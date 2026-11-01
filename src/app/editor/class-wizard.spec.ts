@@ -269,6 +269,20 @@ describe('Subclass-granted spell prefill', () => {
     f.state.classes[0].level = 8;
     expect(previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet.spells!.some(spell => spell.name === 'Shield' && spell.uses?.length)).toBe(false);
   });
+  it('imports literal class table values only as opt-in reminders and preserves manual resource edits', () => {
+    const f=fixture(), record=f.index.get(f.state.classes[0].classKey)!;
+    record.data['classTableGroups']=[{colLabels:['Psi Dice','Uses'],rows:Array.from({length:20},()=>[{type:'dice',toRoll:[{number:2,faces:6}]},3])}];
+    expect(previewClassWizard(f.sheet,f.state,f.revision,f.index).sheet.resources??[]).toEqual([]);
+    f.state.options['resourceReminders']=true;
+    const first=previewClassWizard(f.sheet,f.state,f.revision,f.index).sheet;
+    expect(first.resources!.filter(resource=>resource.name==='Psi Dice')[0].note).toBe('2d6');
+    expect(first.resources!.every(resource=>resource.mode==='note'&&!resource.casting&&resource.recovery==='NONE')).toBe(true);
+    const resource=first.resources![0];resource.note='Personal note';
+    const repeated=previewClassWizard(first,first.creatorWizard!,f.revision,f.index).sheet;
+    expect(repeated.resources!.find(entry=>entry.id===resource.id)!.note).toBe('Personal note');
+    expect(new Set(repeated.resources!.map(entry=>entry.id)).size).toBe(repeated.resources!.length);
+  });
+
   it('offers background proficiencies without creating grants and respects the automatic ability setting', () => {
     const f = fixture(); f.state.classes = []; setAbilityBonusesEnabled(f.sheet, false);
     const record = mapContent({ background: [{ name: 'Sage', source: 'TEST', entries: ['Reference'],

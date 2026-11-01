@@ -47,6 +47,15 @@ describe('Compact entry tools', () => {
     expect(entry.uses![0].usedFreeUses).toBe(3);
   });
 
+  it('allows resource linking before preparation while leaving Uses and Notes gated', () => {
+    const fixture=TestBed.createComponent(EntryAnnotationsComponent);
+    fixture.componentRef.setInput('entry',{});fixture.componentRef.setInput('annotationsEnabled',false);fixture.componentRef.setInput('showResources',true);fixture.detectChanges();
+    const buttons=[...fixture.nativeElement.querySelectorAll('[aria-label="Entry tools"] button')] as HTMLButtonElement[];
+    const resource=buttons.find(button=>button.textContent!.includes('Resources'))!;
+    expect(resource.disabled).toBe(false);expect(buttons.find(button=>button.textContent!.includes('Notes'))!.disabled).toBe(true);
+    resource.click();fixture.detectChanges();expect(fixture.nativeElement.querySelector('[aria-label="Resource links editor"]').hidden).toBe(false);fixture.destroy();
+  });
+
   it('shows Uses, Notes and Combat beside the name and scopes spell combat status to the casting source', () => {
     const sheet = emptyBasicCharacter();
     const known = { editorId: 'known', name: 'Shared', source: 'TEST', castingSourceName: 'Wizard', listType: 'KNOWN' };

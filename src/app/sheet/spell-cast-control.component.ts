@@ -1,3 +1,4 @@
+import { ResourceCost, resourceCosts, remainingResource, spendResource } from '../models/source-resources';
 import { Component, DestroyRef, computed, effect, inject, input, linkedSignal, signal } from '@angular/core';
 import { ExportedCharacter, SpellEntryFull, SpellSlot } from '../models/character.model';
 import { CharacterStore } from '../stores/character.store';
@@ -8,11 +9,12 @@ import { AppDialogService } from '../services/app-dialog.service';
 
 interface CastingResource {
   key: string;
-  kind: 'slot' | 'use' | 'cantrip' | 'ritual';
+  kind: 'slot' | 'use' | 'cantrip' | 'ritual' | 'resource';
   label: string;
   remaining: number;
   total: number;
   useIndex?: number;
+  cost?: ResourceCost;
   pools?: CastingPool[];
 }
 
@@ -36,7 +38,7 @@ interface CastingPool {
         <select aria-label="Casting resource" [value]="resource()?.key ?? ''" [disabled]="pending()" (change)="setResource($any($event.target).value)"
           class="mt-1 min-h-11 w-full min-w-0 rounded-lg border border-outline-variant bg-surface-container px-2 text-base text-on-surface sm:text-sm">
           @if (!resource()) { <option value="">{{ resources().length ? 'Choose a Resource' : 'No Resources Available' }}</option> }
-          @for (resource of resources(); track resource.key) { <option [value]="resource.key">{{ resource.label }}@if (resource.kind === 'use') { · {{ resource.remaining }} / {{ resource.total }} available }</option> }
+          @for (resource of resources(); track resource.key) { <option [value]="resource.key">{{ resource.label }}@if (resource.kind === 'use' || resource.kind === 'resource') { · {{ resource.remaining }} / {{ resource.total }} available }</option> }
         </select>
       </label>
       <div class="flex flex-wrap items-end gap-2">
@@ -141,6 +143,10 @@ export class SpellCastControlComponent {
   readonly resources = (): CastingResource[] => [
     ...(this.baseLevel() === 0 ? [{ key: 'cantrip', kind: 'cantrip' as const, label: 'Cantrip · No Resource', remaining: 1, total: 1 }] : []),
     ...this.slotResources(),
+    ...resourceCosts(this.liveSheet() ?? {}, (this.trackedSpell()?.spell ?? this.spell()).resourceLinks, (this.trackedSpell()?.spell ?? this.spell()).castingSourceName).map(cost => {
+      const pool = this.liveSheet()!.resources!.find(resource => resource.id === cost.resourceId)!;
+      return {key:'resource:' + pool.id,kind:'resource' as const,label:pool.name + ' · Cost ' + cost.amount,remaining:Math.floor(remainingResource(pool)/cost.amount),total:Math.floor(pool.total/cost.amount),cost};
+    }),
     ...(this.spell().entity?.meta?.ritual === true ? [{ key: 'ritual', kind: 'ritual' as const, label: 'Ritual - Free', remaining: 1, total: 1 }] : []),
     ...(this.trackedSpell()?.spell.uses ?? []).flatMap((use, index) => {
       const total = use.totalFreeUses ?? 1, used = use.usedFreeUses ?? 0;
@@ -193,9 +199,10 @@ export class SpellCastControlComponent {
     if (!this.canCast()) return;
     const spellKey = this.spellKey(), resourceKey = this.resource()!.key, level = this.level();
     const resourceLabel = this.resource()!.label, resourceTotal = this.resource()!.total;
+    const resourceCost = JSON.stringify(this.resource()?.cost);
     const concentration = this.requiresConcentration(), track = this.trackConcentration();
     const stillCurrent = () => !this.destroyed && this.available() && spellKey === this.spellKey() && resourceKey === this.resource()?.key && level === this.level()
-      && resourceLabel === this.resource()?.label && resourceTotal === this.resource()?.total;
+      && resourceLabel === this.resource()?.label && resourceTotal === this.resource()?.total && JSON.stringify(this.resource()?.cost) === resourceCost;
     this.pending.set(true);
     try {
       if (!this.isPrepared()) {
@@ -218,6 +225,8 @@ export class SpellCastControlComponent {
         const pool = this.pool()!, slots = data.character!.spellSlots![pool.source]
           .map((slot, index) => index === pool.index ? { ...slot, used: (slot.used ?? 0) + 1 } : slot);
         next = { ...data, character: { ...data.character!, spellSlots: { ...data.character!.spellSlots, [pool.source]: slots } } };
+      } else if (resource.kind === 'resource') {
+        const spent = spendResource(data, resource.cost!); if (!spent) return; next = spent;
       } else if (resource.kind === 'use') {
         const tracked = this.trackedSpell();
         if (!tracked) return;

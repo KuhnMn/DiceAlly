@@ -1,3 +1,4 @@
+import { validateResources } from '../models/source-resources';
 import type { ExportedCharacter } from '../models/character.model';
 import { validateSpeciesEntity } from '../content/species-compatibility';
 import { decodeCharacterSpeeds } from '../models/character-speed';
@@ -28,6 +29,7 @@ export function portableCharacter(input: ExportedCharacter): ExportedCharacter {
   }
   validateSpeciesEntity(sheet.species?.entity);
   validateObjectCompanions(sheet.objects);
+  validateResources(sheet);
   validateAbilityBonusState(sheet);
   applyAbilityBonuses(sheet);
   for (const source of sheet.character?.featureSources ?? []) validateSourceAbilities(source);

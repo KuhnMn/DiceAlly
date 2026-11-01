@@ -1,3 +1,4 @@
+import { recoverResources } from '../models/source-resources';
 import { Injectable, inject, signal } from '@angular/core';
 import { CharacterStore } from '../stores/character.store';
 import { summarizeRest } from './rest-report';
@@ -34,8 +35,11 @@ export class RestService {
   }
 
   private applyLongRest(character: ExportedCharacter): void {
+    recoverResources(character, 'long');
     if (this.store.nativeRest && character.character?.characterUuid === this.store.nativeCharacterId()) {
-      Object.assign(character, this.store.nativeRest(character, 'long')); return;
+      const resources = character.resources;
+      Object.assign(character, this.store.nativeRest(character, 'long'));
+      character.resources = resources; return;
     }
     if (!character.character) return;
 
@@ -72,8 +76,11 @@ export class RestService {
   }
 
   private applyShortRest(character: ExportedCharacter): void {
+    recoverResources(character, 'short');
     if (this.store.nativeRest && character.character?.characterUuid === this.store.nativeCharacterId()) {
-      Object.assign(character, this.store.nativeRest(character, 'short')); return;
+      const resources = character.resources;
+      Object.assign(character, this.store.nativeRest(character, 'short'));
+      character.resources = resources; return;
     }
     if (!character.character) return;
 

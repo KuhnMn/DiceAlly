@@ -8,16 +8,19 @@ import { UiIconComponent } from '../ui-icon.component';
   host: { class: 'block min-w-0' },
   imports: [RecoveryIndicatorComponent, UiIconComponent],
   template: `
-    <div class="feature-uses h-full rounded-lg border border-outline-variant bg-surface-variant px-2 py-1">
+    <div class="feature-uses" [class]="trackerOnly() ? '' : 'h-full rounded-lg border border-outline-variant bg-surface-variant px-2 py-1'">
       @if (uses()) {
+        @if (!trackerOnly()) {
         <div class="flex items-center justify-between gap-1 sm:gap-2">
           <span class="min-w-0 break-words text-sm font-semibold">{{ tag() }}</span>
           <div class="flex shrink-0 flex-row-reverse items-center gap-1 sm:flex-col sm:items-end">
           <app-recovery-indicator [condition]="regainCondition()" />
           </div>
         </div>
+        }
         @if (totalCount() > 0) {
-          <div class="mt-1 h-1 overflow-hidden rounded-full bg-surface-container-low" role="progressbar" [attr.aria-label]="tag() + ' uses spent'" aria-valuemin="0" [attr.aria-valuemax]="totalCount()" [attr.aria-valuenow]="usedCount()"><div class="h-full bg-primary transition-[width] duration-300 ease-out motion-reduce:transition-none" [style.width.%]="progressPercent()"></div></div>
+          @if (!trackerOnly()) { <div class="mt-1 h-1 overflow-hidden rounded-full bg-surface-container-low" role="progressbar" [attr.aria-label]="tag() + ' uses spent'" aria-valuemin="0" [attr.aria-valuemax]="totalCount()" [attr.aria-valuenow]="usedCount()"><div class="h-full bg-primary transition-[width] duration-300 ease-out motion-reduce:transition-none" [style.width.%]="progressPercent()"></div></div>
+          }
           @if (totalCount() <= 5) {
             <div class="flex flex-wrap gap-0">
               @for (index of availableUses(); track index) {
@@ -41,6 +44,7 @@ import { UiIconComponent } from '../ui-icon.component';
   `,
 })
 export class FeatureUsesComponent {
+  readonly trackerOnly = input(false);
   uses = input<FeatureUses | undefined>(undefined);
   usesUpdated = output<{ usedFreeUses: number; tag?: string }>();
 

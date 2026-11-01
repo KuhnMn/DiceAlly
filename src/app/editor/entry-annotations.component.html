@@ -9,9 +9,13 @@
     @if (showBonus()) {
       <button type="button" class="annotation-button disabled:opacity-50" title="Edit stat bonuses" [disabled]="!annotationsEnabled()" [attr.aria-pressed]="activePanel === 'bonus'" [attr.aria-expanded]="activePanel === 'bonus' && annotationsEnabled()" [attr.aria-controls]="'bonus-panel-' + i" [class.bg-secondary-container]="activePanel === 'bonus'" (click)="togglePanel('bonus')"><app-ui-icon name="plus" /> Stat Bonuses</button>
     }
+    @if (showResources()) { <button type="button" class="annotation-button" [attr.aria-pressed]="activePanel === 'resources'" [attr.aria-controls]="'resource-panel-' + i" [attr.aria-expanded]="activePanel === 'resources'" (click)="togglePanel('resources')"><app-ui-icon name="tally" /> Resources</button> }
     <ng-content select="[annotation-combat]" />
     <ng-content select="[annotation-description]" />
   </div>
+  <section class="annotation-panel" [hidden]="!showResources() || activePanel !== 'resources'" [id]="'resource-panel-' + i" aria-label="Resource links editor">
+    <h3 class="mb-2 font-semibold">Resources</h3><ng-content select="[annotation-resources]" />
+  </section>
   <section class="annotation-panel" [hidden]="!showBonus() || !annotationsEnabled() || activePanel !== 'bonus'" [id]="'bonus-panel-' + i" aria-label="Stat bonuses editor">
     <div class="flex flex-wrap items-center justify-between gap-2 mb-2"><h3 class="font-semibold">Stat Bonuses</h3></div>
     <ng-content select="[annotation-bonus]" />

@@ -1,3 +1,4 @@
+import { SourceResourcesComponent } from './source-resources.component';
 import { ItemEffectRemindersComponent } from './item-effect-reminders.component';
 import { SpellCastControlComponent } from './spell-cast-control.component';
 import { higherLevelEntries } from '../entries/entry-compatibility';
@@ -35,7 +36,7 @@ type SpellLevelFilter = 'ALL' | number;
 @Component({
   selector: 'app-spells-page',
   host: { class: 'block w-full min-w-0 max-w-full' },
-  imports: [ItemEffectRemindersComponent, SpellCastControlComponent,SpellEffectFilterComponent, SpellSchoolFilterComponent, SpellViewSwitcherComponent, SpellCastingTimeFilterComponent, ListControlsComponent, SheetListLayoutComponent, RecoveryIndicatorComponent, SpellDetailsComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, SpellSummaryComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [SourceResourcesComponent,ItemEffectRemindersComponent, SpellCastControlComponent,SpellEffectFilterComponent, SpellSchoolFilterComponent, SpellViewSwitcherComponent, SpellCastingTimeFilterComponent, ListControlsComponent, SheetListLayoutComponent, RecoveryIndicatorComponent, SpellDetailsComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, SpellSummaryComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .spell-page-header app-spell-view-switcher { margin-bottom: 0; }
     .spell-page.spell-preparation-view { padding: .75rem; }
@@ -162,7 +163,9 @@ type SpellLevelFilter = 'ALL' | number;
                           [style.width.%]="spellSlotProgress(group.source, slot)"
                         ></div>
                       </div>
-                      @if (slot.total > 0) {
+                      @if (slot.total >= 6) {
+                        <app-feature-uses [trackerOnly]="true" [uses]="{tag:group.source + ' level ' + slot.level,totalFreeUses:slot.total,usedFreeUses:spellSlotUsed(group.source,slot),freeUsesRegainCondition:slot.regainCondition}" (usesUpdated)="setSlotUsed(group.source,slot,$event.usedFreeUses)" />
+                      } @else if (slot.total > 0) {
                         <div class="flex flex-wrap gap-0">
                           @for (index of spellSlotIndexes(slot.total); track index) {
                             <label class="flex min-h-8 min-w-9 items-center justify-center cursor-pointer">
@@ -190,6 +193,7 @@ type SpellLevelFilter = 'ALL' | number;
         </div>
       }
 
+      @if (characterData(); as resourceSheet) { <app-source-resources [sheet]="resourceSheet" page="spells" /> }
       <section class="mt-4 min-w-0" aria-label="Spells">
       @if (spellView() === 'PREPARED') { <h3 class="mb-2 text-lg font-bold">Prepared Spells</h3> }
       <div class="mb-3">
@@ -703,6 +707,12 @@ export class SpellsPageComponent {
         },
       },
     });
+  }
+
+  setSlotUsed(source: string, slot: {level:number;total:number;used:number}, used:number) {
+    const value=Math.max(0,Math.min(slot.total,used));
+    this.spellSlotUsedOverrides.update(previous=>({...previous,[this.spellSlotKey(source,slot.level)]:value}));
+    this.persistSpellSlotUsed(source,slot.level,value);
   }
 
   toggleSpellSlot(source: string, slot: { level: number; total: number; used: number }, index: number) {

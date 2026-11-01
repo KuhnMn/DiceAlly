@@ -1,3 +1,4 @@
+import { SourceResourcesEditorComponent } from './source-resources-editor.component';
 import { BastionsEditorComponent } from './bastions-editor.component';
 import { BasicInfoEditorComponent } from './basic-info-editor.component';
 import { SheetSettingsEditorComponent } from './sheet-settings-editor.component';
@@ -47,7 +48,7 @@ import { applyAbilityBonuses } from '../models/ability-score-bonuses';
 
 @Component({
   selector: 'app-local-editor',
-  imports: [BastionsEditorComponent, SheetSettingsEditorComponent, NotesEditorComponent, ScrollToTopComponent, SwipePagesDirective, CombatEditorComponent, CharacterUpdateNoticeComponent, UiIconComponent, ThemePickerComponent, MobileSheetActionsComponent, ScrollableTabsDirective, FormsModule, RouterLink, BasicInfoEditorComponent, AbilityScoresEditorComponent, ProficienciesEditorComponent, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, ClassWizardComponent, SpeciesEditorComponent, ItemsEditorComponent, MonstersEditorComponent],
+  imports: [SourceResourcesEditorComponent, BastionsEditorComponent, SheetSettingsEditorComponent, NotesEditorComponent, ScrollToTopComponent, SwipePagesDirective, CombatEditorComponent, CharacterUpdateNoticeComponent, UiIconComponent, ThemePickerComponent, MobileSheetActionsComponent, ScrollableTabsDirective, FormsModule, RouterLink, BasicInfoEditorComponent, AbilityScoresEditorComponent, ProficienciesEditorComponent, OtherProficienciesComponent, SpellSlotsComponent, FeaturesEditorComponent, SpellsEditorComponent, SourceBookFilterComponent, ClassWizardComponent, SpeciesEditorComponent, ItemsEditorComponent, MonstersEditorComponent],
   templateUrl: './local-editor.component.html',
   styleUrl: './editor.css',
 })
