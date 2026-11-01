@@ -1049,6 +1049,20 @@ body {
 html:has(.app-container.sheet-layout) { scrollbar-gutter: stable; }
 
 /* Compact viewer lists keep mobile single-column and support a desktop layout toggle. */
+.sheet-pool-groups {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: .75rem;
+}
+.sheet-pool-groups > * { min-width: 0; }
+.sheet-pool-groups > :only-child { grid-column: 1 / -1; }
+@media (min-width: 640px) {
+  .sheet-pool-groups {
+    grid-template-columns: repeat(var(--sheet-pool-columns, 1), minmax(0, 1fr));
+  }
+}
+
 .sheet-entry-list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

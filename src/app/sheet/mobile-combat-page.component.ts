@@ -32,10 +32,10 @@ import { SheetListLayoutComponent } from './sheet-list-layout.component';
     @if (character(); as c) {
           <!-- Combat Actions -->
           <div class="border-4 border-surface rounded-lg p-4 bg-surface-container-low shadow-lg">
-            <div class="flex items-center gap-2 mb-3 border-b-2 border-outline-variant pb-2">
-              <h3 class="flex-1 text-sm font-bold uppercase text-center">Combat</h3>
+            <header class="mb-4 flex items-center justify-between gap-2 sm:mb-6">
+              <h2 class="text-xl font-bold sm:text-3xl">Combat</h2>
               <app-sheet-list-layout #listLayout />
-            </div>
+            </header>
             <div class="mb-4 flex flex-wrap items-center gap-2" role="group" aria-label="Concentration &amp; Round Tracker">
               <h4 class="w-full text-xs font-semibold tracking-wide text-on-surface-variant">Concentration &amp; Round Tracker</h4>
               @if (characterData(); as sheet) { <app-concentration-control class="min-w-0 flex-1 border-r border-outline-variant pr-3" [sheet]="sheet" /> }

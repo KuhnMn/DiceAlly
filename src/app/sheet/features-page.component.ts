@@ -173,11 +173,11 @@ import { referenceDescription } from '../models/character-references';
 } @else {
 
     <div class="bg-surface-container-highest p-3 sm:p-5 rounded-lg border-2 border-outline  shadow-lg">
-      @if (characterData(); as resourceSheet) { <app-source-resources [sheet]="resourceSheet" page="features" /> }
-      <div class="mb-3 flex items-center justify-between gap-2">
+      <header class="mb-4 flex items-center justify-between gap-2 sm:mb-6">
         <h2 class="text-xl sm:text-3xl font-bold">Features & Traits</h2>
         <app-sheet-list-layout #listLayout />
-      </div>
+      </header>
+      @if (characterData(); as resourceSheet) { <app-source-resources [sheet]="resourceSheet" page="features" [columns]="listLayout.displayColumns()" /> }
 
       @if (species()) {
         <h3 class="text-lg font-bold mb-2 mt-4">Species</h3>

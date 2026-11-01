@@ -10,11 +10,11 @@ import { HorizontalRowDirective } from './horizontal-row.directive';
   host: { class: 'block min-w-0' },
   template: `@if (resources.length) {
     <section
-      class="mb-4"
+      class="mb-6 sm:mb-8"
       aria-label="Resources"
     >
       <h3 class="mb-2 text-xl font-bold sm:mb-3">Resources</h3>
-      <div class="space-y-2">
+      <div class="sheet-pool-groups" [style.--sheet-pool-columns]="columns()">
         @for (group of groups; track group.sourceId) {
           <div class="border border-surface border-2 rounded-lg p-2 bg-surface-container">
             <div class="text-sm font-semibold text-on-surface mb-1.5">{{ sourceName(group.sourceId) }}</div>
@@ -36,6 +36,7 @@ import { HorizontalRowDirective } from './horizontal-row.directive';
 export class SourceResourcesComponent {
   readonly sheet = input.required<ExportedCharacter>();
   readonly page = input.required<'features' | 'spells'>();
+  readonly columns = input(1);
   private readonly store = inject(CharacterStore);
   get resources() {
     return (this.sheet().resources ?? []).filter((resource) => resource[this.page()]);

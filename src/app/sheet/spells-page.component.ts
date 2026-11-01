@@ -134,15 +134,18 @@ type SpellLevelFilter = 'ALL' | number;
       </button>
     </ng-template>
     <div class="spell-page min-w-0 max-w-full bg-surface-container-highest p-3 sm:p-5 rounded-lg border-2 border-outline shadow-lg [overflow-wrap:anywhere]" [class.spell-preparation-view]="spellView() !== 'PREPARED'" [attr.data-spell-view]="spellView()">
-      <div class="spell-page-header mb-3 flex items-center justify-between gap-2">
-        <app-spell-view-switcher class="min-w-0 flex-1" preparedHeading="Spellcasting" [view]="spellView()" (viewChange)="spellView.set($event)" [showSpellbook]="showSpellbook()" />
-        <app-sheet-list-layout #listLayout class="sm:ml-2 sm:border-l sm:border-outline-variant sm:pl-4" />
-      </div>
+      <header class="spell-page-header mb-4 flex flex-wrap items-center justify-between gap-3 sm:mb-6">
+        <h2 class="text-xl font-bold sm:text-3xl">Spellcasting</h2>
+        <div class="ml-auto flex shrink-0 items-center gap-2">
+          <app-spell-view-switcher [view]="spellView()" (viewChange)="spellView.set($event)" [showSpellbook]="showSpellbook()" />
+          <app-sheet-list-layout #listLayout class="sm:ml-2 sm:border-l sm:border-outline-variant sm:pl-4" />
+        </div>
+      </header>
 
       @if (spellView() === 'PREPARED' && spellSlotGroups().length > 0) {
-        <div id="preparation-spell-slots">
+        <section id="preparation-spell-slots" class="mb-6 sm:mb-8" aria-label="Spell Slots">
           <h3 class="mb-2 text-xl font-bold sm:mb-3">Spell Slots</h3>
-          <div class="space-y-2">
+          <div class="sheet-pool-groups" [style.--sheet-pool-columns]="listLayout.displayColumns()">
             @for (group of spellSlotGroups(); track group.source) {
               <div class="border border-surface border-2 rounded-lg p-2 bg-surface-container">
                 <div class="text-sm font-semibold text-on-surface mb-1.5">{{ group.source }}</div>
@@ -156,12 +159,12 @@ type SpellLevelFilter = 'ALL' | number;
               </div>
             }
           </div>
-        </div>
+        </section>
       }
 
-      @if (characterData(); as resourceSheet) { <app-source-resources [sheet]="resourceSheet" page="spells" /> }
-      <section class="mt-4 min-w-0" aria-label="Spells">
-      @if (spellView() === 'PREPARED') { <h3 class="mb-2 text-lg font-bold">Prepared Spells</h3> }
+      @if (characterData(); as resourceSheet) { <app-source-resources [sheet]="resourceSheet" page="spells" [columns]="listLayout.displayColumns()" /> }
+      <section class="min-w-0" aria-label="Spells">
+      <h3 class="mb-2 text-lg font-bold" [class.text-teal]="spellView() === 'KNOWN'" [class.text-purple]="spellView() === 'SPELLBOOK'">{{ spellView() === 'PREPARED' ? 'Prepared Spells' : spellListLabel(spellView()) }}</h3>
       <div class="mb-3">
         @if (characterData()?.character; as character) {
           <app-feature-source-picker [character]="character" [sources]="pickerSources()"

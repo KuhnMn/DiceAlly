@@ -12,6 +12,7 @@ import { emptyBasicCharacter } from '../editor/basic-info';
 import { MobileCombatPageComponent } from './mobile-combat-page.component';
 import { MobileCharacterInfoPageComponent } from './mobile-character-info-page.component';
 import { SpellsPageComponent } from './spells-page.component';
+import { FeaturesPageComponent } from './features-page.component';
 import { NotesPageComponent } from './notes-page.component';
 import { SheetListLayoutComponent } from './sheet-list-layout.component';
 
@@ -31,6 +32,38 @@ function setup() {
 }
 
 describe('Sheet layouts preserve navigation and character state', () => {
+  it.each([FeaturesPageComponent, SpellsPageComponent])('uses the page layout for source pools before the main content in %s', component => {
+    const sheet = emptyBasicCharacter();
+    sheet.species = { name: 'Elf' };
+    sheet.character!.spellSlots = { Wizard: [{ level: 1, total: 4, used: 0 }], Sorcerer: [{ level: 1, total: 2, used: 0 }] };
+    sheet.resources = ['wizard', 'sorcerer'].map(sourceId => ({
+      id: sourceId, sourceId, name: 'Focus', mode: 'counter' as const, note: '', total: 5, used: 0,
+      recovery: 'LONG_REST' as const, features: true, spells: true,
+    }));
+    const before = structuredClone(sheet);
+    const fixture = TestBed.createComponent<FeaturesPageComponent | SpellsPageComponent>(component);
+    fixture.componentRef.setInput('characterData', sheet); fixture.detectChanges();
+    const header = fixture.nativeElement.querySelector('header') as HTMLElement;
+    expect(header.querySelector('h2')?.textContent).toBe(component === FeaturesPageComponent ? 'Features & Traits' : 'Spellcasting');
+    expect(header.querySelector('app-sheet-list-layout')).not.toBeNull();
+    const headings = [...fixture.nativeElement.querySelectorAll('h2, h3')].map((heading: unknown) => (heading as HTMLElement).textContent?.trim());
+    const expected = component === FeaturesPageComponent
+      ? ['Features & Traits', 'Resources', 'Species', 'Elf', 'Features']
+      : ['Spellcasting', 'Spell Slots', 'Resources', 'Prepared Spells'];
+    expect(headings.slice(0, expected.length)).toEqual(expected);
+    const selector = fixture.debugElement.query(By.directive(SheetListLayoutComponent));
+    const layout = selector.componentInstance as SheetListLayoutComponent;
+    const pools = [...fixture.nativeElement.querySelectorAll('.sheet-pool-groups')] as HTMLElement[];
+    for (const columns of [2, 3, 1]) {
+      layout.columns.set(columns); fixture.detectChanges();
+      expect(pools.every(pool => pool.style.getPropertyValue('--sheet-pool-columns') === String(columns))).toBe(true);
+    }
+    layout.columns.set(3); layout.maxColumns.set(1); fixture.detectChanges();
+    expect(pools.every(pool => pool.style.getPropertyValue('--sheet-pool-columns') === '1')).toBe(true);
+    expect(sheet).toEqual(before);
+    fixture.destroy();
+  });
+
   it('keeps Combat single-column until selected and retains its choice across navigation and resizing', () => {
     const { mode, fixture, component } = setup();
     component.switchPage(7, false); fixture.detectChanges();

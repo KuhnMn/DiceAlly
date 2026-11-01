@@ -25,11 +25,13 @@ describe('Spell preparation views and casting times', () => {
     const fixture = TestBed.createComponent(SpellsPageComponent), data = sheet();
     fixture.componentRef.setInput('characterData', data); fixture.detectChanges();
     const page = fixture.componentInstance, before = JSON.stringify(data);
-    expect(fixture.nativeElement.querySelector('app-spell-view-switcher h3').textContent).toBe('Spellcasting');
+    expect(fixture.nativeElement.querySelector('.spell-page-header h2').textContent).toBe('Spellcasting');
+    expect(fixture.nativeElement.querySelector('section[aria-label="Spells"] > h3').textContent).toBe('Prepared Spells');
     for (const [label, view] of [['Spelllist', 'KNOWN'], ['Spellbook', 'SPELLBOOK']]) {
       fixture.nativeElement.querySelector(`[aria-label="${label} view"]`).click(); fixture.detectChanges();
       expect(page.spellView()).toBe(view); expect(page.activeFilterCount()).toBe(0);
-      expect(fixture.nativeElement.querySelector('app-spell-view-switcher h3').textContent).toBe(label);
+      expect(fixture.nativeElement.querySelector('.spell-page-header h2').textContent).toBe('Spellcasting');
+      expect(fixture.nativeElement.querySelector('section[aria-label="Spells"] > h3').textContent).toBe(label);
       page.spellCastingTimes.set(['reaction']); page.searchQuery.set('Reaction'); fixture.detectChanges();
       fixture.nativeElement.querySelector('[aria-label="Clear filters and search"]').click(); fixture.detectChanges();
       expect(page.spellView()).toBe(view); expect(page.activeFilterCount()).toBe(0);
