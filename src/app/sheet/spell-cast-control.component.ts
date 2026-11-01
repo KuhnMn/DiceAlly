@@ -226,6 +226,20 @@ export class SpellCastControlComponent {
     this.feedback.set('');
   }
 
+  private castConfirmation(resource: CastingResource, level: number | null): string {
+    const cast = `Cast ${this.spell().name}`;
+    switch (resource.kind) {
+      case 'slot': return `${cast} at Level ${level}.`;
+      case 'cantrip': return `${cast} as a cantrip.`;
+      case 'ritual': return `${cast} as a ritual.`;
+      case 'use': {
+        const tag = this.trackedSpell()?.spell.uses?.[resource.useIndex!]?.tag;
+        return `${cast} using ${tag ? `${tag} (1 use)` : '1 use'}.`;
+      }
+      case 'resource': return `${cast} using ${this.usageOptions()[0].label} (Cost: ${resource.cost!.amount}).`;
+    }
+  }
+
   async cast() {
     if (!this.canCast()) return;
     const spellKey = this.spellKey(), resourceKey = this.resource()!.key, level = this.level();
@@ -251,6 +265,7 @@ export class SpellCastControlComponent {
       // Confirm against the latest sheet only after the user decides; cancellation spends nothing.
       if (!stillCurrent()) return;
       const data = this.liveSheet()!, resource = this.resource()!;
+      const confirmation = this.castConfirmation(resource, level);
       let next = data;
       if (resource.kind === 'slot') {
         const pool = this.pool()!, slots = data.character!.spellSlots![pool.source]
@@ -266,8 +281,7 @@ export class SpellCastControlComponent {
       }
       if (concentration && track) next = { ...next, character: { ...next.character!, concentrationEffect: this.spell().name } };
       if (next !== data) this.store.setCharacter(next);
-      if (resource.kind === 'ritual') this.feedback.set(`Cast ${this.spell().name} as a ritual.`);
-      else if (resource.kind !== 'cantrip' || concentration) this.feedback.set(`Cast ${this.spell().name}${level === 0 ? '' : ' at Level ' + level}.`);
+      this.feedback.set(confirmation);
     } finally { this.pending.set(false); }
   }
 }

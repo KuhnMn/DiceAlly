@@ -42,6 +42,7 @@ describe('Cast from spell details', () => {
     expect(control.level()).toBe(0);expect(control.canCast()).toBe(true);
     await control.cast();fixture.detectChanges();
     expect(store.characterData()!.resources![0].used).toBe(3);
+    expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toBe('Cast Test Spell using Psionic Energy Dice (Cost: 3).');
     expect(control.resource()?.remaining).toBe(2);
     expect(control.canCast()).toBe(false);
     await control.cast();expect(store.characterData()!.resources![0].used).toBe(3);
@@ -149,13 +150,15 @@ describe('Cast from spell details', () => {
   });
 
   it.each([0, 1])('also warns for an unprepared level %s spell cast using attached Uses', async level => {
-    const entry = spell(level), value = sheet(); entry.listType = 'KNOWN'; entry.uses = [{ totalFreeUses: 2, usedFreeUses: 0 }]; value.spells = [entry];
+    const entry = spell(level), value = sheet(); entry.listType = 'KNOWN'; entry.uses = [{ tag: 'Daily Gift', totalFreeUses: 2, usedFreeUses: 0 }]; value.spells = [entry];
     const { fixture, control, store } = setup(entry, value), dialogs = TestBed.inject(AppDialogService);
     control.setResource('use:0');
     const cancelled = control.cast(); dialogs.finish(false); await cancelled;
     expect(store.characterData()!.spells![0].uses![0].usedFreeUses).toBe(0);
+    expect(control.feedback()).toBe('');
     const accepted = control.cast(); dialogs.finish(true); await accepted;
     expect(store.characterData()!.spells![0].uses![0].usedFreeUses).toBe(1);
+    expect(control.feedback()).toBe('Cast Test Spell using Daily Gift (1 use).');
     expect(store.characterData()!.character!.spellSlots!['Wizard'][0].used).toBe(1);
     fixture.destroy();
   });
@@ -420,7 +423,7 @@ describe('Cast from spell details', () => {
     expect(control.level()).toBe(2); fixture.destroy();
   });
 
-  it('shows a fixed Cantrip cast level beside Cast without spending slots or producing any effect', () => {
+  it('shows a fixed Cantrip cast level beside Cast and confirms casting without changing the character', () => {
     const value = sheet(); value.character!.spellSlots = {};
     const { fixture, control, store } = setup(spell(0), value);
     const before = structuredClone(value);
@@ -433,7 +436,7 @@ describe('Cast from spell details', () => {
     control.setLevel('2'); expect(control.level()).toBe(0);
     fixture.nativeElement.querySelector('button').click(); control.cast(); fixture.detectChanges();
     expect(store.characterData()).toBe(value); expect(store.characterData()).toEqual(before);
-    expect(fixture.nativeElement.querySelector('[role="status"]')).toBeNull(); fixture.destroy();
+    expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toBe('Cast Test Spell as a cantrip.'); fixture.destroy();
   });
 
   it('does not spend slots from a different character or invent a level for an unknown spell', () => {
