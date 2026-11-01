@@ -126,8 +126,16 @@ export class AbilityBonusEditorComponent {
   }
   alreadyChosen(key: SpeciesAbility, position: number) { return this.selection.chosen?.some((chosen, index) => index !== position && chosen === key) ?? false; }
   setPreset(preset: string) {
-    if (preset === 'none') { this.change({ disabled: true }); return; }
     const state = this.sheet().abilityBonuses!;
+    if (preset === 'none') {
+      const hasContent = this.source?.hasContent || !!this.source?.error;
+      delete state.custom[this.sourceId()];
+      delete state.choices[this.sourceId()];
+      // Suppress structured content without modifying the saved library definition.
+      if (hasContent) state.choices[this.sourceId()] = { disabled: true };
+      this.edited.emit();
+      return;
+    }
     if (preset === 'content') delete state.custom[this.sourceId()];
     else if (preset === 'three' || preset === 'two-one') state.custom[this.sourceId()] = [backgroundBonusOptions()[preset === 'three' ? 0 : 1]];
     else state.custom[this.sourceId()] = preset === 'fixed' ? [{ fixed: {}, maximum: 20, hidden: false }] : [asiBonusOptions()[preset === 'two' ? 1 : 0]];

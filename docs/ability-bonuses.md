@@ -39,7 +39,11 @@ Alternatives and chosen abilities must be valid and distinct as required by thei
 definition. A source with an unfinished/invalid choice contributes nothing until
 resolved; other valid sources still work and the character can remain a draft.
 
-Each source can be explicitly disabled with No bonus under Configure Bonus.
+No bonus removes authored bonus definitions and allocations for that source and
+removes it from the Ability Scores bonus list and calculation breakdown. A source
+with structured content retains only an explicit disabled marker so the original
+content cannot immediately reapply; content-free sources retain no bonus entry.
+Re-enabling from the owning feature/background starts a fresh configuration.
 Definition overrides are authored state,
 not edits to cached library content. The source editor offers +2 to one ability,
 +1 to two abilities, or fixed custom changes and a maximum. Every feature can
@@ -63,7 +67,8 @@ deterministic bonus projection, not a full chronological feat-eligibility engine
 
 `AbilityBonusEditorComponent` is shared by Ability Scores, feature rows and the
 background editor. Source names and types appear on standalone Ability Scores
-cards; embedded editors reuse the surrounding feature or background heading.
+list rows with collapsible inline configuration; embedded editors reuse the
+surrounding feature or background heading.
 Feature bonus editing opens from Stat Bonuses in the Uses/Notes toolbar.
 Feature tools open the Bonus Type selector directly in the same panel layout as
 Uses and Notes, without another Configure Bonus disclosure. A compact plus icon

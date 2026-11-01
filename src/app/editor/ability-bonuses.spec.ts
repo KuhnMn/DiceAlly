@@ -81,7 +81,7 @@ describe('Ability bonuses in editor, viewer and saved characters', () => {
     host.editor.setAutomatic(true); await fixture.whenStable();
     const background = fixture.debugElement.queryAll(By.directive(AbilityBonusEditorComponent)).find(entry =>
       entry.componentInstance.sourceId() === backgroundBonusSourceId(host.sheet.background!))!;
-    const selects = background.nativeElement.querySelectorAll('select') as NodeListOf<HTMLSelectElement>;
+    const selects = background.nativeElement.querySelectorAll('[aria-label="Ability allocation"] select') as NodeListOf<HTMLSelectElement>;
     selects[0].value = 'wis'; selects[0].dispatchEvent(new Event('change')); await fixture.whenStable();
     expect(host.sheet.character!.abilityScores!.wisdom).toBe(10);
     expect(selects[1].querySelector<HTMLOptionElement>('option[value="wis"]')!.disabled).toBe(true);
@@ -95,39 +95,48 @@ describe('Ability bonuses in editor, viewer and saved characters', () => {
     fixture.destroy();
   });
 
-  it('disables and re-enables a source through Bonus Type and preserves overrides while disabled', async () => {
+  it('removes a bonus source and its authored values through No bonus, and restores it only from its owner', async () => {
     const fixture = TestBed.createComponent(AbilityTestHost), host = fixture.componentInstance;
-    host.editor.setAutomatic(true);
     const sourceId = featureBonusSourceId(host.sheet.features![0]);
-    host.sheet.abilityBonuses!.choices[sourceId] = { disabled: true };
-    applyAbilityBonuses(host.sheet);
     await fixture.whenStable();
-    const feature = fixture.debugElement.queryAll(By.directive(AbilityBonusEditorComponent)).find(entry =>
-      entry.componentInstance.sourceId() === sourceId)!;
-    const root = feature.nativeElement as HTMLElement;
-    const bonusType = () => root.querySelector<HTMLSelectElement>('details select')!;
-    const selectType = async (value: string) => {
-      bonusType().value = value;
-      bonusType().dispatchEvent(new Event('change'));
-      await fixture.whenStable();
-    };
-    expect(bonusType().value).toBe('none');
-    expect(host.sheet.character!.abilityScores!.strength).toBe(10);
-    await selectType('content');
-    expect(host.sheet.character!.abilityScores!.strength).toBe(12);
-    await selectType('fixed');
-    const strength = root.querySelector<HTMLInputElement>('[aria-label="Fixed ability bonuses"] input')!;
+    const root = fixture.nativeElement as HTMLElement;
+    const row = () => root.querySelector<HTMLDetailsElement>('[aria-label="Strong feat stat bonuses"]');
+    expect(row()!.open).toBe(false);
+    row()!.open = true;
+    expect(row()!.querySelector('app-ability-bonus-editor details')).toBeNull();
+    const type = row()!.querySelector<HTMLSelectElement>('select')!;
+    type.value = 'fixed'; type.dispatchEvent(new Event('change')); await fixture.whenStable();
+    const strength = row()!.querySelector<HTMLInputElement>('[aria-label="Fixed ability bonuses"] input')!;
     strength.value = '3'; strength.dispatchEvent(new Event('input')); await fixture.whenStable();
     expect(host.sheet.character!.abilityScores!.strength).toBe(13);
-    const custom = structuredClone(host.sheet.abilityBonuses!.custom[sourceId]);
-    await selectType('none');
+    type.value = 'none'; type.dispatchEvent(new Event('change')); await fixture.whenStable();
     expect(host.sheet.character!.abilityScores!.strength).toBe(10);
-    expect(host.sheet.abilityBonuses!.custom[sourceId]).toEqual(custom);
-    expect(root.querySelector('[aria-label="Fixed ability bonuses"]')).toBeNull();
-    await selectType('content');
-    expect(host.sheet.abilityBonuses!.choices[sourceId].disabled).toBe(false);
+    expect(row()).toBeNull();
+    expect(host.sheet.abilityBonuses!.custom[sourceId]).toBeUndefined();
+    expect(host.sheet.abilityBonuses!.choices[sourceId]).toEqual({ disabled: true });
+    expect(host.editor.bonusResult.sources.some(result => result.source.id === sourceId)).toBe(false);
+    const restored = JSON.parse(JSON.stringify(host.sheet));
+    applyAbilityBonuses(restored);
+    expect(restored.character.abilityScores.strength).toBe(10);
+    // The feature's own editor remains available when its Ability Scores row is gone.
+    const owner = TestBed.createComponent(AbilityBonusEditorComponent);
+    owner.componentRef.setInput('sheet', host.sheet);
+    owner.componentRef.setInput('sourceId', sourceId);
+    owner.componentRef.setInput('inlineConfiguration', true);
+    owner.componentInstance.edited.subscribe(() => {
+      applyAbilityBonuses(host.sheet);
+      // Two independent fixtures share the document; refresh the other view on edits.
+      fixture.detectChanges();
+    });
+    await owner.whenStable();
+    const ownerType = owner.nativeElement.querySelector('select') as HTMLSelectElement;
+    expect(ownerType.value).toBe('none');
+    ownerType.value = 'content'; ownerType.dispatchEvent(new Event('change')); await owner.whenStable();
+    fixture.changeDetectorRef.markForCheck(); await fixture.whenStable();
     expect(host.sheet.character!.abilityScores!.strength).toBe(12);
-    fixture.destroy();
+    expect(row()).not.toBeNull();
+    expect(host.sheet.abilityBonuses!.custom[sourceId]).toBeUndefined();
+    owner.destroy(); fixture.destroy();
   });
 
   it('opens stat bonuses from the entry tools and closes them when Notes opens', async () => {
@@ -170,6 +179,9 @@ describe('Ability bonuses in editor, viewer and saved characters', () => {
     type.value = 'none'; type.dispatchEvent(new Event('change')); await fixture.whenStable();
     expect(root.querySelector('[aria-label="Ability allocation"]')).toBeNull();
     expect(root.querySelector('p[role="status"]')).toBeNull();
+    const id = backgroundBonusSourceId(sheet.background);
+    expect(sheet.abilityBonuses!.custom[id]).toBeUndefined();
+    expect(sheet.abilityBonuses!.choices[id]).toBeUndefined();
     fixture.destroy();
   });
 

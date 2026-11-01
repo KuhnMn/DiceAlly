@@ -82,6 +82,7 @@ describe('Opt-in ability score bonuses', () => {
     applyAbilityBonuses(value); expect(value.character!.abilityScores!.strength).toBe(12);
     expect(value.abilityBonuses!.choices[id].chosen).toEqual(['str']);
     value.abilityBonuses!.choices[id].disabled = true; applyAbilityBonuses(value); expect(value.character!.abilityScores!.strength).toBe(10);
+    expect(calculateAbilityBonuses(value).sources.some(source => source.source.id === id)).toBe(false);
   });
 
   it('supports ASI presets and explicit custom feature definitions without parsing description prose', () => {

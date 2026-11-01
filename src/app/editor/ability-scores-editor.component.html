@@ -34,7 +34,16 @@
   <section class="editor-card space-y-3" aria-label="Ability bonus sources">
     <h2>Ability Bonuses</h2>
     @for (source of editor.bonusSources; track source.id) {
-      <app-ability-bonus-editor [sheet]="editor.sheet" [sourceId]="source.id" (edited)="editor.changed()" />
+      <details class="group rounded-lg border border-outline-variant bg-surface-container" [attr.aria-label]="source.name + ' stat bonuses'">
+        <summary class="flex min-h-8 cursor-pointer list-none items-center gap-2 px-2 py-1.5 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+          <span class="min-w-0 flex-1 [overflow-wrap:anywhere]">{{ source.name }}</span>
+          <span class="rounded bg-secondary-container px-1.5 py-0.5 text-xs font-normal text-on-secondary-container">{{ source.kind }}</span>
+          <app-ui-icon class="shrink-0 text-primary group-open:rotate-180" name="chevron-down" />
+        </summary>
+        <div class="border-t border-outline-variant p-2">
+          <app-ability-bonus-editor [inlineConfiguration]="true" [showSource]="false" [sheet]="editor.sheet" [sourceId]="source.id" (edited)="editor.changed()" />
+        </div>
+      </details>
     } @empty { <p class="text-sm text-on-surface-variant">No configured bonuses.</p> }
   </section>
 }

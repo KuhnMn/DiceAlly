@@ -110,7 +110,7 @@ export function calculateAbilityBonuses(sheet: ExportedCharacter, includeSpecies
   const state = sheet.abilityBonuses;
   const base = { ...(state?.enabled ? state.base : sheet.character?.abilityScores) };
   const effective = { ...base };
-  const sources = state?.enabled ? abilityBonusSources(sheet, includeSpecies).filter(source => source.options.length || source.error)
+  const sources = state?.enabled ? abilityBonusSources(sheet, includeSpecies).filter(source => !state.choices?.[source.id]?.disabled && (source.options.length || source.error))
     .map(source => resolveAbilityBonus(source, state.choices?.[source.id])) : [];
   const contributions: { sourceId: string; name: string; ability: SpeciesAbility; requested: number; applied: number }[] = [];
   for (const ability of BONUS_ABILITIES) {
