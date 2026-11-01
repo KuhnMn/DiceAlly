@@ -36,7 +36,7 @@ const TRACKER_COLORS: Record<TrackerTone, { accent: string; fill: string; button
         @if (totalCount() > 0) {
           @if (!trackerOnly()) { <div class="mt-1 h-1 overflow-hidden rounded-full" [class]="poolLayout() ? 'hidden sm:block bg-outline-variant' : 'bg-surface-container-low'" role="progressbar" [attr.aria-label]="tag() + ' uses spent'" aria-valuemin="0" [attr.aria-valuemax]="totalCount()" [attr.aria-valuenow]="usedCount()"><div class="h-full transition-[width] duration-300 ease-out motion-reduce:transition-none" [class]="colors().fill" [style.width.%]="progressPercent()"></div></div>
           }
-          @if (totalCount() <= 5) {
+          @if (totalCount() < 5) {
             <div class="flex flex-wrap gap-0">
               @for (index of availableUses(); track index) {
                 <label class="flex min-h-8 cursor-pointer items-center justify-center gap-1" [class.min-w-9]="poolLayout()" [class.min-w-10]="!poolLayout()">

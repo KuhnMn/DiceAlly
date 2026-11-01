@@ -3,13 +3,13 @@ import { TestBed } from '@angular/core/testing';
 import { SpellsPageComponent } from './spells-page.component';
 
 describe('Spell slot display', () => {
-  it('switches from checkboxes to the shared counter at six slots and persists both directions', () => {
+  it.each([5, 6])('uses the shared counter at %i slots and persists both directions', (total) => {
     const fixture=TestBed.createComponent(SpellsPageComponent), store=TestBed.inject(CharacterStore);
-    const sheet={character:{characterUuid:'slots',spellSlots:{Wizard:[{level:1,total:6,used:1}]}}};
+    const sheet={character:{characterUuid:'slots',spellSlots:{Wizard:[{level:1,total,used:1}]}}};
     store.setCharacter(sheet);fixture.componentRef.setInput('characterData',sheet);fixture.detectChanges();
     const tracker=fixture.nativeElement.querySelector('#preparation-spell-slots app-feature-uses');
     expect(tracker.querySelectorAll('input').length).toBe(0);expect(tracker.querySelectorAll('output')).toHaveLength(1);
-    expect(tracker.querySelector('output').textContent).toContain('5 / 6');
+    expect(tracker.querySelector('output').textContent).toContain(`${total - 1} / ${total}`);
     const buttons=[...tracker.querySelectorAll('button')] as HTMLButtonElement[];
     expect(buttons[0].getAttribute('aria-label')).toMatch(/^Restore one/);expect(buttons[1].getAttribute('aria-label')).toMatch(/^Use one/);
     expect(buttons[0].parentElement!.querySelector('output')).toBeNull();

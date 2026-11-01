@@ -46,8 +46,6 @@ export class ResourceSelectComponent {
     return [option.label, option.recovery ? regainLabel(option.recovery) : '', option.balance ? `${option.balance} available` : ''].filter(Boolean).join(' · ');
   }
   optionLabel(option: ResourceSelectOption) {
-    const characters = Array.from(option.label);
-    const name = characters.length > 24 ? characters.slice(0, 23).join('') + '…' : option.label;
-    return [name, option.balance ?? ''].filter(Boolean).join(' · ');
+    return [option.label, option.balance ?? ''].filter(Boolean).join(' · ');
   }
 }

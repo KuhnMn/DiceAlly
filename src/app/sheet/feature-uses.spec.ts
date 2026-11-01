@@ -21,9 +21,9 @@ describe('Use tracker controls', () => {
     return { fixture, changes, component: fixture.componentInstance };
   }
 
-  it('uses checkboxes without a counter for up to five uses', () => {
-    const { fixture, component, changes } = setup(5);
-    expect(fixture.nativeElement.querySelectorAll('input[type="checkbox"]').length).toBe(5);
+  it('uses checkboxes without a counter for up to four uses', () => {
+    const { fixture, component, changes } = setup(4);
+    expect(fixture.nativeElement.querySelectorAll('input[type="checkbox"]').length).toBe(4);
     expect(fixture.nativeElement.querySelector('output')).toBeNull();
     expect(fixture.nativeElement.querySelector('button')).toBeNull();
     fixture.nativeElement.querySelector('input').click(); fixture.detectChanges();
@@ -31,9 +31,9 @@ describe('Use tracker controls', () => {
     expect(changes).toEqual([1]);
   });
 
-  it('switches to a counter at six uses', () => {
-    const { fixture } = setup(6, 2);
-    expect(fixture.nativeElement.querySelector('output').textContent.trim()).toBe('4/6');
+  it('switches to a counter at five uses', () => {
+    const { fixture } = setup(5, 2);
+    expect(fixture.nativeElement.querySelector('output').textContent.trim()).toBe('3/5');
     expect(fixture.nativeElement.querySelector('input')).toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('left');
   });

@@ -9,7 +9,7 @@ import { UiIconComponent } from '../ui-icon.component';
   imports: [UiIconComponent],
   host: { class: 'contents' },
   template: `@for (tag of tags(); track $index) {
-    <span class="inline-flex min-w-0 max-w-full items-center gap-1 rounded bg-secondary-container px-2 py-0.5 text-xs text-on-secondary-container"
+    <span class="inline-flex min-w-0 max-w-full items-center gap-1 rounded-full border border-teal bg-teal-container px-2 py-0.5 text-xs text-on-teal-container"
       [title]="tag.description" [attr.aria-label]="tag.description">
       <app-ui-icon class="shrink-0" name="link" />
       <span class="min-w-0 max-w-48 truncate">{{ tag.name }}</span>
