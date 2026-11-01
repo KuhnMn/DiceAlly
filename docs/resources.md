@@ -16,9 +16,11 @@ placement overrides are retained by the wizard. The editor uses the same blue
 and purple category controls as feature sources.
 
 Features and spells can link pools through the Resources tool beside Uses and
-Notes. Each link defines an explicit positive cost. A feature offers a Use button
-for each linked pool. A spell offers linked pools in Casting Resource alongside
-slots and its existing uses. Pools must be linked to each spell individually,
+Notes. Each link defines an explicit positive cost. A feature shows its linked pool
+and available balance beside one Use button, or a pool selector when several
+resources are linked. Spending uses only the selected pool and its configured
+cost. A spell offers linked pools in Casting Resource alongside slots and its
+existing uses. Pools must be linked to each spell individually,
 with a separate cost for that spell. Legacy source-wide casting settings are ignored.
 Resource casts use the spell's base level; slot upcasting remains unchanged.
 Each selection spends one chosen pool, never both a resource and a spell slot.
