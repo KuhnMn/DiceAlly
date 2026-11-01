@@ -6,6 +6,7 @@ import { preparedVersion, spellIdentity } from '../editor/spell-selection';
 import { regainLabel } from './regain-label';
 import { UiIconComponent } from '../ui-icon.component';
 import { AppDialogService } from '../services/app-dialog.service';
+import { ResourceSelectComponent, ResourceSelectOption } from './resource-select.component';
 
 interface CastingResource {
   key: string;
@@ -31,24 +32,15 @@ interface CastingPool {
 @Component({
   selector: 'app-spell-cast-control',
   host: { class: 'block border-t border-outline-variant pt-3' },
-  imports: [UiIconComponent],
+  imports: [UiIconComponent, ResourceSelectComponent],
   template: `
     <section aria-label="Cast spell" class="space-y-2">
-      <label class="block text-xs font-semibold text-on-surface-variant">Casting Resource
-        <select aria-label="Casting resource" [value]="resource()?.key ?? ''" [disabled]="pending()" (change)="setResource($any($event.target).value)"
-          class="mt-1 min-h-11 w-full min-w-0 rounded-lg border border-outline-variant bg-surface-container px-2 text-base text-on-surface sm:text-sm">
-          @if (!resource()) { <option value="">{{ resources().length ? 'Choose a Resource' : 'No Resources Available' }}</option> }
-          @for (resource of resources(); track resource.key) { <option [value]="resource.key">{{ resource.label }}@if (resource.kind === 'use' || resource.kind === 'resource') { · {{ resource.remaining }} / {{ resource.total }} available }</option> }
-        </select>
-      </label>
+      <app-resource-select label="Casting Resource" ariaLabel="Casting resource" [value]="resource()?.key ?? ''"
+        [options]="resourceOptions()" [disabled]="pending()" (changed)="setResource($event)"
+        [placeholder]="resources().length ? 'Choose a Resource' : 'No Resources Available'" />
       <div class="flex flex-wrap items-end gap-2">
-        <label class="min-w-24 flex-1 text-xs font-semibold text-on-surface-variant">Cast Level
-          <select aria-label="Cast level" [value]="level() ?? ''" [disabled]="pending() || levels().length <= 1" (change)="setLevel($any($event.target).value)"
-            class="mt-1 min-h-11 w-full rounded-lg border border-outline-variant bg-surface-container px-3 text-base text-on-surface disabled:opacity-60 sm:text-sm">
-            @if (level() === null) { <option value="">No Applicable Level</option> }
-            @for (value of levels(); track value) { <option [value]="value">{{ value === 0 ? 'C' : 'Level ' + value }}@if (poolForLevel(value); as pool) { · {{ pool.remaining }} / {{ pool.slot.total }} available }</option> }
-          </select>
-        </label>
+        <app-resource-select class="min-w-24 flex-1" label="Cast Level" ariaLabel="Cast level" [value]="level() === null ? '' : '' + level()"
+          [options]="levelOptions()" [disabled]="pending() || levels().length <= 1" (changed)="setLevel($event)" placeholder="No Applicable Level" />
         @if (requiresConcentration()) {
           <button type="button" (click)="trackConcentration.set(!trackConcentration())" [disabled]="pending()" [attr.aria-pressed]="trackConcentration()" aria-label="Track concentration after casting" [title]="trackConcentration() ? 'Track Concentration After Casting: On' : 'Track Concentration After Casting: Off'"
             class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg border border-outline-variant text-lg disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-primary" [class.bg-tertiary-container]="trackConcentration()" [class.text-on-tertiary-container]="trackConcentration()" [class.text-on-surface-variant]="!trackConcentration()"><app-ui-icon name="head" [filled]="trackConcentration()" /></button>
@@ -162,6 +154,17 @@ export class SpellCastControlComponent {
       ?? resources.find(resource => resource.kind === 'slot' && resource.pools?.[0].source === this.spell().castingSourceName)
       ?? resources.find(resource => resource.kind === 'slot') ?? null;
   };
+  resourceOptions(): ResourceSelectOption[] {
+    return this.resources().map(resource => ({ value: resource.key, label: resource.label,
+      balance: resource.kind === 'use' || resource.kind === 'resource' ? `${resource.remaining}/${resource.total}` : undefined }));
+  }
+  levelOptions(): ResourceSelectOption[] {
+    return this.levels().map(value => {
+      const pool = this.poolForLevel(value);
+      return { value: String(value), label: value === 0 ? 'C' : `Level ${value}`,
+        balance: pool ? `${pool.remaining}/${pool.slot.total}` : undefined };
+    });
+  }
   readonly upcasting = () => this.resource()?.kind === 'slot' && this.level()! > this.baseLevel()!;
   private available() {
     const resource = this.resource();

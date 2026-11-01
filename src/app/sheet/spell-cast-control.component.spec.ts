@@ -35,7 +35,11 @@ describe('Cast from spell details', () => {
     entry.resourceLinks=[{resourceId:'points',amount:3}];
     fixture.componentRef.setInput('spell', { ...entry }); fixture.detectChanges();
     control.setResource('resource:points');expect(control.canCast()).toBe(true);
+    fixture.detectChanges();
+    const resourceControl=fixture.nativeElement.querySelector('[aria-label="Casting resource"]').closest('app-resource-select') as HTMLElement;
+    expect(resourceControl.querySelector('output .tabular-nums')?.textContent).toBe('2/2');
     await control.cast();expect(store.characterData()!.resources![0].used).toBe(3);
+    fixture.detectChanges();expect(resourceControl.querySelector('output .tabular-nums')?.textContent).toBe('1/2');
     expect(store.characterData()!.character!.spellSlots).toEqual(value.character!.spellSlots);
     await control.cast();expect(store.characterData()!.resources![0].used).toBe(6);expect(control.canCast()).toBe(false);
     await control.cast();expect(store.characterData()!.resources![0].used).toBe(6);fixture.destroy();
@@ -314,12 +318,15 @@ describe('Cast from spell details', () => {
   it('defaults to the spell level, spends one slot, disables at zero remaining, and rejects repeated casts before rerender', () => {
     const { fixture, control, store } = setup();
     expect(control.level()).toBe(1); expect(control.levels()).toEqual([1, 2]);
+    const levelControl=fixture.nativeElement.querySelector('[aria-label="Cast level"]').closest('app-resource-select') as HTMLElement;
+    expect(levelControl.querySelector('output .tabular-nums')?.textContent).toBe('1/2');
     fixture.nativeElement.querySelector('button').click();
     expect(store.characterData()!.character!.spellSlots!['Wizard'][0].used).toBe(2);
     control.cast(); expect(store.characterData()!.character!.spellSlots!['Wizard'][0].used).toBe(2);
     fixture.detectChanges(); expect(fixture.nativeElement.querySelector('button').disabled).toBe(true);
+    expect(levelControl.querySelector('output .tabular-nums')?.textContent).toBe('0/2');
     expect(store.characterData()!.character!.spellSlots!['Wizard'][1].used).toBe(0);
-    expect(fixture.nativeElement.textContent).toContain('0 / 2 available');
+    expect(fixture.nativeElement.textContent).toContain('0/2');
     fixture.destroy();
   });
 
