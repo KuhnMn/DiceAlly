@@ -269,7 +269,7 @@ describe('Subclass-granted spell prefill', () => {
     f.state.classes[0].level = 8;
     expect(previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet.spells!.some(spell => spell.name === 'Shield' && spell.uses?.length)).toBe(false);
   });
-  it('imports selected numbers as counters, dice as reminders and preserves manual resource edits', () => {
+  it('imports selected numbers as counters and replaces their selected reminder values', () => {
     const f=fixture(), record=f.index.get(f.state.classes[0].classKey)!;
     record.data['classTableGroups']=[{colLabels:['Psi Dice','Uses'],rows:Array.from({length:20},()=>[{type:'dice',toRoll:[{number:2,faces:6}]},3])}];
     expect(previewClassWizard(f.sheet,f.state,f.revision,f.index).sheet.resources??[]).toEqual([]);
@@ -281,7 +281,7 @@ describe('Subclass-granted spell prefill', () => {
     expect(first.resources!.every(resource=>!resource.casting&&resource.recovery==='NONE')).toBe(true);
     const resource=first.resources![0];resource.note='Personal note';
     const repeated=previewClassWizard(first,first.creatorWizard!,f.revision,f.index).sheet;
-    expect(repeated.resources!.find(entry=>entry.id===resource.id)!.note).toBe('Personal note');
+    expect(repeated.resources!.find(entry=>entry.id===resource.id)!.note).toBe('2d6');
     expect(new Set(repeated.resources!.map(entry=>entry.id)).size).toBe(repeated.resources!.length);
   });
 
@@ -476,6 +476,30 @@ describe('Optional class wizard prefill', () => {
   });
 
   beforeEach(() => { localStorage.removeItem('ally-creator-source-books'); TestBed.configureTestingModule({ providers: [provideRouter([])] }); });
+
+  it('seeds current resource settings once on opening and keeps wizard edits through later level previews', async () => {
+    const f=fixture();
+    f.find('class','Mage').data['classTableGroups']=[{colLabels:['Points'],rows:Array.from({length:20},(_,index)=>[index+1])}];
+    f.state.options['resourceReminders']=true;
+    const column=previewClassWizard(f.sheet,f.state,f.revision,f.index).resourceColumns[0];
+    f.state.resourceImports={[column.id]:{enabled:true,name:'Previous name',recovery:'LONG_REST'}};
+    const sheet=previewClassWizard(f.sheet,f.state,f.revision,f.index).sheet;
+    Object.assign(sheet.resources![0],{name:'Editor name',recovery:'SHORT_REST',total:99,used:2});
+    const cache=new IndexedDbContentCache();
+    await cache.stage({...f.revision,status:'staging'});await cache.put(f.revision.id,f.records);await cache.activate(f.revision);
+    await cache.saveSource('development-local',f.revision.source);
+    const component=TestBed.createComponent(ClassWizardComponent);component.componentRef.setInput('sheet',sheet);
+    component.detectChanges();await component.whenStable();await component.componentInstance.loadContent();
+    const wizard=component.componentInstance;
+    expect(wizard.error()).toBe('');
+    expect(wizard.proposal()!.resourceColumns.map(column=>column.id)).toContain(column.id);
+    expect(wizard.state.resourceImports![column.id]).toMatchObject({name:'Editor name',recovery:'SHORT_REST'});
+    Object.assign(wizard.state.resourceImports![column.id],{name:'Wizard name',recovery:'SHORT_REST_ONE'});
+    wizard.state.classes[0].level=5;wizard.rebuild();wizard.rebuild();
+    expect(wizard.proposal()!.sheet.resources![0]).toMatchObject({name:'Wizard name',recovery:'SHORT_REST_ONE',total:5,used:2});
+    expect(sheet.resources![0]).toMatchObject({name:'Editor name',recovery:'SHORT_REST',total:99});
+    component.destroy();
+  });
 
   it('keeps disabled-section choices out of the open decisions and restores saved answers when enabled again', () => {
     const f = fixture();

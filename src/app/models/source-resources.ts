@@ -1,4 +1,10 @@
 import type { ExportedCharacter } from './character.model';
+export const RESOURCE_RECOVERY_OPTIONS = [
+  { value: 'NONE', label: 'Manual' },
+  { value: 'LONG_REST', label: 'Long Rest' },
+  { value: 'SHORT_REST', label: 'Short Rest' },
+  { value: 'SHORT_REST_ONE', label: 'One on Short Rest' },
+] as const;
 export interface SourceResource {
   id: string;
   sourceId: string;
@@ -76,7 +82,8 @@ export function validateResources(sheet: ExportedCharacter): void {
   if (imports !== undefined && (!imports || typeof imports !== 'object' || Array.isArray(imports)
     || Object.values(imports).some(setting => !setting || typeof setting !== 'object' || Array.isArray(setting)
       || typeof setting.enabled !== 'boolean' || setting.name !== undefined && typeof setting.name !== 'string'
-      || setting.reminderId !== undefined && typeof setting.reminderId !== 'string')))
+      || setting.reminderId !== undefined && typeof setting.reminderId !== 'string'
+      || setting.recovery !== undefined && !RESOURCE_RECOVERY_OPTIONS.some(option => option.value === setting.recovery))))
     throw new Error('Invalid resource import mapping.');
   if (sheet.resources !== undefined && !Array.isArray(sheet.resources))
     throw new Error('Invalid resources.');
@@ -96,7 +103,7 @@ export function validateResources(sheet: ExportedCharacter): void {
       resource.total < 0 ||
       !Number.isSafeInteger(resource.used) ||
       resource.used < 0 ||
-      !['NONE', 'LONG_REST', 'SHORT_REST', 'SHORT_REST_ONE'].includes(resource.recovery) ||
+      !RESOURCE_RECOVERY_OPTIONS.some(option => option.value === resource.recovery) ||
       ['features', 'spells'].some(
         (key) => typeof resource[key as 'features'] !== 'boolean',
       )

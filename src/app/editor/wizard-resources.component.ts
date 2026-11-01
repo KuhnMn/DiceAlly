@@ -2,7 +2,8 @@ import { Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ExportedCharacter } from '../models/character.model';
 import { WizardState } from './wizard-prefill';
-import { resourceImportSetting, ResourceImportSetting, WizardResourceColumn } from './wizard-resources';
+import { resourceImportName, resourceImportSetting, ResourceImportSetting, WizardResourceColumn } from './wizard-resources';
+import { RESOURCE_RECOVERY_OPTIONS } from '../models/source-resources';
 
 @Component({
   selector: 'app-wizard-resources',
@@ -13,7 +14,7 @@ import { resourceImportSetting, ResourceImportSetting, WizardResourceColumn } fr
     <section class="mb-3 space-y-2 rounded-lg border border-outline-variant p-2 text-sm" aria-label="Resource import">
       <label class="flex items-center gap-2 font-semibold"><input type="checkbox" name="wizard-resources-enabled"
         [ngModel]="state().options['resourceReminders'] === true" (ngModelChange)="enabledChanged.emit($event)" />Import Resources</label>
-      <p class="text-xs text-on-surface-variant">Choose which table values to track. Numbers become counters; dice become reminders. Recovery stays manual.</p>
+      <p class="text-xs text-on-surface-variant">Selected resources replace saved definitions or are added again if deleted. Spent uses are preserved.</p>
       @if (state().options['resourceReminders'] === true) {
         @for (column of columns(); track column.id) {
           @let config = setting(column);
@@ -27,11 +28,15 @@ import { resourceImportSetting, ResourceImportSetting, WizardResourceColumn } fr
             <p class="text-[11px] text-on-surface-variant">{{ column.owner }} · {{ column.table }}</p>
             @if (config.enabled && !combined(column)) {
               <div class="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <label><span class="field-label">Name</span><input class="editor-input" [ngModel]="config.name ?? column.name"
+                <label><span class="field-label">Name</span><input class="editor-input" [ngModel]="name(column)"
                   (ngModelChange)="update(column, {name:$event})" [ngModelOptions]="{standalone:true}" /></label>
                 @if (column.kind === 'counter') {
+                  <label><span class="field-label">Recovery</span><select class="editor-input" [ngModel]="config.recovery ?? 'NONE'"
+                    (ngModelChange)="update(column, {recovery:$event})" [ngModelOptions]="{standalone:true}" [attr.aria-label]="'Recovery for ' + column.name">
+                    @for (option of recoveries; track option.value) { <option [value]="option.value">{{ option.label }}</option> }
+                  </select></label>
                   <label><span class="field-label">Combine with Reminder</span><select class="editor-input"
-                    [ngModel]="config.reminderId ?? ''" (ngModelChange)="update(column, {reminderId:$event})" [ngModelOptions]="{standalone:true}">
+                    [ngModel]="config.reminderId ?? ''" (ngModelChange)="update(column, {reminderId:$event})" [ngModelOptions]="{standalone:true}" [attr.aria-label]="'Reminder for ' + column.name">
                     <option value="">No Reminder</option>
                     @for (reminder of reminders(column); track reminder.id) { <option [value]="reminder.id">{{ reminder.name }} · {{ reminder.value }}</option> }
                   </select></label>
@@ -44,12 +49,14 @@ import { resourceImportSetting, ResourceImportSetting, WizardResourceColumn } fr
     </section>`,
 })
 export class WizardResourcesComponent {
+  readonly recoveries = RESOURCE_RECOVERY_OPTIONS;
   readonly sheet = input.required<ExportedCharacter>();
   readonly state = input.required<WizardState>();
   readonly columns = input.required<WizardResourceColumn[]>();
   readonly enabledChanged = output<boolean>();
   readonly edited = output<void>();
   setting(column: WizardResourceColumn) { return resourceImportSetting(this.sheet(), this.state(), column); }
+  name(column: WizardResourceColumn) { return resourceImportName(this.sheet(), this.state(), column, this.columns()); }
   update(column: WizardResourceColumn, patch: Partial<ResourceImportSetting>) {
     (this.state().resourceImports ??= {})[column.id] = { ...this.setting(column), ...patch };
     this.edited.emit();

@@ -1,7 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ExportedCharacter } from '../models/character.model';
-import { SourceResource } from '../models/source-resources';
+import { RESOURCE_RECOVERY_OPTIONS, SourceResource } from '../models/source-resources';
 import { UiIconComponent } from '../ui-icon.component';
 @Component({
   selector: 'app-source-resources-editor',
@@ -108,10 +108,7 @@ import { UiIconComponent } from '../ui-icon.component';
                     (ngModelChange)="change()"
                     [ngModelOptions]="{ standalone: true }"
                   >
-                    <option value="NONE">Manual</option>
-                    <option value="LONG_REST">Long Rest</option>
-                    <option value="SHORT_REST">Short Rest</option>
-                    <option value="SHORT_REST_ONE">One on Short Rest</option>
+                    @for (option of recoveries; track option.value) { <option [value]="option.value">{{ option.label }}</option> }
                   </select></label
                 >
               </div>
@@ -151,6 +148,7 @@ import { UiIconComponent } from '../ui-icon.component';
   </section>`,
 })
 export class SourceResourcesEditorComponent {
+  readonly recoveries = RESOURCE_RECOVERY_OPTIONS;
   readonly sheet = input.required<ExportedCharacter>();
   readonly edited = output<void>();
   newest = '';

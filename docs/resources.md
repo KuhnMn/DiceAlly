@@ -39,12 +39,15 @@ can explicitly select a reminder from the same source to produce one combined
 resource, keeping the counter's stable identity. Names can be authored freely.
 Costs and recovery are never inferred. Mappings persist with the character.
 
-Resource updates compare individual fields against the last generated values.
-A manual name, recovery, placement, reminder or total protects that field while
-untouched fields continue to follow the chosen level. Spent counts and resource
-links are retained. Explicitly editing a mapping's name or reminder association
-applies that choice to those fields while preserving unrelated manual settings.
-Deleted resources stay deleted. Deselected or obsolete pools
-are retained when manually edited, spent or referenced by a feature or spell.
-Older edited resources without field history are kept conservatively on the
-first update; the wizard does not reconstruct their previous values by guessing.
+Opening the wizard prefills each existing resource's current name and recovery
+from the editor, once per column. Later preview rebuilds preserve wizard drafts.
+When combining two columns, a custom counter name wins; otherwise a custom
+reminder name is carried over. An explicitly combined, unused reminder is removed
+even when it was renamed. A reminder converted into an active tracker, or still
+referenced by a feature or spell, remains separate to preserve that play state.
+
+Selected resources are authoritative when applying the wizard: their table
+values, mode, name and chosen recovery replace saved definitions. Selected deleted
+resources are recreated. Spent counts, viewer placement, source assignments and
+feature/spell links are retained for existing counters. Deselected resources are
+not recreated; obsolete pools remain when edited, spent or still referenced.

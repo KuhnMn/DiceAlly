@@ -39,8 +39,32 @@ export function wizardResourceColumns(parent: ContentRecord, subclass: ContentRe
 }
 
 export function resourceImportSetting(sheet: ExportedCharacter, state: WizardState, column: WizardResourceColumn): ResourceImportSetting {
-  return state.resourceImports?.[column.id] ?? { enabled: !!sheet.resources?.some(resource => resource.id === column.id)
-    && !!sheet.creatorWizard?.baseline.some(entry => entry.path[0] === 'resources' && entry.path[1] === column.id) };
+  const existing = sheet.resources?.find(resource => resource.id === column.id);
+  return { enabled: !!existing && !!sheet.creatorWizard?.baseline.some(entry => entry.path[0] === 'resources' && entry.path[1] === column.id),
+    ...(existing ? { name: existing.name, recovery: existing.recovery } : {}), ...state.resourceImports?.[column.id] };
+}
+
+/** Seed once per column when opening the wizard; later rebuilds must retain its drafts. */
+export function seedResourceImports(sheet: ExportedCharacter, state: WizardState, columns: WizardResourceColumn[]): void {
+  for (const column of columns) {
+    const existing = sheet.resources?.find(resource => resource.id === column.id);
+    if (existing) (state.resourceImports ??= {})[column.id] = {
+      ...resourceImportSetting(sheet, state, column), name: existing.name, recovery: existing.recovery,
+    };
+  }
+}
+
+function reminderColumn(sheet: ExportedCharacter, state: WizardState, column: WizardResourceColumn, columns: WizardResourceColumn[]) {
+  return column.kind === 'counter' ? columns.find(candidate => candidate.id === resourceImportSetting(sheet, state, column).reminderId
+    && candidate.kind === 'note' && candidate.sourceId === column.sourceId) : undefined;
+}
+
+export function resourceImportName(sheet: ExportedCharacter, state: WizardState, column: WizardResourceColumn, columns: WizardResourceColumn[]): string {
+  const name = resourceImportSetting(sheet, state, column).name?.trim() || column.name;
+  if (name !== column.name) return name;
+  const reminder = reminderColumn(sheet, state, column, columns);
+  const reminderName = reminder && resourceImportSetting(sheet, state, reminder).name?.trim();
+  return reminder && reminderName && reminderName !== reminder.name ? reminderName : name;
 }
 
 /** Each association is selected explicitly; names never decide ownership, costs or recovery. */
@@ -54,21 +78,19 @@ export function wizardResourceValues(sheet: ExportedCharacter, state: WizardStat
   }));
   return selected.filter(column => !combined.has(column.id)).map(column => {
     const setting = resourceImportSetting(sheet, state, column);
-    const reminder = column.kind === 'counter' ? columns.find(candidate => candidate.id === setting.reminderId
-      && candidate.kind === 'note' && candidate.sourceId === column.sourceId) : undefined;
+    const reminder = reminderColumn(sheet, state, column, columns);
+    const existing = sheet.resources?.find(resource => resource.id === column.id);
+    const previousReminder = sheet.resources?.find(resource => resource.id === reminder?.id);
     const resource: SourceResource = {
-      id: column.id, sourceId: column.sourceId, name: setting.name?.trim() || column.name,
+      id: column.id, sourceId: existing?.sourceId ?? column.sourceId, name: resourceImportName(sheet, state, column, columns),
       mode: column.kind === 'counter' ? reminder ? 'both' : 'counter' : 'note',
       note: String(reminder?.value ?? (column.kind === 'note' ? column.value : '')),
-      total: column.kind === 'counter' ? Number(column.value) : 0, used: 0, recovery: 'NONE', features: true, spells: false,
+      total: column.kind === 'counter' ? Number(column.value) : 0, used: 0,
+      recovery: setting.recovery ?? 'NONE',
+      features: existing?.features ?? previousReminder?.features ?? true,
+      spells: existing?.spells ?? previousReminder?.spells ?? false,
     };
-    // Editing the mapping is explicit intent for those fields, rather than a library update.
-    const previous = sheet.creatorWizard?.resourceImports?.[column.id];
-    const overwriteFields = [
-      ...(setting.name !== undefined && setting.name !== previous?.name ? ['name'] : []),
-      ...(setting.reminderId !== undefined && setting.reminderId !== previous?.reminderId
-        && (!setting.reminderId || reminder) ? ['mode', 'note'] : []),
-    ];
-    return { path: ['resources', resource.id], scope: 'resourceReminders', label: `${column.owner}: ${resource.name}`, value: resource, overwriteFields };
+    return { path: ['resources', resource.id], scope: 'resourceReminders', label: `${column.owner}: ${resource.name}`, value: resource,
+      combinedResourceId: reminder?.id };
   });
 }

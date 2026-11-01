@@ -5,7 +5,7 @@ import { emptyBasicCharacter } from './basic-info';
 
 export type WizardState = NonNullable<ExportedCharacter['creatorWizard']>;
 export type WizardClass = WizardState['classes'][number];
-export interface PrefillValue { path: string[]; value: unknown; scope: string; label: string; origin?: string; overwriteFields?: string[]; }
+export interface PrefillValue { path: string[]; value: unknown; scope: string; label: string; origin?: string; combinedResourceId?: string; }
 export type PrefillKeepReason = 'existing' | 'edited' | 'removed' | 'protected' | 'matching' | 'annotations' | 'linked';
 export interface PrefillChange { path: string[]; label: string; action: 'Fill' | 'Update' | 'Remove' | 'Keep'; keepReason?: PrefillKeepReason; }
 
@@ -106,7 +106,7 @@ function hasAnnotations(value: unknown): boolean {
   return !!((value as { used?: number } | undefined)?.used || entry?.notes?.length || entry?.resourceLinks?.length || entry?.uses?.some(use => (use.usedFreeUses ?? 0) > 0));
 }
 
-/** Detached, repeatable prefill. Manual changes and removals become protected values. */
+/** Detached, repeatable prefill. Selected resources replace definitions; other manual edits stay protected. */
 export function mergeWizardPrefill(original: ExportedCharacter, state: WizardState, values: PrefillValue[], overrideSections: readonly string[] = []) {
   const sheet = structuredClone(original);
   const bookkeeping = readWizardBookkeeping(original.creatorWizard ?? {});
@@ -121,7 +121,8 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
   const desired = new Map(values.filter(entry => enabled(entry.scope)).map(entry => [JSON.stringify(entry.path), entry]));
   for (const [key, entry] of desired) {
     // Shared source definitions are owned by features/spells, never by an unrelated section.
-    const overrideManualEdits = overrideSections.includes(entry.scope);
+    const overrideManualEdits = overrideSections.includes(entry.scope)
+      || entry.path[0] === 'resources' && entry.scope === 'resourceReminders';
     let current = readWizardValue(sheet, entry.path);
     const matches = collisions(sheet, entry);
     const replacement = overrideManualEdits && current === undefined && matches.length === 1 ? matches[0] : undefined;
@@ -131,27 +132,6 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
     const excludesAnnotations = ['features', 'spells', 'species'].includes(entry.path[0]);
     const manuallyChanged = old ? wizardFingerprint(current, excludesAnnotations) !== (old.editFingerprint ?? old.fingerprint)
       : current !== undefined && !same(current, readWizardValue(defaults, entry.path));
-    if (entry.path[0] === 'resources' && current && typeof current === 'object' && old
-      && (old.fieldFingerprints || entry.overwriteFields?.length) && !overrideManualEdits) {
-      const existing = current as MutableObject;
-      const proposed: MutableObject = { ...structuredClone(entry.value as MutableObject), used: existing['used'] };
-      let keptFields = false;
-      for (const field of Object.keys(proposed)) {
-        if (field === 'used') continue;
-        const modified = old.fieldFingerprints
-          ? wizardFingerprint(existing[field]) !== (old.fieldFingerprints[field] ?? wizardFingerprint(undefined))
-          : manuallyChanged || protectedKeys.has(key);
-        if (modified && !entry.overwriteFields?.includes(field)) {
-          proposed[field] = structuredClone(existing[field]); keptFields = true;
-        }
-      }
-      write(sheet, entry.path, proposed);
-      protectedKeys.delete(key);
-      if (!same(current, proposed)) changes.push({ path: entry.path, label: entry.label, action: 'Update' });
-      else if (keptFields) changes.push({ path: entry.path, label: entry.label, action: 'Keep', keepReason: 'edited' });
-      baseline[key] = createWizardBaseline(entry);
-      continue;
-    }
     if ((!overrideManualEdits && (protectedKeys.has(key) || manuallyChanged || matches.length > 0))
       || matches.length > (replacement ? 1 : 0)) {
       const keepReason: PrefillKeepReason = matches.length ? 'matching'
@@ -191,6 +171,19 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
       write(sheet, entry.path, proposed);
     }
     baseline[key] = createWizardBaseline({ path: [...entry.path], value: entry.value, scope: entry.scope, label: entry.label });
+  }
+  // Combining a reminder explicitly replaces it with the counter's definition and name.
+  // A recorded counter or referenced pool remains separate to preserve play state.
+  for (const entry of desired.values()) {
+    if (entry.path[0] !== 'resources' || !entry.combinedResourceId || entry.combinedResourceId === entry.path[1]) continue;
+    if (!sheet.resources?.some(resource => resource.id === entry.path[1])) continue;
+    const reminder = sheet.resources.find(resource => resource.id === entry.combinedResourceId);
+    if (!reminder || reminder.mode !== 'note' || reminder.used > 0
+      || [...(sheet.features ?? []), ...(sheet.spells ?? [])].some(resource => resource.resourceLinks?.some(link => link.resourceId === reminder.id))) continue;
+    sheet.resources = sheet.resources.filter(resource => resource.id !== reminder.id);
+    const path = ['resources', reminder.id], key = JSON.stringify(path);
+    delete baseline[key]; protectedKeys.delete(key);
+    changes.push({path, label: reminder.name, action: 'Remove'});
   }
   // Remove untouched obsolete entries first; retain annotated entries and their sources.
   const obsolete = Object.entries(previous).filter(([key, entry]) => !desired.has(key) && enabled(entry.scope))

@@ -1,7 +1,7 @@
 import { mapContent } from '../content/content-adapter';
 import { emptyBasicCharacter } from './basic-info';
 import { mergeWizardPrefill, WizardState } from './wizard-prefill';
-import { wizardResourceColumns, wizardResourceValues } from './wizard-resources';
+import { seedResourceImports, wizardResourceColumns, wizardResourceValues } from './wizard-resources';
 import { SourceResource } from '../models/source-resources';
 import { portableCharacter } from '../characters/portable-character';
 import { readWizardBookkeeping } from './wizard-bookkeeping';
@@ -47,23 +47,56 @@ describe('Explicit resource imports',()=>{
     next.state.resourceImports![resource.id].reminderId=next.columns.find(column=>column.name==='Cantrips Known')!.id;
     expect((wizardResourceValues(next.sheet,next.state,next.columns).find(entry=>entry.path[1]===resource.id)!.value as SourceResource).mode).toBe('counter');
   });
-  it('updates untouched fields after manual renaming, recovery and placement changes while preserving spent uses and links',()=>{
+  it('inherits either custom name when combining and removes the replaced reminder even if renamed',()=>{
+    for (const custom of ['Number','Die Size']) {
+      const f=fixture();
+      f.state.resourceImports=Object.fromEntries(f.columns.filter(column=>column.sourceId==='soulknife-source').map(column=>[column.id,{enabled:true}]));
+      const first=mergeWizardPrefill(f.sheet,f.state,wizardResourceValues(f.sheet,f.state,f.columns)).sheet;
+      const column=f.columns.find(column=>column.name===custom)!;
+      first.resources!.find(resource=>resource.id===column.id)!.name='Psionic Energy Dice';
+      const state=structuredClone(first.creatorWizard!);
+      seedResourceImports(first,state,f.columns);
+      const count=f.columns.find(column=>column.name==='Number')!, die=f.columns.find(column=>column.name==='Die Size')!;
+      state.resourceImports![count.id].reminderId=die.id;
+      const result=mergeWizardPrefill(first,state,wizardResourceValues(first,state,f.columns)).sheet;
+      expect(result.resources).toEqual([expect.objectContaining({id:count.id,name:'Psionic Energy Dice',mode:'both',total:4,note:'D6'})]);
+    }
+  });
+  it('prefers the counter name if both resources have custom names and preserves an active reminder tracker',()=>{
+    const f=fixture();
+    f.state.resourceImports=Object.fromEntries(f.columns.filter(column=>column.sourceId==='soulknife-source').map(column=>[column.id,{enabled:true}]));
+    const first=mergeWizardPrefill(f.sheet,f.state,wizardResourceValues(f.sheet,f.state,f.columns)).sheet;
+    const count=f.columns.find(column=>column.name==='Number')!, die=f.columns.find(column=>column.name==='Die Size')!;
+    Object.assign(first.resources!.find(resource=>resource.id===count.id)!,{name:'Counter name'});
+    Object.assign(first.resources!.find(resource=>resource.id===die.id)!,{name:'Reminder name',mode:'both',total:4,used:1});
+    const state=structuredClone(first.creatorWizard!);seedResourceImports(first,state,f.columns);
+    state.resourceImports![count.id].reminderId=die.id;
+    const result=mergeWizardPrefill(first,state,wizardResourceValues(first,state,f.columns)).sheet;
+    expect(result.resources!.find(resource=>resource.id===count.id)!.name).toBe('Counter name');
+    expect(result.resources!.find(resource=>resource.id===die.id)!.used).toBe(1);
+  });
+  it('prefills editor settings and replaces selected definitions while preserving spent uses and links',()=>{
     const f=fixture(), first=mergeWizardPrefill(f.sheet,f.state,combined(f)).sheet;
     Object.assign(first.resources![0],{name:'My Psi Dice',recovery:'SHORT_REST',features:false,spells:true,used:2});
     first.features=[{name:'Blade',resourceLinks:[{resourceId:first.resources![0].id,amount:1}]}];
     const next=fixture(5);combined(next);
-    const result=mergeWizardPrefill(first,first.creatorWizard!,wizardResourceValues(first,next.state,next.columns)).sheet;
+    seedResourceImports(first,next.state,next.columns);
+    const result=mergeWizardPrefill(first,next.state,wizardResourceValues(first,next.state,next.columns)).sheet;
     expect(result.resources![0]).toMatchObject({name:'My Psi Dice',recovery:'SHORT_REST',features:false,spells:true,used:2,total:6,note:'D8'});
     expect(result.features).toEqual(first.features);
     result.resources![0].total=9;
     const advanced=fixture(11);combined(advanced);
-    expect(mergeWizardPrefill(result,result.creatorWizard!,wizardResourceValues(result,advanced.state,advanced.columns)).sheet.resources![0].total).toBe(9);
+    seedResourceImports(result,advanced.state,advanced.columns);
+    expect(mergeWizardPrefill(result,advanced.state,wizardResourceValues(result,advanced.state,advanced.columns)).sheet.resources![0].total).toBe(6);
   });
-  it('preserves removed resources and keeps referenced pools when their import is deselected',()=>{
+  it('restores selected resources after deletion and keeps referenced pools when their import is deselected',()=>{
     const f=fixture(), values=combined(f);
     const first=mergeWizardPrefill(f.sheet,f.state,values).sheet;
     const removed=structuredClone(first);removed.resources=[];
-    expect(mergeWizardPrefill(removed,removed.creatorWizard!,values).sheet.resources).toEqual([]);
+    expect(mergeWizardPrefill(removed,removed.creatorWizard!,values).sheet.resources).toEqual(first.resources);
+    const disabled=structuredClone(removed.creatorWizard!);
+    Object.values(disabled.resourceImports!).forEach(setting=>setting.enabled=false);
+    expect(mergeWizardPrefill(removed,disabled,wizardResourceValues(removed,disabled,f.columns)).sheet.resources).toEqual([]);
     first.spells=[{name:'Spell',resourceLinks:[{resourceId:first.resources![0].id,amount:1}]}];
     expect(mergeWizardPrefill(first,first.creatorWizard!,[]).sheet.resources).toEqual(first.resources);
   });
@@ -76,19 +109,26 @@ describe('Explicit resource imports',()=>{
     const result=mergeWizardPrefill(first,state,wizardResourceValues(first,state,f.columns)).sheet.resources![0];
     expect(result).toMatchObject({name:'New chosen name',mode:'counter',note:'',recovery:'LONG_REST',total:4,used:2});
   });
-  it('round-trips mappings and field history and handles old edited history conservatively',()=>{
-    const f=fixture(), first=mergeWizardPrefill(f.sheet,f.state,combined(f)).sheet;
+  it('round-trips mappings and replaces selected resources with old history too',()=>{
+    const f=fixture();combined(f);
+    const count=f.columns.find(column=>column.kind==='counter' && column.name==='Number')!;
+    f.state.resourceImports![count.id].recovery='SHORT_REST';
+    const first=mergeWizardPrefill(f.sheet,f.state,wizardResourceValues(f.sheet,f.state,f.columns)).sheet;
     const restored=portableCharacter(JSON.parse(JSON.stringify(first)));
     expect(restored.creatorWizard!.resourceImports).toEqual(f.state.resourceImports);
     expect(readWizardBookkeeping(restored.creatorWizard!).baseline).toEqual(first.creatorWizard!.baseline);
     const invalid = structuredClone(restored);
     Object.assign(Object.values(invalid.creatorWizard!.resourceImports!)[0], {enabled:'yes'});
     expect(()=>portableCharacter(invalid)).toThrow('Invalid resource import mapping');
+    const invalidRecovery=structuredClone(restored);
+    invalidRecovery.creatorWizard!.resourceImports![count.id].recovery='UNSUPPORTED';
+    expect(()=>portableCharacter(invalidRecovery)).toThrow('Invalid resource import mapping');
     delete first.creatorWizard!.baseline[0].fieldFingerprints;
     first.resources![0].name='Legacy custom name';
     const next=fixture(5);combined(next);
-    const result=mergeWizardPrefill(first,first.creatorWizard!,wizardResourceValues(first,next.state,next.columns)).sheet;
-    expect(result.resources![0]).toEqual(first.resources![0]);
+    seedResourceImports(first,next.state,next.columns);
+    const result=mergeWizardPrefill(first,next.state,wizardResourceValues(first,next.state,next.columns)).sheet;
+    expect(result.resources![0]).toMatchObject({name:'Legacy custom name',total:6,note:'D8'});
     expect(result.creatorWizard!.baseline[0].fieldFingerprints).toBeDefined();
   });
 });

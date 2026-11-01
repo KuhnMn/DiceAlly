@@ -23,6 +23,7 @@ import { validateBasicInfo } from './basic-info';
 import { SearchableSelectComponent, SelectOption } from './searchable-select.component';
 import { activeContentRevision } from './active-content-revision';
 import { WizardResourcesComponent } from './wizard-resources.component';
+import { seedResourceImports } from './wizard-resources';
 
 @Component({
   selector: 'app-class-wizard',
@@ -86,6 +87,7 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
   savedRevisionAvailable = false;
   private destroyed = false;
   private seededFromSheet = false;
+  private readonly seededResourceImports = new Set<string>();
 
   constructor() {
     effect(() => {
@@ -215,8 +217,18 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
   }
   rebuild() {
     const revision = this.revision(); if (!revision) return;
-    try { this.proposal.set(previewClassWizard(this.sheet(), this.state, revision, this.records, this.sourceBooks.selected(), this.overrideSections,
-      record => this.sourceBooks.isVisible(record))); this.error.set(''); }
+    try {
+      const preview = () => previewClassWizard(this.sheet(), this.state, revision, this.records, this.sourceBooks.selected(), this.overrideSections,
+        record => this.sourceBooks.isVisible(record));
+      let proposal = preview();
+      const unseeded = proposal.resourceColumns.filter(column => !this.seededResourceImports.has(column.id));
+      if (unseeded.length) {
+        seedResourceImports(this.sheet(), this.state, unseeded);
+        unseeded.forEach(column => this.seededResourceImports.add(column.id));
+        proposal = preview();
+      }
+      this.proposal.set(proposal); this.error.set('');
+    }
     catch (error) { this.proposal.set(null); this.error.set(error instanceof Error ? error.message : String(error)); }
   }
   choiceComplete(choice: WizardChoice) {

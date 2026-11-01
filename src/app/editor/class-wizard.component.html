@@ -119,7 +119,9 @@
         </details>
       }
       <div class="mb-3 rounded-lg border border-outline-variant p-2.5 text-xs">
-        <p>{{ overrideSections.length ? 'Manual values will be replaced only in sections marked Override Edits. Notes and used counters are preserved.' : 'Manual changes, notes and used counters are preserved.' }} @if (keptEntries()) { <strong>{{ keptEntries() }} {{ keptEntries() === 1 ? 'entry' : 'entries' }} kept.</strong> }</p>
+        <p>@if (state.options['resourceReminders'] === true) { Selected resources use the settings chosen in this wizard. }
+          {{ overrideSections.length ? 'Sections marked Override Edits replace manual values.' : 'Other manual values are preserved.' }}
+          Notes and used counters are preserved. @if (keptEntries()) { <strong>{{ keptEntries() }} {{ keptEntries() === 1 ? 'entry' : 'entries' }} kept.</strong> }</p>
         <button type="button" class="mt-1 inline-flex min-h-8 items-center gap-1 text-primary underline" (click)="goToStage(1)">Adjust Prefill Sections <app-ui-icon name="left" /></button>
       </div>
       @if (proposal()?.unresolved?.length || proposal()?.warnings?.length) {
