@@ -50,14 +50,15 @@ import { ResourceCost } from '../models/source-resources';
         </button>
       </div>
     }
-    <button
-      type="button"
-      class="secondary-button compact-button"
-      [disabled]="!pools.length"
-      (click)="add()"
-    >
-      <app-ui-icon name="link" /> Link Resource
-    </button>
+    @if (availablePool) {
+      <button
+        type="button"
+        class="secondary-button compact-button"
+        (click)="add()"
+      >
+        <app-ui-icon name="link" /> Link Resource
+      </button>
+    }
     @if (!pools.length) {
       <p class="text-xs text-on-surface-variant">
         Add a resource with uses under Feature (Re-)Sources first.
@@ -71,6 +72,9 @@ export class ResourceLinksEditorComponent {
   readonly edited = output<void>();
   get pools() {
     return (this.sheet().resources ?? []).filter((resource) => resource.mode !== 'note');
+  }
+  get availablePool() {
+    return this.pools.find(resource => !this.linked(resource.id));
   }
   has(id: string) {
     return this.pools.some((resource) => resource.id === id);
@@ -87,7 +91,7 @@ export class ResourceLinksEditorComponent {
     );
   }
   add() {
-    const pool = this.pools.find((resource) => !this.linked(resource.id));
+    const pool = this.availablePool;
     if (pool) {
       (this.entry().resourceLinks ??= []).push({ resourceId: pool.id, amount: 1 });
       this.edited.emit();

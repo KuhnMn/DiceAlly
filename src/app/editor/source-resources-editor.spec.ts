@@ -71,6 +71,35 @@ describe('Resource editing and tracking', () => {
     expect(sheet.features[0].resourceLinks).toEqual([]);
     fixture.destroy();
   });
+  it('hides the add-link button when every counted resource is linked and restores it after unlinking', () => {
+    const sheet = emptyBasicCharacter();
+    sheet.resources = [
+      { id: 'one', sourceId: 'source', name: 'One', mode: 'counter', total: 2, used: 0, note: '', recovery: 'NONE', features: true, spells: true },
+      { id: 'two', sourceId: 'source', name: 'Two', mode: 'both', total: 3, used: 0, note: 'D6', recovery: 'NONE', features: true, spells: true },
+      { id: 'note', sourceId: 'source', name: 'Reminder', mode: 'note', total: 0, used: 0, note: 'D8', recovery: 'NONE', features: true, spells: true },
+    ];
+    const entry = { resourceLinks: [{ resourceId: 'removed', amount: 2 }] };
+    const fixture = TestBed.createComponent(ResourceLinksEditorComponent);
+    fixture.componentRef.setInput('sheet', sheet); fixture.componentRef.setInput('entry', entry); fixture.detectChanges();
+    const add = () => [...fixture.nativeElement.querySelectorAll('button')].find(button => (button as HTMLButtonElement).textContent?.includes('Link Resource')) as HTMLButtonElement | undefined;
+    add()!.click(); fixture.detectChanges();
+    expect(entry.resourceLinks.map(link => link.resourceId)).toEqual(['removed', 'one']);
+    expect(add()).toBeDefined();
+    add()!.click(); fixture.detectChanges();
+    expect(entry.resourceLinks.map(link => link.resourceId)).toEqual(['removed', 'one', 'two']);
+    expect(add()).toBeUndefined();
+    fixture.componentInstance.add();
+    expect(entry.resourceLinks).toHaveLength(3);
+    (fixture.nativeElement.querySelectorAll('button[aria-label="Remove resource link"]')[1] as HTMLButtonElement).click(); fixture.detectChanges();
+    expect(add()).toBeDefined();
+    add()!.click(); fixture.detectChanges();
+    expect(entry.resourceLinks.map(link => link.resourceId)).toEqual(['removed', 'two', 'one']);
+    expect(add()).toBeUndefined();
+    fixture.componentRef.setInput('sheet', { ...sheet, resources: [sheet.resources[2]] }); fixture.detectChanges();
+    expect(add()).toBeUndefined();
+    expect(fixture.nativeElement.textContent).toContain('Add a resource with uses');
+    fixture.destroy();
+  });
   it('links a specific cost and spends from the same pool, refusing further use when exhausted', () => {
     const sheet = emptyBasicCharacter();
     sheet.character!.featureSources = [{ editorId: 'source', name: 'Fighter' }];
