@@ -71,6 +71,8 @@ export function deriveProficiencyGrants(selections: ContentClassSelection[], ind
         const selection = entry as ExplicitProficiencyChoice | { fromFilter: string; count?: number };
         if (!('from' in selection)) { diagnostics.push(`Proficiency choice handler required: ${path}`); continue; }
         choice(selection.from, selection.count ?? 1, kind, origin, path);
+      } else if (field === 'all' && kind === 'weapon' && entry && typeof entry === 'object' && 'fromFilter' in entry && typeof entry.fromFilter === 'string') {
+        add(kind, `All weapons matching ${entry.fromFilter}`, origin);
       } else if (isPool(field, kind)) {
         const builtin = kind === 'skill' && field === 'any' ? Object.keys(SKILL_ABILITIES)
           : kind === 'tool' ? toolCatalog[field] : undefined;

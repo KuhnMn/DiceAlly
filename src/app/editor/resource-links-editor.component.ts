@@ -89,7 +89,7 @@ export class ResourceLinksEditorComponent {
   add() {
     const pool = this.pools.find((resource) => !this.linked(resource.id));
     if (pool) {
-      (this.entry().resourceLinks ??= []).push({ resourceId: pool.id, amount: pool.defaultCost });
+      (this.entry().resourceLinks ??= []).push({ resourceId: pool.id, amount: 1 });
       this.edited.emit();
     }
   }

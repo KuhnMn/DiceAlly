@@ -32,6 +32,19 @@ describe('General proficiency choice pools', () => {
     const description = fixture(undefined,undefined,['Choose one musical instrument']); expect(deriveProficiencyGrants(description.selections,description.index).canAccept).toBe(false);
     const alternatives = fixture(undefined,[{ common: true },{ elvish: true }]); expect(deriveProficiencyGrants(alternatives.selections,alternatives.index,{},'species').canAccept).toBe(false);
   });
+  it('preserves all-filter weapon grants but keeps filtered choices unresolved', () => {
+    const f = fixture(undefined);
+    const record = [...f.index.records.values()].find(record => record.kind === 'class')!;
+    const filter = 'type=martial weapon|property=light;finesse';
+    record.data['startingProficiencies'] = { weaponProficiencies: [{ all: { fromFilter: filter } }] };
+    const fixed = deriveProficiencyGrants(f.selections, f.index);
+    expect(fixed.canAccept).toBe(true);
+    expect(fixed.generated.map(entry => entry.target)).toEqual([`All weapons matching ${filter}`]);
+    record.data['startingProficiencies'] = { weaponProficiencies: [{ choose: { fromFilter: filter, count: 1 } }] };
+    const choice = deriveProficiencyGrants(f.selections, f.index);
+    expect(choice.canAccept).toBe(false);
+    expect(choice.generated).toEqual([]);
+  });
   it('requires exactly one package and grants only that alternative, preserving manual contributions', () => {
     const f = fixture(undefined,[{ common: true },{ elvish: true }]);
     const pending = deriveProficiencyGrants(f.selections,f.index,{},'species'); const pkg = pending.packages[0];

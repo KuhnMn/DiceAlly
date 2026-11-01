@@ -17,6 +17,7 @@ import { CombatResource, combatLinksForResource } from './combat-actions';
           <span class="relative z-10 inline-flex shrink-0 items-center gap-1.5 text-[11px] text-on-surface-variant" (click)="detailsRequested.emit()">
             @if (usesCount()) { <span role="img" [attr.aria-label]="usesCount() + ' use trackers'" [title]="usesCount() + ' use trackers'" class="inline-flex items-center gap-0.5"><app-ui-icon name="tally" />{{ usesCount() }}</span> }
             @if (notesCount()) { <span role="img" [attr.aria-label]="notesCount() + ' note groups'" [title]="notesCount() + ' note groups'" class="inline-flex items-center gap-0.5"><app-ui-icon name="file" />{{ notesCount() }}</span> }
+            @if (resourceLinksCount()) { <span role="img" [attr.aria-label]="'Linked resources: ' + resourceLinksCount()" [title]="'Linked resources: ' + resourceLinksCount()" class="inline-flex items-center gap-0.5 text-primary"><app-ui-icon name="link" />{{ resourceLinksCount() }}</span> }
             <ng-content select="[entry-indicator]" />
             @if (combatCount()) { <span role="img" [attr.aria-label]="combatCount() + ' Combat entries'" [title]="combatCount() + ' Combat entries'" class="inline-flex items-center gap-0.5 text-primary"><app-ui-icon name="swords" />{{ combatCount() }}</span> }
           </span>
@@ -48,6 +49,7 @@ export class EditorEntryRowComponent {
   readonly expanded = input(false);
   readonly notesCount = input(0);
   readonly usesCount = input(0);
+  readonly resourceLinksCount = input(0);
   readonly sheet = input<ExportedCharacter>();
   readonly resource = input<CombatResource>();
   private readonly combatIndex = inject(EditorCombatIndex, { optional: true });

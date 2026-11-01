@@ -35,16 +35,16 @@ describe('Source resources', () => {
       spendResource({ resources: [pool({ mode: 'note' })] }, { resourceId: 'psi', amount: 1 }),
     ).toBeNull();
   });
-  it('offers only explicitly enabled source pools and lets an entry override its cost', () => {
+  it('offers only explicitly linked pools and ignores legacy source casting defaults', () => {
     const sheet: ExportedCharacter = {
       character: { featureSources: [{ editorId: 'source', name: 'Wizard' }] },
       resources: [pool(), pool({ id: 'hint', mode: 'note' })],
     };
-    expect(resourceCosts(sheet, [], 'Wizard')).toEqual([{ resourceId: 'psi', amount: 2 }]);
-    expect(resourceCosts(sheet, [{ resourceId: 'psi', amount: 3 }], 'Wizard')).toEqual([
+    expect(resourceCosts(sheet)).toEqual([]);
+    expect(resourceCosts(sheet, [{ resourceId: 'psi', amount: 3 }])).toEqual([
       { resourceId: 'psi', amount: 3 },
     ]);
-    expect(resourceCosts(sheet, [], 'Other')).toEqual([]);
+    expect(resourceCosts(sheet, [{ resourceId: 'hint', amount: 1 }, { resourceId: 'missing', amount: 1 }])).toEqual([]);
   });
   it('respects explicit rest conditions and leaves reminders and manual pools untouched', () => {
     const sheet: ExportedCharacter = {

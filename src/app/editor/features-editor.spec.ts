@@ -47,9 +47,10 @@ async function catalog() {
 describe('Feature editor', () => {
   beforeEach(() => TestBed.configureTestingModule({ imports: [FeaturesEditorComponent], providers: [provideRouter([])] }));
 
-  it('shows configured bonuses beside the feature name and removes the indicator when disabled', async () => {
+  it('shows bonus and resource indicators beside the feature name and removes them when cleared', async () => {
     const fixture = TestBed.createComponent(FeaturesEditorComponent), sheet = featureSheet();
     sheet.features = [{ editorId: 'strong', name: 'Strong feat', featureType: 'FEAT', source: 'TEST', featureSourceName: 'General',
+      resourceLinks: [{ resourceId: 'pool', amount: 1 }],
       featEntity: { name: 'Strong feat', source: 'TEST', entries: [], ability: [{ str: 2 }] } }];
     fixture.componentRef.setInput('sheet', sheet);
     fixture.componentInstance.setType('FEAT'); await fixture.whenStable();
@@ -59,6 +60,7 @@ describe('Feature editor', () => {
     const name = row.querySelector('p[title="Strong feat"]')!;
     expect(name.parentElement!.querySelector('[role="img"][aria-label^="Stat bonuses:"]')).toBe(indicator);
     expect(row.textContent).not.toContain('+2 STR');
+    expect(name.parentElement!.querySelector('[aria-label="Linked resources: 1"]')).not.toBeNull();
     indicator.click(); await fixture.whenStable();
     const bonusButton = [...row.querySelectorAll<HTMLButtonElement>('[aria-label="Entry tools"] button')]
       .find(button => button.textContent!.includes('Stat Bonuses'))!;
@@ -66,6 +68,9 @@ describe('Feature editor', () => {
     const type = row.querySelector<HTMLSelectElement>('[aria-label="Stat bonuses editor"] select')!;
     type.value = 'none'; type.dispatchEvent(new Event('change')); await fixture.whenStable();
     expect(row.querySelector('[role="img"][aria-label^="Stat bonuses:"]')).toBeNull();
+    sheet.features![0].resourceLinks = [];
+    fixture.changeDetectorRef.markForCheck(); fixture.detectChanges();
+    expect(row.querySelector('[aria-label^="Linked resources:"]')).toBeNull();
     fixture.destroy();
   });
 

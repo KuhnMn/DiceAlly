@@ -143,7 +143,7 @@ export class SpellCastControlComponent {
   readonly resources = (): CastingResource[] => [
     ...(this.baseLevel() === 0 ? [{ key: 'cantrip', kind: 'cantrip' as const, label: 'Cantrip · No Resource', remaining: 1, total: 1 }] : []),
     ...this.slotResources(),
-    ...resourceCosts(this.liveSheet() ?? {}, (this.trackedSpell()?.spell ?? this.spell()).resourceLinks, (this.trackedSpell()?.spell ?? this.spell()).castingSourceName).map(cost => {
+    ...resourceCosts(this.liveSheet() ?? {}, (this.trackedSpell()?.spell ?? this.spell()).resourceLinks).map(cost => {
       const pool = this.liveSheet()!.resources!.find(resource => resource.id === cost.resourceId)!;
       return {key:'resource:' + pool.id,kind:'resource' as const,label:pool.name + ' · Cost ' + cost.amount,remaining:Math.floor(remainingResource(pool)/cost.amount),total:Math.floor(pool.total/cost.amount),cost};
     }),

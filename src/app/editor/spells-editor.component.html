@@ -43,7 +43,7 @@
       <app-editor-entry-row [sheet]="sheet()" [resource]="spell" [name]="spell.name" [expanded]="expanded.has(spell)" (detailsRequested)="toggle(spell)" (removeRequested)="remove(spell)"
         [showRemove]="spell.listType !== 'PREPARED'" [removalDisabled]="spell.listType === 'KNOWN' && !!prepared"
         [removalTitle]="spell.listType === 'KNOWN' && prepared ? 'Unprepare this spell before removing it from Spelllist' : ''"
-        [notesCount]="tracked.notes?.length || 0" [usesCount]="tracked.uses?.length || 0">
+        [notesCount]="tracked.notes?.length || 0" [usesCount]="tracked.uses?.length || 0" [resourceLinksCount]="tracked.resourceLinks?.length ?? 0">
         <ng-container entry-metadata>
           <span class="shrink-0 rounded bg-purple-container px-1 text-on-purple-container">{{ helpers.spellLevelLabel(spell) }}</span>
           @if (spell.entity?.school; as school) { <span class="shrink-0 rounded bg-teal-container px-1 text-on-teal-container" [title]="helpers.spellSchoolLabel(school)">{{ shortSchoolLabel(school) }}</span> }

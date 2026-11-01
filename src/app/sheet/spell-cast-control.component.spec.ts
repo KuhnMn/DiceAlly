@@ -30,8 +30,10 @@ describe('Cast from spell details', () => {
     const entry=spell(), value=sheet(); value.spells=[entry];
     value.character!.featureSources=[{editorId:'wizard',name:'Wizard'}];
     value.resources=[{id:'points',sourceId:'wizard',name:'Sorcery Points',mode:'counter',note:'',total:7,used:0,recovery:'LONG_REST',features:true,spells:true,casting:true,defaultCost:2}];
-    entry.resourceLinks=[{resourceId:'points',amount:3}];
     const {fixture,control,store}=setup(entry,value);
+    expect(control.resources().some(resource => resource.kind === 'resource')).toBe(false);
+    entry.resourceLinks=[{resourceId:'points',amount:3}];
+    fixture.componentRef.setInput('spell', { ...entry }); fixture.detectChanges();
     control.setResource('resource:points');expect(control.canCast()).toBe(true);
     await control.cast();expect(store.characterData()!.resources![0].used).toBe(3);
     expect(store.characterData()!.character!.spellSlots).toEqual(value.character!.spellSlots);

@@ -9,9 +9,7 @@ import { FeatureUsesComponent } from './feature-uses.component';
   host: { class: 'block min-w-0' },
   template: `@if (resources.length) {
     <section
-      class="mb-4 rounded-lg border-2 p-2"
-      [class.border-purple]="page() === 'spells'"
-      [class.border-blue]="page() === 'features'"
+      class="mb-4"
       aria-label="Resources"
     >
       <h3 class="mb-2 text-lg font-bold">Resources</h3>

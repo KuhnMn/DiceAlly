@@ -56,7 +56,7 @@ describe('Compact entry tools', () => {
     resource.click();fixture.detectChanges();expect(fixture.nativeElement.querySelector('[aria-label="Resource links editor"]').hidden).toBe(false);fixture.destroy();
   });
 
-  it('shows Uses, Notes and Combat beside the name and scopes spell combat status to the casting source', () => {
+  it('shows Uses, Notes, linked Resources and Combat beside the name and scopes spell combat status to the casting source', () => {
     const sheet = emptyBasicCharacter();
     const known = { editorId: 'known', name: 'Shared', source: 'TEST', castingSourceName: 'Wizard', listType: 'KNOWN' };
     const prepared = { ...known, editorId: 'prepared', listType: 'PREPARED' }, bard = { ...known, editorId: 'bard', castingSourceName: 'Bard' };
@@ -65,12 +65,14 @@ describe('Compact entry tools', () => {
     sheet.combatActions = [known, prepared, bard].map(spell => prefillCombatAction(sheet, spell, 'SPELL', helper));
     const fixture = TestBed.createComponent(EditorEntryRowComponent);
     fixture.componentRef.setInput('name', known.name); fixture.componentRef.setInput('sheet', sheet); fixture.componentRef.setInput('resource', known);
-    fixture.componentRef.setInput('usesCount', 3); fixture.componentRef.setInput('notesCount', 2); fixture.detectChanges();
+    fixture.componentRef.setInput('usesCount', 3); fixture.componentRef.setInput('notesCount', 2); fixture.componentRef.setInput('resourceLinksCount', 1); fixture.detectChanges();
     const indicators = [...fixture.nativeElement.querySelectorAll('[role="img"]')] as HTMLElement[];
-    expect(indicators.map(element => element.getAttribute('aria-label'))).toEqual(['3 use trackers', '2 note groups', '2 Combat entries']);
+    expect(indicators.map(element => element.getAttribute('aria-label'))).toEqual(['3 use trackers', '2 note groups', 'Linked resources: 1', '2 Combat entries']);
     expect(indicators[0].parentElement!.parentElement!.querySelector('p')?.textContent).toContain('Shared');
     expect(indicators[0].querySelector('app-ui-icon')?.getAttribute('name')).toBe('tally');
+    fixture.componentRef.setInput('resourceLinksCount', 0);
     sheet.combatActions.splice(0, 2); fixture.changeDetectorRef.markForCheck(); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[aria-label$="Combat entries"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label^="Linked resources:"]')).toBeNull();
   });
 });

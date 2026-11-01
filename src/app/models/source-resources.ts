@@ -10,8 +10,9 @@ export interface SourceResource {
   recovery: string;
   features: boolean;
   spells: boolean;
-  casting: boolean;
-  defaultCost: number;
+  /** Legacy 1.2.0 field; ignored. Spells require explicit links. */
+  casting?: boolean;
+  defaultCost?: number;
 }
 export interface ResourceCost {
   resourceId: string;
@@ -23,20 +24,8 @@ export function remainingResource(resource: SourceResource): number {
 export function resourceCosts(
   sheet: ExportedCharacter,
   links: ResourceCost[] = [],
-  sourceName?: string,
 ): ResourceCost[] {
-  const source = sheet.character?.featureSources?.find((source) => source.name === sourceName);
   const costs = [...links];
-  for (const resource of sheet.resources ?? []) {
-    if (
-      source?.editorId &&
-      resource.sourceId === source.editorId &&
-      resource.casting &&
-      resource.mode !== 'note' &&
-      !costs.some((cost) => cost.resourceId === resource.id)
-    )
-      costs.push({ resourceId: resource.id, amount: resource.defaultCost });
-  }
   return costs.filter(
     (cost, index) =>
       Number.isSafeInteger(cost.amount) &&
@@ -101,10 +90,8 @@ export function validateResources(sheet: ExportedCharacter): void {
       resource.total < 0 ||
       !Number.isSafeInteger(resource.used) ||
       resource.used < 0 ||
-      !Number.isSafeInteger(resource.defaultCost) ||
-      resource.defaultCost < 1 ||
       !['NONE', 'LONG_REST', 'SHORT_REST', 'SHORT_REST_ONE'].includes(resource.recovery) ||
-      ['features', 'spells', 'casting'].some(
+      ['features', 'spells'].some(
         (key) => typeof resource[key as 'features'] !== 'boolean',
       )
     )

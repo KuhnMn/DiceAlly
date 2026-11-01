@@ -156,7 +156,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
             id: wizardEditorId('resource', revision.sourceIdentity, selection.selectionId, table.id, String(column)),
             sourceId: table.subclass && subclass ? wizardEditorId('source', revision.sourceIdentity, selection.selectionId, subclass.key) : parentId,
             name: label, mode: 'note', note: String(text), total: 0, used: 0, recovery: 'NONE',
-            features: true, spells: false, casting: false, defaultCost: 1,
+            features: true, spells: false,
           };
           put('resourceReminders', `${table.owner}: ${label}`, ['resources', resource.id], resource);
         }

@@ -328,6 +328,35 @@ describe('Subclass-granted spell prefill', () => {
     expect(previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet.background).toEqual({ name: 'Wizard custom background' });
     expect(f.state.classes.map(entry => entry.classKey)).not.toContain('display-only');
   });
+  it('finishes revised Soulknife Rogue selections while retaining its exact filtered weapon grant', () => {
+    const f = fixture();
+    const filter = 'type=martial weapon|property=light;finesse';
+    const records = mapContent({
+      class: [{ name: 'Rogue', source: 'XPHB', hd: { number: 1, faces: 8 }, classFeatures: [],
+        startingProficiencies: {
+          weaponProficiencies: [{ simple: true, all: { fromFilter: filter } }],
+          toolProficiencies: [{ "thieves' tools": true }],
+          skills: [{ choose: { from: ['acrobatics', 'athletics', 'deception', 'insight', 'stealth'], count: 4 } }],
+        } }],
+      subclass: [{ name: 'Soulknife', shortName: 'Soulknife', source: 'XPHB', className: 'Rogue', classSource: 'XPHB', subclassFeatures: [] }],
+    }, 'soulknife-fixture.json').records;
+    const index = new Map(records.map(record => [record.key, record]));
+    const state: WizardState = { ...f.state, classes: [{ selectionId: 'rogue', level: 3,
+      classKey: records.find(record => record.kind === 'class')!.key,
+      subclassKey: records.find(record => record.kind === 'subclass')!.key }], answers: {} };
+    const pending = previewClassWizard(f.sheet, state, f.revision, index);
+    const skill = pending.choices.find(choice => choice.label === 'Rogue: skill proficiencies')!;
+    expect(pending.unresolved).toContain(skill);
+    state.answers[skill.id] = skill.candidates.slice(0, 4).map(candidate => candidate.value);
+    const completed = previewClassWizard(f.sheet, state, f.revision, index);
+    expect(completed.unresolved).toEqual([]);
+    expect(completed.warnings).toEqual([]);
+    expect(completed.errors).toEqual([]);
+    expect(completed.sheet.character!.proficiencies!.simpleWeapons).toBe(true);
+    expect(completed.sheet.character!.proficiencies!.martialWeapons).not.toBe(true);
+    expect(completed.sheet.character!.proficiencies!.custom).toContain(`All weapons matching ${filter}`);
+    expect(completed.sheet.character!.proficiencies!.tools!["Thieves' tools"]).toBe(true);
+  });
   it('labels multiclass Bard choices and completes its structured skill and instrument grants', () => {
     const f = fixture();
     const extra = mapContent({

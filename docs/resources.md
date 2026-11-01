@@ -14,9 +14,9 @@ are labelled so the user can reassign their retained resources.
 Features and spells can link pools through the Resources tool beside Uses and
 Notes. Each link defines an explicit positive cost. A feature offers a Use button
 for each linked pool. A spell offers linked pools in Casting Resource alongside
-slots and its existing uses. A pool may additionally be explicitly offered to all
-spells of its source, using an authored default cost; a spell link overrides that
-cost. Resource casts use the spell's base level; slot upcasting remains unchanged.
+slots and its existing uses. Pools must be linked to each spell individually,
+with a separate cost for that spell. Legacy source-wide casting settings are ignored.
+Resource casts use the spell's base level; slot upcasting remains unchanged.
 Each selection spends one chosen pool, never both a resource and a spell slot.
 Spending resolves the latest pool, refuses invalid or insufficient costs and
 commits atomically after existing preparation/concentration confirmations.

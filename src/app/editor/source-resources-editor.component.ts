@@ -6,7 +6,7 @@ import { UiIconComponent } from '../ui-icon.component';
 @Component({
   selector: 'app-source-resources-editor',
   imports: [FormsModule, UiIconComponent],
-  styleUrl: './editor.css',
+  styleUrls: ['./editor.css', './source-resources-editor.component.css'],
   template: ` <section class="editor-card">
     <div class="mb-3 flex items-center justify-between gap-2">
       <h2 class="!mb-0">Resources</h2>
@@ -34,7 +34,7 @@ import { UiIconComponent } from '../ui-icon.component';
               >· {{ sourceName(resource.sourceId) }}</span
             >
           </summary>
-          <div class="space-y-2 border-t border-outline-variant p-2">
+          <div class="resource-fields border-t border-outline-variant p-2">
             <div class="grid grid-cols-2 gap-2">
               <label
                 ><span class="field-label">Name</span
@@ -61,30 +61,32 @@ import { UiIconComponent } from '../ui-icon.component';
                 </select></label
               >
             </div>
-            <label class="block"
-              ><span class="field-label">Display</span
-              ><select
-                class="editor-input"
-                [(ngModel)]="resource.mode"
-                (ngModelChange)="change()"
-                [ngModelOptions]="{ standalone: true }"
-              >
-                <option value="counter">Uses</option>
-                <option value="note">Reminder</option>
-                <option value="both">Uses and Reminder</option>
-              </select></label
-            >
-            @if (resource.mode !== 'counter') {
+            <div class="resource-display-row">
               <label class="block"
-                ><span class="field-label">Reminder / Dice</span
-                ><input
+                ><span class="field-label">Display</span
+                ><select
                   class="editor-input"
-                  [(ngModel)]="resource.note"
+                  [(ngModel)]="resource.mode"
                   (ngModelChange)="change()"
                   [ngModelOptions]="{ standalone: true }"
-                  placeholder="For example: 3d6 Sneak Attack"
-              /></label>
-            }
+                >
+                  <option value="counter">Uses</option>
+                  <option value="note">Reminder</option>
+                  <option value="both">Uses and Reminder</option>
+                </select></label
+              >
+              @if (resource.mode !== 'counter') {
+                <label class="block"
+                  ><span class="field-label">Reminder / Dice</span
+                  ><input
+                    class="editor-input"
+                    [(ngModel)]="resource.note"
+                    (ngModelChange)="change()"
+                    [ngModelOptions]="{ standalone: true }"
+                    placeholder="For example: 3d6 Sneak Attack"
+                /></label>
+              }
+            </div>
             @if (resource.mode !== 'note') {
               <div class="grid grid-cols-2 gap-2">
                 <label
@@ -133,30 +135,6 @@ import { UiIconComponent } from '../ui-icon.component';
                 Spells</label
               >
             </div>
-            @if (resource.mode !== 'note') {
-              <label class="block text-sm"
-                ><input
-                  type="checkbox"
-                  [(ngModel)]="resource.casting"
-                  (ngModelChange)="change()"
-                  [ngModelOptions]="{ standalone: true }"
-                />
-                Offer for spells of this source</label
-              >
-              @if (resource.casting) {
-                <label class="block"
-                  ><span class="field-label">Resource Cost per Cast</span
-                  ><input
-                    class="editor-input"
-                    type="number"
-                    min="1"
-                    step="1"
-                    [ngModel]="resource.defaultCost"
-                    (ngModelChange)="setCost(resource, $event)"
-                    [ngModelOptions]="{ standalone: true }"
-                /></label>
-              }
-            }
             <button
               type="button"
               class="secondary-button compact-button"
@@ -203,8 +181,6 @@ export class SourceResourcesEditorComponent {
       recovery: 'NONE',
       features: true,
       spells: false,
-      casting: false,
-      defaultCost: 1,
     };
     (this.sheet().resources ??= []).push(resource);
     this.newest = resource.id;
@@ -213,11 +189,6 @@ export class SourceResourcesEditorComponent {
   setTotal(resource: SourceResource, total: number) {
     if (!Number.isSafeInteger(total) || total < 0) return;
     resource.total = total;
-    this.change();
-  }
-  setCost(resource: SourceResource, cost: number) {
-    if (!Number.isSafeInteger(cost) || cost < 1) return;
-    resource.defaultCost = cost;
     this.change();
   }
   remove(resource: SourceResource) {
