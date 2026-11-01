@@ -5,6 +5,7 @@ import { ContentRecord, DEFAULT_CONTENT_SOURCE, ImportRevision } from '../conten
 import { ContentReference } from '../models/character.model';
 import { SheetDetailDialogComponent } from './sheet-detail-dialog.component';
 import { ViewerRelatedEntriesService } from './viewer-related-entries.service';
+import { RelatedEntriesListComponent } from '../compendium/related-entries-list.component';
 
 const revision: ImportRevision = {
   id: 'current', namespace: 'development-local', source: DEFAULT_CONTENT_SOURCE,
@@ -28,6 +29,21 @@ class DetailHost { readonly reference = reference; }
 
 describe('Dynamic viewer library links', () => {
   afterEach(() => vi.restoreAllMocks());
+
+  it('keeps compendium links expanded by default and lets the summary collapse them', () => {
+    const fixture = TestBed.createComponent(RelatedEntriesListComponent);
+    fixture.componentRef.setInput('entries', [linked]); fixture.detectChanges();
+    const details = fixture.nativeElement.querySelector('details') as HTMLDetailsElement;
+    expect(details.open).toBe(true);
+    details.querySelector('summary')!.click(); fixture.detectChanges();
+    expect(details.open).toBe(false);
+    details.querySelector('summary')!.click(); fixture.detectChanges();
+    expect(details.open).toBe(true);
+    const opened = vi.fn(); fixture.componentInstance.opened.subscribe(opened);
+    details.querySelector('button')!.click();
+    expect(opened).toHaveBeenCalledWith(linked);
+    expect(details.open).toBe(true);
+  });
 
   function cache(active: ImportRevision | undefined = revision) {
     vi.spyOn(IndexedDbContentCache.prototype, 'savedSource').mockResolvedValue(DEFAULT_CONTENT_SOURCE);
@@ -71,22 +87,29 @@ describe('Dynamic viewer library links', () => {
     Object.defineProperty(HTMLDialogElement.prototype, 'showModal', { configurable: true, value: function (this: HTMLDialogElement) { this.open = true; } });
     const service = {
       load: vi.fn().mockResolvedValue({ record, revision, related: [linked] }),
-      open: vi.fn().mockResolvedValue({ record: linked, revision, related: [] }),
+      open: vi.fn().mockResolvedValue({ record: linked, revision, related: [record] }),
     };
     TestBed.configureTestingModule({ providers: [{ provide: ViewerRelatedEntriesService, useValue: service }] });
     const fixture = TestBed.createComponent(DetailHost);
     fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();
     const note = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
     note.value = 'Unsaved draft';
+    const related = fixture.nativeElement.querySelector('app-related-entries-list details') as HTMLDetailsElement;
+    expect(related.open).toBe(false);
+    related.querySelector('summary')!.click(); fixture.detectChanges();
+    expect(related.open).toBe(true);
     fixture.nativeElement.querySelector('app-related-entries-list button').click();
     fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('dialog').length).toBe(1);
     expect(fixture.nativeElement.querySelector('h2').textContent).toBe('Linked spell');
+    const linkedRelated = fixture.nativeElement.querySelector('app-compendium-details app-related-entries-list details') as HTMLDetailsElement;
+    expect(linkedRelated.open).toBe(false);
     fixture.nativeElement.querySelector('button[aria-label="Back to previous entry"]').click();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('h2').textContent).toBe('Saved feature');
     expect(fixture.nativeElement.querySelector('textarea')).toBe(note);
     expect(note.value).toBe('Unsaved draft');
+    expect(related.open).toBe(true);
     fixture.destroy();
     if (showModal) Object.defineProperty(HTMLDialogElement.prototype, 'showModal', showModal);
     else Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal');

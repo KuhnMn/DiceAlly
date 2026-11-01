@@ -35,11 +35,11 @@ let nextDialogId = 0;
           <div class="flex flex-wrap items-center gap-2 md:hidden"><ng-container [ngTemplateOutlet]="tags()" /></div>
         }
         <ng-content />
-        <app-related-entries-list [entries]="library()?.related ?? []" (opened)="openRelated($event)" />
+        <app-related-entries-list [entries]="library()?.related ?? []" [initiallyExpanded]="false" (opened)="openRelated($event)" />
         </div>
         @defer (when selected()) {
           @if (selected(); as entry) {
-            <app-compendium-details [record]="entry.record" [revision]="entry.revision" [related]="entry.related" (opened)="openRelated($event)" />
+            <app-compendium-details [record]="entry.record" [revision]="entry.revision" [related]="entry.related" [relatedInitiallyExpanded]="false" (opened)="openRelated($event)" />
           }
         }
       </div>

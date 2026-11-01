@@ -70,7 +70,7 @@ import { vehicleItemStatistics } from '../sheet/vehicle-item-presentation';
       }
       @if (!sections().length && !overview()) { <p class="mt-3 text-sm text-on-surface-variant">No description is included in this entry.</p> }
     }
-    <app-related-entries-list [entries]="related()" (opened)="opened.emit($event)" />
+    <app-related-entries-list [entries]="related()" [initiallyExpanded]="relatedInitiallyExpanded()" (opened)="opened.emit($event)" />
   `,
 })
 export class CompendiumDetailsComponent {
@@ -81,6 +81,7 @@ export class CompendiumDetailsComponent {
   readonly record = input.required<ContentRecord>();
   readonly revision = input.required<ImportRevision>();
   readonly related = input<ContentRecord[]>([]);
+  readonly relatedInitiallyExpanded = input(true);
   readonly itemView = input<ItemView | null>(null);
   readonly vehicleItem = computed(() => {
     const item = this.itemView()?.item as ItemVehicleDefinition | undefined;
