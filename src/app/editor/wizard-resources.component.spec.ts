@@ -7,7 +7,8 @@ import { seedResourceImports, WizardResourceColumn, wizardResourceValues } from 
 describe('Wizard resource mapping', () => {
   it('selects a counter and explicitly joins its dice reminder without importing unrelated columns', async () => {
     const sheet = emptyBasicCharacter();
-    const state: WizardState = { revisionId: 'test', classes: [], answers: {}, options: {resourceReminders:true}, baseline: [], protectedPaths: [] };
+    const state: WizardState = { revisionId: 'test', classes: [], answers: {}, options: {resourceReminders:true}, baseline: [], protectedPaths: [],
+      resourceImports:{die:{enabled:false,name:'Inherited resource'}} };
     const columns: WizardResourceColumn[] = [
       {id:'count',sourceId:'soulknife',owner:'Soulknife',table:'Resources',name:'Number',kind:'counter',value:4},
       {id:'die',sourceId:'soulknife',owner:'Soulknife',table:'Resources',name:'Die Size',kind:'note',value:'D6'},
@@ -23,7 +24,13 @@ describe('Wizard resource mapping', () => {
     expect([...reminder.options].map(option=>option.value)).toEqual(['','die']);
     reminder.value='die';reminder.dispatchEvent(new Event('change'));await fixture.whenStable();
     const name=fixture.nativeElement.querySelector('input:not([type="checkbox"])') as HTMLInputElement;
-    name.value='Psionic Energy';name.dispatchEvent(new Event('input'));await fixture.whenStable();
+    expect(name.value).toBe('Inherited resource');
+    for (const draft of ['', 'Psionic ', 'Number', 'Psionic Energy']) {
+      name.value=draft;name.dispatchEvent(new Event('input'));await fixture.whenStable();
+      expect(name.value).toBe(draft);
+      expect(state.resourceImports!['count'].name).toBe(draft);
+      if (!draft) expect(wizardResourceValues(sheet,state,columns)[0].value).toMatchObject({name:'Inherited resource'});
+    }
     const recovery=fixture.nativeElement.querySelector('[aria-label="Recovery for Number"]') as HTMLSelectElement;
     recovery.value='SHORT_REST';recovery.dispatchEvent(new Event('change'));await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('[aria-label="Import Soulknife: Die Size"]').disabled).toBe(true);

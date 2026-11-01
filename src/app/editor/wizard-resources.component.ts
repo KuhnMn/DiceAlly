@@ -49,6 +49,7 @@ import { RESOURCE_RECOVERY_OPTIONS } from '../models/source-resources';
     </section>`,
 })
 export class WizardResourcesComponent {
+  private readonly nameDrafts = new Map<string, string>();
   readonly recoveries = RESOURCE_RECOVERY_OPTIONS;
   readonly sheet = input.required<ExportedCharacter>();
   readonly state = input.required<WizardState>();
@@ -56,8 +57,15 @@ export class WizardResourcesComponent {
   readonly enabledChanged = output<boolean>();
   readonly edited = output<void>();
   setting(column: WizardResourceColumn) { return resourceImportSetting(this.sheet(), this.state(), column); }
-  name(column: WizardResourceColumn) { return resourceImportName(this.sheet(), this.state(), column, this.columns()); }
+  name(column: WizardResourceColumn) {
+    const draft = this.nameDrafts.get(column.id);
+    if (draft !== undefined) return draft;
+    const configured = this.setting(column).name;
+    return configured !== undefined && configured !== column.name ? configured
+      : resourceImportName(this.sheet(), this.state(), column, this.columns());
+  }
   update(column: WizardResourceColumn, patch: Partial<ResourceImportSetting>) {
+    if (patch.name !== undefined) this.nameDrafts.set(column.id, patch.name);
     (this.state().resourceImports ??= {})[column.id] = { ...this.setting(column), ...patch };
     this.edited.emit();
   }
