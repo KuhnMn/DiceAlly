@@ -19,11 +19,14 @@ describe('Resource use control',()=>{
   it('shows one linked pool without a dropdown and spends its exact cost using the latest balance',()=>{
     const {fixture,store}=setup([{resourceId:'focus',amount:2}]);
     expect(fixture.nativeElement.querySelector('select')).toBeNull();
-    expect(fixture.nativeElement.querySelector('output').textContent).toContain('Focus · Cost 2 · 5 / 8 available');
+    expect(fixture.nativeElement.querySelector('output').textContent).toContain('Focus');
+    expect(fixture.nativeElement.querySelector('output').textContent).toContain('5/8');
     const button=fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    expect(button.textContent).toContain('(2)');
+    expect(button.getAttribute('aria-label')).toBe('Use 2 Focus');
     button.click();fixture.detectChanges();
     expect(store.characterData()!.resources![0].used).toBe(5);
-    expect(fixture.nativeElement.querySelector('output').textContent).toContain('3 / 8 available');
+    expect(fixture.nativeElement.querySelector('output').textContent).toContain('3/8');
     button.click();fixture.detectChanges();
     expect(store.characterData()!.resources![0].used).toBe(7);expect(button.disabled).toBe(true);
     button.click();expect(store.characterData()!.resources![0].used).toBe(7);
@@ -32,13 +35,22 @@ describe('Resource use control',()=>{
   it('selects among linked pools, retains that selection after spending and refuses removed links',()=>{
     const links=[{resourceId:'focus',amount:2},{resourceId:'psi',amount:3}];
     const {fixture,store,control}=setup(links);
+    const longName='Psionic Energy Dice with a very long custom resource name';
+    const current=store.characterData()!;
+    store.setCharacter({...current,resources:current.resources!.map(resource=>resource.id==='psi'?{...resource,name:longName}:resource)});
+    fixture.detectChanges();
     const select=fixture.nativeElement.querySelector('select') as HTMLSelectElement;
     expect(select.options).toHaveLength(2);
+    expect(select.options[1].textContent).toContain('… · 6/6');
+    expect(select.options[1].getAttribute('aria-label')).toContain(longName);
+    expect(select.options[1].textContent).not.toContain('Cost');
     select.value='psi';select.dispatchEvent(new Event('change'));fixture.detectChanges();
     const button=fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    expect(button.textContent).toContain('(3)');
+    expect(button.getAttribute('aria-label')).toBe('Use 3 '+longName);
     button.click();fixture.detectChanges();
     expect(store.characterData()!.resources!.map(resource=>resource.used)).toEqual([3,3]);
-    expect(select.value).toBe('psi');expect(select.selectedOptions[0].textContent).toContain('3 / 6 available');
+    expect(select.value).toBe('psi');expect(select.selectedOptions[0].textContent).toContain('3/6');
     button.click();fixture.detectChanges();expect(button.disabled).toBe(true);
     expect(store.characterData()!.resources![1].used).toBe(6);
     fixture.componentRef.setInput('links',[links[0]]);fixture.detectChanges();
