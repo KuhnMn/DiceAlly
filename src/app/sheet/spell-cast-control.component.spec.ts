@@ -61,6 +61,7 @@ describe('Cast from spell details', () => {
     fixture.detectChanges();
     const resourceControl=fixture.nativeElement.querySelector('[aria-label="Casting resource"]').closest('app-resource-select') as HTMLElement;
     expect(resourceControl.querySelector('output .tabular-nums')?.textContent).toBe('7/7');
+    expect(resourceControl.querySelector('output [aria-label="Regain: Long Rest"]')).not.toBeNull();
     expect(resourceControl.textContent).toContain('Wizard · Sorcery Points');
     expect(resourceControl.textContent).not.toContain('Cost 3');
     expect(fixture.nativeElement.querySelector('button[aria-label="Cast Test Spell"]').textContent).toContain('(3)');

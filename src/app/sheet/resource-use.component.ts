@@ -50,7 +50,11 @@ export class ResourceUseComponent {
     return `${remaining}/${resource?.total ?? 0}`;
   }
   options(): ResourceSelectOption[] {
-    return this.links().map(cost => ({ value: cost.resourceId, label: this.name(cost), balance: this.balance(cost) }));
+    return this.links().map(cost => {
+      const resource = this.data().resources?.find(resource => resource.id === cost.resourceId);
+      return { value: cost.resourceId, label: this.name(cost), balance: this.balance(cost),
+        recovery: resource ? (resource.recovery === 'NONE' ? 'MANUAL' : resource.recovery) : undefined };
+    });
   }
   available(cost: ResourceCost) {
     const resource = this.data().resources?.find((resource) => resource.id === cost.resourceId);

@@ -1,3 +1,4 @@
+import { ResourceLinkTagsComponent } from './resource-link-tags.component';
 import { SourceResourcesComponent } from './source-resources.component';
 import { ItemEffectRemindersComponent } from './item-effect-reminders.component';
 import { SpellCastControlComponent } from './spell-cast-control.component';
@@ -35,7 +36,7 @@ type SpellLevelFilter = 'ALL' | number;
 @Component({
   selector: 'app-spells-page',
   host: { class: 'block w-full min-w-0 max-w-full' },
-  imports: [SourceResourcesComponent,ItemEffectRemindersComponent, SpellCastControlComponent,SpellEffectFilterComponent, SpellSchoolFilterComponent, SpellViewSwitcherComponent, SpellCastingTimeFilterComponent, ListControlsComponent, SheetListLayoutComponent, SpellDetailsComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, SpellSummaryComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [ResourceLinkTagsComponent,SourceResourcesComponent,ItemEffectRemindersComponent, SpellCastControlComponent,SpellEffectFilterComponent, SpellSchoolFilterComponent, SpellViewSwitcherComponent, SpellCastingTimeFilterComponent, ListControlsComponent, SheetListLayoutComponent, SpellDetailsComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, SpellSummaryComponent, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .spell-page-header app-spell-view-switcher { margin-bottom: 0; }
     .spell-page.spell-preparation-view { padding: .75rem; }
@@ -301,6 +302,12 @@ type SpellLevelFilter = 'ALL' | number;
                       }
                     </div>
 
+                    }
+
+                    @if (spell.resourceLinks?.length) {
+                      <div class="mt-1 flex min-w-0 flex-wrap items-center gap-1">
+                        <app-resource-link-tags [sheet]="characterData()!" [links]="spell.resourceLinks ?? []" />
+                      </div>
                     }
 
                     <!-- Expandable Content -->

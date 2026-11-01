@@ -1,3 +1,4 @@
+import { ResourceLinkTagsComponent } from './resource-link-tags.component';
 import { ResourceUseComponent } from './resource-use.component';
 import { SourceResourcesComponent } from './source-resources.component';
 import { AbilityBonusSummaryComponent } from './ability-bonus-summary.component';
@@ -28,7 +29,7 @@ import { referenceDescription } from '../models/character-references';
 
 @Component({
   selector: 'app-features-page',
-  imports: [ResourceUseComponent,SourceResourcesComponent,AbilityBonusSummaryComponent, RuleReferenceComponent, PrerequisiteDetailsComponent, FeatureFiltersComponent, ListControlsComponent, SheetListLayoutComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [ResourceLinkTagsComponent,ResourceUseComponent,SourceResourcesComponent,AbilityBonusSummaryComponent, RuleReferenceComponent, PrerequisiteDetailsComponent, FeatureFiltersComponent, ListControlsComponent, SheetListLayoutComponent, SheetDetailDialogComponent, UiIconComponent, SheetSourcePickerComponent, HorizontalRowDirective, CommonModule, EntryRendererComponent, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     .flash-highlight {
       animation: feature-flash 1.6s ease-out;
@@ -297,6 +298,7 @@ import { referenceDescription } from '../models/character-references';
                   @if (feature.featureSourceName) {
                     <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">{{ feature.featureSourceName }}</span>
                   }
+                  <app-resource-link-tags [sheet]="characterData()!" [links]="feature.resourceLinks ?? []" />
                 </div>
 
                 <!-- Reference details open in a modal on every screen size. -->

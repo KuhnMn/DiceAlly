@@ -21,6 +21,7 @@ describe('Resource use control',()=>{
     expect(fixture.nativeElement.querySelector('select')).toBeNull();
     expect(fixture.nativeElement.querySelector('output').textContent).toContain('Focus');
     expect(fixture.nativeElement.querySelector('output').textContent).toContain('5/8');
+    expect(fixture.nativeElement.querySelector('output [aria-label="Regain: Short Rest"]')).not.toBeNull();
     const button=fixture.nativeElement.querySelector('button') as HTMLButtonElement;
     expect(button.textContent).toContain('(2)');
     expect(button.getAttribute('aria-label')).toBe('Use 2 Focus');
@@ -41,7 +42,7 @@ describe('Resource use control',()=>{
     fixture.detectChanges();
     const select=fixture.nativeElement.querySelector('select') as HTMLSelectElement;
     expect(select.options).toHaveLength(2);
-    expect(select.options[1].textContent).toContain('… · 6/6');
+    expect(select.options[1].textContent).toContain('… · Long Rest · 6/6');
     expect(select.options[1].getAttribute('aria-label')).toContain(longName);
     expect(select.options[1].textContent).not.toContain('Cost');
     select.value='psi';select.dispatchEvent(new Event('change'));fixture.detectChanges();

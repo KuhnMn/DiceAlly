@@ -143,7 +143,8 @@ export class SpellCastControlComponent {
     ...resourceCosts(this.liveSheet() ?? {}, (this.trackedSpell()?.spell ?? this.spell()).resourceLinks).map(cost => {
       const pool = this.liveSheet()!.resources!.find(resource => resource.id === cost.resourceId)!;
       const source = this.liveSheet()!.character?.featureSources?.find(source => source.editorId === pool.sourceId);
-      return {key:'resource:' + pool.id,kind:'resource' as const,label:(source?.name || 'Removed source') + ' · ' + pool.name,remaining:remainingResource(pool),total:pool.total,cost};
+      return {key:'resource:' + pool.id,kind:'resource' as const,label:(source?.name || 'Removed source') + ' · ' + pool.name,remaining:remainingResource(pool),total:pool.total,cost,
+        recovery:pool.recovery === 'NONE' ? 'MANUAL' : pool.recovery};
     }),
     ...(this.spell().entity?.meta?.ritual === true ? [{ key: 'ritual', kind: 'ritual' as const, label: 'Ritual - Free', remaining: 1, total: 1 }] : []),
     ...(this.trackedSpell()?.spell.uses ?? []).flatMap((use, index) => {
