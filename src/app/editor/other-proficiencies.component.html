@@ -29,7 +29,7 @@
           @if (editingCustom === i) {
             <textarea class="editor-input" rows="2" [name]="'custom-proficiency-' + i" aria-label="Proficiency description" [ngModel]="text" (ngModelChange)="updateCustomProficiency(i, $event)"></textarea>
           } @else {
-            <app-entry-renderer [entry]="{text: text}" [compact]="true" />
+            <app-entry-renderer [entry]="{text: proficiencyLabel(text)}" [compact]="true" />
           }
           </div>
           <div class="ml-auto flex shrink-0 items-center gap-1">

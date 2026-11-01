@@ -39,7 +39,7 @@ describe('General proficiency choice pools', () => {
     record.data['startingProficiencies'] = { weaponProficiencies: [{ all: { fromFilter: filter } }] };
     const fixed = deriveProficiencyGrants(f.selections, f.index);
     expect(fixed.canAccept).toBe(true);
-    expect(fixed.generated.map(entry => entry.target)).toEqual([`All weapons matching ${filter}`]);
+    expect(fixed.generated.map(entry => entry.target)).toEqual(['Martial Weapons with the Light or Finesse Property']);
     record.data['startingProficiencies'] = { weaponProficiencies: [{ choose: { fromFilter: filter, count: 1 } }] };
     const choice = deriveProficiencyGrants(f.selections, f.index);
     expect(choice.canAccept).toBe(false);

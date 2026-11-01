@@ -1,5 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 import { Proficiencies } from '../models/character.model';
+import { proficiencyLabel } from '../models/proficiency-labels';
 import { EntryRendererComponent } from '../entries/entry-renderer.component';
 
 /** Display each proficiency in its stored category. */
@@ -11,7 +12,7 @@ export function proficiencyGroups(proficiencies?: Proficiencies) {
     { name: 'Weapons', entries: weapons },
     { name: 'Tools', entries: Object.keys(proficiencies?.tools ?? {}) },
     { name: 'Languages', entries: proficiencies?.languages ?? [] },
-    { name: 'Other', entries: proficiencies?.custom ?? [] },
+    { name: 'Other', entries: (proficiencies?.custom ?? []).map(proficiencyLabel) },
   ].filter(group => group.entries.length);
 }
 

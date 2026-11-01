@@ -398,7 +398,10 @@ describe('Subclass-granted spell prefill', () => {
     expect(completed.errors).toEqual([]);
     expect(completed.sheet.character!.proficiencies!.simpleWeapons).toBe(true);
     expect(completed.sheet.character!.proficiencies!.martialWeapons).not.toBe(true);
-    expect(completed.sheet.character!.proficiencies!.custom).toContain(`All weapons matching ${filter}`);
+    expect(completed.sheet.character!.proficiencies!.custom).toContain('Martial Weapons with the Light or Finesse Property');
+    expect(completed.sheet.character!.proficiencies!.custom!.join(' ')).not.toContain('type=');
+    const repeated = previewClassWizard(completed.sheet, completed.sheet.creatorWizard!, f.revision, index);
+    expect(repeated.sheet.character!.proficiencies!.custom).toEqual(completed.sheet.character!.proficiencies!.custom);
     expect(completed.sheet.character!.proficiencies!.tools!["Thieves' tools"]).toBe(true);
   });
   it('labels multiclass Bard choices and completes its structured skill and instrument grants', () => {

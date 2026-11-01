@@ -6,6 +6,7 @@ import { SourceEntries } from '../content/content-entries';
 import { spellSaveLabel } from '../content/spell-effects';
 import { preparePrerequisites } from '../sheet/prerequisite-presentation';
 import { Prerequisite } from '../models/character.model';
+import { weaponProficiencyFilterLabel } from '../models/proficiency-labels';
 
 type ClassSource = BrewSourceByKind['class'];
 type Proficiencies = NonNullable<ClassDefinition['proficiencies']['starting']>;
@@ -37,7 +38,10 @@ function packages(values: unknown, kind: string): string {
           : typeof choice['fromFilter'] === 'string' ? `${kind.toLowerCase()} matching ${filterText(choice['fromFilter'])}` : kind.toLowerCase();
         return [`Choose ${choice['count'] ?? 1}: ${from}`];
       }
-      if (key === 'all' && typeof choice?.['fromFilter'] === 'string') return [`All ${kind.toLowerCase()} matching ${filterText(choice['fromFilter'])}`];
+      if (key === 'all' && typeof choice?.['fromFilter'] === 'string') return [
+        (kind === 'Weapons' ? weaponProficiencyFilterLabel(choice['fromFilter']) : undefined)
+          ?? `All ${kind.toLowerCase()} matching ${filterText(choice['fromFilter'])}`,
+      ];
       if (value === true) return [name(key, kind)];
       if (typeof value === 'number') return [`Choose ${value}: ${key === 'any' ? `Any ${kind.toLowerCase()}` : POOLS[key] ?? name(key, kind)}`];
       if (typeof value === 'string') return [key === 'entry' ? value : `${name(key, kind)}: ${value}`];

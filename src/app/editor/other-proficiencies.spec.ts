@@ -33,13 +33,19 @@ describe('Other Proficiencies', () => {
     expect(input('Custom attack bonus')).toBeDefined();
   });
 
-  it('edits and removes descriptive proficiencies while preserving the other proficiency settings', async () => {
+  it.each([
+    'Weapons with the {@filter Finesse or Light|items|type=martial weapon} property',
+    'All weapons matching type=martial weapon|property=light;finesse',
+  ])('displays, edits and removes descriptive proficiencies: %s', async (description) => {
     const fixture = TestBed.createComponent(OtherProficienciesComponent);
     const sheet = emptyBasicCharacter();
     sheet.character!.proficiencies = { languages: ['Common'], simpleWeapons: true,
-      custom: ['Weapons with the {@filter Finesse or Light|items|type=martial weapon} property'] };
+      custom: [description] };
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
     expect(fixture.nativeElement.textContent).not.toContain('{@filter');
+    expect(fixture.nativeElement.textContent).not.toContain('type=');
+    expect(fixture.nativeElement.textContent).toContain('Finesse');
+    expect(sheet.character!.proficiencies!.custom).toEqual([description]);
     const page = fixture.componentInstance;
     page.updateCustomProficiency(0, 'Conditional weapons');
     page.customInput = 'Vehicles'; page.addCustomProficiency();

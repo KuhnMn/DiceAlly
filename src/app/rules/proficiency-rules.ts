@@ -1,5 +1,6 @@
 import { sourceProficiencyGrants, ProficiencyPackages, ProficiencyPackage, ExplicitProficiencyChoice } from '../content/proficiency-grants';
 import { itemTypeCode } from '../content/item.model';
+import { weaponProficiencyFilterLabel } from '../models/proficiency-labels';
 import { characterOption } from '../content/character-option-adapter';
 import { classDefinition } from '../content/class-adapter';
 import { entityKey } from '../content/content.model';
@@ -72,7 +73,7 @@ export function deriveProficiencyGrants(selections: ContentClassSelection[], ind
         if (!('from' in selection)) { diagnostics.push(`Proficiency choice handler required: ${path}`); continue; }
         choice(selection.from, selection.count ?? 1, kind, origin, path);
       } else if (field === 'all' && kind === 'weapon' && entry && typeof entry === 'object' && 'fromFilter' in entry && typeof entry.fromFilter === 'string') {
-        add(kind, `All weapons matching ${entry.fromFilter}`, origin);
+        add(kind, weaponProficiencyFilterLabel(entry.fromFilter) ?? `All weapons matching ${entry.fromFilter}`, origin);
       } else if (isPool(field, kind)) {
         const builtin = kind === 'skill' && field === 'any' ? Object.keys(SKILL_ABILITIES)
           : kind === 'tool' ? toolCatalog[field] : undefined;

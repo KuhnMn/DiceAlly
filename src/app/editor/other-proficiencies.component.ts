@@ -6,6 +6,7 @@ import { Component, OnInit, inject, input, output, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ExportedCharacter, FeatureSource } from '../models/character.model';
+import { proficiencyLabel } from '../models/proficiency-labels';
 import { IndexedDbContentCache } from '../content/content-cache';
 import { ContentRecord, ImportRevision } from '../content/content.model';
 import { SourceBookFilterService } from './source-book-filter.service';
@@ -90,6 +91,7 @@ export class OtherProficienciesComponent implements OnInit {
   get advantages() { return this.character.advantageOn ?? []; }
   get languages() { return this.character.proficiencies?.languages ?? []; }
   get customProficiencies() { return this.character.proficiencies?.custom ?? []; }
+  readonly proficiencyLabel = proficiencyLabel;
   addCustomProficiency() {
     const text = this.customInput.trim();
     if (!text) return;
