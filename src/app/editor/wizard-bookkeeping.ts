@@ -6,6 +6,7 @@ export interface WizardBaselineEntry {
   label: string;
   fingerprint: string;
   editFingerprint?: string;
+  fieldFingerprints?: Record<string, string>;
 }
 
 export function createWizardBaseline(entry: {
@@ -15,6 +16,10 @@ export function createWizardBaseline(entry: {
   const editFingerprint = ['features', 'spells', 'species'].includes(entry.path[0])
     ? wizardFingerprint(entry.value, true) : fingerprint;
   return { path: entry.path, scope: entry.scope, label: entry.label, fingerprint,
+    ...(entry.path[0] === 'resources' && entry.value && typeof entry.value === 'object' ? {
+      fieldFingerprints: Object.fromEntries(Object.entries(entry.value).filter(([key]) => key !== 'used')
+        .map(([key, value]) => [key, wizardFingerprint(value)])),
+    } : {}),
     ...(editFingerprint !== fingerprint ? { editFingerprint } : {}) };
 }
 
@@ -34,10 +39,13 @@ export function readWizardBookkeeping(value: {
   const baseline = ((value.baseline ?? []) as WizardBaselineEntry[]).map(entry => {
     if (!entry || 'value' in entry || typeof entry.scope !== 'string' || typeof entry.label !== 'string'
       || !/^fnv128:[a-f0-9]{32}$/.test(entry.fingerprint)
-      || (entry.editFingerprint !== undefined && !/^fnv128:[a-f0-9]{32}$/.test(entry.editFingerprint))) {
+      || (entry.editFingerprint !== undefined && !/^fnv128:[a-f0-9]{32}$/.test(entry.editFingerprint))
+      || (entry.fieldFingerprints !== undefined && (!entry.fieldFingerprints || typeof entry.fieldFingerprints !== 'object'
+        || Array.isArray(entry.fieldFingerprints) || Object.values(entry.fieldFingerprints).some(hash => typeof hash !== 'string' || !/^fnv128:[a-f0-9]{32}$/.test(hash))))) {
       throw new Error('Unsupported wizard history format. Import a RAW character or a current export.');
     }
     return { path: readPath(entry.path), scope: entry.scope, label: entry.label, fingerprint: entry.fingerprint,
+      ...(entry.fieldFingerprints ? { fieldFingerprints: { ...entry.fieldFingerprints } } : {}),
       ...(entry.editFingerprint ? { editFingerprint: entry.editFingerprint } : {}) };
   });
   const protectedPaths = value.protectedPaths ?? [];

@@ -1,5 +1,4 @@
-import { classResourceTables, resourceCell } from '../compendium/class-resources';
-import { SourceResource } from '../models/source-resources';
+import { WizardResourceColumn, wizardResourceColumns, wizardResourceValues } from './wizard-resources';
 import { additionalSpells, SPELL_GRANT_LISTS } from '../content/additional-spells';
 import { spellDefinition, spellRecordClasses } from '../content/spell-adapter';
 import { characterOption, characterOptionSourceData } from '../content/character-option-adapter';
@@ -59,6 +58,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
   records: ReadonlyMap<string, ContentRecord>, sourceBooks: readonly string[] = [], overrideSections: readonly string[] = [],
   catalogVisible: (record: ContentRecord) => boolean = () => true) {
   const index: ContentRulesIndex = { records, sourceIdentity: revision.sourceIdentity, revisionId: revision.id };
+  const resourceColumns: WizardResourceColumn[] = [];
   const values: PrefillValue[] = []; const choices: WizardChoice[] = []; const warnings: string[] = []; const errors: string[] = [];
   const put = (scope: string, label: string, path: string[], value: unknown, origin?: string) => values.push({ scope, label, path, value, origin });
   const features = deriveClassFeatures(state.classes, index, [], [], state.answers);
@@ -140,31 +140,9 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
       sourceNames.set(`${selection.selectionId}:${subclass.key}`, name);
       if (castingRecord === subclass) castingSource = name;
     }
-    if (state.options['resourceReminders'] === true) {
-      for (const table of classResourceTables(parent, subclass ?? null).filter(table => !table.spellSlots)) {
-        const row = table.rows[selection.level - 1];
-        if (!row) continue;
-        for (const [column, raw] of row.entries()) {
-          // Only literal numbers, dice objects and whole dice tags; no prose or dynamic formulas.
-          const isDice = !!raw && typeof raw === 'object' && raw.type === 'dice';
-          const diceTag = typeof raw === 'string'
-            ? /^\{@dice\s+((?:\d+)?d\d+(?:\s*[+-]\s*(?:(?:\d+)?d\d+|\d+))*)(?:\|[^{}]*)?\}$/i.exec(raw.trim())
-            : null;
-          if (typeof raw !== 'number' && !isDice && !diceTag) continue;
-          const text = diceTag ? diceTag[1] : resourceCell(raw);
-          if (typeof text !== 'string' && typeof text !== 'number') continue;
-          const label = table.labels[column]?.replace(/\{@\w+ ([^{}]*)\}/g, (_tag, body: string) => body.split('|')[0]);
-          if (!label) continue;
-          const resource: SourceResource = {
-            id: wizardEditorId('resource', revision.sourceIdentity, selection.selectionId, table.id, String(column)),
-            sourceId: table.subclass && subclass ? wizardEditorId('source', revision.sourceIdentity, selection.selectionId, subclass.key) : parentId,
-            name: label, mode: 'note', note: String(text), total: 0, used: 0, recovery: 'NONE',
-            features: true, spells: false,
-          };
-          put('resourceReminders', `${table.owner}: ${label}`, ['resources', resource.id], resource);
-        }
-      }
-    }
+    resourceColumns.push(...wizardResourceColumns(parent, subclass ?? null, revision.sourceIdentity,
+      selection.selectionId, selection.level, parentId, subclass
+        ? wizardEditorId('source', revision.sourceIdentity, selection.selectionId, subclass.key) : parentId));
     const singleLevel = deriveLevelRules({ classes: [classInput], constitution: 10, manualMaxHp: 0,
       applyHp: false, applyHitDice: false, manualPools: [] }, { currentHp: 0, annotations: {}, resources: {} });
     const maxSpellLevel = Math.max(0, ...singleLevel.pools.filter(pool => pool.kind === 'spell-slots').map(pool => pool.rank));
@@ -331,6 +309,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     return !isCompleteSelection(answer, choice.count, choice.candidates.map(candidate => candidate.value));
   });
   // 4. Reconcile with the last baseline. Manual changes and annotations take precedence.
+  values.push(...wizardResourceValues(sheet, state, resourceColumns));
   const proposal = mergeWizardPrefill(sheet, state, values, overrideSections);
   const background = backgroundKey ? records.get(backgroundKey) : undefined;
   if (backgroundKey && background?.kind !== 'background') errors.push('The selected background is missing from this import.');
@@ -361,7 +340,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
       uniqueChoices.filter(choice => choice.ownerKey === state.speciesKey), state.answers);
   }
   applyAbilityBonuses(proposal.sheet);
-  return { ...proposal, values, hpContributions, errors: [...new Set(errors)], warnings: [...new Set(warnings)], choices: uniqueChoices, unresolved,
+  return { ...proposal, resourceColumns, values, hpContributions, errors: [...new Set(errors)], warnings: [...new Set(warnings)], choices: uniqueChoices, unresolved,
     summary: { level: proposal.sheet.character?.level ?? state.classes.reduce((sum, entry) => sum + entry.level, 0), maxHp: Math.max(0, maxHp),
       features: values.filter(entry => entry.path[0] === 'features').length, spells: spells.size } };
 }

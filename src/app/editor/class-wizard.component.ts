@@ -22,10 +22,11 @@ import { WIZARD_SECTIONS, WizardChoice, WizardHpContribution, matchesSubclass, p
 import { validateBasicInfo } from './basic-info';
 import { SearchableSelectComponent, SelectOption } from './searchable-select.component';
 import { activeContentRevision } from './active-content-revision';
+import { WizardResourcesComponent } from './wizard-resources.component';
 
 @Component({
   selector: 'app-class-wizard',
-  imports: [InfoButtonComponent, UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, SourceBookFilterComponent, SearchableSelectComponent, CapitalizeFirstPipe],
+  imports: [WizardResourcesComponent, InfoButtonComponent, UiIconComponent, FormsModule, RouterLink, CatalogDialogComponent, SourceBookFilterComponent, SearchableSelectComponent, CapitalizeFirstPipe],
   templateUrl: './class-wizard.component.html',
   styleUrls: ['./editor.css', './editor-spell-filters.css'],
 })

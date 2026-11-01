@@ -5,7 +5,7 @@ import { emptyBasicCharacter } from './basic-info';
 
 export type WizardState = NonNullable<ExportedCharacter['creatorWizard']>;
 export type WizardClass = WizardState['classes'][number];
-export interface PrefillValue { path: string[]; value: unknown; scope: string; label: string; origin?: string; }
+export interface PrefillValue { path: string[]; value: unknown; scope: string; label: string; origin?: string; overwriteFields?: string[]; }
 export type PrefillKeepReason = 'existing' | 'edited' | 'removed' | 'protected' | 'matching' | 'annotations' | 'linked';
 export interface PrefillChange { path: string[]; label: string; action: 'Fill' | 'Update' | 'Remove' | 'Keep'; keepReason?: PrefillKeepReason; }
 
@@ -131,6 +131,27 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
     const excludesAnnotations = ['features', 'spells', 'species'].includes(entry.path[0]);
     const manuallyChanged = old ? wizardFingerprint(current, excludesAnnotations) !== (old.editFingerprint ?? old.fingerprint)
       : current !== undefined && !same(current, readWizardValue(defaults, entry.path));
+    if (entry.path[0] === 'resources' && current && typeof current === 'object' && old
+      && (old.fieldFingerprints || entry.overwriteFields?.length) && !overrideManualEdits) {
+      const existing = current as MutableObject;
+      const proposed: MutableObject = { ...structuredClone(entry.value as MutableObject), used: existing['used'] };
+      let keptFields = false;
+      for (const field of Object.keys(proposed)) {
+        if (field === 'used') continue;
+        const modified = old.fieldFingerprints
+          ? wizardFingerprint(existing[field]) !== (old.fieldFingerprints[field] ?? wizardFingerprint(undefined))
+          : manuallyChanged || protectedKeys.has(key);
+        if (modified && !entry.overwriteFields?.includes(field)) {
+          proposed[field] = structuredClone(existing[field]); keptFields = true;
+        }
+      }
+      write(sheet, entry.path, proposed);
+      protectedKeys.delete(key);
+      if (!same(current, proposed)) changes.push({ path: entry.path, label: entry.label, action: 'Update' });
+      else if (keptFields) changes.push({ path: entry.path, label: entry.label, action: 'Keep', keepReason: 'edited' });
+      baseline[key] = createWizardBaseline(entry);
+      continue;
+    }
     if ((!overrideManualEdits && (protectedKeys.has(key) || manuallyChanged || matches.length > 0))
       || matches.length > (replacement ? 1 : 0)) {
       const keepReason: PrefillKeepReason = matches.length ? 'matching'
@@ -178,8 +199,10 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
     const overrideManualEdits = overrideSections.includes(entry.scope);
     const path = JSON.parse(key) as string[]; const current = readWizardValue(sheet, path);
     const source = current as { name?: string } | undefined;
-    const stillLinked = path[0] === 'sources' && source?.name && (sheet.features?.some(feature => feature.featureSourceName === source.name)
-      || sheet.spells?.some(spell => spell.castingSourceName === source.name) || sheet.character?.spellSlots?.[source.name]?.length || sheet.resources?.some(resource => resource.sourceId === path[1]));
+    const stillLinked = path[0] === 'resources'
+      ? [...(sheet.features ?? []), ...(sheet.spells ?? [])].some(entry => entry.resourceLinks?.some(link => link.resourceId === path[1]))
+      : path[0] === 'sources' && source?.name && (sheet.features?.some(feature => feature.featureSourceName === source.name)
+        || sheet.spells?.some(spell => spell.castingSourceName === source.name) || sheet.character?.spellSlots?.[source.name]?.length || sheet.resources?.some(resource => resource.sourceId === path[1]));
     if (current !== undefined && (hasAnnotations(current) || stillLinked
       || !overrideManualEdits && (protectedKeys.has(key) || wizardFingerprint(current) !== entry.fingerprint))) {
       const keepReason: PrefillKeepReason = hasAnnotations(current) ? 'annotations' : stillLinked ? 'linked'

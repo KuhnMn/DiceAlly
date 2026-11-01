@@ -28,9 +28,23 @@ exports, native sheet projection and description refresh. Resource deletion
 cleans its links; missing external links remain visible as missing resources and
 cannot be spent.
 
-The wizard has an opt-in Import class table values as resource reminders setting.
-It copies only literal numeric cells, structured dice cells or explicit dice tags
-at the selected class level, with stable IDs and normal wizard protection for
-manual changes and removals. It never infers a pool, cost, recovery or usage rule
-from prose, column names or a class/feature name. Convert an imported reminder to
-Uses and Reminder and author its total and recovery when needed.
+The wizard has an opt-in Import Resources section. New free-form table columns
+start unselected: a number alone does not establish a consumable resource.
+Schema-defined spell-slot, spell-progression and optional-selection tables are
+excluded. Other columns, including spell counts embedded in free-form tables,
+are never imported automatically. Previously imported entries remain selected.
+Choose the columns to track: literal nonnegative integer cells become counters;
+structured dice cells and explicit numeric dice tags become reminders. A counter
+can explicitly select a reminder from the same source to produce one combined
+resource, keeping the counter's stable identity. Names can be authored freely.
+Costs and recovery are never inferred. Mappings persist with the character.
+
+Resource updates compare individual fields against the last generated values.
+A manual name, recovery, placement, reminder or total protects that field while
+untouched fields continue to follow the chosen level. Spent counts and resource
+links are retained. Explicitly editing a mapping's name or reminder association
+applies that choice to those fields while preserving unrelated manual settings.
+Deleted resources stay deleted. Deselected or obsolete pools
+are retained when manually edited, spent or referenced by a feature or spell.
+Older edited resources without field history are kept conservatively on the
+first update; the wizard does not reconstruct their previous values by guessing.

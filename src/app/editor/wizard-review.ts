@@ -21,6 +21,7 @@ const DETAIL_LABELS: Readonly<Record<string, string>> = {
   name: 'Name', source: 'Source Book', castingSourceName: 'Casting Source', featureSourceName: 'Feature Source',
   listType: 'Spell List', featureType: 'Feature Type', entity: 'Description & Rules', featureEntity: 'Feature Details',
   featEntity: 'Feat Details', optionalFeatureEntity: 'Optional Feature Details',
+  mode: 'Display', note: 'Reminder', recovery: 'Recovery', features: 'Features', spells: 'Spells',
   total: 'Total', level: 'Level', regainCondition: 'Recovery', dieType: 'Hit Die', value: 'Movement',
 };
 
@@ -58,6 +59,8 @@ function valueLabel(value: unknown): string {
   if (typeof value !== 'object') return ({ PROFICIENT: 'Proficient', EXPERTISE: 'Expertise', HALF: 'Half Proficiency' } as Record<string, string>)[String(value)] ?? String(value);
   const entry = object(value)!;
   if (typeof entry['dieType'] === 'string') return `${entry['total']} × ${entry['dieType']}`;
+  if (typeof entry['mode'] === 'string' && typeof entry['name'] === 'string') return [entry['name'],
+    entry['mode'] !== 'note' ? `${entry['total']} Uses` : '', entry['mode'] !== 'counter' ? entry['note'] : ''].filter(Boolean).join(' · ');
   if (typeof entry['total'] === 'number') return `${entry['total']} Slots`;
   const speed = object(entry['value']);
   if (speed?.['kind'] === 'fixed') return `${speed['feet']} ft.`;
@@ -93,7 +96,9 @@ export function wizardReviewValues(change: PrefillChange, before: ExportedCharac
     if (suggested && valueLabel(suggested.value) !== result.after) result.suggested = valueLabel(suggested.value);
     result.detail = next == null ? 'This entry stays removed. The wizard will not add it again.'
       : change.keepReason === 'annotations' ? 'This setup no longer adds this entry. It stays on your character because it has notes or recorded uses.'
-      : change.keepReason === 'linked' ? 'This source stays because your features, spells or spell slots still use it.'
+      : change.keepReason === 'linked' ? change.path[0] === 'resources'
+        ? 'This resource stays because a feature or spell still uses it.'
+        : 'This source stays because your features, spells or spell slots still use it.'
       : result.suggested || differences.length ? 'Your current values will be kept. The wizard suggestions shown here will not be applied.'
       : 'Already on your character. Applying this setup will not change it.';
   }
@@ -127,6 +132,9 @@ export function groupWizardReview(changes: PrefillChange[], before: ExportedChar
       section = 'Spells & Slots'; group = `${id} · Spell Slots`;
     } else if (kind === 'sources') {
       section = 'Feature Sources'; group = 'Sources';
+    } else if (kind === 'resources') {
+      const resource = sheet.resources?.find(entry => entry.id === id) ?? other.resources?.find(entry => entry.id === id);
+      section = 'Resources'; group = sheet.character?.featureSources?.find(source => source.editorId === resource?.sourceId)?.name ?? 'Unassigned Source';
     } else if (kind === 'species' || kind === 'resistances' || kind === 'speeds' || kind === 'character' && ['senses', 'speeds'].includes(id)) {
       section = 'Species & Movement'; group = kind === 'species' ? 'Species' : kind === 'resistances' ? 'Resistances' : id === 'senses' ? 'Senses' : 'Speeds';
     } else if (['saves', 'languages', 'custom'].includes(kind) || kind === 'character' && id === 'proficiencies') {
@@ -139,7 +147,7 @@ export function groupWizardReview(changes: PrefillChange[], before: ExportedChar
     const entries = groups.get(group) ?? [];
     entries.push(change); groups.set(group, entries);
   }
-  return ['Character identity', 'Character stats', 'Feature Sources', 'Species & Movement', 'Proficiencies', 'Features', 'Spells & Slots']
+  return ['Character identity', 'Character stats', 'Feature Sources', 'Resources', 'Species & Movement', 'Proficiencies', 'Features', 'Spells & Slots']
     .filter(label => sections.has(label)).map(label => ({
       label, count: [...sections.get(label)!.values()].reduce((count, entries) => count + entries.length, 0),
       groups: [...sections.get(label)!].sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true })).map(([label, entries]) => ({

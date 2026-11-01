@@ -72,6 +72,12 @@ export function recoverResources(sheet: ExportedCharacter, rest: 'short' | 'long
   }
 }
 export function validateResources(sheet: ExportedCharacter): void {
+  const imports = sheet.creatorWizard?.resourceImports;
+  if (imports !== undefined && (!imports || typeof imports !== 'object' || Array.isArray(imports)
+    || Object.values(imports).some(setting => !setting || typeof setting !== 'object' || Array.isArray(setting)
+      || typeof setting.enabled !== 'boolean' || setting.name !== undefined && typeof setting.name !== 'string'
+      || setting.reminderId !== undefined && typeof setting.reminderId !== 'string')))
+    throw new Error('Invalid resource import mapping.');
   if (sheet.resources !== undefined && !Array.isArray(sheet.resources))
     throw new Error('Invalid resources.');
   const ids = new Set<string>();

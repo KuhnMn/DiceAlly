@@ -269,21 +269,23 @@ describe('Subclass-granted spell prefill', () => {
     f.state.classes[0].level = 8;
     expect(previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet.spells!.some(spell => spell.name === 'Shield' && spell.uses?.length)).toBe(false);
   });
-  it('imports literal class table values only as opt-in reminders and preserves manual resource edits', () => {
+  it('imports selected numbers as counters, dice as reminders and preserves manual resource edits', () => {
     const f=fixture(), record=f.index.get(f.state.classes[0].classKey)!;
     record.data['classTableGroups']=[{colLabels:['Psi Dice','Uses'],rows:Array.from({length:20},()=>[{type:'dice',toRoll:[{number:2,faces:6}]},3])}];
     expect(previewClassWizard(f.sheet,f.state,f.revision,f.index).sheet.resources??[]).toEqual([]);
     f.state.options['resourceReminders']=true;
+    f.state.resourceImports=Object.fromEntries(previewClassWizard(f.sheet,f.state,f.revision,f.index).resourceColumns.map(column=>[column.id,{enabled:true}]));
     const first=previewClassWizard(f.sheet,f.state,f.revision,f.index).sheet;
     expect(first.resources!.filter(resource=>resource.name==='Psi Dice')[0].note).toBe('2d6');
-    expect(first.resources!.every(resource=>resource.mode==='note'&&!resource.casting&&resource.recovery==='NONE')).toBe(true);
+    expect(first.resources!.find(resource=>resource.name==='Uses')).toMatchObject({mode:'counter',total:3,note:'',recovery:'NONE'});
+    expect(first.resources!.every(resource=>!resource.casting&&resource.recovery==='NONE')).toBe(true);
     const resource=first.resources![0];resource.note='Personal note';
     const repeated=previewClassWizard(first,first.creatorWizard!,f.revision,f.index).sheet;
     expect(repeated.resources!.find(entry=>entry.id===resource.id)!.note).toBe('Personal note');
     expect(new Set(repeated.resources!.map(entry=>entry.id)).size).toBe(repeated.resources!.length);
   });
 
-  it('imports Soulknife die-size tags and numbers at the selected level without inferring uses', () => {
+  it('imports selected Soulknife dice and counters at the selected level without inferring recovery', () => {
     const f = fixture();
     const rows = Array.from({ length: 20 }, (_, index) => index < 2 ? [0, 0]
       : [`{@dice D${index < 4 ? 6 : index < 10 ? 8 : index < 16 ? 10 : 12}}`, index < 4 ? 4 : index < 8 ? 6 : index < 12 ? 8 : index < 16 ? 10 : 12]);
@@ -299,13 +301,14 @@ describe('Subclass-granted spell prefill', () => {
       subclassKey: records.find(record => record.kind === 'subclass')!.key }], answers: {} };
     expect(previewClassWizard(f.sheet, state, f.revision, index).sheet.resources ?? []).toEqual([]);
     state.options['resourceReminders'] = true;
+    state.resourceImports = Object.fromEntries(previewClassWizard(f.sheet,state,f.revision,index).resourceColumns.map(column=>[column.id,{enabled:true}]));
     for (const [level, die, count] of [[3, 'D6', '4'], [5, 'D8', '6'], [11, 'D10', '8'], [17, 'D12', '12']] as const) {
       state.classes[0].level = level;
       const result = previewClassWizard(f.sheet, state, f.revision, index).sheet;
       const sourceId = result.character!.featureSources!.find(source => source.name === 'Soulknife (XPHB)')!.editorId;
       expect(result.resources).toEqual([
         expect.objectContaining({ name: 'Die Size', note: die, sourceId, mode: 'note', total: 0, used: 0, recovery: 'NONE' }),
-        expect.objectContaining({ name: 'Number', note: count, sourceId, mode: 'note', total: 0, used: 0, recovery: 'NONE' }),
+        expect.objectContaining({ name: 'Number', note: '', sourceId, mode: 'counter', total: Number(count), used: 0, recovery: 'NONE' }),
       ]);
     }
   });
@@ -318,6 +321,7 @@ describe('Subclass-granted spell prefill', () => {
         'Roll {@dice 1d6}', 'PB + 1', '{@dice 1d6 + PB}', '{@dice D6} extra']),
     }];
     f.state.options['resourceReminders'] = true;
+    f.state.resourceImports = Object.fromEntries(previewClassWizard(f.sheet,f.state,f.revision,f.index).resourceColumns.map(column=>[column.id,{enabled:true}]));
     expect(previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet.resources?.map(resource => [resource.name, resource.note]))
       .toEqual([['Die', 'd8'], ['Roll', '2d6 + 1']]);
   });

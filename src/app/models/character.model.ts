@@ -898,7 +898,8 @@ export interface ExportedCharacter {
     customBackgroundName?: string;
     answers: Record<string, string[]>;
     options: Record<string, boolean>;
-    baseline: { path: string[]; fingerprint: string; editFingerprint?: string; scope: string; label: string }[];
+    resourceImports?: Record<string, { enabled: boolean; name?: string; reminderId?: string }>;
+    baseline: { path: string[]; fingerprint: string; editFingerprint?: string; fieldFingerprints?: Record<string, string>; scope: string; label: string }[];
     protectedPaths: string[][];
   };
   portaitUrl?: string | null;

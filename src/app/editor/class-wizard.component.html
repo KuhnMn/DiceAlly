@@ -68,9 +68,8 @@
           <label class="flex items-center gap-1.5 text-xs text-on-surface-variant"><input type="checkbox" [name]="'wizard-override-' + section.key" [attr.aria-label]="'Override manual edits for ' + section.label" [disabled]="state.options[section.key] === false" [(ngModel)]="overrideEdits[section.key]" (ngModelChange)="rebuild()" />Override edits</label>
         </div>
       }</div>
-      <label class="mb-3 block rounded-lg border border-outline-variant p-2 text-sm"><input type="checkbox" name="wizard-resource-reminders" [ngModel]="state.options['resourceReminders'] === true" (ngModelChange)="state.options['resourceReminders'] = $event; rebuild()" /> Import class table values as resource reminders
-        <span class="mt-1 block text-xs text-on-surface-variant">Copies explicit numbers and dice at the selected class level. Uses, costs and recovery remain manual.</span>
-      </label>
+      <app-wizard-resources [sheet]="sheet()" [state]="state" [columns]="proposal()?.resourceColumns ?? []"
+        (enabledChanged)="state.options['resourceReminders'] = $event; rebuild()" (edited)="rebuild()" />
       @if (proposal()?.unresolved?.length) {
         <details open class="mb-3 rounded-lg border border-outline-variant bg-surface-container p-2.5" aria-label="Open wizard decisions">
           <summary class="cursor-pointer text-sm font-semibold">Open Decisions ({{ proposal()!.unresolved.length }})</summary>
