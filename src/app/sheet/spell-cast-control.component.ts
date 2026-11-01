@@ -43,6 +43,9 @@ interface CastingPool {
         @if (slots) {
           <app-resource-select class="min-w-0 flex-1" label="Cast Level" ariaLabel="Cast level" [value]="level() === null ? '' : '' + level()"
             [options]="levelOptions()" [disabled]="pending() || levels().length <= 1" (changed)="setLevel($event)" placeholder="No Applicable Level" />
+        } @else if (resource()?.kind === 'cantrip') {
+          <app-resource-select class="min-w-0 flex-1" label="Cast Level" ariaLabel="Cast level" value="0"
+            [options]="levelOptions()" [selectable]="false" />
         } @else if (resource()?.kind === 'resource' || resource()?.kind === 'use') {
           <app-resource-select class="min-w-0 flex-1" label="Resource" ariaLabel="Resource balance" [value]="resource()!.key"
             [options]="usageOptions()" [selectable]="false" />
@@ -181,7 +184,7 @@ export class SpellCastControlComponent {
   levelOptions(): ResourceSelectOption[] {
     return this.levels().map(value => {
       const pool = this.poolForLevel(value);
-      return { value: String(value), label: value === 0 ? 'C' : `Level ${value}`,
+      return { value: String(value), label: value === 0 ? 'Cantrip' : `Level ${value}`,
         balance: pool ? `${pool.remaining}/${pool.slot.total}` : undefined };
     });
   }

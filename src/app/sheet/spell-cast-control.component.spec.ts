@@ -420,11 +420,15 @@ describe('Cast from spell details', () => {
     expect(control.level()).toBe(2); fixture.destroy();
   });
 
-  it('keeps free cantrips enabled without a level field, spending slots or producing any effect', () => {
+  it('shows a fixed Cantrip cast level beside Cast without spending slots or producing any effect', () => {
     const value = sheet(); value.character!.spellSlots = {};
     const { fixture, control, store } = setup(spell(0), value);
     const before = structuredClone(value);
     expect(fixture.nativeElement.querySelector('select[aria-label="Cast level"]')).toBeNull();
+    const levelControl = fixture.nativeElement.querySelector('app-resource-select[ariaLabel="Cast level"]') as HTMLElement;
+    expect(levelControl.querySelector('output')!.textContent).toContain('Cantrip');
+    const castButton = fixture.nativeElement.querySelector('button[aria-label="Cast Test Spell"]') as HTMLButtonElement;
+    expect(castButton.parentElement!.parentElement).toBe(levelControl.parentElement);
     expect(fixture.nativeElement.querySelector('button').disabled).toBe(false);
     control.setLevel('2'); expect(control.level()).toBe(0);
     fixture.nativeElement.querySelector('button').click(); control.cast(); fixture.detectChanges();
