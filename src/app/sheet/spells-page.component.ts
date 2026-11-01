@@ -138,7 +138,7 @@ type SpellLevelFilter = 'ALL' | number;
         <h2 class="text-xl font-bold sm:text-3xl">Spellcasting</h2>
         <div class="ml-auto flex shrink-0 items-center gap-2">
           <app-spell-view-switcher [view]="spellView()" (viewChange)="spellView.set($event)" [showSpellbook]="showSpellbook()" />
-          <app-sheet-list-layout #listLayout class="sm:ml-2 sm:border-l sm:border-outline-variant sm:pl-4" />
+          <app-sheet-list-layout #listLayout [characterId]="characterData()?.character?.characterUuid" page="spells" class="sm:ml-2 sm:border-l sm:border-outline-variant sm:pl-4" />
         </div>
       </header>
 

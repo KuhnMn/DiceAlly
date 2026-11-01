@@ -175,7 +175,7 @@ import { referenceDescription } from '../models/character-references';
     <div class="bg-surface-container-highest p-3 sm:p-5 rounded-lg border-2 border-outline  shadow-lg">
       <header class="mb-4 flex items-center justify-between gap-2 sm:mb-6">
         <h2 class="text-xl sm:text-3xl font-bold">Features & Traits</h2>
-        <app-sheet-list-layout #listLayout />
+        <app-sheet-list-layout #listLayout [characterId]="characterData()?.character?.characterUuid" page="features" />
       </header>
       @if (characterData(); as resourceSheet) { <app-source-resources [sheet]="resourceSheet" page="features" [columns]="listLayout.displayColumns()" /> }
 
