@@ -16,7 +16,7 @@ describe('Linked resource costs in collapsed lists', () => {
     const sheet = emptyBasicCharacter();
     sheet.resources = [{ id: 'psi', sourceId: 'source', name: 'Psionic Energy', mode: 'counter', note: '', total: 8, used: 2, recovery: 'SHORT_REST', features: true, spells: true }];
     const resourceLinks = [{ resourceId: 'psi', amount: 2 }];
-    sheet.features = [{ name: 'Psychic Attack', featureType: 'FEAT', resourceLinks }];
+    sheet.features = [{ editorId: 'feature', name: 'Psychic Attack', featureType: 'FEAT', source: 'TEST', resourceLinks }];
     sheet.spells = ['PREPARED', 'KNOWN', 'SPELLBOOK'].map(listType => ({ name: 'Psychic Spell', listType, resourceLinks,
       entity: { name: 'Psychic Spell', level: 1, school: 'V', source: 'TEST', time: [], range: {}, components: {}, duration: [], entries: [] } }));
     const features = TestBed.createComponent(FeaturesPageComponent);
@@ -26,9 +26,16 @@ describe('Linked resource costs in collapsed lists', () => {
     spells.componentRef.setInput('characterData', sheet); spells.detectChanges();
     const tag = (root: HTMLElement) => root.querySelector('app-resource-link-tags [title]') as HTMLElement;
     expect(tag(features.nativeElement).title).toBe('Resource: Psionic Energy · Cost: 2');
+    const featureRow = tag(features.nativeElement).closest('app-resource-link-tags')!.parentElement!;
+    expect(featureRow.previousElementSibling?.textContent).toContain('Psychic Attack');
+    expect(featureRow.nextElementSibling?.textContent).toContain('TEST');
+    expect(featureRow.textContent).not.toContain('TEST');
     for (const view of ['PREPARED', 'KNOWN', 'SPELLBOOK'] as const) {
       spells.componentInstance.spellView.set(view); spells.detectChanges();
       expect(tag(spells.nativeElement).title).toBe('Resource: Psionic Energy · Cost: 2');
+      const spellRow = tag(spells.nativeElement).closest('app-resource-link-tags')!.parentElement!;
+      expect(spellRow.textContent).toContain(view === 'PREPARED' ? 'Evocation' : 'Evoc');
+      if (view === 'PREPARED') expect(spellRow.querySelector('button[aria-pressed]')).not.toBeNull();
     }
     const updated = { ...sheet, resources: [{ ...sheet.resources[0], name: 'Custom Focus' }],
       features: sheet.features!.map(feature => ({ ...feature, resourceLinks: [{ resourceId: 'psi', amount: 3 }] })) };

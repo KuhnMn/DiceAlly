@@ -290,6 +290,12 @@ import { referenceDescription } from '../models/character-references';
                   </div>
                 </button>
 
+                @if (feature.resourceLinks?.length) {
+                  <div class="mt-1 flex min-w-0 flex-wrap items-center gap-1">
+                  <app-resource-link-tags [sheet]="characterData()!" [links]="feature.resourceLinks ?? []" />
+                  </div>
+                }
+
                 <!-- Basic Info (always visible) -->
                 <div class="mt-1 flex flex-wrap items-center gap-1 sm:gap-2">
                   @if (feature.source) {
@@ -298,7 +304,6 @@ import { referenceDescription } from '../models/character-references';
                   @if (feature.featureSourceName) {
                     <span class="text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">{{ feature.featureSourceName }}</span>
                   }
-                  <app-resource-link-tags [sheet]="characterData()!" [links]="feature.resourceLinks ?? []" />
                 </div>
 
                 <!-- Reference details open in a modal on every screen size. -->

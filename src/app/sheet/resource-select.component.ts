@@ -48,6 +48,6 @@ export class ResourceSelectComponent {
   optionLabel(option: ResourceSelectOption) {
     const characters = Array.from(option.label);
     const name = characters.length > 24 ? characters.slice(0, 23).join('') + '…' : option.label;
-    return [name, option.recovery ? regainLabel(option.recovery) : '', option.balance ?? ''].filter(Boolean).join(' · ');
+    return [name, option.balance ?? ''].filter(Boolean).join(' · ');
   }
 }

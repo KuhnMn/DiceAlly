@@ -250,13 +250,14 @@ type SpellLevelFilter = 'ALL' | number;
                           </button>
                         </h3>
                       </div>
-                      <div class="preparation-metadata mt-0.5 flex min-w-0 items-center gap-1 text-[10px] leading-4">
+                      <div class="preparation-metadata mt-0.5 flex min-w-0 flex-wrap items-center gap-1 text-[10px] leading-4">
                         @if (spell.entity?.school; as school) { <span class="shrink-0 rounded bg-teal-container px-1 text-on-teal-container" [attr.aria-label]="helpers.spellSchoolLabel(school)" [title]="helpers.spellSchoolLabel(school)">{{ compactSchoolLabel(school) }}</span> }
                         @if (hasSpellListType(spell, 'SPELLBOOK')) { <span role="img" aria-label="In Spellbook" title="In Spellbook" class="inline-flex shrink-0 rounded bg-purple-container px-0.5 text-xs text-on-purple-container"><app-ui-icon name="book" /></span> }
                         @if (spellView() === 'SPELLBOOK') {
                           @if (spell.entity?.meta?.ritual) { <span class="shrink-0 rounded bg-green-container px-1 text-on-green-container" aria-label="Ritual" title="Ritual">Ritual</span> }
                           @if (requiresConcentration(spell)) { <span class="shrink-0 rounded bg-tertiary-container px-1 text-on-tertiary-container" aria-label="Concentration" title="Concentration">C</span> }
                         }
+                        <app-resource-link-tags [sheet]="characterData()!" [links]="spell.resourceLinks ?? []" />
                         @if (spell.castingSourceName) { <span class="min-w-0 truncate rounded bg-secondary-container px-1 text-on-secondary-container" [title]="spell.castingSourceName">{{ spell.castingSourceName }}</span> }
                         @if (spell.source) { <span class="min-w-0 max-w-[35%] truncate rounded bg-surface-container-highest px-1 text-on-surface" [title]="spell.source">{{ spell.source }}</span> }
                       </div>
@@ -287,6 +288,7 @@ type SpellLevelFilter = 'ALL' | number;
                           </span>
                         }
                       }
+                      <app-resource-link-tags [sheet]="characterData()!" [links]="spell.resourceLinks ?? []" />
                     </div>
 
                     <!-- Basic information stays visible when descriptions are collapsed. -->
@@ -302,12 +304,6 @@ type SpellLevelFilter = 'ALL' | number;
                       }
                     </div>
 
-                    }
-
-                    @if (spell.resourceLinks?.length) {
-                      <div class="mt-1 flex min-w-0 flex-wrap items-center gap-1">
-                        <app-resource-link-tags [sheet]="characterData()!" [links]="spell.resourceLinks ?? []" />
-                      </div>
                     }
 
                     <!-- Expandable Content -->

@@ -60,13 +60,18 @@ describe('Cast from spell details', () => {
     control.setResource('resource:points');expect(control.canCast()).toBe(true);
     fixture.detectChanges();
     const resourceControl=fixture.nativeElement.querySelector('[aria-label="Casting resource"]').closest('app-resource-select') as HTMLElement;
-    expect(resourceControl.querySelector('output .tabular-nums')?.textContent).toBe('7/7');
+    expect(resourceControl.querySelector('output .tabular-nums')).toBeNull();
+    expect([...resourceControl.querySelectorAll('option')].some(option => option.textContent?.includes('7/7'))).toBe(false);
     expect(resourceControl.querySelector('output [aria-label="Regain: Long Rest"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('select[aria-label="Cast level"]')).toBeNull();
+    const balance = fixture.nativeElement.querySelector('app-resource-select[ariaLabel="Resource balance"] output');
+    expect(balance.textContent).toContain('Sorcery Points');
+    expect(balance.textContent).toContain('7/7');
     expect(resourceControl.textContent).toContain('Wizard · Sorcery Points');
     expect(resourceControl.textContent).not.toContain('Cost 3');
     expect(fixture.nativeElement.querySelector('button[aria-label="Cast Test Spell"]').textContent).toContain('(3)');
     await control.cast();expect(store.characterData()!.resources![0].used).toBe(3);
-    fixture.detectChanges();expect(resourceControl.querySelector('output .tabular-nums')?.textContent).toBe('4/7');
+    fixture.detectChanges();expect(balance.textContent).toContain('4/7');
     expect(store.characterData()!.character!.spellSlots).toEqual(value.character!.spellSlots);
     await control.cast();expect(store.characterData()!.resources![0].used).toBe(6);expect(control.canCast()).toBe(false);
     await control.cast();expect(store.characterData()!.resources![0].used).toBe(6);fixture.destroy();
@@ -81,7 +86,7 @@ describe('Cast from spell details', () => {
     expect(control.resource()?.kind).toBe('slot');
     control.setLevel('2'); resourceSelect.value = 'ritual'; resourceSelect.dispatchEvent(new Event('change')); fixture.detectChanges();
     expect(control.level()).toBe(1); expect(control.levels()).toEqual([1]); expect(control.upcasting()).toBe(false);
-    expect(fixture.nativeElement.querySelector('select[aria-label="Cast level"]').disabled).toBe(true);
+    expect(fixture.nativeElement.querySelector('select[aria-label="Cast level"]')).toBeNull();
     control.setLevel('2'); expect(control.level()).toBe(1);
     const before = structuredClone(value);
     await control.cast(); await control.cast();
@@ -173,7 +178,8 @@ describe('Cast from spell details', () => {
     const select = fixture.nativeElement.querySelector('select[aria-label="Casting resource"]') as HTMLSelectElement;
     expect(select.value).toBe(key);
     expect(select.closest('app-resource-select')!.querySelector('[role="img"][aria-label="Regain: Short Rest"]')).not.toBeNull();
-    expect(select.selectedOptions[0].textContent).toContain('Short Rest');
+    expect(select.selectedOptions[0].textContent).not.toContain('Short Rest');
+    expect(select.selectedOptions[0].getAttribute('aria-label')).toContain('Short Rest');
     control.setLevel('3');
     expect(control.resource()?.key).toBe(key); expect(control.levels()).toEqual([1, 2]); expect(control.canCast()).toBe(false);
     await control.cast(); expect(store.characterData()).toBe(value);
@@ -201,7 +207,8 @@ describe('Cast from spell details', () => {
     expect(control.resources().map(resource => resource.key)).toEqual(keys);
     await control.cast(); expect(store.characterData()!.character!.spellSlots!['Warlock'][0].used).toBe(1);
     control.setResource('use:0'); fixture.detectChanges();
-    expect(control.levels()).toEqual([1]); expect(control.level()).toBe(1); expect(levelSelect.disabled).toBe(true);
+    expect(control.levels()).toEqual([1]); expect(control.level()).toBe(1);
+    expect(fixture.nativeElement.querySelector('select[aria-label="Cast level"]')).toBeNull();
     expect(control.resources().map(resource => resource.key)).toEqual(keys);
     await control.cast(); expect(store.characterData()!.spells![0].uses![0].usedFreeUses).toBe(1);
     const artificer = control.resources().find(resource => resource.label.startsWith('Artificer'))!;
@@ -402,12 +409,11 @@ describe('Cast from spell details', () => {
     expect(control.level()).toBe(2); fixture.destroy();
   });
 
-  it('keeps cantrips fixed at C and always enabled, without spending slots or producing any effect', () => {
+  it('keeps free cantrips enabled without a level field, spending slots or producing any effect', () => {
     const value = sheet(); value.character!.spellSlots = {};
     const { fixture, control, store } = setup(spell(0), value);
     const before = structuredClone(value);
-    const level = fixture.nativeElement.querySelector('select[aria-label="Cast level"]') as HTMLSelectElement;
-    expect(level.disabled).toBe(true); expect(level.selectedOptions[0].textContent?.trim()).toBe('C');
+    expect(fixture.nativeElement.querySelector('select[aria-label="Cast level"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('button').disabled).toBe(false);
     control.setLevel('2'); expect(control.level()).toBe(0);
     fixture.nativeElement.querySelector('button').click(); control.cast(); fixture.detectChanges();

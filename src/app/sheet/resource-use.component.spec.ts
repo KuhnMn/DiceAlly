@@ -42,7 +42,7 @@ describe('Resource use control',()=>{
     fixture.detectChanges();
     const select=fixture.nativeElement.querySelector('select') as HTMLSelectElement;
     expect(select.options).toHaveLength(2);
-    expect(select.options[1].textContent).toContain('… · Long Rest · 6/6');
+    expect(select.options[1].textContent).toContain('… · 6/6');
     expect(select.options[1].getAttribute('aria-label')).toContain(longName);
     expect(select.options[1].textContent).not.toContain('Cost');
     select.value='psi';select.dispatchEvent(new Event('change'));fixture.detectChanges();

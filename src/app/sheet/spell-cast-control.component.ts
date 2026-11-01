@@ -40,8 +40,13 @@ interface CastingPool {
         <app-resource-select class="min-w-24 flex-1" [class.basis-full]="slots" label="Casting Resource" ariaLabel="Casting resource" [value]="resource()?.key ?? ''"
           [options]="resourceOptions()" [disabled]="pending()" (changed)="setResource($event)"
           [placeholder]="resources().length ? 'Choose a Resource' : 'No Resources Available'" />
-        <app-resource-select class="min-w-24 flex-1" [class.order-3]="!slots" [class.basis-full]="!slots" label="Cast Level" ariaLabel="Cast level" [value]="level() === null ? '' : '' + level()"
-          [options]="levelOptions()" [disabled]="pending() || levels().length <= 1" (changed)="setLevel($event)" placeholder="No Applicable Level" />
+        @if (slots) {
+          <app-resource-select class="min-w-24 flex-1" label="Cast Level" ariaLabel="Cast level" [value]="level() === null ? '' : '' + level()"
+            [options]="levelOptions()" [disabled]="pending() || levels().length <= 1" (changed)="setLevel($event)" placeholder="No Applicable Level" />
+        } @else if (resource()?.kind === 'resource' || resource()?.kind === 'use') {
+          <app-resource-select class="order-3 basis-full" label="Resource" ariaLabel="Resource balance" [value]="resource()!.key"
+            [options]="usageOptions()" [selectable]="false" />
+        }
         <div class="flex shrink-0 items-end gap-2">
         @if (requiresConcentration()) {
           <button type="button" (click)="trackConcentration.set(!trackConcentration())" [disabled]="pending()" [attr.aria-pressed]="trackConcentration()" aria-label="Track concentration after casting" [title]="trackConcentration() ? 'Track Concentration After Casting: On' : 'Track Concentration After Casting: Off'"
@@ -55,8 +60,8 @@ interface CastingPool {
       <p class="text-xs text-on-surface-variant" aria-live="polite">
         @if (baseLevel() === null) { The spell level is unavailable. }
         @else if (!resource()) { {{ resources().length ? 'Choose a casting resource.' : 'No spell slots available for this spell.' }} }
-        @else if (resource()?.kind === 'use') { Uses one selected use; no spell slot. Cast at the spell's base level. }
-        @else if (resource()?.kind === 'resource') { Uses the selected resource; no spell slot. Cast at the spell's base level. }
+        @else if (resource()?.kind === 'use') { Uses one selected use; no spell slot. }
+        @else if (resource()?.kind === 'resource') { Uses the selected resource; no spell slot. }
         @else if (resource()?.kind === 'ritual') { Ritual casting uses no spell slot or Uses. }
         @else if (baseLevel() === 0) { Cantrips do not use spell slots. }
         @else { Choose an applicable cast level. }
@@ -163,7 +168,15 @@ export class SpellCastControlComponent {
   };
   resourceOptions(): ResourceSelectOption[] {
     return this.resources().map(resource => ({ value: resource.key, label: resource.label,
-      recovery: resource.recovery, balance: resource.kind === 'use' || resource.kind === 'resource' ? `${resource.remaining}/${resource.total}` : undefined }));
+      recovery: resource.recovery }));
+  }
+  usageOptions(): ResourceSelectOption[] {
+    const resource = this.resource();
+    if (!resource || (resource.kind !== 'resource' && resource.kind !== 'use')) return [];
+    const name = resource.kind === 'resource'
+      ? this.liveSheet()?.resources?.find(pool => pool.id === resource.cost?.resourceId)?.name ?? 'Missing resource'
+      : this.trackedSpell()?.spell.uses?.[resource.useIndex!]?.tag || 'Uses';
+    return [{ value: resource.key, label: name, balance: `${resource.remaining}/${resource.total}` }];
   }
   levelOptions(): ResourceSelectOption[] {
     return this.levels().map(value => {
