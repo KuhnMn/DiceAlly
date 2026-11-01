@@ -1,11 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { isModuleLoadError, loadWithRetry } from './lazy-load';
+import { isModuleLoadError, loadWithRetry, moduleRetryUrl } from './lazy-load';
 import { canPreload } from './idle-preloading.strategy';
 
 beforeEach(() => vi.stubGlobal('navigator', { onLine: true }));
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe('Lazy module loading', () => {
+  it('retries an equivalent filename path without changing static dependency URLs', () => {
+    vi.stubGlobal('location', new URL('https://diceally.example/sheet'));
+    const retry = new URL(moduleRetryUrl(new TypeError('error loading dynamically imported module: https://diceally.example/chunk-TK2C7JMY.js'))!);
+    expect(retry.pathname).toBe('/%63hunk-TK2C7JMY.js');
+    expect(retry.searchParams.has('module-retry')).toBe(true);
+    expect(new URL('./chunk-RUNTIME.js', retry).href).toBe('https://diceally.example/chunk-RUNTIME.js');
+  });
+  it('never retries modules from another origin or invents an unknown module address', () => {
+    vi.stubGlobal('location', new URL('https://diceally.example/sheet'));
+    expect(moduleRetryUrl(new TypeError('Failed to fetch dynamically imported module: https://other.example/chunk-X.js'))).toBeUndefined();
+    expect(moduleRetryUrl(new TypeError('Importing a module script failed.'))).toBeUndefined();
+  });
   it.each(['Failed to fetch dynamically imported module: /chunk-X.js', 'error loading dynamically imported module', 'Importing a module script failed.'])('recognizes browser download failures: %s', message => {
     expect(isModuleLoadError(new TypeError(message))).toBe(true);
   });
