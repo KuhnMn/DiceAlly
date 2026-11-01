@@ -25,7 +25,7 @@ import { FacilityFiltersComponent } from '../facility-filters.component';
       @for (order of facility.entity.orders ?? []; track order) { <span class="rounded bg-surface-container-high px-2 py-0.5 text-xs font-normal text-on-surface">{{ orderLabel(order) }}</span> }
     </ng-template>
     <section class="rounded-lg border-2 border-outline bg-surface-container-highest p-3 shadow-lg sm:p-5">
-      <header class="mb-3 flex items-center justify-between gap-2"><h2 class="text-xl font-bold sm:text-3xl">Bastions</h2><app-sheet-list-layout #layout /></header>
+      <header class="mb-3 flex items-center justify-between gap-2"><h2 class="text-xl font-bold sm:text-3xl">Bastions</h2><app-sheet-list-layout #layout [characterId]="characterData()?.character?.characterUuid" page="bastions" /></header>
       <app-bastion-plan [value]="characterData()?.bastion?.planUrl" />
       <h3 class="mb-2 text-lg font-bold">Facilities</h3>
       <app-list-controls label="Search facilities" [query]="query()" (queryChange)="query.set($event)" [filterCount]="filterCount()" (cleared)="clearFilters()">

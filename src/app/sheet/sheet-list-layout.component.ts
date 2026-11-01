@@ -2,6 +2,7 @@ import { sheetColumnCapacity } from './sheet-layout.service';
 import { Component, signal, computed, inject, input, effect, ElementRef, afterNextRender, DestroyRef } from '@angular/core';
 import { UiIconComponent } from '../ui-icon.component';
 import { observeResizeAfterFrame } from '../resize-observer';
+import type { OptionalSheetPage } from '../models/sheet-pages';
 
 @Component({
   selector: 'app-sheet-list-layout',
@@ -22,7 +23,7 @@ import { observeResizeAfterFrame } from '../resize-observer';
 })
 export class SheetListLayoutComponent {
   readonly characterId = input<string | null>();
-  readonly page = input<'features' | 'spells'>();
+  readonly page = input<'features' | Exclude<OptionalSheetPage, 'notes'>>();
   readonly columns = signal(1);
   readonly maxColumns = signal(3);
   readonly displayColumns = computed(() => Math.min(this.columns(), this.maxColumns()));

@@ -5,6 +5,10 @@ import { emptyBasicCharacter } from '../editor/basic-info';
 import { FeaturesPageComponent } from './features-page.component';
 import { SpellsPageComponent } from './spells-page.component';
 import { SheetListLayoutComponent } from './sheet-list-layout.component';
+import { MobileCombatPageComponent } from './mobile-combat-page.component';
+import { EquipmentPageComponent } from './equipment-page.component';
+import { MonstersPageComponent } from './monsters-page.component';
+import { BastionsPageComponent } from './bastions-page.component';
 
 const key = (id: string, page = 'spells') => `dice-ally-sheet-columns-${JSON.stringify([id, page])}`;
 
@@ -28,11 +32,15 @@ describe('Remembered character list columns', () => {
     return { fixture, layout: fixture.componentInstance, choose };
   }
 
-  it.each([FeaturesPageComponent, SpellsPageComponent])('restores the page choice after reopening %s without changing the character', component => {
+  it.each([
+    [FeaturesPageComponent, 'features'], [SpellsPageComponent, 'spells'],
+    [MobileCombatPageComponent, 'combat'], [EquipmentPageComponent, 'inventory'],
+    [MonstersPageComponent, 'companions'], [BastionsPageComponent, 'bastions'],
+  ] as const)('restores the page choice after reopening %s without changing the character', (component, page) => {
     const sheet = emptyBasicCharacter(), other = emptyBasicCharacter();
     const before = structuredClone(sheet);
     const open = () => {
-      const fixture = TestBed.createComponent<FeaturesPageComponent | SpellsPageComponent>(component);
+      const fixture = TestBed.createComponent<FeaturesPageComponent | SpellsPageComponent | MobileCombatPageComponent | EquipmentPageComponent | MonstersPageComponent | BastionsPageComponent>(component);
       fixture.componentRef.setInput('characterData', sheet); fixture.detectChanges();
       const selector = fixture.debugElement.query(By.directive(SheetListLayoutComponent));
       return { fixture, selector, layout: selector.componentInstance as SheetListLayoutComponent };
@@ -48,7 +56,7 @@ describe('Remembered character list columns', () => {
     expect(reopened.layout.columns()).toBe(2);
     expect(sheet).toEqual(before);
     reopened.fixture.destroy();
-    localStorage.removeItem(key(sheet.character!.characterUuid!, component === FeaturesPageComponent ? 'features' : 'spells'));
+    localStorage.removeItem(key(sheet.character!.characterUuid!, page));
   });
 
   it('keeps separate choices for both pages and resets them when changing character', () => {

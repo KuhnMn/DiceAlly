@@ -34,7 +34,7 @@ import { SheetListLayoutComponent } from './sheet-list-layout.component';
           <div class="border-4 border-surface rounded-lg p-4 bg-surface-container-low shadow-lg">
             <header class="mb-4 flex items-center justify-between gap-2 sm:mb-6">
               <h2 class="text-xl font-bold sm:text-3xl">Combat</h2>
-              <app-sheet-list-layout #listLayout />
+              <app-sheet-list-layout #listLayout [characterId]="characterData()?.character?.characterUuid" page="combat" />
             </header>
             <div class="mb-4 flex flex-wrap items-center gap-2" role="group" aria-label="Concentration &amp; Round Tracker">
               <h4 class="w-full text-xs font-semibold tracking-wide text-on-surface-variant">Concentration &amp; Round Tracker</h4>
