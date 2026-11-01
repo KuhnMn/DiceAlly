@@ -58,8 +58,8 @@ const TRACKER_COLORS: Record<TrackerTone, { accent: string; fill: string; button
         } @else { <p class="my-2 text-xs text-on-surface-variant">{{ checkboxNoun() === 'slot' ? 'No slots available' : 'No uses available' }}</p> }
         }
         @if (note().trim()) {
-          <div class="mt-2 flex items-start gap-1.5 border-t border-outline-variant pt-2 text-sm text-on-surface-variant" [attr.aria-label]="tag() + ' notes'">
-            <app-ui-icon name="file" class="mt-0.5" /><p class="min-w-0 whitespace-pre-wrap break-words">{{ note() }}</p>
+          <div class="mt-2 flex items-start gap-1.5 border-t border-outline-variant pt-2 text-sm leading-5 text-on-surface-variant" [attr.aria-label]="tag() + ' notes'">
+            <span class="inline-flex h-5 shrink-0 items-center"><app-ui-icon name="file" /></span><p class="min-w-0 whitespace-pre-wrap break-words">{{ note() }}</p>
           </div>
         }
       } @else { <p class="text-xs text-on-surface-variant">No uses data</p> }
