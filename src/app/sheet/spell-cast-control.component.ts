@@ -36,18 +36,18 @@ interface CastingPool {
   template: `
     <section aria-label="Cast spell" class="space-y-2">
       @let slots = !resource() || resource()?.kind === 'slot';
-      <div class="flex flex-wrap items-end gap-2">
-        <app-resource-select class="min-w-24 flex-1" [class.basis-full]="slots" label="Casting Resource" ariaLabel="Casting resource" [value]="resource()?.key ?? ''"
-          [options]="resourceOptions()" [disabled]="pending()" (changed)="setResource($event)"
-          [placeholder]="resources().length ? 'Choose a Resource' : 'No Resources Available'" />
+      <app-resource-select label="Casting Resource" ariaLabel="Casting resource" [value]="resource()?.key ?? ''"
+        [options]="resourceOptions()" [disabled]="pending()" (changed)="setResource($event)"
+        [placeholder]="resources().length ? 'Choose a Resource' : 'No Resources Available'" />
+      <div class="flex min-h-16 min-w-0 items-end gap-2">
         @if (slots) {
-          <app-resource-select class="min-w-24 flex-1" label="Cast Level" ariaLabel="Cast level" [value]="level() === null ? '' : '' + level()"
+          <app-resource-select class="min-w-0 flex-1" label="Cast Level" ariaLabel="Cast level" [value]="level() === null ? '' : '' + level()"
             [options]="levelOptions()" [disabled]="pending() || levels().length <= 1" (changed)="setLevel($event)" placeholder="No Applicable Level" />
         } @else if (resource()?.kind === 'resource' || resource()?.kind === 'use') {
-          <app-resource-select class="order-3 basis-full" label="Resource" ariaLabel="Resource balance" [value]="resource()!.key"
+          <app-resource-select class="min-w-0 flex-1" label="Resource" ariaLabel="Resource balance" [value]="resource()!.key"
             [options]="usageOptions()" [selectable]="false" />
         }
-        <div class="flex shrink-0 items-end gap-2">
+        <div class="ml-auto flex shrink-0 items-end gap-2">
         @if (requiresConcentration()) {
           <button type="button" (click)="trackConcentration.set(!trackConcentration())" [disabled]="pending()" [attr.aria-pressed]="trackConcentration()" aria-label="Track concentration after casting" [title]="trackConcentration() ? 'Track Concentration After Casting: On' : 'Track Concentration After Casting: Off'"
             class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg border border-outline-variant text-lg disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-primary" [class.bg-tertiary-container]="trackConcentration()" [class.text-on-tertiary-container]="trackConcentration()" [class.text-on-surface-variant]="!trackConcentration()"><app-ui-icon name="head" [filled]="trackConcentration()" /></button>

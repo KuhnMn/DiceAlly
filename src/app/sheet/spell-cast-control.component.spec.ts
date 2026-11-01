@@ -55,6 +55,10 @@ describe('Cast from spell details', () => {
     value.resources=[{id:'points',sourceId:'wizard',name:'Sorcery Points',mode:'counter',note:'',total:7,used:0,recovery:'LONG_REST',features:true,spells:true,casting:true,defaultCost:2}];
     const {fixture,control,store}=setup(entry,value);
     expect(control.resources().some(resource => resource.kind === 'resource')).toBe(false);
+    const levelControl = fixture.nativeElement.querySelector('[aria-label="Cast level"]').closest('app-resource-select') as HTMLElement;
+    const actionRow = levelControl.parentElement!;
+    const castButton = fixture.nativeElement.querySelector('button[aria-label="Cast Test Spell"]') as HTMLButtonElement;
+    expect(castButton.parentElement!.parentElement).toBe(actionRow);
     entry.resourceLinks=[{resourceId:'points',amount:3}];
     fixture.componentRef.setInput('spell', { ...entry }); fixture.detectChanges();
     control.setResource('resource:points');expect(control.canCast()).toBe(true);
@@ -65,6 +69,9 @@ describe('Cast from spell details', () => {
     expect(resourceControl.querySelector('output [aria-label="Regain: Long Rest"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('select[aria-label="Cast level"]')).toBeNull();
     const balance = fixture.nativeElement.querySelector('app-resource-select[ariaLabel="Resource balance"] output');
+    expect(balance.closest('app-resource-select').parentElement).toBe(actionRow);
+    expect(castButton.parentElement!.parentElement).toBe(actionRow);
+    expect(resourceControl.parentElement).not.toBe(actionRow);
     expect(balance.textContent).toContain('Sorcery Points');
     expect(balance.textContent).toContain('7/7');
     expect(resourceControl.textContent).toContain('Wizard · Sorcery Points');
@@ -74,7 +81,11 @@ describe('Cast from spell details', () => {
     fixture.detectChanges();expect(balance.textContent).toContain('4/7');
     expect(store.characterData()!.character!.spellSlots).toEqual(value.character!.spellSlots);
     await control.cast();expect(store.characterData()!.resources![0].used).toBe(6);expect(control.canCast()).toBe(false);
-    await control.cast();expect(store.characterData()!.resources![0].used).toBe(6);fixture.destroy();
+    await control.cast();expect(store.characterData()!.resources![0].used).toBe(6);
+    control.setResource(control.resources().find(resource => resource.kind === 'slot')!.key); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[aria-label="Cast level"]').closest('app-resource-select').parentElement).toBe(actionRow);
+    expect(castButton.parentElement!.parentElement).toBe(actionRow);
+    fixture.destroy();
   });
 
   it('offers Ritual - Free only for ritual spells, fixes its level to base and never spends slots or Uses', async () => {
