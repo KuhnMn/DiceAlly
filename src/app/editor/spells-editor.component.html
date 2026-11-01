@@ -100,7 +100,7 @@
         [disabled]="adding()" (selected)="selectedSource = $event" />
       @if (!targetSource) {
         <p role="status" class="text-xs text-on-surface-variant">Choose a casting source before adding spells.
-          <button type="button" class="text-primary underline" (click)="catalogOpen = false; openSources.emit()">Manage Feature Sources</button>
+          <button type="button" class="text-primary underline" (click)="catalogOpen = false; openSources.emit()">Manage Feature (Re-)Sources</button>
         </p>
       }
       <details class="rounded-lg bg-surface-container-high px-3 py-2 mb-3"><summary class="cursor-pointer text-sm font-semibold text-primary py-1">Add Custom Spell</summary><div class="mt-2 space-y-2"><div class="flex gap-2"><label class="flex-1"><span class="field-label">Name</span><input class="editor-input" name="custom-spell-name" [(ngModel)]="customName" /></label><label class="w-24"><span class="field-label">Level</span><select class="editor-input" name="custom-spell-level" [(ngModel)]="customLevel">@for (level of levels; track level) { <option [ngValue]="level">{{ level }}</option> }</select></label></div><label><span class="field-label">Description</span><textarea class="editor-input" name="custom-spell-description" rows="2" [(ngModel)]="customDescription"></textarea></label><button type="button" class="action-button" [disabled]="!targetSource || !customName.trim()" (click)="addCustom()">Add to Spelllist</button></div></details>

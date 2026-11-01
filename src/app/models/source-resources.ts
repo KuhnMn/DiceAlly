@@ -1,4 +1,4 @@
-import type { ExportedCharacter } from './character.model';
+import type { ExportedCharacter, FeatureSource } from './character.model';
 export const RESOURCE_RECOVERY_OPTIONS = [
   { value: 'NONE', label: 'Manual' },
   { value: 'LONG_REST', label: 'Long Rest' },
@@ -19,6 +19,9 @@ export interface SourceResource {
   /** Legacy 1.2.0 field; ignored. Spells require explicit links. */
   casting?: boolean;
   defaultCost?: number;
+}
+export function resourcePlacement(source: FeatureSource | undefined): Pick<SourceResource, 'features' | 'spells'> {
+  return { features: !!source?.isGeneralFeatureSource, spells: !!source?.isSpellcastingSource };
 }
 export interface ResourceCost {
   resourceId: string;

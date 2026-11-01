@@ -105,12 +105,12 @@ describe('Other Proficiencies', () => {
     const fixture = TestBed.createComponent(OtherProficienciesComponent); const sheet = emptyBasicCharacter();
     fixture.componentRef.setInput('sheet', sheet); await fixture.whenStable();
     const page = fixture.componentInstance;
-    expect(fixture.nativeElement.textContent).not.toContain('Feature Sources');
+    expect(fixture.nativeElement.textContent).not.toContain('Feature (Re-)Sources');
     page.addAdvantage(); expect(page.advantages[0].appliesTo).toBe('');
     page.advantages[0].appliesTo = 'Stealth'; page.addAdvantage();
     expect(page.advantages[0].appliesTo).toBe('Stealth'); expect(page.advantages[1].appliesTo).toBe('');
     fixture.componentRef.setInput('panel', 'sources'); await fixture.whenStable();
-    expect([...fixture.nativeElement.querySelectorAll('h2')].map((heading: HTMLElement) => heading.textContent)).toEqual(['Feature Sources']);
+    expect([...fixture.nativeElement.querySelectorAll('h2')].map((heading: HTMLElement) => heading.textContent)).toEqual(['Feature (Re-)Sources']);
   });
 
   it('renames source links together and rejects duplicate source labels', async () => {

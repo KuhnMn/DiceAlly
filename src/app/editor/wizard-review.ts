@@ -131,7 +131,7 @@ export function groupWizardReview(changes: PrefillChange[], before: ExportedChar
     } else if (kind === 'slots') {
       section = 'Spells & Slots'; group = `${id} · Spell Slots`;
     } else if (kind === 'sources') {
-      section = 'Feature Sources'; group = 'Sources';
+      section = 'Feature (Re-)Sources'; group = 'Sources';
     } else if (kind === 'resources') {
       const resource = sheet.resources?.find(entry => entry.id === id) ?? other.resources?.find(entry => entry.id === id);
       section = 'Resources'; group = sheet.character?.featureSources?.find(source => source.editorId === resource?.sourceId)?.name ?? 'Unassigned Source';
@@ -147,7 +147,7 @@ export function groupWizardReview(changes: PrefillChange[], before: ExportedChar
     const entries = groups.get(group) ?? [];
     entries.push(change); groups.set(group, entries);
   }
-  return ['Character identity', 'Character stats', 'Feature Sources', 'Resources', 'Species & Movement', 'Proficiencies', 'Features', 'Spells & Slots']
+  return ['Character identity', 'Character stats', 'Feature (Re-)Sources', 'Resources', 'Species & Movement', 'Proficiencies', 'Features', 'Spells & Slots']
     .filter(label => sections.has(label)).map(label => ({
       label, count: [...sections.get(label)!.values()].reduce((count, entries) => count + entries.length, 0),
       groups: [...sections.get(label)!].sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true })).map(([label, entries]) => ({

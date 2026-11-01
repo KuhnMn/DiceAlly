@@ -48,7 +48,7 @@
   </div>
   <nav [appScrollableTabs]="page" class="max-lg:!hidden mb-3 sm:border-b-2 border-outline-variant" aria-label="Character editor pages">
     @for (title of pages; track title; let i = $index) {
-      <button type="button" class="px-3 py-3 text-sm font-semibold border-b-4 -mb-0.5 transition-colors hover:bg-surface-container" [class.border-primary]="page === i" [class.text-primary]="page === i" [class.border-transparent]="page !== i" [class.text-on-surface-variant]="page !== i" [attr.aria-current]="page === i ? 'page' : null" (click)="setPage(i)">{{ title }}@if (title === 'Proficiencies & More') { <span class="block text-[10px] font-normal mt-1">Languages &amp; Advantages</span> }@if (title === 'Feature Sources') { <span class="block text-[10px] font-normal mt-1">Spell Slots</span> }</button>
+      <button type="button" class="px-3 py-3 text-sm font-semibold border-b-4 -mb-0.5 transition-colors hover:bg-surface-container" [class.border-primary]="page === i" [class.text-primary]="page === i" [class.border-transparent]="page !== i" [class.text-on-surface-variant]="page !== i" [attr.aria-current]="page === i ? 'page' : null" (click)="setPage(i)">{{ title }}@if (title === 'Proficiencies & More') { <span class="block text-[10px] font-normal mt-1">Languages &amp; Advantages</span> }@if (title === 'Feature (Re-)Sources') { <span class="block text-[10px] font-normal mt-1">Spell Slots</span> }</button>
     }
   </nav>
 
@@ -70,7 +70,7 @@
         <app-editor-ability-scores [model]="abilities" />
       } @else if (pages[page] === 'Proficiencies & More') {
         <app-editor-proficiencies [model]="proficiencies" />
-      } @else if (pages[page] === 'Feature Sources') {
+      } @else if (pages[page] === 'Feature (Re-)Sources') {
         <app-other-proficiencies [sheet]="sheet" panel="sources" (edited)="changed()" />
         <app-source-resources-editor [sheet]="sheet" (edited)="changed()" />
         @if (hasCastingSources || hasSpellSlots) {

@@ -26,6 +26,16 @@ function combined(f: ReturnType<typeof fixture>) {
   return wizardResourceValues(f.sheet,f.state,f.columns);
 }
 describe('Explicit resource imports',()=>{
+  it('defaults new wizard resources to their own source placement and retains existing resource overrides',()=>{
+    const f=fixture();combined(f);
+    const sources=[{editorId:'rogue-source',name:'Rogue',isGeneralFeatureSource:true,isSpellcastingSource:false},
+      {editorId:'soulknife-source',name:'Soulknife',isGeneralFeatureSource:false,isSpellcastingSource:true}];
+    const values=wizardResourceValues(f.sheet,f.state,f.columns,sources);
+    expect(values[0].value).toMatchObject({features:false,spells:true});
+    const first=mergeWizardPrefill(f.sheet,f.state,values).sheet;
+    first.resources![0].features=true;first.resources![0].spells=false;
+    expect(wizardResourceValues(first,first.creatorWizard!,f.columns,sources)[0].value).toMatchObject({features:true,spells:false});
+  });
   it('never imports free-form numeric columns automatically and excludes schema spell and slot progressions',()=>{
     const f=fixture();
     expect(f.columns.map(column=>column.name)).toEqual(['Cantrips Known','Die Size','Number']);

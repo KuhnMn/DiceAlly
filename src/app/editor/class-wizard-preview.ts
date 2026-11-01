@@ -309,7 +309,10 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     return !isCompleteSelection(answer, choice.count, choice.candidates.map(candidate => candidate.value));
   });
   // 4. Reconcile with the last baseline. Manual changes and annotations take precedence.
-  values.push(...wizardResourceValues(sheet, state, resourceColumns));
+  const proposedSources = values.filter(entry => entry.path[0] === 'sources').map(entry => entry.value as FeatureSource);
+  const currentSources = sheet.character?.featureSources ?? [];
+  const resourceSources = overrideSections.includes('sources') ? [...proposedSources, ...currentSources] : [...currentSources, ...proposedSources];
+  values.push(...wizardResourceValues(sheet, state, resourceColumns, resourceSources));
   const proposal = mergeWizardPrefill(sheet, state, values, overrideSections);
   const background = backgroundKey ? records.get(backgroundKey) : undefined;
   if (backgroundKey && background?.kind !== 'background') errors.push('The selected background is missing from this import.');

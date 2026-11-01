@@ -1,12 +1,12 @@
 import { Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ExportedCharacter } from '../models/character.model';
-import { RESOURCE_RECOVERY_OPTIONS, SourceResource } from '../models/source-resources';
+import { RESOURCE_RECOVERY_OPTIONS, resourcePlacement, SourceResource } from '../models/source-resources';
 import { UiIconComponent } from '../ui-icon.component';
 @Component({
   selector: 'app-source-resources-editor',
   imports: [FormsModule, UiIconComponent],
-  styleUrls: ['./editor.css', './source-resources-editor.component.css'],
+  styleUrls: ['./editor.css', './source-category-options.css', './source-resources-editor.component.css'],
   template: ` <section class="editor-card">
     <div class="mb-3 flex items-center justify-between gap-2">
       <h2 class="!mb-0">Resources</h2>
@@ -48,8 +48,8 @@ import { UiIconComponent } from '../ui-icon.component';
                 ><span class="field-label">Source</span
                 ><select
                   class="editor-input"
-                  [(ngModel)]="resource.sourceId"
-                  (ngModelChange)="change()"
+                  [ngModel]="resource.sourceId"
+                  (ngModelChange)="setSource(resource, $event)"
                   [ngModelOptions]="{ standalone: true }"
                 >
                   @if (!hasSource(resource.sourceId)) {
@@ -113,25 +113,28 @@ import { UiIconComponent } from '../ui-icon.component';
                 >
               </div>
             }
-            <div class="flex flex-wrap gap-3 text-sm">
-              <label
+            <fieldset class="min-w-0">
+              <legend class="field-label">Show On</legend>
+              <div class="grid grid-cols-2 gap-2">
+              <label class="source-option"
                 ><input
                   type="checkbox"
                   [(ngModel)]="resource.features"
                   (ngModelChange)="change()"
                   [ngModelOptions]="{ standalone: true }"
                 />
-                Features</label
-              ><label
+                <app-ui-icon name="list" /><span>Features</span></label
+              ><label class="source-option source-casting"
                 ><input
                   type="checkbox"
                   [(ngModel)]="resource.spells"
                   (ngModelChange)="change()"
                   [ngModelOptions]="{ standalone: true }"
                 />
-                Spells</label
+                <app-ui-icon name="sparkles" /><span>Spells</span></label
               >
-            </div>
+              </div>
+            </fieldset>
             <button
               type="button"
               class="secondary-button compact-button"
@@ -177,8 +180,7 @@ export class SourceResourcesEditorComponent {
       total: 1,
       used: 0,
       recovery: 'NONE',
-      features: true,
-      spells: false,
+      ...resourcePlacement(source),
     };
     (this.sheet().resources ??= []).push(resource);
     this.newest = resource.id;
@@ -187,6 +189,12 @@ export class SourceResourcesEditorComponent {
   setTotal(resource: SourceResource, total: number) {
     if (!Number.isSafeInteger(total) || total < 0) return;
     resource.total = total;
+    this.change();
+  }
+  setSource(resource: SourceResource, id: string) {
+    resource.sourceId = id;
+    const source = this.sources.find(source => source.editorId === id);
+    if (source) Object.assign(resource, resourcePlacement(source));
     this.change();
   }
   remove(resource: SourceResource) {

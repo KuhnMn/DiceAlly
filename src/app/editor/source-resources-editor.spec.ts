@@ -9,6 +9,28 @@ import { ResourceUseComponent } from '../sheet/resource-use.component';
 import { CharacterStore } from '../stores/character.store';
 import { emptyBasicCharacter } from './basic-info';
 describe('Resource editing and tracking', () => {
+  it('prefills placement from the selected source and lets both colored options be changed independently', async () => {
+    for (const [features,spells] of [[true,false],[false,true],[true,true],[false,false]]) {
+      const sheet=emptyBasicCharacter();
+      sheet.character!.featureSources=[{editorId:'source',name:'Source',isGeneralFeatureSource:features,isSpellcastingSource:spells},
+        {editorId:'other',name:'Other',isGeneralFeatureSource:!features,isSpellcastingSource:!spells}];
+      const fixture=TestBed.createComponent(SourceResourcesEditorComponent);
+      fixture.componentRef.setInput('sheet',sheet);fixture.componentInstance.add();await fixture.whenStable();
+      const resource=sheet.resources![0];
+      expect(resource).toMatchObject({features,spells});
+      const checkboxes=[...fixture.nativeElement.querySelectorAll('.source-option input')] as HTMLInputElement[];
+      expect(checkboxes.map(input=>input.checked)).toEqual([features,spells]);
+      checkboxes[0].click();await fixture.whenStable();
+      expect(resource).toMatchObject({features:!features,spells});
+      checkboxes[1].click();await fixture.whenStable();
+      expect(resource).toMatchObject({features:!features,spells:!spells});
+      expect(sheet.character!.featureSources[0]).toMatchObject({isGeneralFeatureSource:features,isSpellcastingSource:spells});
+      const source=fixture.nativeElement.querySelector('select') as HTMLSelectElement;
+      source.value='other';source.dispatchEvent(new Event('change'));await fixture.whenStable();
+      expect(resource).toMatchObject({sourceId:'other',features:!features,spells:!spells});
+      fixture.destroy();
+    }
+  });
   it('round-trips resource definitions, play counters and spell costs through local and cloud storage', async () => {
     const sheet=emptyBasicCharacter();sheet.character!.name='Resources';sheet.character!.featureSources=[{editorId:'source',name:'Mage'}];
     const fixture=TestBed.createComponent(SourceResourcesEditorComponent);fixture.componentRef.setInput('sheet',sheet);fixture.componentInstance.add();
@@ -22,7 +44,7 @@ describe('Resource editing and tracking', () => {
   });
   it('creates source pools, displays reminders without counters, and cleans up links on removal', async () => {
     const sheet = emptyBasicCharacter();
-    sheet.character!.featureSources = [{ name: 'Rogue' }];
+    sheet.character!.featureSources = [{ name: 'Rogue', isGeneralFeatureSource: true }];
     const fixture = TestBed.createComponent(SourceResourcesEditorComponent);
     fixture.componentRef.setInput('sheet', sheet);
     fixture.detectChanges();

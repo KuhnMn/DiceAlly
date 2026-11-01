@@ -39,10 +39,10 @@ describe('Spell Slots editor', () => {
     expect(() => validateBasicInfo(sheet)).toThrow(/Spell slot total/);
   });
 
-  it('offers slots inside Feature Sources when casting sources or existing slots exist', async () => {
+  it('offers slots inside Feature (Re-)Sources when casting sources or existing slots exist', async () => {
     const fixture = TestBed.createComponent(LocalEditorComponent); await fixture.whenStable();
     const editor = fixture.componentInstance;
-    expect(editor.pages).toEqual(['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature Sources', 'Species & Features', 'Spells', 'Items', 'Companions', 'Bastions', 'Combat', 'Notes', 'Sheet Settings']);
+    expect(editor.pages).toEqual(['Basic Info', 'Ability Scores', 'Proficiencies & More', 'Feature (Re-)Sources', 'Species & Features', 'Spells', 'Items', 'Companions', 'Bastions', 'Combat', 'Notes', 'Sheet Settings']);
     expect(editor.hasCastingSources).toBe(false);
     editor.character.featureSources = [{ name: 'Wizard', isSpellcastingSource: true }];
     expect(editor.hasCastingSources).toBe(true);

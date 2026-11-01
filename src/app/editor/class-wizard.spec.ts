@@ -279,6 +279,7 @@ describe('Subclass-granted spell prefill', () => {
     expect(first.resources!.filter(resource=>resource.name==='Psi Dice')[0].note).toBe('2d6');
     expect(first.resources!.find(resource=>resource.name==='Uses')).toMatchObject({mode:'counter',total:3,note:'',recovery:'NONE'});
     expect(first.resources!.every(resource=>!resource.casting&&resource.recovery==='NONE')).toBe(true);
+    expect(first.resources!.every(resource=>resource.features && resource.spells)).toBe(true);
     const resource=first.resources![0];resource.note='Personal note';
     const repeated=previewClassWizard(first,first.creatorWizard!,f.revision,f.index).sheet;
     expect(repeated.resources!.find(entry=>entry.id===resource.id)!.note).toBe('2d6');

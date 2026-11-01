@@ -1,8 +1,8 @@
 import { classResourceTables, resourceCell } from '../compendium/class-resources';
 import { ContentRecord } from '../content/content.model';
 import { SourceEntry } from '../content/content-entries';
-import { ExportedCharacter } from '../models/character.model';
-import { SourceResource } from '../models/source-resources';
+import { ExportedCharacter, FeatureSource } from '../models/character.model';
+import { resourcePlacement, SourceResource } from '../models/source-resources';
 import { wizardEditorId } from './editor-identity';
 import type { PrefillValue, WizardState } from './wizard-prefill';
 
@@ -68,7 +68,8 @@ export function resourceImportName(sheet: ExportedCharacter, state: WizardState,
 }
 
 /** Each association is selected explicitly; names never decide ownership, costs or recovery. */
-export function wizardResourceValues(sheet: ExportedCharacter, state: WizardState, columns: WizardResourceColumn[]): PrefillValue[] {
+export function wizardResourceValues(sheet: ExportedCharacter, state: WizardState, columns: WizardResourceColumn[],
+  sources: readonly FeatureSource[] = sheet.character?.featureSources ?? []): PrefillValue[] {
   if (state.options['resourceReminders'] !== true) return [];
   const selected = columns.filter(column => resourceImportSetting(sheet, state, column).enabled);
   const combined = new Set(selected.filter(column => column.kind === 'counter').flatMap(column => {
@@ -81,14 +82,15 @@ export function wizardResourceValues(sheet: ExportedCharacter, state: WizardStat
     const reminder = reminderColumn(sheet, state, column, columns);
     const existing = sheet.resources?.find(resource => resource.id === column.id);
     const previousReminder = sheet.resources?.find(resource => resource.id === reminder?.id);
+    const placement = resourcePlacement(sources.find(source => source.editorId === column.sourceId));
     const resource: SourceResource = {
       id: column.id, sourceId: existing?.sourceId ?? column.sourceId, name: resourceImportName(sheet, state, column, columns),
       mode: column.kind === 'counter' ? reminder ? 'both' : 'counter' : 'note',
       note: String(reminder?.value ?? (column.kind === 'note' ? column.value : '')),
       total: column.kind === 'counter' ? Number(column.value) : 0, used: 0,
       recovery: setting.recovery ?? 'NONE',
-      features: existing?.features ?? previousReminder?.features ?? true,
-      spells: existing?.spells ?? previousReminder?.spells ?? false,
+      features: existing?.features ?? previousReminder?.features ?? placement.features,
+      spells: existing?.spells ?? previousReminder?.spells ?? placement.spells,
     };
     return { path: ['resources', resource.id], scope: 'resourceReminders', label: `${column.owner}: ${resource.name}`, value: resource,
       combinedResourceId: reminder?.id };

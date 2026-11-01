@@ -22,7 +22,7 @@ import { SpellSourceCount } from './spell-selection';
       <div class="flex justify-between items-center gap-2 mb-2">
         <span class="selector-heading text-sm font-semibold" [class.field-label]="mode() === 'dropdown'">{{ heading() }}</span>
         @if (mode() === 'cards' && showManage()) {
-          <button type="button" class="secondary-button compact-button" (click)="manageSources.emit()">Feature Sources</button>
+          <button type="button" class="secondary-button compact-button" (click)="manageSources.emit()">Feature (Re-)Sources</button>
         }
       </div>
       }

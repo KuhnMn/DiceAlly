@@ -1,6 +1,6 @@
 # Source resources
 
-Resources are authored under Feature Sources alongside spell slots. Each has a
+Resources are authored under Feature (Re-)Sources alongside spell slots. Each has a
 stable ID, source ID, name, viewer placement (Features, Spells, or both), explicit
 recovery and a mode: uses, reminder, or uses with a reminder. Dice expressions and
 rules text remain display text; the app does not evaluate them.
@@ -9,7 +9,11 @@ The viewer shares the Uses tracker. Pools of one to five show checkboxes; six or
 more show remaining/total with spend and restore buttons. Spell slots now use the
 same counter from six slots. Reminders never show a spend control. Category colors
 match features and spellcasting. Pools survive source renames; removed sources
-are labelled so the user can reassign their retained resources.
+are labelled so the user can reassign their retained resources. New resources
+start with their source's Features/Spellcasting selection; choosing another
+source resets that initial placement to the new source. Existing resource
+placement overrides are retained by the wizard. The editor uses the same blue
+and purple category controls as feature sources.
 
 Features and spells can link pools through the Resources tool beside Uses and
 Notes. Each link defines an explicit positive cost. A feature offers a Use button

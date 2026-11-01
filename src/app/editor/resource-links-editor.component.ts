@@ -56,11 +56,11 @@ import { ResourceCost } from '../models/source-resources';
       [disabled]="!pools.length"
       (click)="add()"
     >
-      Link Resource
+      <app-ui-icon name="link" /> Link Resource
     </button>
     @if (!pools.length) {
       <p class="text-xs text-on-surface-variant">
-        Add a resource with uses under Feature Sources first.
+        Add a resource with uses under Feature (Re-)Sources first.
       </p>
     }
   </div>`,
