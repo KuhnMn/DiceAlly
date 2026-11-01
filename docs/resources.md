@@ -29,8 +29,8 @@ cleans its links; missing external links remain visible as missing resources and
 cannot be spent.
 
 The wizard has an opt-in Import class table values as resource reminders setting.
-It copies only literal numeric cells or structured dice cells at the selected
-class level, with stable IDs and normal wizard protection for manual changes and
-removals. It never infers a pool, cost, recovery or usage rule from prose, column
-names or a class/feature name. Convert an imported reminder to Uses and Reminder
-and author its total and recovery when needed.
+It copies only literal numeric cells, structured dice cells or explicit dice tags
+at the selected class level, with stable IDs and normal wizard protection for
+manual changes and removals. It never infers a pool, cost, recovery or usage rule
+from prose, column names or a class/feature name. Convert an imported reminder to
+Uses and Reminder and author its total and recovery when needed.

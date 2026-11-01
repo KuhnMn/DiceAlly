@@ -145,10 +145,13 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
         const row = table.rows[selection.level - 1];
         if (!row) continue;
         for (const [column, raw] of row.entries()) {
-          // Only literal numeric/dice cells: do not parse prose, formulas, recovery or spending rules.
+          // Only literal numbers, dice objects and whole dice tags; no prose or dynamic formulas.
           const isDice = !!raw && typeof raw === 'object' && raw.type === 'dice';
-          if (typeof raw !== 'number' && !isDice) continue;
-          const text = resourceCell(raw);
+          const diceTag = typeof raw === 'string'
+            ? /^\{@dice\s+((?:\d+)?d\d+(?:\s*[+-]\s*(?:(?:\d+)?d\d+|\d+))*)(?:\|[^{}]*)?\}$/i.exec(raw.trim())
+            : null;
+          if (typeof raw !== 'number' && !isDice && !diceTag) continue;
+          const text = diceTag ? diceTag[1] : resourceCell(raw);
           if (typeof text !== 'string' && typeof text !== 'number') continue;
           const label = table.labels[column]?.replace(/\{@\w+ ([^{}]*)\}/g, (_tag, body: string) => body.split('|')[0]);
           if (!label) continue;

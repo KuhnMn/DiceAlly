@@ -283,6 +283,45 @@ describe('Subclass-granted spell prefill', () => {
     expect(new Set(repeated.resources!.map(entry=>entry.id)).size).toBe(repeated.resources!.length);
   });
 
+  it('imports Soulknife die-size tags and numbers at the selected level without inferring uses', () => {
+    const f = fixture();
+    const rows = Array.from({ length: 20 }, (_, index) => index < 2 ? [0, 0]
+      : [`{@dice D${index < 4 ? 6 : index < 10 ? 8 : index < 16 ? 10 : 12}}`, index < 4 ? 4 : index < 8 ? 6 : index < 12 ? 8 : index < 16 ? 10 : 12]);
+    const records = mapContent({
+      class: [{ name: 'Rogue', source: 'XPHB', hd: { number: 1, faces: 8 }, classFeatures: [] }],
+      subclass: [{ name: 'Soulknife', shortName: 'Soulknife', source: 'XPHB', className: 'Rogue', classSource: 'XPHB', subclassFeatures: [],
+        subclassTableGroups: [{ subclasses: [{ name: 'Soulknife', source: 'XPHB' }],
+          colLabels: ['{@tip Die Size|Soulknife Energy Die Size}', '{@tip Number|Soulknife Energy Die Number}'], rows }] }],
+    }, 'soulknife-resources.json').records;
+    const index = new Map(records.map(record => [record.key, record]));
+    const state: WizardState = { ...f.state, classes: [{ selectionId: 'rogue', level: 3,
+      classKey: records.find(record => record.kind === 'class')!.key,
+      subclassKey: records.find(record => record.kind === 'subclass')!.key }], answers: {} };
+    expect(previewClassWizard(f.sheet, state, f.revision, index).sheet.resources ?? []).toEqual([]);
+    state.options['resourceReminders'] = true;
+    for (const [level, die, count] of [[3, 'D6', '4'], [5, 'D8', '6'], [11, 'D10', '8'], [17, 'D12', '12']] as const) {
+      state.classes[0].level = level;
+      const result = previewClassWizard(f.sheet, state, f.revision, index).sheet;
+      const sourceId = result.character!.featureSources!.find(source => source.name === 'Soulknife (XPHB)')!.editorId;
+      expect(result.resources).toEqual([
+        expect.objectContaining({ name: 'Die Size', note: die, sourceId, mode: 'note', total: 0, used: 0, recovery: 'NONE' }),
+        expect.objectContaining({ name: 'Number', note: count, sourceId, mode: 'note', total: 0, used: 0, recovery: 'NONE' }),
+      ]);
+    }
+  });
+
+  it('copies explicit literal dice tags while skipping unmarked dice, prose and dynamic formulas', () => {
+    const f = fixture();
+    f.find('class', 'Mage').data['classTableGroups'] = [{
+      colLabels: ['Die', 'Roll', 'Plain', 'Prose', 'Formula', 'Tagged Formula', 'Malformed'],
+      rows: Array.from({ length: 20 }, () => ['{@dice d8}', '{@dice 2d6 + 1|Roll Dice}', 'd6',
+        'Roll {@dice 1d6}', 'PB + 1', '{@dice 1d6 + PB}', '{@dice D6} extra']),
+    }];
+    f.state.options['resourceReminders'] = true;
+    expect(previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet.resources?.map(resource => [resource.name, resource.note]))
+      .toEqual([['Die', 'd8'], ['Roll', '2d6 + 1']]);
+  });
+
   it('offers background proficiencies without creating grants and respects the automatic ability setting', () => {
     const f = fixture(); f.state.classes = []; setAbilityBonusesEnabled(f.sheet, false);
     const record = mapContent({ background: [{ name: 'Sage', source: 'TEST', entries: ['Reference'],
