@@ -151,7 +151,7 @@ type SpellLevelFilter = 'ALL' | number;
                 <div class="text-sm font-semibold text-on-surface mb-1.5">{{ group.source }}</div>
                 <div appHorizontalRow class="grid gap-2 sm:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))]">
                   @for (slot of group.slots; track slot.level) {
-                    <app-feature-uses tone="spells" class="max-sm:w-44" [poolLayout]="true" checkboxNoun="slot" [controlLabel]="group.source + ' level ' + slot.level"
+                    <app-feature-uses tone="spells" class="max-sm:w-44 only:w-full only:col-span-full" [poolLayout]="true" checkboxNoun="slot" [controlLabel]="group.source + ' level ' + slot.level"
                       [uses]="{tag:'Level ' + slot.level,totalFreeUses:slot.total,usedFreeUses:spellSlotUsed(group.source,slot),freeUsesRegainCondition:slot.regainCondition}"
                       (usesUpdated)="setSlotUsed(group.source,slot,$event.usedFreeUses)" />
                   }
