@@ -65,6 +65,8 @@ import { LibraryNavigationComponent } from '../library-navigation.component';
                   <option value="dark-forge">⚒️ Dark (Forge)</option>
                   <option value="light-glade">🌿 Light (Glade)</option>
                   <option value="dark-glade">🍃 Dark (Glade)</option>
+                  <option value="light-deepwater">Light (Deepwater)</option>
+                  <option value="dark-deepwater">Dark (Deepwater)</option>
                 </select>
               </label>
             </div>

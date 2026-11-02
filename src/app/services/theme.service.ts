@@ -71,7 +71,7 @@ export class ThemeService {
     const html = document.documentElement;
     
     // Remove all theme classes
-      html.classList.remove('light-theme', 'dark-theme', 'royal-theme', 'ethereal-theme', 'forge-theme', 'glade-theme');
+      html.classList.remove('light-theme', 'dark-theme', 'royal-theme', 'ethereal-theme', 'forge-theme', 'glade-theme', 'deepwater-theme');
     
     // Set data attribute for theme
     html.setAttribute('data-theme', theme);
@@ -97,6 +97,9 @@ export class ThemeService {
 
     if (theme.includes('glade')) {
       html.classList.add('glade-theme');
+    }
+    if (theme.includes('deepwater')) {
+      html.classList.add('deepwater-theme');
     }
   }
 

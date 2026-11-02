@@ -42,9 +42,9 @@ describe('Account settings synchronization', () => {
     TestBed.tick(); await service.sync();
     expect(JSON.parse(remote['alice']['sourceBooks'].value)).toEqual(['PHB', 'XPHB']);
     expect(writes).not.toContain('alice/theme');
-    currentTheme.set('dark-forge');
+    currentTheme.set('dark-deepwater');
     TestBed.tick(); await service.sync();
-    expect(JSON.parse(remote['alice']['theme'].value)).toBe('dark-forge');
+    expect(JSON.parse(remote['alice']['theme'].value)).toBe('dark-deepwater');
     expect(service.pending()).toBe(0);
     selected.set([]); TestBed.tick(); await service.sync();
     expect(remote['alice']['sourceBooks'].value).toBe('[]');
@@ -58,7 +58,7 @@ describe('Account settings synchronization', () => {
     expect(selected()).toEqual(['HB']);
     user.set({ uid: 'alice', getIdToken: async () => 'token' });
     TestBed.tick(); await service.sync();
-    expect(currentTheme()).toBe('dark-forge');
+    expect(currentTheme()).toBe('dark-deepwater');
     expect(selected()).toEqual([]);
   });
 
@@ -73,6 +73,8 @@ describe('Account settings synchronization', () => {
     expect(validSetting('sourceBooks', old)).toBe(true);
     expect(validSetting('sourceBooks', { ...old, value: '[1]' })).toBe(false);
     expect(validSetting('theme', { ...old, value: '"nonexistent-theme"' })).toBe(false);
+    expect(validSetting('theme', { ...old, value: '"light-deepwater"' })).toBe(true);
+    expect(validSetting('theme', { ...old, value: '"dark-deepwater"' })).toBe(true);
   });
 });
 

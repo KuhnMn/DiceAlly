@@ -20,11 +20,12 @@ export class ThemePickerComponent {
     'light-ethereal': '🌌', 'dark-ethereal': '💜',
     'light-forge': '🔥', 'dark-forge': '⚒️',
     'light-glade': '🌿', 'dark-glade': '🍃',
+    'light-deepwater': '', 'dark-deepwater': '',
   };
   label(theme: Theme): string {
     const [mode, name] = theme.split('-');
     const title = name === 'mc' ? 'Monte Carlo' : name.charAt(0).toUpperCase() + name.slice(1);
-    return `${this.symbols[theme]} ${mode === 'light' ? 'Light' : 'Dark'} · ${title}`;
+    return `${this.symbols[theme]} ${mode === 'light' ? 'Light' : 'Dark'} · ${title}`.trimStart();
   }
   select(event: Event) { this.themes.setTheme((event.target as HTMLSelectElement).value as Theme); }
 }

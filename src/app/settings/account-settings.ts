@@ -3,7 +3,7 @@ export type SettingKey = typeof SETTING_KEYS[number];
 export interface AccountSetting { value: string; mutationId: string; }
 export interface CachedSetting extends AccountSetting { pending: boolean; }
 export type SettingsCache = Partial<Record<SettingKey, CachedSetting>>;
-export const THEMES = ['light-mc', 'dark-mc', 'light-royal', 'dark-royal', 'light-ethereal', 'dark-ethereal', 'light-forge', 'dark-forge', 'light-glade', 'dark-glade'] as const;
+export const THEMES = ['light-mc', 'dark-mc', 'light-royal', 'dark-royal', 'light-ethereal', 'dark-ethereal', 'light-forge', 'dark-forge', 'light-glade', 'dark-glade', 'light-deepwater', 'dark-deepwater'] as const;
 export type Theme = typeof THEMES[number];
 
 /** JSON strings retain an empty Source Books selection (Firebase otherwise removes empty arrays). */
