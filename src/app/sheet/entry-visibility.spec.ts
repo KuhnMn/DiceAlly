@@ -9,6 +9,11 @@ import { EquipmentPageComponent } from './equipment-page.component';
 import { MonstersPageComponent } from './monsters-page.component';
 import { BastionsPageComponent } from './bastions-page.component';
 import { CharacterInfoPageComponent } from './character-info-page.component';
+import { MobileCombatPageComponent } from './mobile-combat-page.component';
+
+function toggleHidden(root: HTMLElement) {
+  root.querySelector<HTMLButtonElement>('button[aria-label="Show hidden entries"]')!.click();
+}
 
 describe('Viewer entry visibility', () => {
   beforeEach(() => TestBed.configureTestingModule({ providers: [provideRouter([])] }));
@@ -25,6 +30,17 @@ describe('Viewer entry visibility', () => {
     const overview = TestBed.createComponent(CharacterInfoPageComponent); overview.componentRef.setInput('characterData', sheet);
     expect(overview.componentInstance.features().map(entry => entry.name)).toEqual(['Visible Feat']);
     expect(sheet.features).toHaveLength(2);
+    const before = structuredClone(sheet);
+    toggleHidden(fixture.nativeElement); fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Hidden Feat');
+    expect(fixture.nativeElement.querySelector('#species-section')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label="Show hidden entries"]').getAttribute('aria-pressed')).toBe('true');
+    fixture.componentInstance.searchQuery.set('Hidden'); fixture.detectChanges();
+    expect(fixture.componentInstance.sortedFeatures().map(entry => entry.name)).toEqual(['Hidden Feat']);
+    toggleHidden(fixture.nativeElement); fixture.detectChanges();
+    expect(fixture.componentInstance.sortedFeatures()).toEqual([]);
+    expect(fixture.componentInstance.searchQuery()).toBe('Hidden');
+    expect(sheet).toEqual(before);
   });
 
   it('omits hidden spells from every viewer list', () => {
@@ -34,12 +50,19 @@ describe('Viewer entry visibility', () => {
       { name: 'Hidden Spell', listType, hidden: true },
     ]);
     const fixture = TestBed.createComponent(SpellsPageComponent); fixture.componentRef.setInput('characterData', sheet);
+    const before = structuredClone(sheet);
     for (const view of ['PREPARED', 'KNOWN', 'SPELLBOOK'] as const) {
       fixture.componentInstance.spellView.set(view); fixture.detectChanges();
       expect(fixture.componentInstance.spells().map(entry => entry.name)).toEqual(['Visible Spell']);
       expect(fixture.nativeElement.textContent).not.toContain('Hidden Spell');
+      toggleHidden(fixture.nativeElement); fixture.detectChanges();
+      expect(fixture.componentInstance.spells().map(entry => entry.name)).toEqual(['Hidden Spell', 'Visible Spell']);
+      expect(fixture.nativeElement.textContent).toContain('Hidden Spell');
+      toggleHidden(fixture.nativeElement); fixture.detectChanges();
+      expect(fixture.componentInstance.spells().map(entry => entry.name)).toEqual(['Visible Spell']);
     }
     expect(sheet.spells).toHaveLength(6);
+    expect(sheet).toEqual(before);
   });
 
   it('hides inventory cards while retaining equipped items for calculations', () => {
@@ -50,6 +73,14 @@ describe('Viewer entry visibility', () => {
     expect(fixture.componentInstance.inventory()).toHaveLength(2);
     const overview = TestBed.createComponent(CharacterInfoPageComponent); overview.componentRef.setInput('characterData', sheet);
     expect(overview.componentInstance.inventory()[1]).toBe(sheet.inventory[1]);
+    const before = structuredClone(sheet);
+    toggleHidden(fixture.nativeElement); fixture.detectChanges();
+    expect(fixture.componentInstance.visibleInventory().map(entry => entry.name).sort()).toEqual(['Hidden Armor', 'Visible Item']);
+    fixture.componentInstance.inventoryFilter.set('equipped'); fixture.detectChanges();
+    expect(fixture.componentInstance.visibleInventory().map(entry => entry.name)).toEqual(['Hidden Armor']);
+    toggleHidden(fixture.nativeElement); fixture.detectChanges();
+    expect(fixture.componentInstance.visibleInventory()).toEqual([]);
+    expect(sheet).toEqual(before);
   });
 
   it('filters monsters, object companions and facilities without losing their instances', () => {
@@ -58,21 +89,39 @@ describe('Viewer entry visibility', () => {
     sheet.objects = [{ kind: 'object', name: 'Visible Object', hitPoints: { enabled: false } }, { kind: 'object', name: 'Hidden Object', hitPoints: { enabled: false }, hidden: true }];
     sheet.bastion = { facilities: [{ editorId: 'room', name: 'Hidden Room', hidden: true, entity: { version: 1, name: 'Room', source: 'TEST', facilityType: 'basic', entries: [] } }] };
     const companions = TestBed.createComponent(MonstersPageComponent); companions.componentRef.setInput('characterData', sheet); companions.detectChanges();
+    const before = structuredClone(sheet);
     expect(companions.componentInstance.visibleMonsters().map(entry => entry.name)).toEqual(['Visible Wolf']);
+    toggleHidden(companions.nativeElement); companions.detectChanges();
+    expect(companions.componentInstance.visibleMonsters().map(entry => entry.name).sort()).toEqual(['Hidden Wolf', 'Visible Wolf']);
+    toggleHidden(companions.nativeElement); companions.detectChanges();
     companions.componentInstance.companionType.set('object'); companions.detectChanges();
     expect(companions.componentInstance.visibleMonsters().map(entry => entry.name)).toEqual(['Visible Object']);
+    toggleHidden(companions.nativeElement); companions.detectChanges();
+    expect(companions.componentInstance.visibleMonsters().map(entry => entry.name).sort()).toEqual(['Hidden Object', 'Visible Object']);
+    toggleHidden(companions.nativeElement); companions.detectChanges();
     const bastions = TestBed.createComponent(BastionsPageComponent); bastions.componentRef.setInput('characterData', sheet); bastions.detectChanges();
     expect(bastions.componentInstance.selected()).toEqual([]);
+    toggleHidden(bastions.nativeElement); bastions.detectChanges();
+    expect(bastions.componentInstance.selected().map(entry => entry.name)).toEqual(['Hidden Room']);
+    toggleHidden(bastions.nativeElement); bastions.detectChanges();
+    expect(bastions.componentInstance.selected()).toEqual([]);
     expect(sheet.objects).toHaveLength(2); expect(sheet.bastion.facilities).toHaveLength(1);
+    expect(sheet).toEqual(before);
   });
 
-  it('hides independent combat entries and bookmarks of hidden sources', () => {
+  it.each([CharacterInfoPageComponent, MobileCombatPageComponent])('reveals independent combat entries and bookmarks of hidden sources in %s', component => {
     const sheet = emptyBasicCharacter();
     sheet.features = [{ editorId: 'gift', name: 'Hidden Gift', featureType: 'FEAT', hidden: true }];
     const helper = TestBed.inject(CharacterHelpersService);
     sheet.combatActions = [prefillCombatAction(sheet, sheet.features[0], 'FEAT', helper), { name: 'Hidden Custom Action', hidden: true }, { name: 'Visible Action' }];
-    const fixture = TestBed.createComponent(CharacterInfoPageComponent); fixture.componentRef.setInput('characterData', sheet); fixture.detectChanges();
+    const fixture = TestBed.createComponent(component); fixture.componentRef.setInput('characterData', sheet); fixture.detectChanges();
     expect(fixture.componentInstance.combatActions().map(action => action.name)).toEqual(['Visible Action']);
     expect(sheet.combatActions).toHaveLength(3);
+    const before = structuredClone(sheet);
+    toggleHidden(fixture.nativeElement); fixture.detectChanges();
+    expect(fixture.componentInstance.combatActions().map(action => action.name)).toEqual(sheet.combatActions.map(action => action.name));
+    toggleHidden(fixture.nativeElement); fixture.detectChanges();
+    expect(fixture.componentInstance.combatActions().map(action => action.name)).toEqual(['Visible Action']);
+    expect(sheet).toEqual(before);
   });
 });

@@ -1,6 +1,8 @@
 import { rankSearchResults } from '../search-ranking';
 import { UiIconComponent } from '../ui-icon.component';
-import { Component, ElementRef, HostListener, ViewChild, inject, input, output } from '@angular/core';
+import { Component, ElementRef, ViewChild, input, output } from '@angular/core';
+import { ConnectedPosition, OverlayModule } from '@angular/cdk/overlay';
+import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { FormsModule } from '@angular/forms';
 
 export interface SelectOption { value: string; label: string; disabled?: boolean; }
@@ -8,21 +10,25 @@ export interface SelectOption { value: string; label: string; disabled?: boolean
 /** A single selection with its search inside the dropdown window. */
 @Component({
   selector: 'app-searchable-select',
-  imports: [UiIconComponent, FormsModule],
+  imports: [UiIconComponent, FormsModule, OverlayModule, CdkTrapFocus],
   styleUrl: './editor.css',
   template: `
-    <div class="relative" (keydown)="keydown($event)">
+    <div cdkOverlayOrigin #origin="cdkOverlayOrigin" (keydown)="keydown($event)">
       <button #trigger type="button" class="editor-input flex items-center justify-between gap-2 text-left" [class.compact-select]="compact()"
         aria-haspopup="dialog" [attr.aria-expanded]="open" [attr.aria-controls]="popupId" [attr.aria-label]="label()"
         [disabled]="disabled()" (click)="toggle()">
         <span class="min-w-0 truncate">{{ selectedLabel }}</span><span class="shrink-0 text-xs" aria-hidden="true"><app-ui-icon name="chevron-down" /></span>
       </button>
-      @if (open) {
-        <div [id]="popupId" role="dialog" [attr.aria-label]="label() + ' options'"
-          class="absolute z-30 left-0 right-0 top-full mt-1 rounded-lg border-2 border-outline-variant bg-surface p-2 shadow-xl">
-          <input #searchInput type="search" class="editor-input mb-2" [(ngModel)]="search" [ngModelOptions]="{standalone: true}"
+    </div>
+    <ng-template cdkConnectedOverlay [cdkConnectedOverlayOrigin]="origin" [cdkConnectedOverlayOpen]="open"
+      [cdkConnectedOverlayPositions]="positions" [cdkConnectedOverlayWidth]="popupWidth"
+      [cdkConnectedOverlayPush]="true" [cdkConnectedOverlayViewportMargin]="12"
+      (overlayOutsideClick)="open = false" (detach)="open = false">
+        <div #popup [id]="popupId" role="dialog" cdkTrapFocus [attr.aria-label]="label() + ' options'" (keydown)="keydown($event)"
+          class="flex max-h-[calc(100dvh-1.5rem)] w-full flex-col rounded-lg border-2 border-outline-variant bg-surface p-2 text-on-surface shadow-xl">
+          <input #searchInput type="search" class="editor-input mb-2 shrink-0" [(ngModel)]="search" [ngModelOptions]="{standalone: true}"
             [attr.aria-label]="'Search ' + label()" placeholder="Search…" />
-          <div role="listbox" [attr.aria-label]="label()" class="max-h-52 overflow-y-auto space-y-0.5">
+          <div role="listbox" [attr.aria-label]="label()" class="min-h-0 max-h-72 overflow-y-auto overscroll-contain space-y-0.5">
             @for (option of filtered; track option.value) {
               <button type="button" role="option" [attr.data-value]="option.value" [attr.aria-selected]="value() === option.value"
                 [disabled]="option.disabled" [class.bg-secondary-container]="value() === option.value"
@@ -31,8 +37,7 @@ export interface SelectOption { value: string; label: string; disabled?: boolean
             } @empty { <p class="p-2 text-xs text-on-surface-variant">No matching options.</p> }
           </div>
         </div>
-      }
-    </div>
+    </ng-template>
   `,
 })
 export class SearchableSelectComponent {
@@ -44,7 +49,12 @@ export class SearchableSelectComponent {
   readonly compact = input(false);
   readonly selected = output<string>();
   readonly popupId = `select-${crypto.randomUUID()}`;
-  private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
+  readonly positions: ConnectedPosition[] = [
+    { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetY: 4 },
+    { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom', offsetY: -4 },
+  ];
+  popupWidth = 280;
+  @ViewChild('popup') private popup?: ElementRef<HTMLElement>;
   @ViewChild('trigger') private trigger?: ElementRef<HTMLButtonElement>;
   @ViewChild('searchInput') set searchInput(field: ElementRef<HTMLInputElement> | undefined) { field?.nativeElement.focus(); }
   open = false;
@@ -54,17 +64,20 @@ export class SearchableSelectComponent {
     const query = this.search.trim().toLowerCase();
     return rankSearchResults(this.options().filter(option => option.label.toLowerCase().includes(query)), query, option => option.label);
   }
-  toggle() { this.open = !this.open; if (this.open) this.search = ''; }
+  toggle() {
+    this.open = !this.open;
+    if (this.open) {
+      this.search = '';
+      this.popupWidth = Math.min(Math.max(this.trigger?.nativeElement.getBoundingClientRect().width ?? 0, 280), window.innerWidth - 24);
+    }
+  }
   choose(value: string) { this.selected.emit(value); this.close(); }
   close() { this.open = false; this.trigger?.nativeElement.focus(); }
-  @HostListener('document:click', ['$event']) outside(event: MouseEvent) {
-    if (this.open && !this.element.nativeElement.contains(event.target as Node)) this.open = false;
-  }
   keydown(event: KeyboardEvent) {
     if (event.key === 'Escape' && this.open) { event.preventDefault(); event.stopPropagation(); this.close(); return; }
     if (!this.open && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) { event.preventDefault(); this.toggle(); return; }
     if (!this.open) return;
-    const buttons = Array.from(this.element.nativeElement.querySelectorAll<HTMLButtonElement>('[role="option"]:not(:disabled)'));
+    const buttons = Array.from(this.popup?.nativeElement.querySelectorAll<HTMLButtonElement>('[role="option"]:not(:disabled)') ?? []);
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
       const index = buttons.indexOf(event.target as HTMLButtonElement);

@@ -75,13 +75,14 @@ export class MonstersPageComponent extends MonsterPresentation {
     return [value.monsterMaxHP ?? hp?.average ?? 0, hp?.formula ? `(${hp.formula})` : '', hp?.special].filter(part => part !== undefined && part !== '').join(' ');
   }
   readonly searchQuery = signal('');
+  readonly showHidden = signal(false);
   readonly monsterFilter = signal<'all' | 'companions' | 'reference'>('all');
   readonly monsterFilters = [{ value: 'all', label: 'All' }, { value: 'companions', label: 'Tracked companions' }, { value: 'reference', label: 'Reference' }] as const;
   readonly visibleMonsters = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
     const filter = this.monsterFilter();
     const entries: Companion[] = this.companionType() === 'object' ? [...this.characterData()?.objects ?? []].sort((a, b) => Number(b.hitPoints.enabled) - Number(a.hitPoints.enabled) || (a.name ?? '').localeCompare(b.name ?? '')) : this.monsters();
-    return rankSearchResults(entries.filter(visibleInViewer).filter(monster => (monster.name ?? '').toLowerCase().includes(query) && (filter === 'all' || filter === 'companions' && this.health(monster).enabled || filter === 'reference' && !this.health(monster).enabled)), query, monster => monster.name ?? '');
+    return rankSearchResults(entries.filter(entry => this.showHidden() || visibleInViewer(entry)).filter(monster => (monster.name ?? '').toLowerCase().includes(query) && (filter === 'all' || filter === 'companions' && this.health(monster).enabled || filter === 'reference' && !this.health(monster).enabled)), query, monster => monster.name ?? '');
   });
   monsterKey(monster: Companion) { return (isObjectCompanion(monster) ? 'object-' : 'monster-') + (monster.editorId ?? this.helpers.sourceId((monster.name ?? '') + '-' + (monster.source ?? ''))); }
   characterData = input.required<ExportedCharacter | null>();

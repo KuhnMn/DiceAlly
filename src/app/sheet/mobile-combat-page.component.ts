@@ -6,10 +6,11 @@ import { CharacterInfoPageComponent } from './character-info-page.component';
 import { UiIconComponent } from '../ui-icon.component';
 import { BasicCombatActionsComponent } from './basic-combat-actions.component';
 import { SheetListLayoutComponent } from './sheet-list-layout.component';
+import { ViewerVisibilityToggleComponent } from './viewer-visibility-toggle.component';
 
 @Component({
   selector: 'app-mobile-combat-page',
-  imports: [ItemEffectRemindersComponent, CombatActionComponent, BasicCombatActionsComponent, UiIconComponent, ConcentrationControlComponent, SheetListLayoutComponent],
+  imports: [ViewerVisibilityToggleComponent, ItemEffectRemindersComponent, CombatActionComponent, BasicCombatActionsComponent, UiIconComponent, ConcentrationControlComponent, SheetListLayoutComponent],
   styles: [`
     :host { display: block; min-width: 0; }
     #mobile-combat-round {
@@ -33,7 +34,10 @@ import { SheetListLayoutComponent } from './sheet-list-layout.component';
           <div class="border-4 border-surface rounded-lg p-4 bg-surface-container-low shadow-lg">
             <header class="mb-4 flex items-center justify-between gap-2 sm:mb-6">
               <h2 class="text-xl font-bold sm:text-3xl">Combat</h2>
-              <app-sheet-list-layout #listLayout [characterId]="characterData()?.character?.characterUuid" page="combat" />
+              <div class="flex items-center gap-2">
+                <app-viewer-visibility-toggle [(showHidden)]="showHiddenCombat" />
+                <app-sheet-list-layout #listLayout [characterId]="characterData()?.character?.characterUuid" page="combat" />
+              </div>
             </header>
             <div class="mb-4 flex flex-wrap items-center gap-2" role="group" aria-label="Concentration &amp; Round Tracker">
               <h4 class="w-full text-xs font-semibold tracking-wide text-on-surface-variant">Concentration &amp; Round Tracker</h4>

@@ -178,7 +178,7 @@ type SpellLevelFilter = 'ALL' | number;
       @if (spellView() === 'PREPARED') {
         <app-item-effect-reminders [sheet]="characterData()" scope="spells" (navigateToSource)="navigateToSource.emit($event)" />
       }
-      <app-list-controls label="Search spells" [query]="searchQuery()" (queryChange)="searchQuery.set($event)"
+      <app-list-controls label="Search spells" [query]="searchQuery()" (queryChange)="searchQuery.set($event)" [allowHiddenEntries]="true" [(showHidden)]="showHidden"
         [filterCount]="activeFilterCount()" (cleared)="clearFilters()">
       <ng-container list-toolbar-action>
           <button type="button" aria-label="Only ritual spells" title="Only ritual spells" [attr.aria-pressed]="spellRitualFilter() === 'RITUAL'"
@@ -358,9 +358,10 @@ export class SpellsPageComponent {
   highlightedId = signal<string | null>(null);
 
   readonly searchQuery = signal('');
+  readonly showHidden = signal(false);
   spellView = signal<'PREPARED' | 'KNOWN' | 'SPELLBOOK'>('PREPARED');
   readonly sourceSpellCounts = computed(() => {
-    return spellSourceCounts((this.characterData()?.spells ?? []).filter(visibleInViewer), this.pickerSources(), this.spellCastingSourcesList().slice(1));
+    return spellSourceCounts((this.characterData()?.spells ?? []).filter(entry => this.showHidden() || visibleInViewer(entry)), this.pickerSources(), this.spellCastingSourcesList().slice(1));
   });
   spellRitualFilter = signal<SpellRitualFilter>('ALL');
   readonly spellLevelFilters = signal<number[]>([]);
@@ -455,7 +456,7 @@ export class SpellsPageComponent {
     const castingTimes = this.spellCastingTimes();
     const schools = this.spellSchools();
     const effects = this.spellEffects();
-    const filtered = spells.filter(visibleInViewer).filter((spell) => {
+    const filtered = spells.filter(entry => this.showHidden() || visibleInViewer(entry)).filter((spell) => {
       const matchesListType = spell.listType === listTypeFilter;
       const isRitual = spell.entity?.meta?.ritual ?? false;
       const matchesRitual = ritualFilter === 'ALL'

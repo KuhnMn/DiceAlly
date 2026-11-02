@@ -97,12 +97,14 @@ describe('Other Proficiencies', () => {
     expect(fixture.nativeElement.querySelector('input[type="search"]')).toBeNull();
     (fixture.nativeElement.querySelector('button[aria-haspopup="dialog"]') as HTMLButtonElement).click();
     await fixture.whenStable();
-    const search = fixture.nativeElement.querySelector('input[type="search"]') as HTMLInputElement;
+    const popupId = fixture.nativeElement.querySelector('button[aria-haspopup="dialog"]').getAttribute('aria-controls');
+    const popup = document.getElementById(popupId)!;
+    const search = popup.querySelector('input[type="search"]') as HTMLInputElement;
     expect(search).toBeTruthy(); search.value = 'Item 1'; search.dispatchEvent(new Event('input', { bubbles: true }));
     await fixture.whenStable();
-    expect(fixture.nativeElement.querySelectorAll('[role="option"]').length).toBe(1);
-    (fixture.nativeElement.querySelector('[role="option"]') as HTMLButtonElement).click();
-    await fixture.whenStable(); expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+    expect(popup.querySelectorAll('[role="option"]').length).toBe(1);
+    (popup.querySelector('[role="option"]') as HTMLButtonElement).click();
+    await fixture.whenStable(); expect(document.getElementById(popupId)).toBeNull();
     expect(sheet.character!.proficiencies!.tools!['Item 1 (TEST)']).toMatchObject({ contentKey: records[1].key,
       revisionId: revision.id, sourceIdentity: revision.sourceIdentity, snapshot: { data: { type: 'AT|PHB' } } });
   });

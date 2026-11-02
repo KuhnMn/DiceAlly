@@ -255,7 +255,7 @@ import { referenceDescription } from '../models/character-references';
         </div>
       </div>
 
-      <app-list-controls label="Search features" [query]="searchQuery()" (queryChange)="searchQuery.set($event)"
+      <app-list-controls label="Search features" [query]="searchQuery()" (queryChange)="searchQuery.set($event)" [allowHiddenEntries]="true" [(showHidden)]="showHidden"
         [filterCount]="activeFilterCount()" (cleared)="clearFilters()">
         <app-feature-filters [kind]="featureTypeFilter() === 'FEAT' ? 'FEAT' : featureTypeFilter() === 'OPTIONAL_FEATURE' ? 'OPTIONAL_FEATURE' : 'CLASS_FEATURE'" [showClasses]="false" [levels]="featureFilterOptions().levels"
           [categories]="featureCategoryOptions()" [selectedCategories]="featureCategoriesFilter()" (selectedCategoriesChange)="featureCategoriesFilter.set($event)"
@@ -351,6 +351,7 @@ export class FeaturesPageComponent {
   expandedItems = signal<Set<string>>(new Set());
 
   readonly searchQuery = signal('');
+  readonly showHidden = signal(false);
   featureTypeFilter = signal<'ALL' | FeatureType>('CLASS_FEATURE');
   readonly featureViews = FEATURE_TYPES;
   readonly categoryLabel = featureCategoryLabel;
@@ -359,14 +360,14 @@ export class FeaturesPageComponent {
   readonly featureLevels = signal<number[]>([]);
   readonly featureFilterOptions = computed(() => featureFilterOptions(this.featuresInContext().map(featureFilterData)));
   readonly featureCategoryOptions = computed(() => [...new Set(this.featuresInContext().flatMap(feature => featureCategories(featureFilterData(feature), this.featureTypeFilter() === 'FEAT' ? 'FEAT' : 'OPTIONAL_FEATURE')))].sort());
-  private readonly featuresInContext = computed(() => (this.characterData()?.features ?? []).filter(visibleInViewer).filter(feature => (this.featureTypeFilter() === 'ALL' || this.helpers.featureTypeLabel(feature) === this.featureTypeFilter()) && (this.featureSourceFilter() === 'ALL' || feature.featureSourceName === this.featureSourceFilter())));
+  private readonly featuresInContext = computed(() => (this.characterData()?.features ?? []).filter(entry => this.showHidden() || visibleInViewer(entry)).filter(feature => (this.featureTypeFilter() === 'ALL' || this.helpers.featureTypeLabel(feature) === this.featureTypeFilter()) && (this.featureSourceFilter() === 'ALL' || feature.featureSourceName === this.featureSourceFilter())));
   readonly activeFilterCount = computed(() => this.featureTypeFilter() === 'CLASS_FEATURE' ? this.featureLevels().length : this.featureCategoriesFilter().length);
   clearFilters() {
     this.searchQuery.set(''); this.featureCategoriesFilter.set([]); this.featureLevels.set([]);
   }
 
 
-  species = computed(() => { const species = this.characterData()?.species; return visibleInViewer(species) ? species : null; });
+  species = computed(() => { const species = this.characterData()?.species; return species && (this.showHidden() || visibleInViewer(species)) ? species : null; });
   readonly speciesMovement = computed(() => speciesMovementText(this.species()?.entity));
   readonly speciesSize = computed(() => formatSizeNames(this.species()?.entity?.size));
   readonly speciesSenses = computed(() => speciesSenseRanges(this.species()?.entity));
@@ -422,7 +423,7 @@ export class FeaturesPageComponent {
     const typeFilter = this.featureTypeFilter();
     const sourceFilter = this.featureSourceFilter();
     const levels = this.featureLevels(), categories = this.featureCategoriesFilter();
-    const filtered = items.filter(visibleInViewer).filter((feature) => {
+    const filtered = items.filter(entry => this.showHidden() || visibleInViewer(entry)).filter((feature) => {
       const matchesType = typeFilter === 'ALL' || this.helpers.featureTypeLabel(feature) === typeFilter;
       const matchesSource = sourceFilter === 'ALL' || feature.featureSourceName === sourceFilter;
       return matchesType && matchesSource && (typeFilter === 'CLASS_FEATURE' ? matchesFeatureFilters(featureFilterData(feature), [], levels) : typeFilter === 'ALL' || matchesFeatureCategories(featureFilterData(feature), typeFilter, categories)) && feature.name.toLowerCase().includes(this.searchQuery().trim().toLowerCase());

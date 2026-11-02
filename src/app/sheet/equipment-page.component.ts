@@ -92,6 +92,7 @@ export class EquipmentPageComponent {
     { kind: 'copper', label: 'Copper (CP)', name: 'Copper', unit: 'CP' },
   ];
   readonly searchQuery = signal('');
+  readonly showHidden = signal(false);
   readonly inventoryFilter = signal<'all' | 'equipped' | 'attuned'>('all');
   readonly inventoryFilters = [{ value: 'all', label: 'All' }, { value: 'equipped', label: 'Equipped' }, { value: 'attuned', label: 'Attuned' }] as const;
   readonly bonusFields = [{ key: 'bonusWeapon', label: 'Weapon' }, { key: 'bonusWeaponAttack', label: 'Weapon attack' }, { key: 'bonusWeaponDamage', label: 'Weapon damage' }, { key: 'bonusSavingThrow', label: 'Saving throws' }, { key: 'bonusSpellAttack', label: 'Spell attack' }, { key: 'bonusSpellSaveDc', label: 'Spell save DC' }, { key: 'bonusSpellDamage', label: 'Spell damage' }, { key: 'bonusAc', label: 'AC' }] as const;
@@ -100,7 +101,7 @@ export class EquipmentPageComponent {
     this.inventoryRevision();
     const query = this.searchQuery().trim().toLowerCase();
     const filter = this.inventoryFilter();
-    return rankSearchResults(this.inventory().filter(visibleInViewer).filter(item => item.name.toLowerCase().includes(query) && (filter === 'all' || filter === 'equipped' && item.isEquipped || filter === 'attuned' && item.isAttuned)), query, item => item.name);
+    return rankSearchResults(this.inventory().filter(entry => this.showHidden() || visibleInViewer(entry)).filter(item => item.name.toLowerCase().includes(query) && (filter === 'all' || filter === 'equipped' && item.isEquipped || filter === 'attuned' && item.isAttuned)), query, item => item.name);
   });
   readonly inventoryGroups = computed(() => {
     const groups = new Map<string, InventoryItem[]>();

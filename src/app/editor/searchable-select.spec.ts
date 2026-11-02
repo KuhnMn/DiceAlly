@@ -15,16 +15,19 @@ describe('Shared searchable dropdown', () => {
     const trigger = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
     expect(fixture.nativeElement.querySelector('input')).toBeNull();
     trigger.click(); await fixture.whenStable();
-    const search = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    const popup = document.getElementById(fixture.componentInstance.popupId)!;
+    expect(fixture.nativeElement.contains(popup)).toBe(false);
+    const search = popup.querySelector('input') as HTMLInputElement;
     expect(document.activeElement).toBe(search);
     search.value = 'Wizard'; search.dispatchEvent(new Event('input', { bubbles: true }));
     await fixture.whenStable();
-    expect(fixture.nativeElement.querySelectorAll('[role="option"]').length).toBe(2);
+    expect(popup.querySelectorAll('[role="option"]').length).toBe(2);
     search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     await fixture.whenStable();
     expect(selections).toEqual(['wizard']);
-    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.getElementById(fixture.componentInstance.popupId)).toBeNull();
     expect(document.activeElement).toBe(trigger);
+    fixture.destroy();
   });
 
   it('closes on Escape without propagating Escape to the containing wizard', async () => {
@@ -35,10 +38,25 @@ describe('Shared searchable dropdown', () => {
     let propagated = false;
     const listener = () => { propagated = true; };
     fixture.nativeElement.addEventListener('keydown', listener);
-    fixture.nativeElement.querySelector('input').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    document.getElementById(fixture.componentInstance.popupId)!.querySelector('input')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await fixture.whenStable();
     expect(fixture.componentInstance.open).toBe(false);
     expect(propagated).toBe(false);
     fixture.nativeElement.removeEventListener('keydown', listener);
+    fixture.destroy();
+  });
+
+  it('closes the detached popup when clicking outside and navigates its options with arrow keys', async () => {
+    const fixture = TestBed.createComponent(SearchableSelectComponent);
+    fixture.componentRef.setInput('options', [{ value: 'wizard', label: 'Wizard' }, { value: 'rogue', label: 'Rogue' }]);
+    await fixture.whenStable();
+    fixture.nativeElement.querySelector('button').click(); await fixture.whenStable();
+    const popup = document.getElementById(fixture.componentInstance.popupId)!;
+    popup.querySelector('input')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    expect(document.activeElement).toBe(popup.querySelector('[role="option"]'));
+    document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+    document.body.click(); await fixture.whenStable();
+    expect(fixture.componentInstance.open).toBe(false);
+    fixture.destroy();
   });
 });

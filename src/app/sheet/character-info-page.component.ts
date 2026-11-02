@@ -28,10 +28,11 @@ import { RuleReferenceComponent } from './rule-reference.component';
 import { CharacterReferenceCategory, referenceDescription } from '../models/character-references';
 import type { BasicActionDescription } from '../models/character-references';
 import { BasicCombatActionsComponent } from './basic-combat-actions.component';
+import { ViewerVisibilityToggleComponent } from './viewer-visibility-toggle.component';
 
 @Component({
   selector: 'app-character-info-page',
-  imports: [SheetStatTooltipComponent, SheetSavingThrowComponent, ItemEffectRemindersComponent, CombatActionComponent, BasicCombatActionsComponent, RuleReferenceComponent, SheetSpeedControlComponent, SheetSpeedDescriptionComponent, BackgroundDetailsComponent, ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
+  imports: [ViewerVisibilityToggleComponent, SheetStatTooltipComponent, SheetSavingThrowComponent, ItemEffectRemindersComponent, CombatActionComponent, BasicCombatActionsComponent, RuleReferenceComponent, SheetSpeedControlComponent, SheetSpeedDescriptionComponent, BackgroundDetailsComponent, ConcentrationControlComponent, AdvantageBadgeComponent, SheetProficienciesComponent, UiIconComponent, CommonModule, FormsModule, ConditionsComponent],
   styleUrl: './sheet-stat-tooltip.css',
   styles: [`
     .round-tracker-input::-webkit-outer-spin-button,
@@ -451,9 +452,10 @@ import { BasicCombatActionsComponent } from './basic-combat-actions.component';
 
           <!-- Combat Actions -->
           <div class="border-4 border-surface rounded-lg p-4 bg-surface-container-low shadow-lg">
-            <h3 class="text-sm font-bold uppercase text-center mb-3 border-b-2 border-outline-variant pb-2">
-              Combat
-            </h3>
+            <header class="mb-3 flex items-center justify-between gap-2 border-b-2 border-outline-variant pb-2">
+              <h3 class="text-sm font-bold uppercase">Combat</h3>
+              <app-viewer-visibility-toggle [(showHidden)]="showHiddenCombat" />
+            </header>
             <app-item-effect-reminders [sheet]="characterData()" (navigateToSource)="navigateToFeatures.emit($event)" />
             @if (combatActions().length > 0 || characterData()?.basicActions?.length) {
               <div class="space-y-3 text-sm max-h-[800px] overflow-y-auto pr-3">
@@ -722,11 +724,12 @@ export class CharacterInfoPageComponent {
     });
   });
 
+  readonly showHiddenCombat = signal(false);
   combatActions = computed(() => {
     const sheet = this.characterData();
     return (sheet?.combatActions ?? []).filter(action => {
       const source = sheet ? resolveCombatResource(sheet, action) : undefined;
-      return visibleInViewer(action) && (!source || visibleInViewer(source));
+      return this.showHiddenCombat() || visibleInViewer(action) && (!source || visibleInViewer(source));
     });
   });
   groupedBasicActions = computed(() => {

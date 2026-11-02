@@ -327,7 +327,7 @@ describe('Subclass-granted spell prefill', () => {
       .toEqual([['Die', 'd8'], ['Roll', '2d6 + 1']]);
   });
 
-  it('offers background proficiencies without creating grants and respects the automatic ability setting', () => {
+  it('offers background proficiencies and a feature source while preserving unrelated manual setup', () => {
     const f = fixture(); f.state.classes = []; setAbilityBonusesEnabled(f.sheet, false);
     const record = mapContent({ background: [{ name: 'Sage', source: 'TEST', entries: ['Reference'],
       skillProficiencies: [{ arcana: true, choose: { from: ['history', 'religion'], count: 1 } }],
@@ -346,6 +346,7 @@ describe('Subclass-granted spell prefill', () => {
     expect(result.sheet.character!.proficiencies!.skills).toMatchObject({ ARCANA: 'PROFICIENT', HISTORY: 'PROFICIENT' });
     expect(result.sheet.character!.proficiencies!.languages).toContain('Elvish');
     expect(result.sheet.background).toEqual(f.sheet.background);
+    expect(result.sheet.character!.featureSources).toContainEqual(expect.objectContaining({ name: 'Sage (TEST)', isGeneralFeatureSource: true }));
     expect(result.sheet.features ?? []).toHaveLength(0); expect(result.sheet.spells ?? []).toHaveLength(0);
     expect(result.sheet.character!.abilityScores).toEqual(f.sheet.character!.abilityScores);
     expect(result.sheet.inventory ?? []).toHaveLength(0);
@@ -354,6 +355,45 @@ describe('Subclass-granted spell prefill', () => {
     expect(automatic.abilityBonuses!.base.intelligence).toBe(10);
     expect(automatic.character!.abilityScores!.intelligence).toBe(12);
     expect(automatic.character!.abilityScores!.constitution).toBe(14);
+  });
+  it('adds background feats with stable identities, spell grants and a source, including custom backgrounds', () => {
+    const f = fixture(); f.state.classes = [];
+    const extra = mapContent({
+      background: [{ name: 'Sage', source: 'XPHB', feats: [{ 'magic initiate|xphb': true }], entries: [] }],
+      feat: [{ name: 'Magic Initiate', source: 'XPHB', category: 'O', entries: [], additionalSpells: [{ known: { '1': ['Spark|TEST'] } }] }],
+    }, 'background-feats.json').records;
+    extra.forEach(record => f.index.set(record.key, record));
+    f.state.backgroundKey = extra.find(record => record.kind === 'background')!.key;
+    const first = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+    expect(first.sheet.features).toHaveLength(1);
+    expect(first.sheet.features![0]).toMatchObject({ name: 'Magic Initiate', featureType: 'FEAT', featureSourceName: 'Sage (XPHB)' });
+    expect(first.sheet.spells).toContainEqual(expect.objectContaining({ name: 'Spark', castingSourceName: 'Sage (XPHB)', listType: 'PREPARED' }));
+    const again = previewClassWizard(first.sheet, first.sheet.creatorWizard!, f.revision, f.index);
+    expect(again.sheet.features).toEqual(first.sheet.features);
+    expect(again.sheet.character!.featureSources).toEqual(first.sheet.character!.featureSources);
+    delete f.state.backgroundKey; f.state.customBackgroundName = 'Custom Scholar';
+    const custom = previewClassWizard(first.sheet, { ...first.sheet.creatorWizard!, backgroundKey: undefined, customBackgroundName: 'Custom Scholar' }, f.revision, f.index);
+    expect(custom.sheet.character!.featureSources).toContainEqual(expect.objectContaining({ name: 'Custom Scholar', isGeneralFeatureSource: true }));
+    f.state.options['features'] = false;
+    expect(previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet.character!.featureSources ?? []).toEqual([]);
+  });
+
+  it('learns subclass spells in the parent spellbook while retaining explicit preparations and free casts', () => {
+    const f = fixture();
+    f.state.classes = [f.state.classes[0]];
+    f.find('subclass', 'School').data['additionalSpells'] = [{
+      known: { '3': ['Shield|TEST'] }, prepared: { '3': ['Spark|TEST'] },
+      innate: { '3': { daily: { '1': ['Shield|TEST'] } } },
+    }];
+    const first = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+    expect(first.sheet.spells).toContainEqual(expect.objectContaining({ name: 'Shield', listType: 'SPELLBOOK', castingSourceName: 'Mage (TEST)' }));
+    expect(first.sheet.spells).not.toContainEqual(expect.objectContaining({ name: 'Shield', listType: 'PREPARED', castingSourceName: 'Mage (TEST)' }));
+    expect(first.sheet.spells).toContainEqual(expect.objectContaining({ name: 'Spark', listType: 'PREPARED', castingSourceName: 'School (TEST)' }));
+    expect(first.sheet.spells).toContainEqual(expect.objectContaining({ name: 'Shield', listType: 'PREPARED', castingSourceName: 'School (TEST)', uses: [expect.objectContaining({ totalFreeUses: 1 })] }));
+    expect(previewClassWizard(first.sheet, first.sheet.creatorWizard!, f.revision, f.index).sheet.spells).toEqual(first.sheet.spells);
+    f.state.classes[0].useSpellbook = false;
+    const normal = previewClassWizard(f.sheet, f.state, f.revision, f.index);
+    expect(normal.sheet.spells!.some(spell => spell.listType === 'SPELLBOOK')).toBe(false);
   });
   it('replaces display selections while preserving custom class text, without taking editor rows as wizard inputs', () => {
     const f = fixture();

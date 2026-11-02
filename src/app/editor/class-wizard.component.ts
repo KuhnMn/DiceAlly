@@ -113,7 +113,7 @@ export class ClassWizardComponent implements OnInit, OnDestroy {
       const pinned = useCurrent ? undefined : saved;
       const revision = pinned ?? await activeContentRevision(this.cache);
       if (!revision) { this.error.set('Import content to use the wizard. Your current character stays editable.'); return; }
-      const kinds = ['class', 'subclass', 'classFeature', 'subclassFeature', 'optionalfeature', 'species', 'background', 'spell'];
+      const kinds = ['class', 'subclass', 'classFeature', 'subclassFeature', 'feat', 'optionalfeature', 'species', 'background', 'spell'];
       const [records, tools] = await Promise.all([
         this.cache.categories(revision.id, kinds), this.cache.tools(revision.id),
       ]);

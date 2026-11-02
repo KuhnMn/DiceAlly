@@ -29,7 +29,7 @@ import { FacilityFiltersComponent } from '../facility-filters.component';
       <header class="mb-3 flex items-center justify-between gap-2"><h2 class="text-xl font-bold sm:text-3xl">Bastions</h2><app-sheet-list-layout #layout [characterId]="characterData()?.character?.characterUuid" page="bastions" /></header>
       <app-bastion-plan [value]="characterData()?.bastion?.planUrl" />
       <h3 class="mb-2 text-lg font-bold">Facilities</h3>
-      <app-list-controls label="Search facilities" [query]="query()" (queryChange)="query.set($event)" [filterCount]="filterCount()" (cleared)="clearFilters()">
+      <app-list-controls label="Search facilities" [query]="query()" (queryChange)="query.set($event)" [allowHiddenEntries]="true" [(showHidden)]="showHidden" [filterCount]="filterCount()" (cleared)="clearFilters()">
         <app-facility-filters [value]="filters()" [levels]="levels()" (changed)="filters.set($event)" />
       </app-list-controls>
       <div class="grid items-start gap-3" [style.grid-template-columns]="'repeat(' + layout.displayColumns() + ', minmax(0, 1fr))'">
@@ -59,6 +59,7 @@ import { FacilityFiltersComponent } from '../facility-filters.component';
 export class BastionsPageComponent {
   readonly characterData = input<ExportedCharacter | null>(null);
   readonly query = signal('');
+  readonly showHidden = signal(false);
   readonly detail = signal<FacilityEntry | null>(null);
   readonly typeLabel = facilityTypeLabel;
   readonly orderLabel = facilityOrderLabel;
@@ -67,7 +68,7 @@ export class BastionsPageComponent {
   readonly levels = computed(() => [...new Set((this.characterData()?.bastion?.facilities ?? []).flatMap(entry => entry.entity.level == null ? [] : [entry.entity.level]))].sort((a, b) => a - b));
   clearFilters() { this.filters.set(emptyFacilityFilters()); }
   readonly selected = computed(() => [...this.characterData()?.bastion?.facilities ?? []]
-    .filter(visibleInViewer).filter(entry => entry.name.toLowerCase().includes(this.query().trim().toLowerCase()) && matchesFacilityFilters(entry.entity, this.filters()))
+    .filter(entry => this.showHidden() || visibleInViewer(entry)).filter(entry => entry.name.toLowerCase().includes(this.query().trim().toLowerCase()) && matchesFacilityFilters(entry.entity, this.filters()))
     .sort((a, b) => compareSearchMatches(a.name, b.name, this.query())));
   updateNotes(facility: FacilityEntry, notes: FeatureNotes[]) { facility.notes = notes; }
 }

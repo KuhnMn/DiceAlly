@@ -18,12 +18,14 @@ describe('Shared source picker', () => {
     const selected: string[] = [];
     picker.selected.subscribe(value => selected.push(value));
     fixture.nativeElement.querySelector('app-searchable-select button').click(); await fixture.whenStable();
-    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    const popupId = fixture.nativeElement.querySelector('app-searchable-select button').getAttribute('aria-controls');
+    const popup = document.getElementById(popupId)!;
+    const input = popup.querySelector('input') as HTMLInputElement;
     input.value = 'Cleric'; input.dispatchEvent(new Event('input', { bubbles: true }));
     await fixture.whenStable();
-    fixture.nativeElement.querySelector('[role="option"]').click(); await fixture.whenStable();
+    popup.querySelector<HTMLButtonElement>('[role="option"]')!.click(); await fixture.whenStable();
     expect(selected).toEqual(['Cleric']);
-    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.getElementById(popupId)).toBeNull();
   });
 
   it('retains an existing missing source while excluding Unassigned for spell-slot assignment', async () => {

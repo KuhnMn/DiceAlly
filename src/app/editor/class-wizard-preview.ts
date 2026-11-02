@@ -25,6 +25,7 @@ import { averageClassHp, contentReference, sourceAbilityFlags, speciesSnapshot, 
 import { isCompleteSelection } from '../rules/spell-choice';
 import { createFeatureEntry } from './feature-selection';
 import { applyAbilityBonuses } from '../models/ability-score-bonuses';
+import { wizardBackgroundFeats } from './wizard-background-feats';
 
 export interface WizardChoice { ownerKey?: string; scope?: 'features' | 'spells' | 'species' | 'proficiencies'; id: string; label: string; count: number; searchable?: boolean; candidates: { value: string; label: string }[]; }
 export interface WizardHpContribution { label: string; level: number; hitDie: number; starting: boolean; constitutionModifier: number; total: number; }
@@ -67,7 +68,8 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     label: choice.label, count: choice.count, candidates: choice.candidates })));
   const sourceNames = new Map<string, string>();
   const spellLevels = new Map<string, number>();
-  const owners: { owner: SpellGrantOwner; label: string; source: string }[] = [];
+  const owners: { owner: SpellGrantOwner; label: string; source: string; spellbookSource?: string }[] = [];
+  const spellbookSources = new Map<string, string>();
   const spells = new Map<string, SpellEntryFull>();
   const reference = (record: ContentRecord) => contentReference(record, revision);
   // Stable IDs let later wizard runs update their own entries without claiming manual ones.
@@ -103,7 +105,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     const owner: SpellGrantOwner = { selectionId, ownerKey: record.key, level, maxSpellLevel,
       ability: (state.answers[abilityId]?.[0] ?? (castingMetadata(record).ability ?? fallback)) || undefined,
       ...(selectedBlocks ? { blocks: selectedBlocks } : {}) };
-    owners.push({ owner, label: record.name, source: castingSource });
+    owners.push({ owner, label: record.name, source: castingSource, spellbookSource: spellbookSources.get(selectionId) });
     const sourceValue = values.find(entry => entry.path[0] === 'sources' && (entry.value as FeatureSource).name === castingSource)?.value as FeatureSource | undefined;
     if (sourceValue) {
       sourceValue.isSpellcastingSource = true;
@@ -131,6 +133,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
       useSpellbook: selection.useSpellbook ?? false, ...sourceAbilityFlags(parent),
     });
     sourceNames.set(`${selection.selectionId}:${parent.key}`, parentName);
+    if (selection.useSpellbook) spellbookSources.set(selection.selectionId, parentName);
     let castingSource = parentName;
     if (subclass) {
       const name = source(wizardEditorId('source', revision.sourceIdentity, selection.selectionId, subclass.key),
@@ -139,6 +142,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
           useSpellbook: castingRecord === subclass && (selection.useSpellbook ?? false), ...sourceAbilityFlags(subclass, castingAbility) });
       sourceNames.set(`${selection.selectionId}:${subclass.key}`, name);
       if (castingRecord === subclass) castingSource = name;
+      if (castingRecord === subclass && selection.useSpellbook) spellbookSources.set(selection.selectionId, name);
     }
     resourceColumns.push(...wizardResourceColumns(parent, subclass ?? null, revision.sourceIdentity,
       selection.selectionId, selection.level, parentId, subclass
@@ -258,6 +262,22 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
   }
   // 3. Rule handlers expose candidates and validate answers before producing sheet entries.
   const backgroundKey = state.backgroundKey;
+  const background = backgroundKey ? records.get(backgroundKey) : undefined;
+  const backgroundName = background?.kind === 'background' ? `${background.name} (${background.publication})` : state.customBackgroundName?.trim();
+  if (backgroundName) {
+    const name = source(wizardEditorId('background-source', revision.sourceIdentity, background?.key ?? normalize(backgroundName)), backgroundName, { isGeneralFeatureSource: true }, 'features');
+    if (background?.kind === 'background') {
+      const result = wizardBackgroundFeats(background, records, state.answers,
+        record => (!sourceBooks.length || sourceBooks.includes(record.publication)) && catalogVisible(record));
+      choices.push(...result.choices);
+      if (state.options['features'] !== false) warnings.push(...result.warnings);
+      for (const record of result.feats) {
+        const id = wizardEditorId('background-feat', revision.sourceIdentity, background.key, record.key);
+        put('features', record.name, ['features', id], createFeatureEntry(record, revision, { editorId: id, sourceName: name, userAdded: false }));
+        addOwner('wizard-background', record, Math.max(1, state.classes.reduce((sum, entry) => sum + entry.level, 0)), name, '', 9);
+      }
+    }
+  }
   const proficiencyRecords = new Map(records);
   const proficiencies = deriveProficiencyGrants(state.classes, { ...index, records: proficiencyRecords }, state.answers, state.speciesKey, [], {}, sourceBooks, backgroundKey);
   if (state.options['proficiencies'] !== false) warnings.push(...proficiencies.diagnostics.filter(message => !message.startsWith('Select ')));
@@ -287,7 +307,7 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
   }
   const modifiers = Object.fromEntries(DEFENSE_ABILITIES.map(({ key }) =>
     [key.slice(0, 3), Math.floor(((sheet.character?.abilityScores?.[key] ?? 10) - 10) / 2)]));
-  for (const { owner, label, source: sourceName } of owners) {
+  for (const { owner, label, source: sourceName, spellbookSource } of owners) {
     const result = deriveSpellGrants([owner], index, [], state.answers);
     if (state.options['spells'] !== false) warnings.push(...result.diagnostics.filter(message => !message.includes('Select ') && !message.includes('Choose additionalSpells'))
       .map(message => `${label}: ${message}`));
@@ -296,6 +316,12 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
     for (const expanded of result.expanded) addSpell(records.get(expanded.contentKey)!, sourceName);
     for (const instance of result.instances) {
       const uses = spellUseTrackers(instance.grants, modifiers);
+      // Known levelled spells granted to a spellbook caster are learned, not prepared.
+      // Keep innate casts, known cantrips and explicit prepared grants immediately usable.
+      if (spellbookSource && instance.list === 'known' && spellDefinition(instance.snapshot).level > 0) {
+        addSpell(instance.snapshot, spellbookSource, 'SPELLBOOK', uses);
+        continue;
+      }
       addSpell(instance.snapshot, sourceName);
       // Explicit additionalSpells grants are usable spells, including known cantrips such
       // as Arcane Trickster's Mage Hand. Expanded lists above only provide eligibility.
@@ -314,7 +340,6 @@ export function previewClassWizard(sheet: ExportedCharacter, state: WizardState,
   const resourceSources = overrideSections.includes('sources') ? [...proposedSources, ...currentSources] : [...currentSources, ...proposedSources];
   values.push(...wizardResourceValues(sheet, state, resourceColumns, resourceSources));
   const proposal = mergeWizardPrefill(sheet, state, values, overrideSections);
-  const background = backgroundKey ? records.get(backgroundKey) : undefined;
   if (backgroundKey && background?.kind !== 'background') errors.push('The selected background is missing from this import.');
   const nextBackground = background?.kind === 'background'
     ? { name: background.name, source: background.publication, entity: characterOptionSourceData(background), contentReference: reference(background) }

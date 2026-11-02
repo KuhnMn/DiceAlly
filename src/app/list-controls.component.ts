@@ -1,20 +1,24 @@
 import { Component, computed, input, model, output, signal } from '@angular/core';
 import { UiIconComponent } from './ui-icon.component';
+import { ViewerVisibilityToggleComponent } from './sheet/viewer-visibility-toggle.component';
 
 /** Compact list search with optional, mounted filters so closing keeps their state. */
 @Component({
   selector: 'app-list-controls',
-  imports: [UiIconComponent],
+  imports: [UiIconComponent, ViewerVisibilityToggleComponent],
   host: { class: 'mb-3 block min-w-0' },
   template: `
-    <div class="flex min-w-0 items-center gap-2">
-      <label class="relative min-w-0 flex-1">
+    <div class="flex min-w-0 items-center gap-2 sm:flex-nowrap" [class.flex-wrap]="allowHiddenEntries()">
+      <label class="relative min-w-0 flex-1 sm:basis-auto" [class.basis-full]="allowHiddenEntries()">
         <span class="sr-only">{{ label() }}</span>
         <app-ui-icon name="search" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
         <input type="search" [disabled]="disabled()" [attr.name]="searchName() || null" [value]="query()" (input)="query.set($any($event.target).value)"
           [placeholder]="label()" class="min-h-11 w-full min-w-0 rounded-lg border border-outline-variant bg-surface-container py-2 pl-9 pr-2 text-base text-on-surface sm:text-sm" />
       </label>
       <ng-content select="[list-toolbar-action]" />
+      @if (allowHiddenEntries()) {
+        <app-viewer-visibility-toggle [(showHidden)]="showHidden" />
+      }
       @if (hasFilters()) {
         <button type="button" [disabled]="disabled()" [attr.aria-expanded]="filtersOpen()" [attr.aria-controls]="filtersId()" (click)="filtersOpen.set(!filtersOpen())"
           [class.bg-primary-container]="filtersOpen() || filterCount() > 0" [class.text-on-primary-container]="filtersOpen() || filterCount() > 0"
@@ -40,6 +44,8 @@ export class ListControlsComponent {
   readonly hasFilters = input(true);
   readonly filterCount = input(0);
   readonly disabled = input(false);
+  readonly allowHiddenEntries = input(false);
+  readonly showHidden = model(false);
   readonly filtersId = computed(() => (this.searchName() || this.label().toLowerCase().replaceAll(' ', '-')) + '-filters');
   readonly filtersOpen = signal(false);
   readonly cleared = output<void>();

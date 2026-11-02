@@ -56,7 +56,7 @@
       <button type="button" (click)="setCompanionType(type.value)" [attr.aria-pressed]="companionType() === type.value" [class.bg-teal-container]="companionType() === type.value" [class.text-on-teal-container]="companionType() === type.value" class="min-h-11 rounded-lg border border-outline-variant px-3 py-1 text-sm">{{ type.label }}</button>
     }
   </nav>
-  <app-list-controls [label]="companionType() === 'object' ? 'Search objects' : 'Search monsters'" [query]="searchQuery()" (queryChange)="searchQuery.set($event)"
+  <app-list-controls [label]="companionType() === 'object' ? 'Search objects' : 'Search monsters'" [query]="searchQuery()" (queryChange)="searchQuery.set($event)" [allowHiddenEntries]="true" [(showHidden)]="showHidden"
     [filterCount]="monsterFilter() === 'all' ? 0 : 1" (cleared)="monsterFilter.set('all')">
   <div appHorizontalRow class="flex flex-wrap gap-2" aria-label="Monster filters">
     @for (filter of monsterFilters; track filter.value) {
