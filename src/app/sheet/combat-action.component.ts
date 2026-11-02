@@ -27,19 +27,21 @@ const LINK_STYLES = {
   template: `
     <div class="relative min-w-0 rounded border-2 bg-surface-container transition-colors" [ngClass]="style()">
       <button type="button" data-page-swipe (click)="opened.set(true)" aria-haspopup="dialog" [attr.aria-label]="'Details for ' + (action().name || 'Combat Action')" [attr.aria-expanded]="opened()"
-        class="block min-h-11 w-full min-w-0 rounded px-2 py-1.5 text-left sm:p-2 focus-visible:outline-2 focus-visible:outline-primary">
-        <span class="mb-0.5 flex min-h-6 items-center text-sm font-semibold sm:mb-1 sm:min-h-8" [class]="navigable() ? 'pr-8 sm:pr-11' : ''">
-          <span class="min-w-0 [overflow-wrap:anywhere]">{{ action().name || 'Combat Action' }}</span>
-        </span>
-        <span class="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,2fr)] gap-2 font-sans text-[11px] font-normal leading-4 text-on-surface-variant sm:text-xs">
-          <span class="min-w-0 [overflow-wrap:anywhere]" [title]="action().range">{{ action().range }}</span>
-          <span class="min-w-0 line-clamp-2 text-center [overflow-wrap:anywhere]" [title]="action().hitOrDc">{{ action().hitOrDc }}</span>
-          <span class="min-w-0 line-clamp-5 text-right [overflow-wrap:anywhere]" [title]="action().damageOrHeal">{{ action().damageOrHeal }}</span>
+        class="block min-h-11 w-full min-w-0 rounded px-2 py-1.5 text-left focus-visible:outline-2 focus-visible:outline-primary" [class.pr-7]="navigable()">
+        <span class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,1.1fr)] items-start gap-2">
+          <span class="min-w-0 [overflow-wrap:anywhere]">
+            <span class="block text-sm font-semibold leading-5">{{ action().name || 'Combat Action' }}</span>
+            @if (action().range) {
+              <span class="block font-mono text-[11px] leading-4 text-on-surface-variant" [title]="'Range: ' + action().range">{{ action().range }}</span>
+            }
+          </span>
+          <span class="min-w-0 whitespace-pre-line text-center font-mono text-[11px] font-normal leading-4 [overflow-wrap:anywhere]" [title]="action().hitOrDc">{{ action().hitOrDc }}</span>
+          <span class="min-w-0 line-clamp-5 whitespace-pre-line text-right font-mono text-[11px] font-normal leading-4 [overflow-wrap:anywhere]" [title]="action().damageOrHeal">{{ action().damageOrHeal }}</span>
         </span>
       </button>
       @if (navigable()) {
         <button type="button" (click)="goToSource()" [attr.aria-label]="'Go to source for ' + (action().name || 'Combat Action')" title="Go to source"
-          class="absolute right-0 top-0 flex h-8 w-8 items-center justify-center rounded border-l border-current/20 sm:h-11 sm:w-11 focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="right" /></button>
+          class="absolute right-0.5 top-0.5 flex h-6 w-6 items-center justify-center rounded opacity-60 hover:bg-current/10 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="right" class="text-xs" /></button>
       }
     </div>
     <ng-template #navigation>

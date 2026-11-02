@@ -1,5 +1,4 @@
 import { ItemEffectRemindersComponent } from './item-effect-reminders.component';
-import { CombatActionColumnsComponent } from './combat-action-columns.component';
 import { CombatActionComponent } from './combat-action.component';
 import { ConcentrationControlComponent } from './concentration-control.component';
 import { Component } from '@angular/core';
@@ -10,7 +9,7 @@ import { SheetListLayoutComponent } from './sheet-list-layout.component';
 
 @Component({
   selector: 'app-mobile-combat-page',
-  imports: [ItemEffectRemindersComponent, CombatActionColumnsComponent, CombatActionComponent, BasicCombatActionsComponent, UiIconComponent, ConcentrationControlComponent, SheetListLayoutComponent],
+  imports: [ItemEffectRemindersComponent, CombatActionComponent, BasicCombatActionsComponent, UiIconComponent, ConcentrationControlComponent, SheetListLayoutComponent],
   styles: [`
     :host { display: block; min-width: 0; }
     #mobile-combat-round {
@@ -61,7 +60,6 @@ import { SheetListLayoutComponent } from './sheet-list-layout.component';
                         @if (groupedBasicActions()[actionType]?.length) {
                           <app-basic-combat-actions [actions]="groupedBasicActions()[actionType]" />
                         }
-                        @if (groupedCombatActions()[actionType]?.length) { <app-combat-action-columns /> }
                         @for (action of groupedCombatActions()[actionType]; track action.editorId ?? $index) {
                           <app-combat-action [action]="action" [sheet]="characterData()!" [linkType]="getCombatActionLinkType(action)" [navigable]="isActionClickable(action)" (navigated)="navigateToCombatAction(action)" />
                         }
