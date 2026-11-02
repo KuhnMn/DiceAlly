@@ -2,18 +2,25 @@ import { Component, input } from '@angular/core';
 import type { BasicActionDescription } from '../models/character-references';
 import { RuleReferenceComponent } from './rule-reference.component';
 
-/** Same rows as authored combat actions, with reference help instead of a navigation action. */
+/** Compact reference cards share the combat palette and open their full descriptions. */
 @Component({
   selector: 'app-basic-combat-actions',
-  host: { class: 'block pb-2' },
+  host: { class: 'block min-w-0 pb-1' },
   imports: [RuleReferenceComponent],
+  styles: [`
+    .basic-action-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 7rem), 1fr));
+      gap: .25rem;
+    }
+  `],
   template: `
     <details>
       <summary data-page-swipe class="cursor-pointer rounded py-1 text-xs font-bold text-tertiary focus-visible:outline-2 focus-visible:outline-primary">Basic</summary>
-      <div class="mt-1 space-y-1">
+      <div class="basic-action-grid mt-1">
         @for (action of actions(); track action.name) {
           <app-rule-reference appearance="combat" [reference]="action">
-            <span class="min-w-0 flex-1 break-words text-sm font-semibold">{{ action.name }}</span>
+            <span class="min-w-0 flex-1 text-xs font-semibold leading-4 [overflow-wrap:anywhere]">{{ action.name }}</span>
           </app-rule-reference>
         }
       </div>

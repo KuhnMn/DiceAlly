@@ -19,10 +19,10 @@ let nextReferenceId = 0;
       (keydown.escape)="close(); $event.stopPropagation()">
       @if (appearance() === 'combat') {
         <button type="button" data-page-swipe (click)="openDescription()" aria-haspopup="dialog" [attr.aria-label]="'About ' + reference()?.name" [attr.aria-expanded]="dialogOpen()"
-          class="inline-flex min-h-11 w-full min-w-0 items-center gap-1 rounded p-2 text-left hover:bg-surface-container-high focus-visible:outline-2 focus-visible:outline-primary">
+          class="inline-flex min-h-9 w-full min-w-0 items-center gap-2 rounded px-2 py-1 text-left hover:bg-surface-container-high focus-visible:outline-2 focus-visible:outline-primary">
           <ng-container [ngTemplateOutlet]="label" />
           @if (reference()?.entries?.length) {
-            <span (mouseenter)="show()" (mouseleave)="scheduleClose()" class="inline-flex h-8 w-8 shrink-0 items-center justify-center text-on-surface-variant"><app-ui-icon name="info" /></span>
+            <span (mouseenter)="show()" (mouseleave)="scheduleClose()" class="inline-flex h-4 w-4 shrink-0 items-center justify-center text-xs text-on-surface-variant opacity-60"><app-ui-icon name="info" /></span>
           }
         </button>
       } @else {
