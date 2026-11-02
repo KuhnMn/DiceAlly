@@ -233,9 +233,9 @@ describe('Theme picker initial selection', () => {
       currentTheme, availableThemes: ['light-mc', 'dark-mc'], setTheme: vi.fn(),
     } }] });
     const fixture = TestBed.createComponent(ThemePickerComponent); fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('select').value).toBe('dark-mc');
+    expect(fixture.nativeElement.querySelector('summary').textContent).toContain('Dark · Monte Carlo');
     currentTheme.set('light-mc'); fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('select').value).toBe('light-mc');
+    expect(fixture.nativeElement.querySelector('summary').textContent).toContain('Light · Monte Carlo');
   });
 });
 import { AppDialogService } from '../services/app-dialog.service';

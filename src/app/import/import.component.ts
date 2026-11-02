@@ -8,14 +8,14 @@ import { CharacterLibraryService, CharacterSummary, CharacterImportResult } from
 
 import { CharacterSharingService } from '../characters/character-sharing.service';
 
-import { ThemeService, type Theme } from '../services/theme.service';
+import { ThemePickerComponent } from '../theme-picker.component';
 import { ExportOptionsModalComponent } from './export-options-modal.component';
 import { RemoveEntryDialogComponent } from '../editor/remove-entry-dialog.component';
 import { LibraryNavigationComponent } from '../library-navigation.component';
 
 @Component({
   selector: 'app-import',
-  imports: [LibraryNavigationComponent, UiIconComponent, CommonModule, FormsModule, RouterLink, ExportOptionsModalComponent, RemoveEntryDialogComponent],
+  imports: [ThemePickerComponent, LibraryNavigationComponent, UiIconComponent, CommonModule, FormsModule, RouterLink, ExportOptionsModalComponent, RemoveEntryDialogComponent],
   template: `
     <app-library-navigation />
     <main class="home-screen max-w-[1000px] mx-auto mb-8 p-4">
@@ -46,29 +46,10 @@ import { LibraryNavigationComponent } from '../library-navigation.component';
               }
             </div>
             <div class="library-theme mb-8 flex justify-end">
-              <label class="text-sm font-medium flex items-center gap-2">
+              <div class="text-sm font-medium flex items-center gap-2">
                 <span class="theme-caption text-on-surface-variant">Theme:</span>
-                <select
-                  [value]="themeService.currentTheme()"
-                  (change)="onThemeChange($event)"
-                  class="px-3 py-2 text-sm font-medium transition-colors rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant cursor-pointer"
-                  title="Select color theme"
-                  aria-label="Select color theme"
-                >
-                  <option value="light-mc">☀️ Light (Monte Carlo)</option>
-                  <option value="dark-mc">🌙 Dark (Monte Carlo)</option>
-                  <option value="light-royal">✨ Light (Royal)</option>
-                  <option value="dark-royal">👑 Dark (Royal)</option>
-                  <option value="light-ethereal">🌌 Light (Ethereal)</option>
-                  <option value="dark-ethereal">💜 Dark (Ethereal)</option>
-                  <option value="light-forge">🔥 Light (Forge)</option>
-                  <option value="dark-forge">⚒️ Dark (Forge)</option>
-                  <option value="light-glade">🌿 Light (Glade)</option>
-                  <option value="dark-glade">🍃 Dark (Glade)</option>
-                  <option value="light-deepwater">Light (Deepwater)</option>
-                  <option value="dark-deepwater">Dark (Deepwater)</option>
-                </select>
-              </label>
+                <app-theme-picker class="w-48" />
+              </div>
             </div>
           </div>
 
@@ -272,7 +253,6 @@ export class ImportComponent {
   private reloadVersion = 0;
   private sharing = inject(CharacterSharingService);
   private router = inject(Router);
-  protected themeService = inject(ThemeService);
 
   raw = '';
   importUrl = '';
@@ -340,12 +320,6 @@ export class ImportComponent {
         : await this.library.importCharacterFromJson(this.raw);
       this.handleImportResult(result, legacy);
     } finally { this.isConvertingLegacy.set(false); }
-  }
-
-  onThemeChange(event: Event) {
-    const select = event.target as HTMLSelectElement | null;
-    if (!select) return;
-    this.themeService.setTheme(select.value as Theme);
   }
 
   async importFromUrl() {

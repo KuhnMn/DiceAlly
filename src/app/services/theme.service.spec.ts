@@ -12,11 +12,16 @@ describe('Deepwater theme selection', () => {
       const service = TestBed.inject(ThemeService);
       const fixture = TestBed.createComponent(ThemePickerComponent);
       fixture.detectChanges(); TestBed.tick();
-      const picker = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
-      expect(picker.value).toBe('dark-deepwater');
+      const picker = fixture.nativeElement.querySelector('details') as HTMLDetailsElement;
+      const summary = picker.querySelector('summary')!;
+      expect(summary.textContent).toContain('Dark · Deepwater');
       expect(html.classList.contains('dark-theme')).toBe(true);
       expect(html.classList.contains('deepwater-theme')).toBe(true);
-      picker.value = 'light-deepwater'; picker.dispatchEvent(new Event('change')); TestBed.tick();
+      summary.click(); fixture.detectChanges();
+      expect(picker.open).toBe(true);
+      picker.querySelector<HTMLButtonElement>('button[data-theme="light-deepwater"]')!.click(); TestBed.tick();
+      expect(picker.open).toBe(false);
+      expect(document.activeElement).toBe(summary);
       expect(service.currentTheme()).toBe('light-deepwater');
       expect(html.classList.contains('light-theme')).toBe(true);
       expect(html.classList.contains('dark-theme')).toBe(false);
@@ -24,6 +29,9 @@ describe('Deepwater theme selection', () => {
       service.setTheme('dark-glade'); TestBed.tick();
       expect(html.classList.contains('glade-theme')).toBe(true);
       expect(html.classList.contains('deepwater-theme')).toBe(false);
+      summary.click(); fixture.detectChanges();
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(picker.open).toBe(false);
       fixture.destroy();
     } finally {
       TestBed.resetTestingModule();
