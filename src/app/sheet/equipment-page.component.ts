@@ -95,6 +95,10 @@ export class EquipmentPageComponent {
   readonly showHidden = signal(false);
   readonly inventoryFilter = signal<'all' | 'equipped' | 'attuned'>('all');
   readonly inventoryFilters = [{ value: 'all', label: 'All' }, { value: 'equipped', label: 'Equipped' }, { value: 'attuned', label: 'Attuned' }] as const;
+  readonly quickInventoryFilters = this.inventoryFilters.filter(filter => filter.value !== 'all');
+  toggleInventoryFilter(filter: 'equipped' | 'attuned') {
+    this.inventoryFilter.update(current => current === filter ? 'all' : filter);
+  }
   readonly bonusFields = [{ key: 'bonusWeapon', label: 'Weapon' }, { key: 'bonusWeaponAttack', label: 'Weapon attack' }, { key: 'bonusWeaponDamage', label: 'Weapon damage' }, { key: 'bonusSavingThrow', label: 'Saving throws' }, { key: 'bonusSpellAttack', label: 'Spell attack' }, { key: 'bonusSpellSaveDc', label: 'Spell save DC' }, { key: 'bonusSpellDamage', label: 'Spell damage' }, { key: 'bonusAc', label: 'AC' }] as const;
   private readonly inventoryRevision = signal(0);
   readonly visibleInventory = computed(() => {

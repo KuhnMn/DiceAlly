@@ -2,6 +2,42 @@ import { TestBed } from '@angular/core/testing';
 import { EquipmentPageComponent } from './equipment-page.component';
 
 describe('Equipment details', () => {
+  it('toggles equipped and attuned quick filters alongside search and hidden items without changing the inventory', () => {
+    const fixture = TestBed.createComponent(EquipmentPageComponent);
+    const sheet = { character: {}, inventory: [
+      { name: 'Worn Cloak', isEquipped: true },
+      { name: 'Attuned Ring', isAttuned: true },
+      { name: 'Worn Ring', isEquipped: true, isAttuned: true },
+      { name: 'Hidden Cloak', isEquipped: true, hidden: true },
+      { name: 'Rope' },
+    ] };
+    const before = structuredClone(sheet);
+    fixture.componentRef.setInput('characterData', sheet); fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const button = (label: string) => root.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!;
+    const names = () => fixture.componentInstance.visibleInventory().map(item => item.name).sort();
+    const equipped = button('Show equipped items'), attuned = button('Show attuned items');
+    equipped.click(); fixture.detectChanges();
+    expect(names()).toEqual(['Worn Cloak', 'Worn Ring']);
+    expect(equipped.getAttribute('aria-pressed')).toBe('true');
+    expect(root.querySelector('app-list-controls button[aria-expanded]')!.textContent).toContain('(1)');
+    attuned.click(); fixture.detectChanges();
+    expect(names()).toEqual(['Attuned Ring', 'Worn Ring']);
+    expect(equipped.getAttribute('aria-pressed')).toBe('false'); expect(attuned.getAttribute('aria-pressed')).toBe('true');
+    attuned.click(); fixture.detectChanges();
+    expect(names()).toEqual(['Attuned Ring', 'Rope', 'Worn Cloak', 'Worn Ring']);
+    equipped.click(); button('Show hidden entries').click(); fixture.detectChanges();
+    expect(names()).toEqual(['Hidden Cloak', 'Worn Cloak', 'Worn Ring']);
+    fixture.componentInstance.searchQuery.set('cloak'); fixture.detectChanges();
+    expect(names()).toEqual(['Hidden Cloak', 'Worn Cloak']);
+    button('Clear filters and search').click(); fixture.detectChanges();
+    expect(fixture.componentInstance.searchQuery()).toBe('');
+    expect(fixture.componentInstance.inventoryFilter()).toBe('all');
+    expect(equipped.getAttribute('aria-pressed')).toBe('false');
+    expect(sheet).toEqual(before);
+    fixture.destroy();
+  });
+
   it('omits an empty combat-statistics row for gear while retaining its details and controls', () => {
     const fixture = TestBed.createComponent(EquipmentPageComponent);
     const item = { editorId: 'fire', name: "Alchemist's Fire", source: 'XPHB', entity: {

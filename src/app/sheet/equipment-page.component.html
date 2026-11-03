@@ -87,6 +87,17 @@
   </div>
   <app-list-controls label="Search items" [query]="searchQuery()" (queryChange)="searchQuery.set($event)" [allowHiddenEntries]="true" [(showHidden)]="showHidden"
     [filterCount]="inventoryFilter() === 'all' ? 0 : 1" (cleared)="inventoryFilter.set('all')">
+  <ng-container list-toolbar-after-visibility>
+    @for (filter of quickInventoryFilters; track filter.value) {
+      <button type="button" (click)="toggleInventoryFilter(filter.value)" [attr.aria-label]="'Show ' + filter.label.toLowerCase() + ' items'" [title]="'Show ' + filter.label.toLowerCase() + ' items'"
+        [attr.aria-pressed]="inventoryFilter() === filter.value"
+        [class.bg-green-container]="inventoryFilter() === filter.value && filter.value === 'equipped'" [class.text-on-green-container]="inventoryFilter() === filter.value && filter.value === 'equipped'"
+        [class.bg-purple-container]="inventoryFilter() === filter.value && filter.value === 'attuned'" [class.text-on-purple-container]="inventoryFilter() === filter.value && filter.value === 'attuned'"
+        class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-outline-variant text-sm focus-visible:outline-2 focus-visible:outline-primary">
+        <app-ui-icon [name]="filter.value === 'equipped' ? 'backpack' : 'flame'" />
+      </button>
+    }
+  </ng-container>
   <div appHorizontalRow class="flex flex-wrap gap-2" aria-label="Inventory filters">
     @for (filter of inventoryFilters; track filter.value) {
       <button type="button" (click)="inventoryFilter.set(filter.value)" [attr.aria-pressed]="inventoryFilter() === filter.value" [class.bg-green-container]="inventoryFilter() === filter.value" [class.text-on-green-container]="inventoryFilter() === filter.value" class="min-h-11 rounded-full border border-outline-variant px-3 py-2 text-sm">{{ filter.label }}</button>
