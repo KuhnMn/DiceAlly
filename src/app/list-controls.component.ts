@@ -19,7 +19,6 @@ import { ViewerVisibilityToggleComponent } from './sheet/viewer-visibility-toggl
       @if (allowHiddenEntries()) {
         <app-viewer-visibility-toggle [(showHidden)]="showHidden" />
       }
-      <ng-content select="[list-toolbar-after-visibility]" />
       @if (hasFilters()) {
         <button type="button" [disabled]="disabled()" [attr.aria-expanded]="filtersOpen()" [attr.aria-controls]="filtersId()" (click)="filtersOpen.set(!filtersOpen())"
           [class.bg-primary-container]="filtersOpen() || filterCount() > 0" [class.text-on-primary-container]="filtersOpen() || filterCount() > 0"

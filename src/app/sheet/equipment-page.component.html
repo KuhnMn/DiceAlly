@@ -87,7 +87,7 @@
   </div>
   <app-list-controls label="Search items" [query]="searchQuery()" (queryChange)="searchQuery.set($event)" [allowHiddenEntries]="true" [(showHidden)]="showHidden"
     [filterCount]="inventoryFilter() === 'all' ? 0 : 1" (cleared)="inventoryFilter.set('all')">
-  <ng-container list-toolbar-after-visibility>
+  <ng-container list-toolbar-action>
     @for (filter of quickInventoryFilters; track filter.value) {
       <button type="button" (click)="toggleInventoryFilter(filter.value)" [attr.aria-label]="'Show ' + filter.label.toLowerCase() + ' items'" [title]="'Show ' + filter.label.toLowerCase() + ' items'"
         [attr.aria-pressed]="inventoryFilter() === filter.value"
