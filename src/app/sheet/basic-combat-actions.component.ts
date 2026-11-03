@@ -10,7 +10,7 @@ import { RuleReferenceComponent } from './rule-reference.component';
   styles: [`
     .basic-action-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 7rem), 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, max(7rem, calc((100% - .75rem) / 4))), 1fr));
       gap: .25rem;
     }
   `],
