@@ -2,6 +2,7 @@ import { Directive, ElementRef, ViewChild } from '@angular/core';
 import { FeatureNotes, FeatureUses } from '../models/character.model';
 import { RECOVERY_OPTIONS } from './recovery-options';
 import type { ViewerEntryVisibility } from '../models/entry-visibility';
+import { USES_TOTAL_OPTIONS, usesTotalSelection, usesTotalFromSelection } from '../models/uses-total';
 export interface AnnotatedEntry extends ViewerEntryVisibility {
   notes?: FeatureNotes[];
   uses?: FeatureUses[];
@@ -11,6 +12,12 @@ export interface AnnotatedEntry extends ViewerEntryVisibility {
 @Directive()
 export abstract class EntryAnnotationsEditor {
   readonly recoveryOptions = RECOVERY_OPTIONS;
+  readonly totalOptions = USES_TOTAL_OPTIONS;
+  readonly totalSelection = usesTotalSelection;
+  setTotalCalculation(uses: FeatureUses, value: string) {
+    uses.totalCalculation = usesTotalFromSelection(value);
+    this.change();
+  }
   abstract change(): void;
   editingNoteGroup?: FeatureNotes;
   editingNoteIndex = 0;

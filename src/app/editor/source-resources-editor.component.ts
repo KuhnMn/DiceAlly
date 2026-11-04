@@ -4,6 +4,7 @@ import { ExportedCharacter } from '../models/character.model';
 import { RESOURCE_RECOVERY_OPTIONS, resourcePlacement, SourceResource } from '../models/source-resources';
 import { UiIconComponent } from '../ui-icon.component';
 import { RESOURCE_MODE_LABELS } from '../models/source-resource-labels';
+import { USES_TOTAL_OPTIONS, usesTotalSelection, usesTotalFromSelection } from '../models/uses-total';
 @Component({
   selector: 'app-source-resources-editor',
   imports: [FormsModule, UiIconComponent],
@@ -90,7 +91,15 @@ import { RESOURCE_MODE_LABELS } from '../models/source-resource-labels';
               }
             </div>
             @if (resource.mode !== 'note') {
+              <label class="block">
+                <span class="field-label">Total Uses Based On</span>
+                <select class="editor-input" [ngModel]="totalSelection(resource.totalCalculation)"
+                  (ngModelChange)="setTotalCalculation(resource, $event)" [ngModelOptions]="{ standalone: true }">
+                  @for (option of totalOptions; track option.value) { <option [value]="option.value">{{ option.label }}</option> }
+                </select>
+              </label>
               <div class="grid grid-cols-2 gap-2">
+                @if (!resource.totalCalculation || resource.totalCalculation.kind === 'fixed') {
                 <label
                   ><span class="field-label">Total Uses</span
                   ><input
@@ -102,6 +111,7 @@ import { RESOURCE_MODE_LABELS } from '../models/source-resource-labels';
                     (ngModelChange)="setTotal(resource, $event)"
                     [ngModelOptions]="{ standalone: true }"
                 /></label>
+                } @else { <p class="text-xs text-on-surface-variant self-center">Total follows the current character value (Minimum: 0).</p> }
                 <label
                   ><span class="field-label">Resource Recovery</span
                   ><select
@@ -153,6 +163,12 @@ import { RESOURCE_MODE_LABELS } from '../models/source-resource-labels';
   </section>`,
 })
 export class SourceResourcesEditorComponent {
+  readonly totalOptions = USES_TOTAL_OPTIONS;
+  readonly totalSelection = usesTotalSelection;
+  setTotalCalculation(resource: SourceResource, value: string) {
+    resource.totalCalculation = usesTotalFromSelection(value);
+    this.change();
+  }
   readonly modes = RESOURCE_MODE_LABELS;
   readonly recoveries = RESOURCE_RECOVERY_OPTIONS;
   readonly sheet = input.required<ExportedCharacter>();

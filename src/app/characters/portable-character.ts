@@ -6,6 +6,7 @@ import { wizardFingerprint } from '../editor/wizard-fingerprint';
 import { validateObjectCompanions } from '../models/companions';
 import { validateSourceAbilities } from '../models/feature-source-abilities';
 import { applyAbilityBonuses, validateAbilityBonusState } from '../models/ability-score-bonuses';
+import { validateUsesTotal } from '../models/uses-total';
 
 /** Android's installation identity has no role in account-owned characters. Never persist or export it. */
 export function portableCharacter(input: ExportedCharacter): ExportedCharacter {
@@ -30,6 +31,10 @@ export function portableCharacter(input: ExportedCharacter): ExportedCharacter {
   validateSpeciesEntity(sheet.species?.entity);
   validateObjectCompanions(sheet.objects);
   validateResources(sheet);
+  for (const entry of [...sheet.features ?? [], ...sheet.spells ?? [], ...sheet.inventory ?? [],
+    ...sheet.monsters ?? [], ...sheet.objects ?? [], ...(sheet.species ? [sheet.species] : [])]) {
+    for (const uses of entry.uses ?? []) validateUsesTotal(uses.totalCalculation);
+  }
   validateAbilityBonusState(sheet);
   applyAbilityBonuses(sheet);
   for (const source of sheet.character?.featureSources ?? []) validateSourceAbilities(source);

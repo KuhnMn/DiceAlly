@@ -26,6 +26,24 @@ function setup(entry = spell(), value = sheet()) {
 }
 
 describe('Cast from spell details', () => {
+  it('enforces dynamic spell-use totals when casting and follows level changes', async () => {
+    const entry = spell(), value = sheet(); value.spells = [entry];
+    entry.uses = [{ tag: 'Daily', totalFreeUses: 99, totalCalculation: { kind: 'proficiency-bonus' }, usedFreeUses: 1 }];
+    const { fixture, control, store } = setup(entry, value);
+    control.setResource('use:0'); fixture.detectChanges();
+    expect(control.resource()?.total).toBe(2);
+    await control.cast();
+    expect(store.characterData()!.spells![0].uses![0].usedFreeUses).toBe(2);
+    expect(control.canCast()).toBe(false);
+    const current = store.characterData()!;
+    store.setCharacter({ ...current, character: { ...current.character, level: 5 } });
+    expect(control.resource()?.total).toBe(3);
+    expect(control.canCast()).toBe(true);
+    await control.cast();
+    expect(store.characterData()!.spells![0].uses![0]).toMatchObject({ totalCalculation: { kind: 'proficiency-bonus' }, usedFreeUses: 3 });
+    expect(control.canCast()).toBe(false);
+    fixture.destroy();
+  });
   it('never offers slot sources for cantrips but allows linked resources and checks the complete cost', async () => {
     const entry=spell(0), value=sheet();value.spells=[entry];
     value.character!.featureSources=[{editorId:'psi-source',name:'Soulknife'}];

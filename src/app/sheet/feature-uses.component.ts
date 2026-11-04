@@ -1,6 +1,7 @@
 import { RecoveryIndicatorComponent } from '../recovery-indicator.component';
 import { Component, input, output, computed, effect, signal } from '@angular/core';
-import { FeatureUses } from '../models/character.model';
+import { CharacterData, FeatureUses } from '../models/character.model';
+import { featureUsesTotal } from '../models/uses-total';
 import { UiIconComponent } from '../ui-icon.component';
 
 type TrackerTone = 'features' | 'spells' | 'species' | 'items' | 'companions';
@@ -76,6 +77,7 @@ export class FeatureUsesComponent {
   readonly controlLabel = input<string>();
   readonly checkboxNoun = input<'use' | 'slot'>('use');
   uses = input<FeatureUses | undefined>(undefined);
+  readonly character = input<CharacterData | null | undefined>(undefined);
   usesUpdated = output<{ usedFreeUses: number; tag?: string }>();
 
   // Local state to track used count - updates immediately for better UX
@@ -83,7 +85,7 @@ export class FeatureUsesComponent {
 
   tag = computed(() => this.uses()?.tag ?? 'Uses');
   controlTag = computed(() => this.controlLabel() ?? this.tag());
-  totalCount = computed(() => this.uses()?.totalFreeUses ?? 1);
+  totalCount = computed(() => featureUsesTotal(this.uses(), this.character()));
   usedCount = computed(() => Math.max(0, Math.min(this.localUsedCount(), this.totalCount())));
   remainingCount = computed(() => this.totalCount() - this.usedCount());
   // Match RestService: older trackers without an explicit condition recover on a long rest.

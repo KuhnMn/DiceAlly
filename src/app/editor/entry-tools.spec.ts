@@ -22,6 +22,20 @@ class VisibilityToolsHost {
 }
 
 describe('Compact entry tools', () => {
+  it('edits explicit uses calculations and retains the fixed total and spent count', async () => {
+    const fixture = TestBed.createComponent(EntryAnnotationsComponent);
+    const entry: AnnotatedEntry = { uses: [{ totalFreeUses: 7, usedFreeUses: 3 }] };
+    fixture.componentRef.setInput('entry', entry); await fixture.whenStable();
+    const panel = fixture.nativeElement.querySelector('[aria-label="Uses editor"]') as HTMLElement;
+    const select = panel.querySelector('select') as HTMLSelectElement;
+    for (const [value, calculation] of [['proficiency-bonus', { kind: 'proficiency-bonus' }],
+      ['wisdom', { kind: 'ability-modifier', ability: 'wisdom' }], ['fixed', { kind: 'fixed' }]] as const) {
+      select.value = value; select.dispatchEvent(new Event('change')); await fixture.whenStable();
+      expect(entry.uses![0]).toEqual({ totalFreeUses: 7, usedFreeUses: 3, totalCalculation: calculation });
+      expect(!!panel.querySelector('input[type="number"]')).toBe(value === 'fixed');
+    }
+    fixture.destroy();
+  });
   it('puts Description first and toggles viewer visibility without changing annotations or preparation', () => {
     const fixture = TestBed.createComponent(VisibilityToolsHost); fixture.detectChanges();
     const host = fixture.componentInstance, before = structuredClone(host.entry);

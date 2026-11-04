@@ -10,8 +10,17 @@ reuse it for features, spells and equipment.
 - `usesUpdated`: Emits `{ usedFreeUses: number; tag?: string }`. The parent applies
   this update to the corresponding tracker and handles persistence.
 
-`totalFreeUses` defaults to one and `usedFreeUses` defaults to zero. Displayed use
-counts and emitted updates are bounded between zero and the total. Trackers with
+`totalFreeUses` defaults to one and `usedFreeUses` defaults to zero. Totals
+can instead follow `totalCalculation`: `{ kind: 'proficiency-bonus' }` or
+`{ kind: 'ability-modifier', ability: 'wisdom' }` (any of the six full ability names).
+`{ kind: 'fixed' }` or an omitted calculation uses the numeric total, preserving
+older documents. The same calculation is available on source resources alongside
+their numeric `total`. Both editors expose these choices explicitly. Calculated
+totals follow the current character level or ability score, with a minimum of zero;
+spent counts and the previous fixed total are preserved when changing the calculation.
+The tracker receives the owning character through its `character` input.
+
+Displayed use counts and emitted updates are bounded between zero and the total. Trackers with
 up to five uses show checkboxes; clicking one marks or clears the contiguous range
 through that slot. Larger trackers show remaining-use controls. The progress bar
 shows consumed uses.

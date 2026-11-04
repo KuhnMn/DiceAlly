@@ -1,4 +1,5 @@
-import { ResourceCost, resourceCosts, remainingResource, spendResource } from '../models/source-resources';
+import { featureUsesTotal } from '../models/uses-total';
+import { ResourceCost, resourceTotal, resourceCosts, remainingResource, spendResource } from '../models/source-resources';
 import { Component, DestroyRef, computed, effect, inject, input, linkedSignal, signal } from '@angular/core';
 import { ExportedCharacter, SpellEntryFull, SpellSlot } from '../models/character.model';
 import { CharacterStore } from '../stores/character.store';
@@ -151,12 +152,12 @@ export class SpellCastControlComponent {
     ...resourceCosts(this.liveSheet() ?? {}, (this.trackedSpell()?.spell ?? this.spell()).resourceLinks).map(cost => {
       const pool = this.liveSheet()!.resources!.find(resource => resource.id === cost.resourceId)!;
       const source = this.liveSheet()!.character?.featureSources?.find(source => source.editorId === pool.sourceId);
-      return {key:'resource:' + pool.id,kind:'resource' as const,label:(source?.name || 'Removed source') + ' · ' + pool.name,remaining:remainingResource(pool),total:pool.total,cost,
+      return {key:'resource:' + pool.id,kind:'resource' as const,label:(source?.name || 'Removed source') + ' · ' + pool.name,remaining:remainingResource(pool, this.liveSheet()!),total:resourceTotal(pool, this.liveSheet()!),cost,
         recovery:pool.recovery === 'NONE' ? 'MANUAL' : pool.recovery};
     }),
     ...(this.spell().entity?.meta?.ritual === true ? [{ key: 'ritual', kind: 'ritual' as const, label: 'Ritual - Free', remaining: 1, total: 1 }] : []),
     ...(this.trackedSpell()?.spell.uses ?? []).flatMap((use, index) => {
-      const total = use.totalFreeUses ?? 1, used = use.usedFreeUses ?? 0;
+      const total = featureUsesTotal(use, this.liveSheet()?.character), used = use.usedFreeUses ?? 0;
       if (!Number.isSafeInteger(total) || total < 0 || !Number.isSafeInteger(used) || used < 0) return [];
       return [{ key: 'use:' + index, kind: 'use' as const, label: (this.spell().castingSourceName || 'Unassigned Source') + ' · ' + (use.tag || 'Uses'), remaining: Math.max(0, total - used), total, useIndex: index }];
     }),

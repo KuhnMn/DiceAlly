@@ -22,9 +22,9 @@ import { HorizontalRowDirective } from './horizontal-row.directive';
                 <div class="text-sm font-semibold text-on-surface mb-1.5">{{ sourceName(group.sourceId) }}</div>
                 <div appHorizontalRow class="grid gap-2 sm:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))]">
                   @for (resource of group.resources; track resource.id) {
-                    <app-feature-uses class="max-sm:w-44 only:w-full only:col-span-full" [poolLayout]="true" [tone]="page()" [trackUses]="resource.mode !== 'note'"
+                    <app-feature-uses [character]="sheet().character" class="max-sm:w-44 only:w-full only:col-span-full" [poolLayout]="true" [tone]="page()" [trackUses]="resource.mode !== 'note'"
                       [note]="resource.mode !== 'counter' ? resource.note : ''"
-                      [uses]="{tag:resource.name,totalFreeUses:resource.total,usedFreeUses:resource.used,
+                      [uses]="{tag:resource.name,totalFreeUses:resource.total,totalCalculation:resource.totalCalculation,usedFreeUses:resource.used,
                         freeUsesRegainCondition:resource.recovery === 'NONE' ? 'MANUAL' : resource.recovery}"
                       (usesUpdated)="update(resource.id, $event.usedFreeUses)" />
                   }

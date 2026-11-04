@@ -1,6 +1,6 @@
 import { Component, inject, input, signal } from '@angular/core';
 import { ExportedCharacter } from '../models/character.model';
-import { ResourceCost, remainingResource, spendResource } from '../models/source-resources';
+import { ResourceCost, resourceTotal, remainingResource, spendResource } from '../models/source-resources';
 import { CharacterStore } from '../stores/character.store';
 import { UiIconComponent } from '../ui-icon.component';
 import { ResourceSelectComponent, ResourceSelectOption } from './resource-select.component';
@@ -46,8 +46,8 @@ export class ResourceUseComponent {
   }
   balance(cost: ResourceCost) {
     const resource = this.data().resources?.find(resource => resource.id === cost.resourceId);
-    const remaining = resource && resource.mode !== 'note' ? remainingResource(resource) : 0;
-    return `${remaining}/${resource?.total ?? 0}`;
+    const remaining = resource && resource.mode !== 'note' ? remainingResource(resource, this.data()) : 0;
+    return `${remaining}/${resource ? resourceTotal(resource, this.data()) : 0}`;
   }
   options(): ResourceSelectOption[] {
     return this.links().map(cost => {
@@ -63,7 +63,7 @@ export class ResourceUseComponent {
       cost.amount > 0 &&
       !!resource &&
       resource.mode !== 'note' &&
-      remainingResource(resource) >= cost.amount
+      remainingResource(resource, this.data()) >= cost.amount
     );
   }
   use(cost = this.selected()) {

@@ -30,17 +30,26 @@
     <div class="space-y-2">
       @for (uses of entry().uses ?? []; track $index; let u = $index) {
         <div class="rounded border border-outline-variant bg-surface-container-lowest p-1.5">
+          <label class="mb-1.5 block min-w-0">
+            <span class="field-label">Total Uses Based On</span>
+            <select class="editor-input" [name]="'uses-calculation-' + i + '-' + u"
+              [ngModel]="totalSelection(uses.totalCalculation)" (ngModelChange)="setTotalCalculation(uses, $event)">
+              @for (option of totalOptions; track option.value) { <option [value]="option.value">{{ option.label }}</option> }
+            </select>
+          </label>
           <div class="grid min-w-0 grid-cols-[minmax(0,1fr)_4rem_2rem] items-end gap-1.5 sm:grid-cols-[minmax(0,1fr)_4rem_minmax(8rem,1fr)_2rem]">
             <label class="min-w-0">
               <span class="field-label">Label</span>
               <input class="editor-input" [name]="'uses-label-' + i + '-' + u" [(ngModel)]="uses.tag"
                 (ngModelChange)="change()" placeholder="Uses" />
             </label>
+            @if (!uses.totalCalculation || uses.totalCalculation.kind === 'fixed') {
             <label class="min-w-0">
               <span class="field-label">Total</span>
               <input class="editor-input text-center" [name]="'uses-total-' + i + '-' + u" type="number"
                 min="0" required step="1" [(ngModel)]="uses.totalFreeUses" (ngModelChange)="change()" />
             </label>
+            } @else { <span class="text-xs text-on-surface-variant">Auto</span> }
             <label class="col-span-2 row-start-2 min-w-0 sm:col-span-1 sm:row-start-auto">
               <span class="field-label">Recovery</span>
               <span class="relative block"><app-recovery-indicator class="pointer-events-none absolute inset-y-0 left-2 flex items-center" [condition]="uses.freeUsesRegainCondition" /><select class="editor-input !pl-8" [name]="'uses-recovery-' + i + '-' + u"
@@ -54,7 +63,7 @@
             <button type="button" class="annotation-remove col-start-3 row-start-1 sm:col-start-4" aria-label="Remove use tracker"
               (click)="removeUses(entry(), u)"><app-ui-icon name="close" /></button>
           </div>
-          @if ((uses.usedFreeUses ?? 0) > (uses.totalFreeUses ?? 1)) {
+          @if ((!uses.totalCalculation || uses.totalCalculation.kind === 'fixed') && (uses.usedFreeUses ?? 0) > (uses.totalFreeUses ?? 1)) {
             <p class="text-xs text-on-surface-variant mt-1">The existing used count exceeds this total and will be kept unchanged.</p>
           }
         </div>

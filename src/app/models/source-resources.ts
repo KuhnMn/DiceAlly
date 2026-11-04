@@ -1,4 +1,5 @@
 import type { ExportedCharacter, FeatureSource } from './character.model';
+import { resolveUsesTotal, validateUsesTotal, type UsesTotal } from './uses-total';
 export const RESOURCE_RECOVERY_OPTIONS = [
   { value: 'NONE', label: 'Manual' },
   { value: 'LONG_REST', label: 'Long Rest' },
@@ -12,6 +13,7 @@ export interface SourceResource {
   mode: 'counter' | 'note' | 'both';
   note: string;
   total: number;
+  totalCalculation?: UsesTotal;
   used: number;
   recovery: string;
   features: boolean;
@@ -27,8 +29,11 @@ export interface ResourceCost {
   resourceId: string;
   amount: number;
 }
-export function remainingResource(resource: SourceResource): number {
-  return Math.max(0, resource.total - resource.used);
+export function resourceTotal(resource: SourceResource, sheet?: ExportedCharacter): number {
+  return resolveUsesTotal(resource.totalCalculation, resource.total, sheet?.character);
+}
+export function remainingResource(resource: SourceResource, sheet?: ExportedCharacter): number {
+  return Math.max(0, resourceTotal(resource, sheet) - resource.used);
 }
 export function resourceCosts(
   sheet: ExportedCharacter,
@@ -59,7 +64,7 @@ export function spendResource(
     !Number.isSafeInteger(pool.used) ||
     pool.used < 0 ||
     !Number.isSafeInteger(pool.total) ||
-    remainingResource(pool) < cost.amount
+    remainingResource(pool, sheet) < cost.amount
   )
     return null;
   return {
@@ -93,6 +98,7 @@ export function validateResources(sheet: ExportedCharacter): void {
     throw new Error('Invalid resources.');
   const ids = new Set<string>();
   for (const resource of sheet.resources ?? []) {
+    validateUsesTotal(resource?.totalCalculation);
     if (
       !resource ||
       typeof resource.id !== 'string' ||

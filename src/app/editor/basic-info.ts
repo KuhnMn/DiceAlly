@@ -4,6 +4,7 @@ import { canonicalDocument } from '../rules/canonical-document';
 import { primaryWalkingSpeed, validateCharacterSpeeds, walkingSpeedEntry } from '../models/character-speed';
 import { validateObjectCompanions } from '../models/companions';
 import { validateSourceAbilities } from '../models/feature-source-abilities';
+import { validateUsesTotal } from '../models/uses-total';
 
 export const DEFENSE_ABILITIES: { key: keyof AbilityScores; label: string }[] = [
   { key: 'strength', label: 'Strength' }, { key: 'dexterity', label: 'Dexterity' },
@@ -63,8 +64,9 @@ export function validateBasicInfo(sheet: ExportedCharacter): void {
       integer(die.used, `${die.dieType} used`);
     }
   }
-  for (const feature of [...sheet.features ?? [], ...sheet.spells ?? [], ...sheet.monsters ?? [], ...sheet.objects ?? [], ...(sheet.species ? [sheet.species] : [])]) {
+  for (const feature of [...sheet.features ?? [], ...sheet.spells ?? [], ...sheet.inventory ?? [], ...sheet.monsters ?? [], ...sheet.objects ?? [], ...(sheet.species ? [sheet.species] : [])]) {
     for (const usage of feature.uses ?? []) {
+      validateUsesTotal(usage.totalCalculation);
       integer(usage.totalFreeUses ?? 1, `${feature.name} uses`);
       integer(usage.usedFreeUses ?? 0, `${feature.name} used count`);
       if (usage.freeUsesRegainCondition && !['SHORT_REST', 'SHORT_REST_ONE', 'LONG_REST', 'MANUAL'].includes(usage.freeUsesRegainCondition)) throw new Error(`Unknown recovery setting for ${feature.name}.`);

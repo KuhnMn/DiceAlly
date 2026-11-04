@@ -35,6 +35,7 @@ describe('Resource editing and tracking', () => {
     const sheet=emptyBasicCharacter();sheet.character!.name='Resources';sheet.character!.featureSources=[{editorId:'source',name:'Mage'}];
     const fixture=TestBed.createComponent(SourceResourcesEditorComponent);fixture.componentRef.setInput('sheet',sheet);fixture.componentInstance.add();
     const pool=sheet.resources![0];pool.total=10;pool.used=4;
+    fixture.componentInstance.setTotalCalculation(pool, 'charisma');
     sheet.spells=[{editorId:'spell',name:'Spell',resourceLinks:[{resourceId:pool.id,amount:3}]}];
     const repository=new IndexedDbCharacterRepository('resource-round-trip-'+crypto.randomUUID());
     await repository.save(sheet,0);const saved=(await repository.get(sheet.character!.characterUuid!))!;

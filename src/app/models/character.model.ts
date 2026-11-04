@@ -3,6 +3,7 @@ import type { ViewerEntryVisibility } from './entry-visibility';
 import type { CharacterSpeed } from './character-speed';
 import type { ItemChargeDefinition, ItemVehicleDefinition } from '../content/item.model';
 import type { SpellEffectFields } from '../content/spell-effects';
+import type { UsesTotal } from './uses-total';
 
 export type Entry =
   | SourceEntry
@@ -257,6 +258,7 @@ export interface SimpleRequisiteSpell {
 
 export interface FeatureUses {
   tag?: string;
+  totalCalculation?: UsesTotal;
   totalFreeUses?: number;
   usedFreeUses?: number | 0;
   freeUsesRegainCondition?: string| "LONG_REST";
