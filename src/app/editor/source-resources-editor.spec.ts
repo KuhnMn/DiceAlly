@@ -65,7 +65,7 @@ describe('Resource editing and tracking', () => {
     expect(view.nativeElement.querySelector('button')).toBeNull();
     view.destroy();
     sheet.features = [{ name: 'Strike', resourceLinks: [{ resourceId: resource.id, amount: 1 }] }];
-    const remove = [...fixture.nativeElement.querySelectorAll('button')].find((button: any) => button.textContent.includes('Remove Resource')) as HTMLButtonElement;
+    const remove = [...fixture.nativeElement.querySelectorAll('button')].find((button: any) => button.textContent.includes('Remove Reminder')) as HTMLButtonElement;
     remove.click(); await fixture.whenStable();
     expect(sheet.resources).toEqual([]);
     expect(sheet.features[0].resourceLinks).toEqual([]);

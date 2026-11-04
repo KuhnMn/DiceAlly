@@ -5,6 +5,19 @@ import { WizardState } from './wizard-prefill';
 import { seedResourceImports, WizardResourceColumn, wizardResourceValues } from './wizard-resources';
 
 describe('Wizard resource mapping', () => {
+  it('imports a numeric reminder without recovery or resource attachment controls', async () => {
+    const sheet=emptyBasicCharacter();
+    const state: WizardState={revisionId:'test',classes:[],answers:{},options:{resourceReminders:true},baseline:[],protectedPaths:[]};
+    const columns: WizardResourceColumn[]=[{id:'prepared',sourceId:'wizard',owner:'Wizard',table:'Spellcasting',name:'Prepared Spells',kind:'note',value:5}];
+    const fixture=TestBed.createComponent(WizardResourcesComponent);
+    fixture.componentRef.setInput('sheet',sheet);fixture.componentRef.setInput('state',state);fixture.componentRef.setInput('columns',columns);
+    await fixture.whenStable();
+    fixture.nativeElement.querySelector('[aria-label="Import Wizard: Prepared Spells"]').click();
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('select')).toBeNull();
+    expect(wizardResourceValues(sheet,state,columns)[0].value).toMatchObject({mode:'note',note:'5',total:0});
+    fixture.destroy();
+  });
   it('selects a counter and explicitly joins its dice reminder without importing unrelated columns', async () => {
     const sheet = emptyBasicCharacter();
     const state: WizardState = { revisionId: 'test', classes: [], answers: {}, options: {resourceReminders:true}, baseline: [], protectedPaths: [],
@@ -12,7 +25,7 @@ describe('Wizard resource mapping', () => {
     const columns: WizardResourceColumn[] = [
       {id:'count',sourceId:'soulknife',owner:'Soulknife',table:'Resources',name:'Number',kind:'counter',value:4},
       {id:'die',sourceId:'soulknife',owner:'Soulknife',table:'Resources',name:'Die Size',kind:'note',value:'D6'},
-      {id:'cantrips',sourceId:'rogue',owner:'Rogue',table:'Class Table',name:'Cantrips Known',kind:'counter',value:2},
+      {id:'cantrips',sourceId:'rogue',owner:'Rogue',table:'Class Table',name:'Cantrips Known',kind:'note',value:2},
     ];
     const fixture=TestBed.createComponent(WizardResourcesComponent);
     fixture.componentRef.setInput('sheet',sheet); fixture.componentRef.setInput('state',state); fixture.componentRef.setInput('columns',columns);

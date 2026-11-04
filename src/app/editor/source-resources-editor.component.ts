@@ -3,20 +3,21 @@ import { FormsModule } from '@angular/forms';
 import { ExportedCharacter } from '../models/character.model';
 import { RESOURCE_RECOVERY_OPTIONS, resourcePlacement, SourceResource } from '../models/source-resources';
 import { UiIconComponent } from '../ui-icon.component';
+import { RESOURCE_MODE_LABELS } from '../models/source-resource-labels';
 @Component({
   selector: 'app-source-resources-editor',
   imports: [FormsModule, UiIconComponent],
   styleUrls: ['./editor.css', './source-category-options.css', './source-resources-editor.component.css'],
   template: ` <section class="editor-card">
     <div class="mb-3 flex items-center justify-between gap-2">
-      <h2 class="!mb-0">Resources</h2>
+      <h2 class="!mb-0">Resources &amp; Reminders</h2>
       <button
         type="button"
         class="action-button compact-button"
         [disabled]="!sources.length"
         (click)="add()"
       >
-        <app-ui-icon name="plus" /> Resource
+        <app-ui-icon name="plus" /> Add Entry
       </button>
     </div>
     @if (!sources.length) {
@@ -30,6 +31,7 @@ import { UiIconComponent } from '../ui-icon.component';
         >
           <summary class="cursor-pointer p-2 text-sm font-semibold">
             {{ resource.name }}
+            <span class="ml-2 text-xs font-normal text-primary">{{ modes[resource.mode] }}</span>
             <span class="text-xs font-normal text-on-surface-variant"
               >· {{ sourceName(resource.sourceId) }}</span
             >
@@ -37,7 +39,7 @@ import { UiIconComponent } from '../ui-icon.component';
           <div class="resource-fields border-t border-outline-variant p-2">
             <div class="grid grid-cols-2 gap-2">
               <label
-                ><span class="field-label">Name</span
+                ><span class="field-label">{{ resource.mode === 'note' ? 'Reminder Name' : 'Resource Name' }}</span
                 ><input
                   class="editor-input"
                   [ngModel]="resource.name"
@@ -63,21 +65,21 @@ import { UiIconComponent } from '../ui-icon.component';
             </div>
             <div class="resource-display-row">
               <label class="block"
-                ><span class="field-label">Display</span
+                ><span class="field-label">Entry Type</span
                 ><select
                   class="editor-input"
                   [(ngModel)]="resource.mode"
                   (ngModelChange)="change()"
                   [ngModelOptions]="{ standalone: true }"
                 >
-                  <option value="counter">Uses</option>
-                  <option value="note">Reminder</option>
-                  <option value="both">Uses and Reminder</option>
+                  <option value="counter">{{ modes.counter }}</option>
+                  <option value="note">{{ modes.note }}</option>
+                  <option value="both">{{ modes.both }}</option>
                 </select></label
               >
               @if (resource.mode !== 'counter') {
                 <label class="block"
-                  ><span class="field-label">Reminder / Dice</span
+                  ><span class="field-label">Reminder Value / Text</span
                   ><input
                     class="editor-input"
                     [(ngModel)]="resource.note"
@@ -101,7 +103,7 @@ import { UiIconComponent } from '../ui-icon.component';
                     [ngModelOptions]="{ standalone: true }"
                 /></label>
                 <label
-                  ><span class="field-label">Recovery</span
+                  ><span class="field-label">Resource Recovery</span
                   ><select
                     class="editor-input"
                     [(ngModel)]="resource.recovery"
@@ -140,17 +142,18 @@ import { UiIconComponent } from '../ui-icon.component';
               class="secondary-button compact-button"
               (click)="remove(resource)"
             >
-              <app-ui-icon name="close" /> Remove Resource
+              <app-ui-icon name="close" /> Remove {{ resource.mode === 'note' ? 'Reminder' : 'Resource' }}
             </button>
           </div>
         </details>
       } @empty {
-        <p class="text-sm text-on-surface-variant">No resources configured.</p>
+        <p class="text-sm text-on-surface-variant">No resources or reminders configured.</p>
       }
     </div>
   </section>`,
 })
 export class SourceResourcesEditorComponent {
+  readonly modes = RESOURCE_MODE_LABELS;
   readonly recoveries = RESOURCE_RECOVERY_OPTIONS;
   readonly sheet = input.required<ExportedCharacter>();
   readonly edited = output<void>();

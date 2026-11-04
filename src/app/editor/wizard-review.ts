@@ -4,6 +4,7 @@ import { object } from '../content/content.model';
 import { FeatureSource } from '../models/character.model';
 import { SOURCE_ABILITIES, sourceAbilities } from '../models/feature-source-abilities';
 import { comparableWizardValue } from './wizard-fingerprint';
+import { RESOURCE_MODE_LABELS } from '../models/source-resource-labels';
 
 export const REVIEW_ACTION_LABELS: Record<PrefillChange['action'], string> = {
   Fill: 'Add', Update: 'Update', Remove: 'Remove', Keep: 'Keep Existing',
@@ -21,7 +22,7 @@ const DETAIL_LABELS: Readonly<Record<string, string>> = {
   name: 'Name', source: 'Source Book', castingSourceName: 'Casting Source', featureSourceName: 'Feature Source',
   listType: 'Spell List', featureType: 'Feature Type', entity: 'Description & Rules', featureEntity: 'Feature Details',
   featEntity: 'Feat Details', optionalFeatureEntity: 'Optional Feature Details',
-  mode: 'Display', note: 'Reminder', recovery: 'Recovery', features: 'Features', spells: 'Spells',
+  mode: 'Entry Type', note: 'Reminder Value / Text', recovery: 'Resource Recovery', features: 'Features', spells: 'Spells',
   total: 'Total', level: 'Level', regainCondition: 'Recovery', dieType: 'Hit Die', value: 'Movement',
 };
 
@@ -37,7 +38,9 @@ function reviewDefinition(value: unknown, kind: string): Record<string, unknown>
       'Feature Abilities': abilities('features'), 'Casting Abilities': abilities('spellcasting'),
       Spellbook: !!source.useSpellbook, 'Custom Attack Bonus': source.customToHit ?? 'Calculated', 'Custom Save DC': source.customDc ?? 'Calculated' };
   }
-  return Object.fromEntries(Object.entries(entry).filter(([key]) => !['editorId', 'contentReference', 'userAdded', 'notes', 'uses'].includes(key)));
+  return Object.fromEntries(Object.entries(entry).filter(([key]) => !['editorId', 'contentReference', 'userAdded', 'notes', 'uses'].includes(key))
+    .map(([key, value]) => [key, kind === 'resources' && key === 'mode'
+      ? RESOURCE_MODE_LABELS[value as keyof typeof RESOURCE_MODE_LABELS] ?? value : value]));
 }
 
 function reviewDifferences(current: unknown, suggested: unknown, kind: string) {
@@ -134,7 +137,7 @@ export function groupWizardReview(changes: PrefillChange[], before: ExportedChar
       section = 'Feature (Re-)Sources'; group = 'Sources';
     } else if (kind === 'resources') {
       const resource = sheet.resources?.find(entry => entry.id === id) ?? other.resources?.find(entry => entry.id === id);
-      section = 'Resources'; group = sheet.character?.featureSources?.find(source => source.editorId === resource?.sourceId)?.name ?? 'Unassigned Source';
+      section = 'Resources & Reminders'; group = sheet.character?.featureSources?.find(source => source.editorId === resource?.sourceId)?.name ?? 'Unassigned Source';
     } else if (kind === 'species' || kind === 'resistances' || kind === 'speeds' || kind === 'character' && ['senses', 'speeds'].includes(id)) {
       section = 'Species & Movement'; group = kind === 'species' ? 'Species' : kind === 'resistances' ? 'Resistances' : id === 'senses' ? 'Senses' : 'Speeds';
     } else if (['saves', 'languages', 'custom'].includes(kind) || kind === 'character' && id === 'proficiencies') {
@@ -147,7 +150,7 @@ export function groupWizardReview(changes: PrefillChange[], before: ExportedChar
     const entries = groups.get(group) ?? [];
     entries.push(change); groups.set(group, entries);
   }
-  return ['Character identity', 'Character stats', 'Feature (Re-)Sources', 'Resources', 'Species & Movement', 'Proficiencies', 'Features', 'Spells & Slots']
+  return ['Character identity', 'Character stats', 'Feature (Re-)Sources', 'Resources & Reminders', 'Species & Movement', 'Proficiencies', 'Features', 'Spells & Slots']
     .filter(label => sections.has(label)).map(label => ({
       label, count: [...sections.get(label)!.values()].reduce((count, entries) => count + entries.length, 0),
       groups: [...sections.get(label)!].sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true })).map(([label, entries]) => ({

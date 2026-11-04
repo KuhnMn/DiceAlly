@@ -36,15 +36,40 @@ describe('Explicit resource imports',()=>{
     first.resources![0].features=true;first.resources![0].spells=false;
     expect(wizardResourceValues(first,first.creatorWizard!,f.columns,sources)[0].value).toMatchObject({features:true,spells:false});
   });
-  it('never imports free-form numeric columns automatically and excludes schema spell and slot progressions',()=>{
+  it('never imports columns automatically, offers spell counts as reminders and excludes slot progressions',()=>{
     const f=fixture();
-    expect(f.columns.map(column=>column.name)).toEqual(['Cantrips Known','Die Size','Number']);
+    expect(f.columns.map(column=>column.name)).toEqual(['Cantrips Known','Spells Known','Die Size','Number']);
+    expect(f.columns.filter(column=>column.sourceId==='rogue-source').map(column=>column.kind)).toEqual(['note','note']);
     expect(wizardResourceValues(f.sheet,f.state,f.columns)).toEqual([]);
     const count=f.columns.find(column=>column.name==='Number')!;
     f.state.resourceImports={[count.id]:{enabled:true}};
     expect(wizardResourceValues(f.sheet,f.state,f.columns).map(entry=>entry.value)).toEqual([
       expect.objectContaining({mode:'counter',total:4,note:'',recovery:'NONE'}),
     ]);
+  });
+  it('imports numeric spell counts as display text and updates them with the class level',()=>{
+    const records=mapContent({class:[{name:'Wizard',source:'XPHB',classFeatures:[],
+      preparedSpellsProgression:Array.from({length:20},(_,level)=>level+4),cantripProgression:Array(20).fill(3),
+      classTableGroups:[{colLabels:['Prepared Spells','Cantrips'],rows:Array.from({length:20},(_,level)=>[level+4,3])}],
+    }]},'spell-counts.json').records;
+    const f=fixture();
+    const columns=(level:number)=>wizardResourceColumns(records[0],null,'library','wizard',level,'wizard-source','');
+    f.state.resourceImports=Object.fromEntries(columns(1).map(column=>[column.id,{enabled:true}]));
+    const first=mergeWizardPrefill(f.sheet,f.state,wizardResourceValues(f.sheet,f.state,columns(1))).sheet;
+    expect(first.resources).toEqual([
+      expect.objectContaining({name:'Prepared Spells',mode:'note',note:'4',total:0,recovery:'NONE'}),
+      expect.objectContaining({name:'Cantrips',mode:'note',note:'3',total:0,recovery:'NONE'}),
+    ]);
+    const next=mergeWizardPrefill(first,first.creatorWizard!,wizardResourceValues(first,first.creatorWizard!,columns(2))).sheet;
+    expect(next.resources![0]).toMatchObject({id:first.resources![0].id,mode:'note',note:'5',total:0});
+  });
+  it('does not classify unrelated numeric headings by partial spell keywords or matching values',()=>{
+    const record=mapContent({class:[{name:'Mage',source:'XPHB',classFeatures:[],cantripProgression:Array(20).fill(2),
+      classTableGroups:[{colLabels:['Number','Spell Points','Prepared Spells Uses','Cantrip Uses','Spells Known Bonus'],rows:Array.from({length:20},()=>[2,2,2,2,2])}],
+    }]},'numeric-columns.json').records[0];
+    const columns=wizardResourceColumns(record,null,'library','mage',1,'mage-source','');
+    expect(columns.slice(0,5).map(column=>column.kind)).toEqual(Array(5).fill('counter'));
+    expect(columns).toHaveLength(5);
   });
   it('combines only explicitly associated values, keeps the counter identity and follows levels',()=>{
     const f=fixture(), values=combined(f);

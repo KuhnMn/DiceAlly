@@ -1,5 +1,27 @@
 # Working preferences
 
+## Local Node environment (Windows)
+
+- Node and npm are installed through `fnm`. If they are missing from the agent shell, initialize fnm before assuming Node is not installed. The user's `.bashrc` initializes Bash only; PowerShell needs its own initialization in each fresh shell invocation.
+- In PowerShell, initialize and verify with:
+
+  ```powershell
+  fnm env --shell powershell | Out-String | Invoke-Expression
+  node --version
+  npm.cmd --version
+  ```
+
+- Use `npm.cmd` in PowerShell to avoid execution-policy issues with the npm PowerShell shim. Do not hardcode fnm's temporary `fnm_multishells` paths or change the user's shell profiles for routine project work.
+- Verified with Node 26.13.0 and npm 11.20.0: Angular/jsdom tests can encounter Node's native `localStorage` instead of the simulated browser storage, producing a `--localstorage-file` warning and `localStorage.removeItem` failures. For UI tests on this runtime, disable Node's native web storage in the current shell before running the relevant tests:
+
+  ```powershell
+  fnm env --shell powershell | Out-String | Invoke-Expression
+  $env:NODE_OPTIONS = (@($env:NODE_OPTIONS, '--no-experimental-webstorage') -join ' ').Trim()
+  npm.cmd test -- src/app/editor/class-wizard.spec.ts
+  ```
+
+- This workaround is scoped to the test process and its children; keep existing `NODE_OPTIONS`. It does not require changing application code, weakening assertions, or rerunning unrelated suites.
+
 ## Versions and releases
 
 - Work on a separate branch. Merge to `main` only when the user asks for it.

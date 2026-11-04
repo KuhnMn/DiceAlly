@@ -11,9 +11,9 @@ import { HorizontalRowDirective } from './horizontal-row.directive';
   template: `@if (resources.length) {
     <section
       class="mb-6 sm:mb-8"
-      aria-label="Resources"
+      aria-label="Resources & Reminders"
     >
-      <h3 class="mb-2 text-xl font-bold sm:mb-3">Resources</h3>
+      <h3 class="mb-2 text-xl font-bold sm:mb-3">Resources &amp; Reminders</h3>
       <div class="sheet-pool-groups" [style.--sheet-pool-columns]="columns()">
         @for (column of groupColumns; track $index) {
           <div class="resource-group-column space-y-3">

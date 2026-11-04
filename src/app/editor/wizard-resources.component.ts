@@ -4,6 +4,7 @@ import { ExportedCharacter } from '../models/character.model';
 import { WizardState } from './wizard-prefill';
 import { resourceImportName, resourceImportSetting, ResourceImportSetting, WizardResourceColumn } from './wizard-resources';
 import { RESOURCE_RECOVERY_OPTIONS } from '../models/source-resources';
+import { RESOURCE_MODE_LABELS } from '../models/source-resource-labels';
 
 @Component({
   selector: 'app-wizard-resources',
@@ -11,10 +12,10 @@ import { RESOURCE_RECOVERY_OPTIONS } from '../models/source-resources';
   styleUrl: './editor.css',
   styles: ['.editor-input { min-height: 2rem; padding: .25rem .5rem; font-size: .8125rem; }'],
   template: `
-    <section class="mb-3 space-y-2 rounded-lg border border-outline-variant p-2 text-sm" aria-label="Resource import">
+    <section class="mb-3 space-y-2 rounded-lg border border-outline-variant p-2 text-sm" aria-label="Resource and reminder import">
       <label class="flex items-center gap-2 font-semibold"><input type="checkbox" name="wizard-resources-enabled"
-        [ngModel]="state().options['resourceReminders'] === true" (ngModelChange)="enabledChanged.emit($event)" />Import Resources</label>
-      <p class="text-xs text-on-surface-variant">Selected resources replace saved definitions or are added again if deleted. Spent uses are preserved.</p>
+        [ngModel]="state().options['resourceReminders'] === true" (ngModelChange)="enabledChanged.emit($event)" />Import Resources &amp; Reminders</label>
+      <p class="text-xs text-on-surface-variant">Resources track spendable uses. Reminders display information without spending it. Selected entries replace saved definitions or are added again if deleted. Spent uses are preserved.</p>
       @if (state().options['resourceReminders'] === true) {
         @for (column of columns(); track column.id) {
           @let config = setting(column);
@@ -23,19 +24,19 @@ import { RESOURCE_RECOVERY_OPTIONS } from '../models/source-resources';
               (ngModelChange)="update(column, {enabled: $event})" [ngModelOptions]="{standalone:true}" [disabled]="combined(column)"
               [attr.aria-label]="'Import ' + column.owner + ': ' + column.name" />
               <span class="min-w-0 flex-1">{{ column.name }} <span class="text-primary">· {{ column.value }}</span></span>
-              <span class="text-xs text-on-surface-variant">{{ combined(column) ? 'Combined' : column.kind === 'counter' ? 'Counter' : 'Reminder' }}</span>
+              <span class="text-xs text-on-surface-variant">{{ combined(column) ? 'Attached Reminder' : typeLabel(column) }}</span>
             </label>
             <p class="text-[11px] text-on-surface-variant">{{ column.owner }} · {{ column.table }}</p>
             @if (config.enabled && !combined(column)) {
               <div class="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <label><span class="field-label">Name</span><input class="editor-input" [ngModel]="name(column)"
+                <label><span class="field-label">{{ column.kind === 'counter' ? 'Resource Name' : 'Reminder Name' }}</span><input class="editor-input" [ngModel]="name(column)"
                   (ngModelChange)="update(column, {name:$event})" [ngModelOptions]="{standalone:true}" /></label>
                 @if (column.kind === 'counter') {
-                  <label><span class="field-label">Recovery</span><select class="editor-input" [ngModel]="config.recovery ?? 'NONE'"
+                  <label><span class="field-label">Resource Recovery</span><select class="editor-input" [ngModel]="config.recovery ?? 'NONE'"
                     (ngModelChange)="update(column, {recovery:$event})" [ngModelOptions]="{standalone:true}" [attr.aria-label]="'Recovery for ' + column.name">
                     @for (option of recoveries; track option.value) { <option [value]="option.value">{{ option.label }}</option> }
                   </select></label>
-                  <label><span class="field-label">Combine with Reminder</span><select class="editor-input"
+                  <label><span class="field-label">Attached Reminder</span><select class="editor-input"
                     [ngModel]="config.reminderId ?? ''" (ngModelChange)="update(column, {reminderId:$event})" [ngModelOptions]="{standalone:true}" [attr.aria-label]="'Reminder for ' + column.name">
                     <option value="">No Reminder</option>
                     @for (reminder of reminders(column); track reminder.id) { <option [value]="reminder.id">{{ reminder.name }} · {{ reminder.value }}</option> }
@@ -44,7 +45,7 @@ import { RESOURCE_RECOVERY_OPTIONS } from '../models/source-resources';
               </div>
             }
           </div>
-        } @empty { <p class="text-xs text-on-surface-variant">No supported resource values at this class level.</p> }
+        } @empty { <p class="text-xs text-on-surface-variant">No supported resources or reminders at this class level.</p> }
       }
     </section>`,
 })
@@ -57,6 +58,10 @@ export class WizardResourcesComponent {
   readonly enabledChanged = output<boolean>();
   readonly edited = output<void>();
   setting(column: WizardResourceColumn) { return resourceImportSetting(this.sheet(), this.state(), column); }
+  typeLabel(column: WizardResourceColumn) {
+    return RESOURCE_MODE_LABELS[column.kind === 'note' ? 'note'
+      : this.reminders(column).some(reminder => reminder.id === this.setting(column).reminderId) ? 'both' : 'counter'];
+  }
   name(column: WizardResourceColumn) {
     const draft = this.nameDrafts.get(column.id);
     if (draft !== undefined) return draft;

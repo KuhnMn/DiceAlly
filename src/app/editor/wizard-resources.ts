@@ -12,6 +12,11 @@ export interface WizardResourceColumn {
 }
 export type ResourceImportSetting = NonNullable<WizardState['resourceImports']>[string];
 
+/** Only explicit spell-count headings describe capacity rather than spendable uses. */
+function spellCountColumn(name: string): boolean {
+  return /^(?:cantrips(?: known)?|spells known|known spells|prepared spells|spells prepared|spells learned at this level)$/i.test(name.trim());
+}
+
 /** A complete numeric dice tag is explicit content; surrounding prose and formulas are not. */
 function literalCell(raw: SourceEntry | undefined): number | string | undefined {
   if (typeof raw === 'number') return Number.isSafeInteger(raw) && raw >= 0 ? raw : undefined;
@@ -27,14 +32,14 @@ export function wizardResourceColumns(parent: ContentRecord, subclass: ContentRe
   identity: string, selectionId: string, level: number, parentId: string, subclassId: string): WizardResourceColumn[] {
   return classResourceTables(parent, subclass)
     // These tables have explicit schema provenance, unlike free-form source table columns.
-    .filter(table => !table.spellSlots && !table.id.endsWith(':casting') && !table.id.endsWith(':fixed') && !table.id.includes(':optional:'))
+    .filter(table => !table.spellSlots && !table.id.endsWith(':fixed') && !table.id.includes(':optional:'))
     .flatMap(table => (table.rows[level - 1] ?? []).flatMap((raw, column) => {
       const value = literalCell(raw);
       const name = table.labels[column]?.replace(/\{@\w+ ([^{}]*)\}/g, (_tag, body: string) => body.split('|')[0]);
       if (value === undefined || !name) return [];
       return [{ id: wizardEditorId('resource', identity, selectionId, table.id, String(column)),
         sourceId: table.subclass ? subclassId : parentId, owner: table.owner, table: table.title,
-        name, kind: typeof value === 'number' ? 'counter' as const : 'note' as const, value }];
+        name, kind: typeof value === 'number' && !spellCountColumn(name) ? 'counter' as const : 'note' as const, value }];
     }));
 }
 

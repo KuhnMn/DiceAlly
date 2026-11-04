@@ -1,4 +1,4 @@
-# Source resources
+# Resources & Reminders
 
 Resources are authored under Feature (Re-)Sources alongside spell slots. Each has a
 stable ID, source ID, name, viewer placement (Features, Spells, or both), explicit
@@ -38,15 +38,23 @@ exports, native sheet projection and description refresh. Resource deletion
 cleans its links; missing external links remain visible as missing resources and
 cannot be spent.
 
-The wizard has an opt-in Import Resources section. New free-form table columns
+The editor and wizard distinguish Resource, Resource with Reminder, and Reminder.
+Resources track spendable uses; reminders only display a value or text. The editor's
+Entry Type field uses these same names, with separate resource and reminder fields.
+
+The wizard has an opt-in Import Resources & Reminders section. New free-form table columns
 start unselected: a number alone does not establish a consumable resource.
-Schema-defined spell-slot, spell-progression and optional-selection tables are
-excluded. Other columns, including spell counts embedded in free-form tables,
-are never imported automatically. Previously imported entries remain selected.
-Choose the columns to track: literal nonnegative integer cells become counters;
+Schema-defined spell-slot, fixed-spell-by-rank and optional-selection tables are
+excluded. Spellcasting count progressions are offered as reminders. Explicit spell-count
+headings (Cantrips, Cantrips Known, Spells Known, Known Spells, Prepared Spells,
+Spells Prepared, Spells Learned at This Level) also become reminders in source tables.
+Matching ignores case and surrounding whitespace after source tags are removed;
+partial keywords and matching numbers alone do not change other columns' types.
+No columns are imported automatically. Previously imported entries remain selected.
+Choose the columns to track: other literal nonnegative integer cells become resources;
 structured dice cells and explicit numeric dice tags become reminders. A counter
 can explicitly select a reminder from the same source to produce one combined
-resource, keeping the counter's stable identity. Names can be authored freely.
+resource with reminder, keeping the counter's stable identity. Names can be authored freely.
 Costs and recovery are never inferred. Mappings persist with the character.
 
 Opening the wizard prefills each existing resource's current name and recovery
