@@ -25,7 +25,9 @@ import { RESOURCE_MODE_LABELS } from '../models/source-resource-labels';
               (ngModelChange)="update(column, {enabled: $event})" [ngModelOptions]="{standalone:true}" [disabled]="combined(column)"
               [attr.aria-label]="'Import ' + column.owner + ': ' + column.name" />
               <span class="min-w-0 flex-1">{{ column.name }} <span class="text-primary">· {{ column.value }}</span></span>
-              <span class="text-xs text-on-surface-variant">{{ combined(column) ? 'Attached Reminder' : typeLabel(column) }}</span>
+              @if (!numeric(column) || combined(column) || typeLabel(column) === modes.both) {
+                <span class="text-xs text-on-surface-variant">{{ combined(column) ? 'Attached Reminder' : typeLabel(column) }}</span>
+              }
             </label>
             @if (numeric(column)) {
               <label class="ml-auto flex items-center gap-2 text-xs text-on-surface-variant"><span>Entry Type</span>
