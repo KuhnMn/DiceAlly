@@ -18,6 +18,7 @@ import { EntryRendererComponent } from '../entries/entry-renderer.component';
     <ng-template cdkConnectedOverlay [cdkConnectedOverlayOrigin]="origin" [cdkConnectedOverlayOpen]="opened() && hasDetails()"
       [cdkConnectedOverlayPush]="true" [cdkConnectedOverlayViewportMargin]="8" (overlayOutsideClick)="opened.set(false)">
       <div role="tooltip" class="my-1 max-h-[50dvh] w-80 max-w-[calc(100vw-1rem)] overflow-auto rounded-lg border border-outline-variant bg-surface-container-high p-3 text-sm text-on-surface shadow-lg">
+        <strong class="mb-1 block font-semibold">{{ label() }}</strong>
         @for (note of notes() ?? []; track $index) { <div class="mb-2 text-on-surface-variant"><app-entry-renderer [entry]="{text: note}" /></div> }
         <app-entry-renderer [entry]="presentation().entry" />
       </div>
@@ -31,12 +32,13 @@ export class ItemRuleTagComponent {
   readonly presentation = computed(() => {
     const label = this.label();
     const normalize = (text: string) => text.trim().replace(/[\u2011\u2010]/g, '-').toLowerCase();
-    // Only promote a complete, item-specific summary such as "Thrown (20/60 ft.)".
-    // Named rule sections and ordinary prose remain untouched in the tooltip.
+    // Promote item-specific summaries and remove leading label-only templates.
+    // Ordinary prose remains in the tooltip.
     const split = (entry: Entry | null): { label: string; entry: Entry | null } => {
       const text = typeof entry === 'string' ? entry
         : entry && typeof entry === 'object' && 'text' in entry && typeof entry.text === 'string' ? entry.text : undefined;
       if (text) {
+        if (normalize(text) === normalize(label)) return { label, entry: null };
         const summary = /^(.*?)\s+(\([^\n]*\))$/.exec(text.trim());
         if (summary && normalize(summary[1]) === normalize(label)) return { label: text.trim(), entry: null };
       }
@@ -45,7 +47,7 @@ export class ItemRuleTagComponent {
         const group = entry as EntriesEntry;
         if (!group.name && group.entries?.length) {
           const first = split(group.entries[0]);
-          if (first.label !== label) {
+          if (first.entry !== group.entries[0]) {
             const entries = [...(first.entry ? [first.entry] : []), ...group.entries.slice(1)];
             return { label: first.label, entry: entries.length ? { ...group, entries } : null };
           }
@@ -53,7 +55,17 @@ export class ItemRuleTagComponent {
       }
       return { label, entry };
     };
-    return split(this.entry() ?? null);
+    const withoutRepeatedHeading = (entry: Entry | null): Entry | null => {
+      if (entry && typeof entry === 'object' && 'type' in entry
+        && (entry.type === 'entries' || entry.type === 'com.ltx.data.EntriesEntry')) {
+        const group = entry as EntriesEntry;
+        return { ...group, name: group.name && normalize(group.name) === normalize(label) ? undefined : group.name,
+          entries: (group.entries ?? []).map(child => withoutRepeatedHeading(child)!) };
+      }
+      return entry;
+    };
+    const result = split(this.entry() ?? null);
+    return { ...result, entry: withoutRepeatedHeading(result.entry) };
   });
   readonly hasDetails = computed(() => !!this.presentation().entry || !!this.notes()?.length);
   readonly mastery = input(false);

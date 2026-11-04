@@ -17,11 +17,35 @@ describe('Item rule tags', () => {
     expect(tooltip.textContent).toContain('Throw the weapon to make a ranged attack.');
     expect(tooltip.textContent).not.toContain('20/60');
     expect(tooltip.querySelectorAll('.font-semibold')).toHaveLength(1);
-    expect(tooltip.querySelector('strong')).toBeNull();
+    expect(tooltip.querySelector('strong')?.textContent).toBe('Thrown');
     expect(JSON.stringify(entry)).toBe(before);
     fixture.componentRef.setInput('entry',{...entry,entries:['Thrown (30/90 ft.)',entry.entries[1]]});fixture.detectChanges();
     expect(button.textContent).toBe('Thrown (30/90 ft.)');
     fixture.destroy();
+  });
+  it('uses one consistent title for label-only property templates and masteries with plain rule text', () => {
+    for (const rule of [
+      {label:'Finesse',mastery:false,entry:{type:'entries',entries:['finesse',
+        {type:'entries',name:'Finesse',entries:['Use Strength or Dexterity.']}]}},
+      {label:'Light',mastery:false,entry:{type:'entries',entries:[{text:'Light'},
+        {type:'entries',name:'Light',entries:['Make an extra attack.']}]}},
+      {label:'Nick',mastery:true,entry:{text:'Make the extra attack as part of the Attack action.'}},
+      {label:'Two-Handed',mastery:false,entry:{type:'entries',entries:['two\u2011handed',
+        {type:'entries',name:'Two\u2011Handed',entries:['Use both hands.']}]}},
+    ]) {
+      const before=JSON.stringify(rule.entry);
+      const fixture=TestBed.createComponent(ItemRuleTagComponent);
+      fixture.componentRef.setInput('label',rule.label);fixture.componentRef.setInput('entry',rule.entry);
+      fixture.componentRef.setInput('mastery',rule.mastery);fixture.detectChanges();
+      const button=fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+      expect(button.textContent).toBe(rule.label);button.click();fixture.detectChanges();
+      const tooltip=TestBed.inject(OverlayContainer).getContainerElement().querySelector('[role="tooltip"]')!;
+      expect(tooltip.querySelector('strong')?.textContent).toBe(rule.label);
+      expect(tooltip.querySelectorAll('.font-semibold')).toHaveLength(1);
+      expect(tooltip.textContent!.toLowerCase().split(rule.label.toLowerCase())).toHaveLength(2);
+      expect(JSON.stringify(rule.entry)).toBe(before);
+      fixture.destroy();
+    }
   });
   it('renders ammunition references in the tag and avoids an empty tooltip when there is only a summary', () => {
     const entries=itemRuleEntries({kind:'itemProperty',key:'ammo',name:'Ammunition',publication:'XDMG',file:'test.json',links:[],
