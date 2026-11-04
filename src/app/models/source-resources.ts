@@ -85,6 +85,7 @@ export function validateResources(sheet: ExportedCharacter): void {
   if (imports !== undefined && (!imports || typeof imports !== 'object' || Array.isArray(imports)
     || Object.values(imports).some(setting => !setting || typeof setting !== 'object' || Array.isArray(setting)
       || typeof setting.enabled !== 'boolean' || setting.name !== undefined && typeof setting.name !== 'string'
+      || setting.kind !== undefined && setting.kind !== 'counter' && setting.kind !== 'note'
       || setting.reminderId !== undefined && typeof setting.reminderId !== 'string'
       || setting.recovery !== undefined && !RESOURCE_RECOVERY_OPTIONS.some(option => option.value === setting.recovery))))
     throw new Error('Invalid resource import mapping.');

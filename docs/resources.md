@@ -45,9 +45,11 @@ Entry Type field uses these same names, with separate resource and reminder fiel
 The wizard has an opt-in Import Resources & Reminders section. New free-form table columns
 start unselected: a number alone does not establish a consumable resource.
 Schema-defined spell-slot, fixed-spell-by-rank and optional-selection tables are
-excluded. Spellcasting count progressions are offered as reminders. Explicit spell-count
+excluded. Mixed source tables also exclude explicit spell-slot counts, slot levels,
+spell levels/ranks and spells learned or gained per level. Spellcasting count
+progressions are offered as reminders. Explicit spell-count
 headings (Cantrips, Cantrips Known, Spells Known, Known Spells, Prepared Spells,
-Spells Prepared, Spells Learned at This Level) also become reminders in source tables.
+Spells Prepared) also become reminders in source tables.
 Matching ignores case and surrounding whitespace after source tags are removed;
 partial keywords and matching numbers alone do not change other columns' types.
 No columns are imported automatically. Previously imported entries remain selected.
@@ -57,7 +59,15 @@ can explicitly select a reminder from the same source to produce one combined
 resource with reminder, keeping the counter's stable identity. Names can be authored freely.
 Costs and recovery are never inferred. Mappings persist with the character.
 
-Opening the wizard prefills each existing resource's current name and recovery
+For any remaining numeric column, Entry Type can switch between Resource and
+Reminder, including before the column is selected. The chosen type persists in
+the wizard mapping through saves, exports, reopening and level changes. Dice
+expressions remain reminders and can be attached to a resource. Attachment choices
+use the chosen types: a column converted to a resource cannot serve as an attached
+reminder, and a column converted to a reminder no longer consumes an attachment.
+Names, recovery and attachment drafts are retained when changing types.
+
+Opening the wizard prefills each existing resource's current name, numeric entry type and recovery
 from the editor, once per column. Later preview rebuilds preserve wizard drafts.
 When combining two columns, a custom counter name wins; otherwise a custom
 reminder name is carried over. An explicitly combined, unused reminder is removed

@@ -5,6 +5,41 @@ import { WizardState } from './wizard-prefill';
 import { seedResourceImports, WizardResourceColumn, wizardResourceValues } from './wizard-resources';
 
 describe('Wizard resource mapping', () => {
+  it('remembers type choices and updates recovery, attachments and import controls when numeric types change', async () => {
+    const sheet=emptyBasicCharacter();
+    const state: WizardState={revisionId:'test',classes:[],answers:{},options:{resourceReminders:true},baseline:[],protectedPaths:[],
+      resourceImports:{count:{enabled:true}}};
+    const columns: WizardResourceColumn[]=[
+      {id:'count',sourceId:'source',owner:'Class',table:'Resources',name:'Number',kind:'counter',value:4},
+      {id:'bonus',sourceId:'source',owner:'Class',table:'Resources',name:'Bonus',kind:'counter',value:2},
+    ];
+    const open=async()=>{
+      const fixture=TestBed.createComponent(WizardResourcesComponent);
+      fixture.componentRef.setInput('sheet',sheet);fixture.componentRef.setInput('state',state);fixture.componentRef.setInput('columns',columns);
+      await fixture.whenStable();return fixture;
+    };
+    const fixture=await open();
+    const type=(name:string)=>fixture.nativeElement.querySelector(`[aria-label="Entry type for ${name}"]`) as HTMLSelectElement;
+    const change=async(input:HTMLSelectElement,value:string)=>{input.value=value;input.dispatchEvent(new Event('change'));await fixture.whenStable();};
+    await change(type('Bonus'),'note');
+    expect(state.resourceImports!['bonus']).toMatchObject({enabled:false,kind:'note'});
+    const reminder=fixture.nativeElement.querySelector('[aria-label="Reminder for Number"]') as HTMLSelectElement;
+    expect([...reminder.options].map(option=>option.value)).toEqual(['','bonus']);
+    await change(reminder,'bonus');
+    expect(wizardResourceValues(sheet,state,columns)[0].value).toMatchObject({mode:'both',total:4,note:'2'});
+    expect(fixture.nativeElement.querySelector('[aria-label="Import Class: Bonus"]').disabled).toBe(true);
+    await change(type('Bonus'),'counter');
+    expect(fixture.nativeElement.querySelector('[aria-label="Import Class: Bonus"]').disabled).toBe(false);
+    expect(wizardResourceValues(sheet,state,columns)[0].value).toMatchObject({mode:'counter',total:4,note:''});
+    await change(type('Number'),'note');
+    expect(fixture.nativeElement.querySelector('[aria-label="Recovery for Number"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label="Reminder for Number"]')).toBeNull();
+    expect(wizardResourceValues(sheet,state,columns)[0].value).toMatchObject({mode:'note',total:0,note:'4'});
+    fixture.destroy();
+    const reopened=await open();
+    expect(reopened.nativeElement.querySelector('[aria-label="Entry type for Number"]').value).toBe('note');
+    reopened.destroy();
+  });
   it('imports a numeric reminder without recovery or resource attachment controls', async () => {
     const sheet=emptyBasicCharacter();
     const state: WizardState={revisionId:'test',classes:[],answers:{},options:{resourceReminders:true},baseline:[],protectedPaths:[]};
@@ -14,7 +49,8 @@ describe('Wizard resource mapping', () => {
     await fixture.whenStable();
     fixture.nativeElement.querySelector('[aria-label="Import Wizard: Prepared Spells"]').click();
     await fixture.whenStable();
-    expect(fixture.nativeElement.querySelector('select')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label="Recovery for Prepared Spells"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label="Reminder for Prepared Spells"]')).toBeNull();
     expect(wizardResourceValues(sheet,state,columns)[0].value).toMatchObject({mode:'note',note:'5',total:0});
     fixture.destroy();
   });

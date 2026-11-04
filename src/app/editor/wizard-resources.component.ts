@@ -2,7 +2,7 @@ import { Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ExportedCharacter } from '../models/character.model';
 import { WizardState } from './wizard-prefill';
-import { resourceImportName, resourceImportSetting, ResourceImportSetting, WizardResourceColumn } from './wizard-resources';
+import { resourceImportKind, resourceImportName, resourceImportReminder, resourceImportSetting, ResourceImportSetting, WizardResourceColumn } from './wizard-resources';
 import { RESOURCE_RECOVERY_OPTIONS } from '../models/source-resources';
 import { RESOURCE_MODE_LABELS } from '../models/source-resource-labels';
 
@@ -20,18 +20,29 @@ import { RESOURCE_MODE_LABELS } from '../models/source-resource-labels';
         @for (column of columns(); track column.id) {
           @let config = setting(column);
           <div class="rounded bg-surface-container p-2">
-            <label class="flex min-h-8 items-center gap-2"><input type="checkbox" [ngModel]="config.enabled"
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <label class="flex min-h-8 min-w-0 flex-1 items-center gap-2"><input type="checkbox" [ngModel]="config.enabled"
               (ngModelChange)="update(column, {enabled: $event})" [ngModelOptions]="{standalone:true}" [disabled]="combined(column)"
               [attr.aria-label]="'Import ' + column.owner + ': ' + column.name" />
               <span class="min-w-0 flex-1">{{ column.name }} <span class="text-primary">· {{ column.value }}</span></span>
               <span class="text-xs text-on-surface-variant">{{ combined(column) ? 'Attached Reminder' : typeLabel(column) }}</span>
             </label>
+            @if (numeric(column)) {
+              <label class="ml-auto flex items-center gap-2 text-xs text-on-surface-variant"><span>Entry Type</span>
+                <select class="editor-input !w-auto" [ngModel]="kind(column)" (ngModelChange)="update(column, {kind:$event})"
+                  [ngModelOptions]="{standalone:true}" [attr.aria-label]="'Entry type for ' + column.name">
+                  <option value="counter">{{ modes.counter }}</option>
+                  <option value="note">{{ modes.note }}</option>
+                </select>
+              </label>
+            }
+            </div>
             <p class="text-[11px] text-on-surface-variant">{{ column.owner }} · {{ column.table }}</p>
             @if (config.enabled && !combined(column)) {
               <div class="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <label><span class="field-label">{{ column.kind === 'counter' ? 'Resource Name' : 'Reminder Name' }}</span><input class="editor-input" [ngModel]="name(column)"
+                <label><span class="field-label">{{ kind(column) === 'counter' ? 'Resource Name' : 'Reminder Name' }}</span><input class="editor-input" [ngModel]="name(column)"
                   (ngModelChange)="update(column, {name:$event})" [ngModelOptions]="{standalone:true}" /></label>
-                @if (column.kind === 'counter') {
+                @if (kind(column) === 'counter') {
                   <label><span class="field-label">Resource Recovery</span><select class="editor-input" [ngModel]="config.recovery ?? 'NONE'"
                     (ngModelChange)="update(column, {recovery:$event})" [ngModelOptions]="{standalone:true}" [attr.aria-label]="'Recovery for ' + column.name">
                     @for (option of recoveries; track option.value) { <option [value]="option.value">{{ option.label }}</option> }
@@ -51,6 +62,7 @@ import { RESOURCE_MODE_LABELS } from '../models/source-resource-labels';
 })
 export class WizardResourcesComponent {
   private readonly nameDrafts = new Map<string, string>();
+  readonly modes = RESOURCE_MODE_LABELS;
   readonly recoveries = RESOURCE_RECOVERY_OPTIONS;
   readonly sheet = input.required<ExportedCharacter>();
   readonly state = input.required<WizardState>();
@@ -58,9 +70,10 @@ export class WizardResourcesComponent {
   readonly enabledChanged = output<boolean>();
   readonly edited = output<void>();
   setting(column: WizardResourceColumn) { return resourceImportSetting(this.sheet(), this.state(), column); }
+  numeric(column: WizardResourceColumn) { return typeof column.value === 'number'; }
+  kind(column: WizardResourceColumn) { return resourceImportKind(this.sheet(), this.state(), column); }
   typeLabel(column: WizardResourceColumn) {
-    return RESOURCE_MODE_LABELS[column.kind === 'note' ? 'note'
-      : this.reminders(column).some(reminder => reminder.id === this.setting(column).reminderId) ? 'both' : 'counter'];
+    return RESOURCE_MODE_LABELS[resourceImportReminder(this.sheet(), this.state(), column, this.columns()) ? 'both' : this.kind(column)];
   }
   name(column: WizardResourceColumn) {
     const draft = this.nameDrafts.get(column.id);
@@ -74,9 +87,11 @@ export class WizardResourcesComponent {
     (this.state().resourceImports ??= {})[column.id] = { ...this.setting(column), ...patch };
     this.edited.emit();
   }
-  reminders(column: WizardResourceColumn) { return this.columns().filter(candidate => candidate.kind === 'note' && candidate.sourceId === column.sourceId); }
+  reminders(column: WizardResourceColumn) {
+    return this.columns().filter(candidate => candidate.id !== column.id && this.kind(candidate) === 'note' && candidate.sourceId === column.sourceId);
+  }
   combined(column: WizardResourceColumn) {
-    return column.kind === 'note' && this.columns().some(candidate => candidate.kind === 'counter' && candidate.sourceId === column.sourceId
-      && this.setting(candidate).enabled && this.setting(candidate).reminderId === column.id);
+    return this.kind(column) === 'note' && this.columns().some(candidate => this.setting(candidate).enabled
+      && resourceImportReminder(this.sheet(), this.state(), candidate, this.columns())?.id === column.id);
   }
 }

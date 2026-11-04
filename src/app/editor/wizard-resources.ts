@@ -14,7 +14,12 @@ export type ResourceImportSetting = NonNullable<WizardState['resourceImports']>[
 
 /** Only explicit spell-count headings describe capacity rather than spendable uses. */
 function spellCountColumn(name: string): boolean {
-  return /^(?:cantrips(?: known)?|spells known|known spells|prepared spells|spells prepared|spells learned at this level)$/i.test(name.trim());
+  return /^(?:cantrips(?: known)?|spells known|known spells|prepared spells|spells prepared)$/i.test(name.trim());
+}
+
+/** Slots and per-level spell grants already have dedicated wizard handling. */
+function excludedSpellColumn(name: string): boolean {
+  return /^(?:(?:pact (?:magic )?)?spell slots?|(?:spell )?slot levels?|spell levels?|[1-9](?:st|nd|rd|th)(?:[- ]level)?(?: spell slots?)?|spells (?:learned|gained)(?: (?:at |each |per )?(?:this )?level)?)$/i.test(name.trim());
 }
 
 /** A complete numeric dice tag is explicit content; surrounding prose and formulas are not. */
@@ -36,7 +41,7 @@ export function wizardResourceColumns(parent: ContentRecord, subclass: ContentRe
     .flatMap(table => (table.rows[level - 1] ?? []).flatMap((raw, column) => {
       const value = literalCell(raw);
       const name = table.labels[column]?.replace(/\{@\w+ ([^{}]*)\}/g, (_tag, body: string) => body.split('|')[0]);
-      if (value === undefined || !name) return [];
+      if (value === undefined || !name || excludedSpellColumn(name)) return [];
       return [{ id: wizardEditorId('resource', identity, selectionId, table.id, String(column)),
         sourceId: table.subclass ? subclassId : parentId, owner: table.owner, table: table.title,
         name, kind: typeof value === 'number' && !spellCountColumn(name) ? 'counter' as const : 'note' as const, value }];
@@ -46,7 +51,14 @@ export function wizardResourceColumns(parent: ContentRecord, subclass: ContentRe
 export function resourceImportSetting(sheet: ExportedCharacter, state: WizardState, column: WizardResourceColumn): ResourceImportSetting {
   const existing = sheet.resources?.find(resource => resource.id === column.id);
   return { enabled: !!existing && !!sheet.creatorWizard?.baseline.some(entry => entry.path[0] === 'resources' && entry.path[1] === column.id),
-    ...(existing ? { name: existing.name, recovery: existing.recovery } : {}), ...state.resourceImports?.[column.id] };
+    ...(existing ? { name: existing.name, recovery: existing.recovery,
+      ...(typeof column.value === 'number' ? { kind: existing.mode === 'note' ? 'note' as const : 'counter' as const } : {}) } : {}),
+    ...state.resourceImports?.[column.id] };
+}
+
+/** A dice expression is display text, never a valid numeric use limit. */
+export function resourceImportKind(sheet: ExportedCharacter, state: WizardState, column: WizardResourceColumn): WizardResourceColumn['kind'] {
+  return typeof column.value === 'number' ? resourceImportSetting(sheet, state, column).kind ?? column.kind : 'note';
 }
 
 /** Seed once per column when opening the wizard; later rebuilds must retain its drafts. */
@@ -55,19 +67,21 @@ export function seedResourceImports(sheet: ExportedCharacter, state: WizardState
     const existing = sheet.resources?.find(resource => resource.id === column.id);
     if (existing) (state.resourceImports ??= {})[column.id] = {
       ...resourceImportSetting(sheet, state, column), name: existing.name, recovery: existing.recovery,
+      ...(typeof column.value === 'number' ? { kind: existing.mode === 'note' ? 'note' as const : 'counter' as const } : {}),
     };
   }
 }
 
-function reminderColumn(sheet: ExportedCharacter, state: WizardState, column: WizardResourceColumn, columns: WizardResourceColumn[]) {
-  return column.kind === 'counter' ? columns.find(candidate => candidate.id === resourceImportSetting(sheet, state, column).reminderId
-    && candidate.kind === 'note' && candidate.sourceId === column.sourceId) : undefined;
+export function resourceImportReminder(sheet: ExportedCharacter, state: WizardState, column: WizardResourceColumn, columns: WizardResourceColumn[]) {
+  return resourceImportKind(sheet, state, column) === 'counter' ? columns.find(candidate => candidate.id !== column.id
+    && candidate.id === resourceImportSetting(sheet, state, column).reminderId
+    && resourceImportKind(sheet, state, candidate) === 'note' && candidate.sourceId === column.sourceId) : undefined;
 }
 
 export function resourceImportName(sheet: ExportedCharacter, state: WizardState, column: WizardResourceColumn, columns: WizardResourceColumn[]): string {
   const name = resourceImportSetting(sheet, state, column).name?.trim() || column.name;
   if (name !== column.name) return name;
-  const reminder = reminderColumn(sheet, state, column, columns);
+  const reminder = resourceImportReminder(sheet, state, column, columns);
   const reminderName = reminder && resourceImportSetting(sheet, state, reminder).name?.trim();
   return reminder && reminderName && reminderName !== reminder.name ? reminderName : name;
 }
@@ -77,22 +91,22 @@ export function wizardResourceValues(sheet: ExportedCharacter, state: WizardStat
   sources: readonly FeatureSource[] = sheet.character?.featureSources ?? []): PrefillValue[] {
   if (state.options['resourceReminders'] !== true) return [];
   const selected = columns.filter(column => resourceImportSetting(sheet, state, column).enabled);
-  const combined = new Set(selected.filter(column => column.kind === 'counter').flatMap(column => {
-    const reminder = columns.find(candidate => candidate.id === resourceImportSetting(sheet, state, column).reminderId
-      && candidate.kind === 'note' && candidate.sourceId === column.sourceId);
+  const combined = new Set(selected.flatMap(column => {
+    const reminder = resourceImportReminder(sheet, state, column, columns);
     return reminder ? [reminder.id] : [];
   }));
   return selected.filter(column => !combined.has(column.id)).map(column => {
     const setting = resourceImportSetting(sheet, state, column);
-    const reminder = reminderColumn(sheet, state, column, columns);
+    const kind = resourceImportKind(sheet, state, column);
+    const reminder = resourceImportReminder(sheet, state, column, columns);
     const existing = sheet.resources?.find(resource => resource.id === column.id);
     const previousReminder = sheet.resources?.find(resource => resource.id === reminder?.id);
     const placement = resourcePlacement(sources.find(source => source.editorId === column.sourceId));
     const resource: SourceResource = {
       id: column.id, sourceId: existing?.sourceId ?? column.sourceId, name: resourceImportName(sheet, state, column, columns),
-      mode: column.kind === 'counter' ? reminder ? 'both' : 'counter' : 'note',
-      note: String(reminder?.value ?? (column.kind === 'note' ? column.value : '')),
-      total: column.kind === 'counter' ? Number(column.value) : 0, used: 0,
+      mode: kind === 'counter' ? reminder ? 'both' : 'counter' : 'note',
+      note: String(reminder?.value ?? (kind === 'note' ? column.value : '')),
+      total: kind === 'counter' ? Number(column.value) : 0, used: 0,
       recovery: setting.recovery ?? 'NONE',
       features: existing?.features ?? previousReminder?.features ?? placement.features,
       spells: existing?.spells ?? previousReminder?.spells ?? placement.spells,

@@ -71,6 +71,50 @@ describe('Explicit resource imports',()=>{
     expect(columns.slice(0,5).map(column=>column.kind)).toEqual(Array(5).fill('counter'));
     expect(columns).toHaveLength(5);
   });
+  it('excludes slot counts, slot levels and per-level spell grants from mixed source and generated tables',()=>{
+    const record=mapContent({class:[{name:'Warlock',source:'XPHB',classFeatures:[],
+      spellsKnownProgressionFixed:Array(20).fill(1),spellsKnownProgressionFixedByLevel:{'1':{'1':2}},
+      classTableGroups:[{colLabels:['Invocations','Cantrips','Prepared Spells','{@filter Spell Slots|optionalfeatures}','Slot Level',
+        'Spell Slot Level','1st','2nd Level','Spells Learned','Spells Gained per Level','Spell Points'],
+        rows:Array.from({length:20},()=>[5,3,7,2,3,3,2,2,1,1,8])},
+        {colLabels:['3rd'],rowsSpellProgression:Array.from({length:20},()=>[2])}],
+    }]},'warlock-resources.json').records[0];
+    const columns=wizardResourceColumns(record,null,'library','warlock',5,'warlock-source','');
+    expect(columns.map(column=>column.name)).toEqual(['Invocations','Cantrips','Prepared Spells','Spell Points']);
+    // Filtering must retain original column positions in stable resource identities.
+    expect(columns.at(-1)!.id).toBe(wizardResourceColumns(record,null,'library','warlock',6,'warlock-source','').at(-1)!.id);
+  });
+  it('persists numeric type choices through export, reopen, deselection and level changes',()=>{
+    const f=fixture(), count=f.columns.find(column=>column.name==='Number')!, cantrips=f.columns.find(column=>column.name==='Cantrips Known')!;
+    f.state.resourceImports={[count.id]:{enabled:true,kind:'note'},[cantrips.id]:{enabled:true,kind:'counter'}};
+    const first=mergeWizardPrefill(f.sheet,f.state,wizardResourceValues(f.sheet,f.state,f.columns)).sheet;
+    expect(first.resources!.find(resource=>resource.id===count.id)).toMatchObject({mode:'note',note:'4',total:0});
+    expect(first.resources!.find(resource=>resource.id===cantrips.id)).toMatchObject({mode:'counter',total:2,note:''});
+    const restored=portableCharacter(JSON.parse(JSON.stringify(first))), next=fixture(5);
+    const state=structuredClone(restored.creatorWizard!);
+    seedResourceImports(restored,state,next.columns);
+    expect(state.resourceImports).toMatchObject(first.creatorWizard!.resourceImports!);
+    expect(wizardResourceValues(restored,state,next.columns).find(entry=>entry.path[1]===count.id)!.value)
+      .toMatchObject({mode:'note',note:'6',total:0});
+    state.resourceImports![count.id].enabled=false;
+    const deselected=mergeWizardPrefill(restored,state,wizardResourceValues(restored,state,next.columns)).sheet;
+    expect(deselected.creatorWizard!.resourceImports![count.id]).toMatchObject({enabled:false,kind:'note'});
+    const reopened=portableCharacter(JSON.parse(JSON.stringify(deselected)));
+    reopened.creatorWizard!.resourceImports![count.id].enabled=true;
+    expect(wizardResourceValues(reopened,reopened.creatorWizard!,next.columns).find(entry=>entry.path[1]===count.id)!.value)
+      .toMatchObject({mode:'note',note:'6',total:0});
+  });
+  it('uses chosen kinds for attachments and never creates a counter from dice or attaches a resource to itself',()=>{
+    const f=fixture(), count=f.columns.find(column=>column.name==='Number')!, die=f.columns.find(column=>column.name==='Die Size')!;
+    f.state.resourceImports={[count.id]:{enabled:true,kind:'note',reminderId:die.id},[die.id]:{enabled:true,kind:'counter'}};
+    expect(wizardResourceValues(f.sheet,f.state,f.columns).map(entry=>entry.value)).toEqual([
+      expect.objectContaining({id:die.id,mode:'note',note:'D6',total:0}),
+      expect.objectContaining({id:count.id,mode:'note',note:'4',total:0}),
+    ]);
+    f.state.resourceImports[count.id]={enabled:true,kind:'counter',reminderId:count.id};
+    expect(wizardResourceValues(f.sheet,f.state,f.columns).find(entry=>entry.path[1]===count.id)!.value)
+      .toMatchObject({mode:'counter',total:4,note:''});
+  });
   it('combines only explicitly associated values, keeps the counter identity and follows levels',()=>{
     const f=fixture(), values=combined(f);
     expect(values).toHaveLength(1);
@@ -158,6 +202,9 @@ describe('Explicit resource imports',()=>{
     const invalidRecovery=structuredClone(restored);
     invalidRecovery.creatorWizard!.resourceImports![count.id].recovery='UNSUPPORTED';
     expect(()=>portableCharacter(invalidRecovery)).toThrow('Invalid resource import mapping');
+    const invalidKind=structuredClone(restored);
+    Object.assign(invalidKind.creatorWizard!.resourceImports![count.id],{kind:'unsupported'});
+    expect(()=>portableCharacter(invalidKind)).toThrow('Invalid resource import mapping');
     delete first.creatorWizard!.baseline[0].fieldFingerprints;
     first.resources![0].name='Legacy custom name';
     const next=fixture(5);combined(next);
