@@ -7,6 +7,7 @@ import { ExportedCharacter } from '../models/character.model';
 import { previewClassWizard } from '../editor/class-wizard-preview';
 import { migrateLegacyCharacter, isLegacyCharacterExport } from './legacy-character-import';
 import { CharacterLibraryService } from './character-library.service';
+import { migrateCharacterUses } from '../models/uses-migration';
 
 const original = () => structuredClone(magnolie) as unknown as ExportedCharacter;
 const revision: ImportRevision = { id: 'legacy-import-fixture', namespace: 'development-local', source: DEFAULT_CONTENT_SOURCE,
@@ -41,6 +42,8 @@ describe('Old app JSON migration', () => {
   it('migrates the complete Magnolie export, preserving character state and custom content', () => {
     const input = original();
     const migrated = migrateLegacyCharacter(input, installedRecords(), revision);
+    const expected = structuredClone(input);
+    migrateCharacterUses(expected);
     expect(input).toEqual(original());
     expect(migrated.character!.proficiencies!.languages).toEqual(['Common', 'Elvish', 'Halfling']);
     expect(migrated.character!.proficiencies!.custom).toEqual([]);
@@ -56,7 +59,7 @@ describe('Old app JSON migration', () => {
       migrated[field]!.forEach((entry, index) => {
         expect(entry.editorId).toBeTruthy();
         expect(entry.notes).toEqual(input[field]![index].notes);
-        expect(entry.uses).toEqual(input[field]![index].uses);
+        expect(entry.uses).toEqual(expected[field]![index].uses);
       });
     }
     expect(migrated.spells!.every(spell => !!spell.contentReference)).toBe(true);

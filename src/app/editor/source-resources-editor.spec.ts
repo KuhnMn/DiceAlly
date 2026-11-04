@@ -9,6 +9,27 @@ import { ResourceUseComponent } from '../sheet/resource-use.component';
 import { CharacterStore } from '../stores/character.store';
 import { emptyBasicCharacter } from './basic-info';
 describe('Resource editing and tracking', () => {
+  it('replaces the total field with a stat or PB multiplier selector', async () => {
+    const sheet = emptyBasicCharacter();
+    sheet.character!.featureSources = [{ name: 'Source' }];
+    const fixture = TestBed.createComponent(SourceResourcesEditorComponent);
+    fixture.componentRef.setInput('sheet', sheet); fixture.componentInstance.add(); await fixture.whenStable();
+    const resource = sheet.resources![0];
+    const selectFor = (label: string): HTMLSelectElement => [...fixture.nativeElement.querySelectorAll('label')]
+      .find((element: any) => element.querySelector('.field-label')?.textContent.trim() === label)!.querySelector('select');
+    const kind = selectFor('Total Uses Based On');
+    kind.value = 'ability-modifier'; kind.dispatchEvent(new Event('change')); await fixture.whenStable();
+    const stat = selectFor('Stat'); stat.value = 'charisma'; stat.dispatchEvent(new Event('change')); await fixture.whenStable();
+    expect(resource.total).toEqual({ kind: 'ability-modifier', ability: 'charisma' });
+    kind.value = 'proficiency-bonus'; kind.dispatchEvent(new Event('change')); await fixture.whenStable();
+    const multiplier = selectFor('PB Multiplier');
+    multiplier.value = [...multiplier.options].find(option => option.textContent === '×4')!.value;
+    multiplier.dispatchEvent(new Event('change')); await fixture.whenStable();
+    expect(resource.total).toEqual({ kind: 'proficiency-bonus', multiplier: 4 });
+    kind.value = 'fixed'; kind.dispatchEvent(new Event('change')); await fixture.whenStable();
+    expect(resource.total).toEqual({ kind: 'fixed', value: 1 }); expect(resource.used).toBe(0);
+    fixture.destroy();
+  });
   it('prefills placement from the selected source and lets both colored options be changed independently', async () => {
     for (const [features,spells] of [[true,false],[false,true],[true,true],[false,false]]) {
       const sheet=emptyBasicCharacter();
@@ -34,8 +55,9 @@ describe('Resource editing and tracking', () => {
   it('round-trips resource definitions, play counters and spell costs through local and cloud storage', async () => {
     const sheet=emptyBasicCharacter();sheet.character!.name='Resources';sheet.character!.featureSources=[{editorId:'source',name:'Mage'}];
     const fixture=TestBed.createComponent(SourceResourcesEditorComponent);fixture.componentRef.setInput('sheet',sheet);fixture.componentInstance.add();
-    const pool=sheet.resources![0];pool.total=10;pool.used=4;
-    fixture.componentInstance.setTotalCalculation(pool, 'charisma');
+    const pool=sheet.resources![0];pool.total = { kind: 'fixed', value: 10 };pool.used=4;
+    fixture.componentInstance.setTotalCalculation(pool, 'ability-modifier');
+    fixture.componentInstance.setAbility(pool.total, 'charisma');
     sheet.spells=[{editorId:'spell',name:'Spell',resourceLinks:[{resourceId:pool.id,amount:3}]}];
     const repository=new IndexedDbCharacterRepository('resource-round-trip-'+crypto.randomUUID());
     await repository.save(sheet,0);const saved=(await repository.get(sheet.character!.characterUuid!))!;
@@ -75,9 +97,9 @@ describe('Resource editing and tracking', () => {
   it('hides the add-link button when every counted resource is linked and restores it after unlinking', () => {
     const sheet = emptyBasicCharacter();
     sheet.resources = [
-      { id: 'one', sourceId: 'source', name: 'One', mode: 'counter', total: 2, used: 0, note: '', recovery: 'NONE', features: true, spells: true },
-      { id: 'two', sourceId: 'source', name: 'Two', mode: 'both', total: 3, used: 0, note: 'D6', recovery: 'NONE', features: true, spells: true },
-      { id: 'note', sourceId: 'source', name: 'Reminder', mode: 'note', total: 0, used: 0, note: 'D8', recovery: 'NONE', features: true, spells: true },
+      { id: 'one', sourceId: 'source', name: 'One', mode: 'counter', total: { kind: 'fixed', value: 2 }, used: 0, note: '', recovery: 'NONE', features: true, spells: true },
+      { id: 'two', sourceId: 'source', name: 'Two', mode: 'both', total: { kind: 'fixed', value: 3 }, used: 0, note: 'D6', recovery: 'NONE', features: true, spells: true },
+      { id: 'note', sourceId: 'source', name: 'Reminder', mode: 'note', total: { kind: 'fixed', value: 0 }, used: 0, note: 'D8', recovery: 'NONE', features: true, spells: true },
     ];
     const entry = { resourceLinks: [{ resourceId: 'removed', amount: 2 }] };
     const fixture = TestBed.createComponent(ResourceLinksEditorComponent);
@@ -108,7 +130,7 @@ describe('Resource editing and tracking', () => {
     editor.componentRef.setInput('sheet', sheet);
     editor.componentInstance.add();
     const resource = sheet.resources![0];
-    resource.total = 6;
+    resource.total = { kind: 'fixed', value: 6 };
     const entry = { resourceLinks: [] as import('../models/source-resources').ResourceCost[] };
     const links = TestBed.createComponent(ResourceLinksEditorComponent);
     links.componentRef.setInput('sheet', sheet);

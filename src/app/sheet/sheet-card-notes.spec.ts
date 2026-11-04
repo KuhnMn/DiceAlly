@@ -44,7 +44,7 @@ describe('Notes on sheet cards', () => {
   it('places editable item and monster notes after their use trackers on the compact cards', () => {
     for (const create of [() => TestBed.createComponent(EquipmentPageComponent), () => TestBed.createComponent(MonstersPageComponent)]) {
       const fixture = create();
-      const entry = { editorId: 'entry', name: 'Entry', notes: notes(), uses: [{ totalFreeUses: 1, usedFreeUses: 0 }] };
+      const entry = { editorId: 'entry', name: 'Entry', notes: notes(), uses: [{ total: { kind: 'fixed', value: 1 }, used: 0 }] };
       fixture.componentRef.setInput('characterData', { character: {}, inventory: [entry], monsters: [entry] });
       fixture.detectChanges();
       const tracker = fixture.nativeElement.querySelector('article app-feature-uses');

@@ -157,7 +157,7 @@ export class SpellCastControlComponent {
     }),
     ...(this.spell().entity?.meta?.ritual === true ? [{ key: 'ritual', kind: 'ritual' as const, label: 'Ritual - Free', remaining: 1, total: 1 }] : []),
     ...(this.trackedSpell()?.spell.uses ?? []).flatMap((use, index) => {
-      const total = featureUsesTotal(use, this.liveSheet()?.character), used = use.usedFreeUses ?? 0;
+      const total = featureUsesTotal(use, this.liveSheet()?.character), used = use.used ?? 0;
       if (!Number.isSafeInteger(total) || total < 0 || !Number.isSafeInteger(used) || used < 0) return [];
       return [{ key: 'use:' + index, kind: 'use' as const, label: (this.spell().castingSourceName || 'Unassigned Source') + ' · ' + (use.tag || 'Uses'), remaining: Math.max(0, total - used), total, useIndex: index }];
     }),
@@ -277,7 +277,7 @@ export class SpellCastControlComponent {
       } else if (resource.kind === 'use') {
         const tracked = this.trackedSpell();
         if (!tracked) return;
-        const uses = tracked.spell.uses!.map((use, index) => index === resource.useIndex ? { ...use, usedFreeUses: (use.usedFreeUses ?? 0) + 1 } : use);
+        const uses = tracked.spell.uses!.map((use, index) => index === resource.useIndex ? { ...use, used: (use.used ?? 0) + 1 } : use);
         next = { ...data, spells: data.spells!.map((spell, index) => index === tracked.index ? { ...spell, uses } : spell) };
       }
       if (concentration && track) next = { ...next, character: { ...next.character!, concentrationEffect: this.spell().name } };

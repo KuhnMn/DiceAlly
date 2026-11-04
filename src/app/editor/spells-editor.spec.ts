@@ -264,7 +264,7 @@ describe('Spell creator and playing sheet', () => {
     annotations.addNoteEntry(group); annotations.noteDraft = 'Second note'; annotations.commitNote();
     for (const recovery of ['SHORT_REST', 'SHORT_REST_ONE', 'LONG_REST', 'MANUAL']) {
       annotations.addUses(prepared); const use = prepared.uses!.at(-1)!;
-      use.tag = 'Daily'; use.totalFreeUses = 3; use.usedFreeUses = 2; use.freeUsesRegainCondition = recovery;
+      use.tag = 'Daily'; use.total = { kind: 'fixed', value: 3 }; use.used = 2; use.freeUsesRegainCondition = recovery;
     }
     expect(known.notes).toEqual([]); expect(book.uses).toEqual([]);
     expect(prepared.notes![0].notes).toEqual(['First note', 'Second note']);
@@ -280,16 +280,16 @@ describe('Spell creator and playing sheet', () => {
     editor.revision.set(null); editor.results.set([]); fixture.componentRef.setInput('sheet', saved); editor.toggle(saved.spells![1]); fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('First note');
     const rest = TestBed.inject(RestService); rest.performShortRest(saved);
-    expect(saved.spells![1].uses!.map(use => use.usedFreeUses)).toEqual([0, 1, 2, 2]);
-    rest.performLongRest(saved); expect(saved.spells![1].uses!.map(use => use.usedFreeUses)).toEqual([0, 0, 0, 2]);
-    prepared.uses![0].totalFreeUses = -1; expect(() => validateBasicInfo(sheet)).toThrow();
+    expect(saved.spells![1].uses!.map(use => use.used)).toEqual([0, 1, 2, 2]);
+    rest.performLongRest(saved); expect(saved.spells![1].uses!.map(use => use.used)).toEqual([0, 0, 0, 2]);
+    prepared.uses![0].total = { kind: 'fixed', value: -1 }; expect(() => validateBasicInfo(sheet)).toThrow();
   });
 
   it('locks preparation from every list when the prepared entry has uses, scoped to its casting source', async () => {
     const fixture = TestBed.createComponent(SpellsPageComponent);
     const sheet = emptyBasicCharacter();
     const known: SpellEntryFull = { name: 'Shield', source: 'PHB', castingSourceName: 'Wizard', listType: 'KNOWN', notes: [], uses: [] };
-    const prepared: SpellEntryFull = { ...structuredClone(known), listType: 'PREPARED', uses: [{ tag: 'Daily', totalFreeUses: 1, usedFreeUses: 0 }] };
+    const prepared: SpellEntryFull = { ...structuredClone(known), listType: 'PREPARED', uses: [{ tag: 'Daily', total: { kind: 'fixed', value: 1 }, used: 0 }] };
     const bard = { ...structuredClone(known), castingSourceName: 'Bard' };
     sheet.spells = [known, prepared, bard];
     fixture.componentRef.setInput('characterData', sheet); await fixture.whenStable();

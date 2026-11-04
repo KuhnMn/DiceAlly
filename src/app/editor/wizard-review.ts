@@ -5,6 +5,7 @@ import { FeatureSource } from '../models/character.model';
 import { SOURCE_ABILITIES, sourceAbilities } from '../models/feature-source-abilities';
 import { comparableWizardValue } from './wizard-fingerprint';
 import { RESOURCE_MODE_LABELS } from '../models/source-resource-labels';
+import { abilityName } from '../models/character-references';
 
 export const REVIEW_ACTION_LABELS: Record<PrefillChange['action'], string> = {
   Fill: 'Add', Update: 'Update', Remove: 'Remove', Keep: 'Keep Existing',
@@ -40,7 +41,8 @@ function reviewDefinition(value: unknown, kind: string): Record<string, unknown>
   }
   return Object.fromEntries(Object.entries(entry).filter(([key]) => !['editorId', 'contentReference', 'userAdded', 'notes', 'uses'].includes(key))
     .map(([key, value]) => [key, kind === 'resources' && key === 'mode'
-      ? RESOURCE_MODE_LABELS[value as keyof typeof RESOURCE_MODE_LABELS] ?? value : value]));
+      ? RESOURCE_MODE_LABELS[value as keyof typeof RESOURCE_MODE_LABELS] ?? value
+      : kind === 'resources' && key === 'total' ? valueLabel(value) : value]));
 }
 
 function reviewDifferences(current: unknown, suggested: unknown, kind: string) {
@@ -61,9 +63,12 @@ function valueLabel(value: unknown): string {
   if (Array.isArray(value)) return value.map(valueLabel).join(', ') || 'None';
   if (typeof value !== 'object') return ({ PROFICIENT: 'Proficient', EXPERTISE: 'Expertise', HALF: 'Half Proficiency' } as Record<string, string>)[String(value)] ?? String(value);
   const entry = object(value)!;
+  if (entry['kind'] === 'fixed' && typeof entry['value'] === 'number') return String(entry['value']);
+  if (entry['kind'] === 'proficiency-bonus') return `${entry['multiplier']} × PB`;
+  if (entry['kind'] === 'ability-modifier') return `${abilityName(String(entry['ability']).slice(0, 3))} Modifier`;
   if (typeof entry['dieType'] === 'string') return `${entry['total']} × ${entry['dieType']}`;
   if (typeof entry['mode'] === 'string' && typeof entry['name'] === 'string') return [entry['name'],
-    entry['mode'] !== 'note' ? `${entry['total']} Uses` : '', entry['mode'] !== 'counter' ? entry['note'] : ''].filter(Boolean).join(' · ');
+    entry['mode'] !== 'note' ? `${valueLabel(entry['total'])} Uses` : '', entry['mode'] !== 'counter' ? entry['note'] : ''].filter(Boolean).join(' · ');
   if (typeof entry['total'] === 'number') return `${entry['total']} Slots`;
   const speed = object(entry['value']);
   if (speed?.['kind'] === 'fixed') return `${speed['feet']} ft.`;

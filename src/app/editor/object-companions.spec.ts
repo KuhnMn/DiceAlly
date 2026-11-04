@@ -49,7 +49,7 @@ describe('Object companions', () => {
     expect(object.hitPoints).toEqual({ enabled: false });
     editor.setMaxHp(object, 60); object.hitPoints.current = 44; object.hitPoints.temporary = 8;
     object.notes = [{ tag: 'Crew', notes: ['Load, aim, fire'], isEditable: true }];
-    object.uses = [{ tag: 'Bolts', totalFreeUses: 4, usedFreeUses: 1, freeUsesRegainCondition: 'MANUAL' }];
+    object.uses = [{ tag: 'Bolts', total: { kind: 'fixed', value: 4 }, used: 1, freeUsesRegainCondition: 'MANUAL' }];
     object.entity!.entries.push('Private annotation test');
     expect(second.entity!.entries).not.toContain('Private annotation test');
     expect(second.notes).toEqual([]); expect(second.uses).toEqual([]);
@@ -72,15 +72,15 @@ describe('Object companions', () => {
     const sheet = emptyBasicCharacter(), object = createObjectEntry(record(), revision);
     sheet.objects = [object]; object.hitPoints = { enabled: true, maximum: 60, maximumOverride: 70, current: 41, temporary: 5 };
     object.notes = [{ tag: 'Crew', notes: ['Two operators'] }];
-    object.uses = ['SHORT_REST', 'SHORT_REST_ONE', 'LONG_REST', 'MANUAL'].map(freeUsesRegainCondition => ({ tag: freeUsesRegainCondition, totalFreeUses: 5, usedFreeUses: 3, freeUsesRegainCondition }));
+    object.uses = ['SHORT_REST', 'SHORT_REST_ONE', 'LONG_REST', 'MANUAL'].map(freeUsesRegainCondition => ({ tag: freeUsesRegainCondition, total: { kind: 'fixed', value: 5 }, used: 3, freeUsesRegainCondition }));
     const fresh = record(80), before = structuredClone(sheet);
     const refreshed = (await refreshCharacterDescriptions(sheet, { get: async (_revision, key) => key === fresh.key ? fresh : undefined }, revision)).sheet.objects![0];
     expect(refreshed.entity!.hp).toBe(80);
     expect(refreshed.hitPoints).toEqual(object.hitPoints); expect(refreshed.notes).toEqual(object.notes); expect(refreshed.uses).toEqual(object.uses);
     const rest = TestBed.inject(RestService); rest.performShortRest(sheet);
-    expect(object.uses.map(use => use.usedFreeUses)).toEqual([0, 2, 3, 3]);
+    expect(object.uses.map(use => use.used)).toEqual([0, 2, 3, 3]);
     expect(summarizeRest(before, sheet)).toContain('Ballista (SHORT_REST_ONE) uses: 1 restored');
-    rest.performLongRest(sheet); expect(object.uses.map(use => use.usedFreeUses)).toEqual([0, 1, 0, 3]);
+    rest.performLongRest(sheet); expect(object.uses.map(use => use.used)).toEqual([0, 1, 0, 3]);
     expect(object.hitPoints).toEqual(before.objects![0].hitPoints);
     object.hitPoints.current = -1;
     expect(() => portableCharacter(sheet)).toThrow('current HP');

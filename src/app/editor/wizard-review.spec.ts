@@ -9,6 +9,18 @@ function spell(editorId: string, listType = 'KNOWN', level = 0, castingSourceNam
 const change = (id: string, action: PrefillChange['action'] = 'Fill'): PrefillChange => ({ path: ['spells', id], label: id, action });
 
 describe('Wizard review grouping', () => {
+  it('shows self-contained resource totals in summaries and retained differences', () => {
+    const resource = { id: 'pool', sourceId: 'source', name: 'Pool', mode: 'counter' as const, note: '',
+      total: { kind: 'proficiency-bonus' as const, multiplier: 0.5 as const }, used: 1,
+      recovery: 'NONE', features: true, spells: false };
+    const before: ExportedCharacter = { resources: [resource] };
+    const suggested = { ...resource, total: { kind: 'fixed' as const, value: 4 } };
+    const change: PrefillChange = { path: ['resources', 'pool'], label: 'Pool', action: 'Keep' };
+    const result = wizardReviewValues(change, before, before, [{ ...change, scope: 'resourceReminders', value: suggested }]);
+    expect(result.before).toBe('Pool · 0.5 × PB Uses');
+    expect(result.suggested).toBe('Pool · 4 Uses');
+    expect(result.differences).toContainEqual({ label: 'Total', current: '0.5 × PB', suggested: '4' });
+  });
   it('includes displayed class and background changes in the identity review', () => {
     const changes: PrefillChange[] = [
       { path: ['classes'], label: 'Classes', action: 'Update' },

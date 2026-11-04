@@ -258,9 +258,8 @@ export interface SimpleRequisiteSpell {
 
 export interface FeatureUses {
   tag?: string;
-  totalCalculation?: UsesTotal;
-  totalFreeUses?: number;
-  usedFreeUses?: number | 0;
+  total: UsesTotal;
+  used: number;
   freeUsesRegainCondition?: string| "LONG_REST";
   userAdded?: boolean;
 }

@@ -28,26 +28,26 @@ function setup(entry = spell(), value = sheet()) {
 describe('Cast from spell details', () => {
   it('enforces dynamic spell-use totals when casting and follows level changes', async () => {
     const entry = spell(), value = sheet(); value.spells = [entry];
-    entry.uses = [{ tag: 'Daily', totalFreeUses: 99, totalCalculation: { kind: 'proficiency-bonus' }, usedFreeUses: 1 }];
+    entry.uses = [{ tag: 'Daily', total: { kind: 'proficiency-bonus', multiplier: 1 }, used: 1 }];
     const { fixture, control, store } = setup(entry, value);
     control.setResource('use:0'); fixture.detectChanges();
     expect(control.resource()?.total).toBe(2);
     await control.cast();
-    expect(store.characterData()!.spells![0].uses![0].usedFreeUses).toBe(2);
+    expect(store.characterData()!.spells![0].uses![0].used).toBe(2);
     expect(control.canCast()).toBe(false);
     const current = store.characterData()!;
     store.setCharacter({ ...current, character: { ...current.character, level: 5 } });
     expect(control.resource()?.total).toBe(3);
     expect(control.canCast()).toBe(true);
     await control.cast();
-    expect(store.characterData()!.spells![0].uses![0]).toMatchObject({ totalCalculation: { kind: 'proficiency-bonus' }, usedFreeUses: 3 });
+    expect(store.characterData()!.spells![0].uses![0]).toMatchObject({ total: { kind: 'proficiency-bonus', multiplier: 1 }, used: 3 });
     expect(control.canCast()).toBe(false);
     fixture.destroy();
   });
   it('never offers slot sources for cantrips but allows linked resources and checks the complete cost', async () => {
     const entry=spell(0), value=sheet();value.spells=[entry];
     value.character!.featureSources=[{editorId:'psi-source',name:'Soulknife'}];
-    value.resources=[{id:'psi',sourceId:'psi-source',name:'Psionic Energy Dice',mode:'counter',note:'',total:5,used:0,recovery:'LONG_REST',features:true,spells:true}];
+    value.resources=[{id:'psi',sourceId:'psi-source',name:'Psionic Energy Dice',mode:'counter',note:'',total:{ kind: 'fixed', value: 5 },used:0,recovery:'LONG_REST',features:true,spells:true}];
     entry.resourceLinks=[{resourceId:'psi',amount:3}];
     const {fixture,control,store}=setup(entry,value);
     expect(control.resources().some(resource=>resource.kind==='slot')).toBe(false);
@@ -71,7 +71,7 @@ describe('Cast from spell details', () => {
   it('casts using a linked source resource instead of spending a spell slot', async () => {
     const entry=spell(), value=sheet(); value.spells=[entry];
     value.character!.featureSources=[{editorId:'wizard',name:'Wizard'}];
-    value.resources=[{id:'points',sourceId:'wizard',name:'Sorcery Points',mode:'counter',note:'',total:7,used:0,recovery:'LONG_REST',features:true,spells:true,casting:true,defaultCost:2}];
+    value.resources=[{id:'points',sourceId:'wizard',name:'Sorcery Points',mode:'counter',note:'',total:{ kind: 'fixed', value: 7 },used:0,recovery:'LONG_REST',features:true,spells:true,casting:true,defaultCost:2}];
     const {fixture,control,store}=setup(entry,value);
     expect(control.resources().some(resource => resource.kind === 'resource')).toBe(false);
     const levelControl = fixture.nativeElement.querySelector('[aria-label="Cast level"]').closest('app-resource-select') as HTMLElement;
@@ -109,7 +109,7 @@ describe('Cast from spell details', () => {
 
   it('offers Ritual - Free only for ritual spells, fixes its level to base and never spends slots or Uses', async () => {
     const entry = spell(), value = sheet(); value.spells = [entry];
-    entry.entity!.meta = { ritual: true }; entry.uses = [{ totalFreeUses: 1, usedFreeUses: 0 }];
+    entry.entity!.meta = { ritual: true }; entry.uses = [{ total: { kind: 'fixed', value: 1 }, used: 0 }];
     const { fixture, control, store } = setup(entry, value);
     const resourceSelect = fixture.nativeElement.querySelector('select[aria-label="Casting resource"]') as HTMLSelectElement;
     expect([...resourceSelect.options].some(option => option.textContent === 'Ritual - Free')).toBe(true);
@@ -168,14 +168,14 @@ describe('Cast from spell details', () => {
   });
 
   it.each([0, 1])('also warns for an unprepared level %s spell cast using attached Uses', async level => {
-    const entry = spell(level), value = sheet(); entry.listType = 'KNOWN'; entry.uses = [{ tag: 'Daily Gift', totalFreeUses: 2, usedFreeUses: 0 }]; value.spells = [entry];
+    const entry = spell(level), value = sheet(); entry.listType = 'KNOWN'; entry.uses = [{ tag: 'Daily Gift', total: { kind: 'fixed', value: 2 }, used: 0 }]; value.spells = [entry];
     const { fixture, control, store } = setup(entry, value), dialogs = TestBed.inject(AppDialogService);
     control.setResource('use:0');
     const cancelled = control.cast(); dialogs.finish(false); await cancelled;
-    expect(store.characterData()!.spells![0].uses![0].usedFreeUses).toBe(0);
+    expect(store.characterData()!.spells![0].uses![0].used).toBe(0);
     expect(control.feedback()).toBe('');
     const accepted = control.cast(); dialogs.finish(true); await accepted;
-    expect(store.characterData()!.spells![0].uses![0].usedFreeUses).toBe(1);
+    expect(store.characterData()!.spells![0].uses![0].used).toBe(1);
     expect(control.feedback()).toBe('Cast Test Spell using Daily Gift (1 use).');
     expect(store.characterData()!.character!.spellSlots!['Wizard'][0].used).toBe(1);
     fixture.destroy();
@@ -226,7 +226,7 @@ describe('Cast from spell details', () => {
     const entry = spell(), value = sheet(); value.spells = [entry];
     value.character!.spellSlots!['Warlock'] = [{ level: 3, total: 2, used: 0, regainCondition: 'SHORT_REST' }];
     value.character!.spellSlots!['Artificer'] = [{ level: 2, total: 1, used: 1 }];
-    entry.uses = [{ tag: 'Free Cast', totalFreeUses: 1, usedFreeUses: 0 }];
+    entry.uses = [{ tag: 'Free Cast', total: { kind: 'fixed', value: 1 }, used: 0 }];
     const { fixture, control, store } = setup(entry, value);
     const resourceSelect = fixture.nativeElement.querySelector('select[aria-label="Casting resource"]') as HTMLSelectElement;
     const levelSelect = fixture.nativeElement.querySelector('select[aria-label="Cast level"]') as HTMLSelectElement;
@@ -242,7 +242,7 @@ describe('Cast from spell details', () => {
     expect(control.levels()).toEqual([1]); expect(control.level()).toBe(1);
     expect(fixture.nativeElement.querySelector('select[aria-label="Cast level"]')).toBeNull();
     expect(control.resources().map(resource => resource.key)).toEqual(keys);
-    await control.cast(); expect(store.characterData()!.spells![0].uses![0].usedFreeUses).toBe(1);
+    await control.cast(); expect(store.characterData()!.spells![0].uses![0].used).toBe(1);
     const artificer = control.resources().find(resource => resource.label.startsWith('Artificer'))!;
     control.setResource(artificer.key); fixture.detectChanges();
     expect(control.levels()).toEqual([2]); expect(control.level()).toBe(2); expect(control.canCast()).toBe(false);
@@ -253,11 +253,11 @@ describe('Cast from spell details', () => {
 
   it('keeps legacy prepared and known copies separate when spending attached uses', async () => {
     const entry = spell(), value = sheet(); delete entry.editorId;
-    entry.uses = [{ tag: 'Gift', totalFreeUses: 2, usedFreeUses: 0 }];
+    entry.uses = [{ tag: 'Gift', total: { kind: 'fixed', value: 2 }, used: 0 }];
     value.spells = [{ ...structuredClone(entry), listType: 'KNOWN' }, entry];
     const { fixture, control, store } = setup(entry, value);
     control.setResource('use:0'); await control.cast(); await control.cast();
-    expect(store.characterData()!.spells!.map(spell => spell.uses![0].usedFreeUses)).toEqual([0, 2]);
+    expect(store.characterData()!.spells!.map(spell => spell.uses![0].used)).toEqual([0, 2]);
     fixture.destroy();
   });
 
@@ -274,41 +274,41 @@ describe('Cast from spell details', () => {
 
   it.each([0, 1])('spends only the explicitly selected attached use for a level %s spell', async level => {
     const entry = spell(level), value = sheet(); value.spells = [entry];
-    entry.uses = [{ tag: 'Gift', totalFreeUses: 1, usedFreeUses: 0 }, { tag: 'Other Use', totalFreeUses: 3, usedFreeUses: 1 }];
+    entry.uses = [{ tag: 'Gift', total: { kind: 'fixed', value: 1 }, used: 0 }, { tag: 'Other Use', total: { kind: 'fixed', value: 3 }, used: 1 }];
     const { fixture, control, store } = setup(entry, value);
     expect(control.resource()?.kind).toBe(level === 0 ? 'cantrip' : 'slot');
     expect(fixture.nativeElement.querySelector('select[aria-label="Casting resource"]')).not.toBeNull();
     if (level) control.setLevel('4');
     control.setResource('use:0'); expect(control.level()).toBe(level);
     await control.cast(); await control.cast();
-    expect(store.characterData()!.spells![0].uses!.map(use => use.usedFreeUses)).toEqual([1, 1]);
+    expect(store.characterData()!.spells![0].uses!.map(use => use.used)).toEqual([1, 1]);
     expect(store.characterData()!.character!.spellSlots!['Wizard'].map(slot => slot.used)).toEqual([1, 0]);
     expect(control.canCast()).toBe(false);
     control.setResource('use:1'); await control.cast();
-    expect(store.characterData()!.spells![0].uses![1].usedFreeUses).toBe(2);
+    expect(store.characterData()!.spells![0].uses![1].used).toBe(2);
     if (level === 0) { control.setResource('cantrip'); expect(control.canCast()).toBe(true); }
-    const rested = structuredClone(store.characterData()!); rested.spells![0].uses![0].usedFreeUses = 0; store.setCharacter(rested);
+    const rested = structuredClone(store.characterData()!); rested.spells![0].uses![0].used = 0; store.setCharacter(rested);
     control.setResource('use:0'); expect(control.canCast()).toBe(true);
     fixture.destroy();
   });
 
   it('requires an explicit choice when only uses are available and reads manual tracker changes immediately', async () => {
     const entry = spell(), value = sheet(); value.spells = [entry]; value.character!.spellSlots = {};
-    entry.uses = [{ tag: 'Gift', totalFreeUses: 1, usedFreeUses: 0 }];
+    entry.uses = [{ tag: 'Gift', total: { kind: 'fixed', value: 1 }, used: 0 }];
     const { fixture, control, store } = setup(entry, value);
     expect(control.canCast()).toBe(false);
     control.setResource('use:0'); expect(control.canCast()).toBe(true);
-    entry.uses[0].usedFreeUses = 1;
+    entry.uses[0].used = 1;
     expect(control.canCast()).toBe(false); await control.cast(); expect(store.characterData()).toBe(value);
-    entry.uses[0].usedFreeUses = 0;
-    await control.cast(); expect(store.characterData()!.spells![0].uses![0].usedFreeUses).toBe(1);
+    entry.uses[0].used = 0;
+    await control.cast(); expect(store.characterData()!.spells![0].uses![0].used).toBe(1);
     fixture.destroy();
   });
 
   it.each([{ level: 0, use: false }, { level: 0, use: true }, { level: 1, use: false }, { level: 1, use: true }])('confirms concentration before spending a resource for $level / use=$use, with cancellation', async ({ level, use }) => {
     const entry = spell(level), value = sheet(); value.spells = [entry]; value.character!.concentrationEffect = 'Entangle';
     entry.entity!.duration = [{ type: 'timed', concentration: true, duration: { amount: 1, type: 'minute' } }];
-    entry.uses = [{ tag: 'Gift', totalFreeUses: 2, usedFreeUses: 0 }];
+    entry.uses = [{ tag: 'Gift', total: { kind: 'fixed', value: 2 }, used: 0 }];
     const { fixture, control, store } = setup(entry, value);
     if (use) control.setResource('use:0');
     const dialogs = TestBed.inject(AppDialogService), before = structuredClone(value);
@@ -320,7 +320,7 @@ describe('Cast from spell details', () => {
     expect(dialogs.current()).toBeNull(); expect(store.characterData()).toEqual(before);
     const confirmed = control.cast(); dialogs.finish(true); await confirmed;
     expect(store.characterData()!.character!.concentrationEffect).toBe('Test Spell');
-    expect(store.characterData()!.spells![0].uses![0].usedFreeUses).toBe(use ? 1 : 0);
+    expect(store.characterData()!.spells![0].uses![0].used).toBe(use ? 1 : 0);
     expect(store.characterData()!.character!.spellSlots!['Wizard'][0].used).toBe(!use && level > 0 ? 2 : 1);
     fixture.destroy();
   });
@@ -367,7 +367,7 @@ describe('Cast from spell details', () => {
   it('highlights the unchanged higher-level dice text only when using a higher-level slot', () => {
     const entry = spell(), value = sheet(); value.spells = [entry];
     entry.entity!.entriesHigherLevel = [{ type: 'entries', entries: ['Deals {@damage 10d6} damage at this level.'] }];
-    entry.uses = [{ totalFreeUses: 1 }];
+    entry.uses = [{ total: { kind: 'fixed', value: 1 }, used: 0 }];
     TestBed.inject(CharacterStore).setCharacter(value);
     const fixture = TestBed.createComponent(SpellsPageComponent);
     fixture.componentRef.setInput('characterData', value); fixture.detectChanges();
@@ -466,7 +466,7 @@ describe('Cast from spell details', () => {
 
   it.each(['Spells', 'Combat'])('keeps the %s dialog, focus and scroll position when casting with Uses updates the sheet', location => {
     const value = sheet(), entry = spell();
-    entry.uses = [{ tag: 'Daily Gift', totalFreeUses: 3, usedFreeUses: 0 }]; value.spells = [entry];
+    entry.uses = [{ tag: 'Daily Gift', total: { kind: 'fixed', value: 3 }, used: 0 }]; value.spells = [entry];
     const store = TestBed.inject(CharacterStore); store.setCharacter(value);
     const fixture = location === 'Spells' ? TestBed.createComponent(SpellsPageComponent) : TestBed.createComponent(CombatActionComponent);
     const sheetInput = location === 'Spells' ? 'characterData' : 'sheet';
@@ -488,7 +488,7 @@ describe('Cast from spell details', () => {
     const castButton = dialog.querySelector('button[aria-label="Cast Test Spell"]') as HTMLButtonElement;
     castButton.focus(); castButton.click();
     const updated = store.characterData()!;
-    expect(updated.spells![0].uses![0].usedFreeUses).toBe(1);
+    expect(updated.spells![0].uses![0].used).toBe(1);
     fixture.componentRef.setInput(sheetInput, updated); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('dialog')).toBe(dialog);
     expect(scrollArea.scrollTop).toBe(180);

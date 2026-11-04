@@ -30,6 +30,6 @@ export function prepareItemCharges(item: ItemChargeDefinition): ItemChargeDetail
 export function createItemChargeTrackers(item: ItemChargeDefinition): FeatureUses[] {
   const details = prepareItemCharges(item);
   if (!details || typeof details.maximumCharges !== 'number' || !Number.isSafeInteger(details.maximumCharges) || details.maximumCharges < 0) return [];
-  return [{ tag: 'Charges', totalFreeUses: details.maximumCharges, usedFreeUses: 0,
+  return [{ tag: 'Charges', total: { kind: 'fixed', value: details.maximumCharges }, used: 0,
     freeUsesRegainCondition: details.trackerRecoveryCondition, userAdded: false }];
 }

@@ -108,7 +108,7 @@ describe('Spell preparation views and casting times', () => {
     // Membership identities include the content source, so keep matching copies aligned.
     data.spells!.filter(spell => spell.name === entry.name).forEach(spell => spell.source = 'TEST');
     entry.notes = [{ tag: 'Reminder', notes: ['Keep this note'], isEditable: true }];
-    entry.uses = [{ tag: 'Daily', totalFreeUses: 2, usedFreeUses: 1 }];
+    entry.uses = [{ tag: 'Daily', total: { kind: 'fixed', value: 2 }, used: 1 }];
     const before = JSON.stringify(data);
     fixture.componentRef.setInput('characterData', data);
     fixture.componentInstance.spellView.set(view); fixture.detectChanges();

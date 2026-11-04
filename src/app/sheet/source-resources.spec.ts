@@ -8,9 +8,9 @@ describe('Resource pool display',()=>{
     const sheet=emptyBasicCharacter();
     sheet.character!.featureSources=[{editorId:'rogue',name:'Rogue'},{editorId:'soulknife',name:'Soulknife'}];
     sheet.resources=[
-      {id:'psi',sourceId:'soulknife',name:'Psionic Energy Dice',mode:'both',note:'D6\nA reminder',total:5,used:1,recovery:'LONG_REST',features:true,spells:true},
-      {id:'small',sourceId:'soulknife',name:'Small Pool',mode:'counter',note:'',total:4,used:0,recovery:'SHORT_REST',features:true,spells:true},
-      {id:'sneak',sourceId:'rogue',name:'Sneak Attack',mode:'note',note:'3d6',total:0,used:0,recovery:'NONE',features:true,spells:false},
+      {id:'psi',sourceId:'soulknife',name:'Psionic Energy Dice',mode:'both',note:'D6\nA reminder',total:{ kind: 'fixed', value: 5 },used:1,recovery:'LONG_REST',features:true,spells:true},
+      {id:'small',sourceId:'soulknife',name:'Small Pool',mode:'counter',note:'',total:{ kind: 'fixed', value: 4 },used:0,recovery:'SHORT_REST',features:true,spells:true},
+      {id:'sneak',sourceId:'rogue',name:'Sneak Attack',mode:'note',note:'3d6',total:{ kind: 'fixed', value: 0 },used:0,recovery:'NONE',features:true,spells:false},
     ];
     const store=TestBed.inject(CharacterStore);store.setCharacter(sheet);
     const fixture=TestBed.createComponent(SourceResourcesComponent);

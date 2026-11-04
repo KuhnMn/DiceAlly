@@ -160,7 +160,7 @@ try {
     await evaluate(session, `globalThis.features=ng.getComponent(document.querySelector('app-editor-features'));
       features.selectedType='FEAT'; features.customName='Browser custom feat'; features.customDescription='Selected text'; features.addCustom();
       const feature=c.sheet.features[0]; features.addNote(feature); features.setNoteEntry(feature.notes[0],0,'Keep this note');
-      features.addUses(feature); feature.uses[0].totalFreeUses=3; feature.uses[0].freeUsesRegainCondition='SHORT_REST_ONE';
+      features.addUses(feature); feature.uses[0].total.value=3; feature.uses[0].freeUsesRegainCondition='SHORT_REST_ONE';
       await c.save(); c.open((await c.library.get(c.character.characterUuid)));`);
     assert.equal(await evaluate(session, `c.sheet.features[0].notes[0].notes[0]`), 'Keep this note');
     assert.equal(await evaluate(session, `c.sheet.features[0].uses[0].freeUsesRegainCondition`), 'SHORT_REST_ONE');

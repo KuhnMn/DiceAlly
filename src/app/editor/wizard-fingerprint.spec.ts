@@ -38,7 +38,7 @@ describe('Compact wizard baselines', () => {
       value: { editorId: 'test-feature', name: 'Gift', source: 'TEST', notes: [], uses: [] } };
     const first = mergeWizardPrefill(emptyBasicCharacter(), state(), [feature]).sheet;
     first.features![0].notes = [{ tag: 'Notes', notes: ['Keep'], isEditable: true }];
-    first.features![0].uses = [{ tag: 'Uses', totalFreeUses: 3, usedFreeUses: 2 }];
+    first.features![0].uses = [{ tag: 'Uses', total: { kind: 'fixed', value: 3 }, used: 2 }];
     const nextValue = { ...feature, value: { ...feature.value as object, name: 'Updated Gift' } };
     const next = mergeWizardPrefill(first, first.creatorWizard!, [nextValue]).sheet;
     expect(next.features![0].name).toBe('Updated Gift');

@@ -44,7 +44,7 @@ describe('Explicit resource imports',()=>{
     const count=f.columns.find(column=>column.name==='Number')!;
     f.state.resourceImports={[count.id]:{enabled:true}};
     expect(wizardResourceValues(f.sheet,f.state,f.columns).map(entry=>entry.value)).toEqual([
-      expect.objectContaining({mode:'counter',total:4,note:'',recovery:'NONE'}),
+      expect.objectContaining({mode:'counter',total:{ kind: 'fixed', value: 4 },note:'',recovery:'NONE'}),
     ]);
   });
   it('imports numeric spell counts as display text and updates them with the class level',()=>{
@@ -57,11 +57,11 @@ describe('Explicit resource imports',()=>{
     f.state.resourceImports=Object.fromEntries(columns(1).map(column=>[column.id,{enabled:true}]));
     const first=mergeWizardPrefill(f.sheet,f.state,wizardResourceValues(f.sheet,f.state,columns(1))).sheet;
     expect(first.resources).toEqual([
-      expect.objectContaining({name:'Prepared Spells',mode:'note',note:'4',total:0,recovery:'NONE'}),
-      expect.objectContaining({name:'Cantrips',mode:'note',note:'3',total:0,recovery:'NONE'}),
+      expect.objectContaining({name:'Prepared Spells',mode:'note',note:'4',total:{ kind: 'fixed', value: 0 },recovery:'NONE'}),
+      expect.objectContaining({name:'Cantrips',mode:'note',note:'3',total:{ kind: 'fixed', value: 0 },recovery:'NONE'}),
     ]);
     const next=mergeWizardPrefill(first,first.creatorWizard!,wizardResourceValues(first,first.creatorWizard!,columns(2))).sheet;
-    expect(next.resources![0]).toMatchObject({id:first.resources![0].id,mode:'note',note:'5',total:0});
+    expect(next.resources![0]).toMatchObject({id:first.resources![0].id,mode:'note',note:'5',total:{ kind: 'fixed', value: 0 }});
   });
   it('does not classify unrelated numeric headings by partial spell keywords or matching values',()=>{
     const record=mapContent({class:[{name:'Mage',source:'XPHB',classFeatures:[],cantripProgression:Array(20).fill(2),
@@ -88,41 +88,41 @@ describe('Explicit resource imports',()=>{
     const f=fixture(), count=f.columns.find(column=>column.name==='Number')!, cantrips=f.columns.find(column=>column.name==='Cantrips Known')!;
     f.state.resourceImports={[count.id]:{enabled:true,kind:'note'},[cantrips.id]:{enabled:true,kind:'counter'}};
     const first=mergeWizardPrefill(f.sheet,f.state,wizardResourceValues(f.sheet,f.state,f.columns)).sheet;
-    expect(first.resources!.find(resource=>resource.id===count.id)).toMatchObject({mode:'note',note:'4',total:0});
-    expect(first.resources!.find(resource=>resource.id===cantrips.id)).toMatchObject({mode:'counter',total:2,note:''});
+    expect(first.resources!.find(resource=>resource.id===count.id)).toMatchObject({mode:'note',note:'4',total:{ kind: 'fixed', value: 0 }});
+    expect(first.resources!.find(resource=>resource.id===cantrips.id)).toMatchObject({mode:'counter',total:{ kind: 'fixed', value: 2 },note:''});
     const restored=portableCharacter(JSON.parse(JSON.stringify(first))), next=fixture(5);
     const state=structuredClone(restored.creatorWizard!);
     seedResourceImports(restored,state,next.columns);
     expect(state.resourceImports).toMatchObject(first.creatorWizard!.resourceImports!);
     expect(wizardResourceValues(restored,state,next.columns).find(entry=>entry.path[1]===count.id)!.value)
-      .toMatchObject({mode:'note',note:'6',total:0});
+      .toMatchObject({mode:'note',note:'6',total:{ kind: 'fixed', value: 0 }});
     state.resourceImports![count.id].enabled=false;
     const deselected=mergeWizardPrefill(restored,state,wizardResourceValues(restored,state,next.columns)).sheet;
     expect(deselected.creatorWizard!.resourceImports![count.id]).toMatchObject({enabled:false,kind:'note'});
     const reopened=portableCharacter(JSON.parse(JSON.stringify(deselected)));
     reopened.creatorWizard!.resourceImports![count.id].enabled=true;
     expect(wizardResourceValues(reopened,reopened.creatorWizard!,next.columns).find(entry=>entry.path[1]===count.id)!.value)
-      .toMatchObject({mode:'note',note:'6',total:0});
+      .toMatchObject({mode:'note',note:'6',total:{ kind: 'fixed', value: 0 }});
   });
   it('uses chosen kinds for attachments and never creates a counter from dice or attaches a resource to itself',()=>{
     const f=fixture(), count=f.columns.find(column=>column.name==='Number')!, die=f.columns.find(column=>column.name==='Die Size')!;
     f.state.resourceImports={[count.id]:{enabled:true,kind:'note',reminderId:die.id},[die.id]:{enabled:true,kind:'counter'}};
     expect(wizardResourceValues(f.sheet,f.state,f.columns).map(entry=>entry.value)).toEqual([
-      expect.objectContaining({id:die.id,mode:'note',note:'D6',total:0}),
-      expect.objectContaining({id:count.id,mode:'note',note:'4',total:0}),
+      expect.objectContaining({id:die.id,mode:'note',note:'D6',total:{ kind: 'fixed', value: 0 }}),
+      expect.objectContaining({id:count.id,mode:'note',note:'4',total:{ kind: 'fixed', value: 0 }}),
     ]);
     f.state.resourceImports[count.id]={enabled:true,kind:'counter',reminderId:count.id};
     expect(wizardResourceValues(f.sheet,f.state,f.columns).find(entry=>entry.path[1]===count.id)!.value)
-      .toMatchObject({mode:'counter',total:4,note:''});
+      .toMatchObject({mode:'counter',total:{ kind: 'fixed', value: 4 },note:''});
   });
   it('combines only explicitly associated values, keeps the counter identity and follows levels',()=>{
     const f=fixture(), values=combined(f);
     expect(values).toHaveLength(1);
     const first=values[0].value as SourceResource;
-    expect(first).toMatchObject({name:'Psionic Energy',mode:'both',total:4,note:'D6'});
+    expect(first).toMatchObject({name:'Psionic Energy',mode:'both',total:{ kind: 'fixed', value: 4 },note:'D6'});
     const next=fixture(5);combined(next);
     const resource=wizardResourceValues(next.sheet,next.state,next.columns)[0].value as SourceResource;
-    expect(resource).toMatchObject({id:first.id,total:6,note:'D8',sourceId:'soulknife-source'});
+    expect(resource).toMatchObject({id:first.id,total:{ kind: 'fixed', value: 6 },note:'D8',sourceId:'soulknife-source'});
     next.state.resourceImports![resource.id].reminderId=next.columns.find(column=>column.name==='Cantrips Known')!.id;
     expect((wizardResourceValues(next.sheet,next.state,next.columns).find(entry=>entry.path[1]===resource.id)!.value as SourceResource).mode).toBe('counter');
   });
@@ -138,7 +138,7 @@ describe('Explicit resource imports',()=>{
       const count=f.columns.find(column=>column.name==='Number')!, die=f.columns.find(column=>column.name==='Die Size')!;
       state.resourceImports![count.id].reminderId=die.id;
       const result=mergeWizardPrefill(first,state,wizardResourceValues(first,state,f.columns)).sheet;
-      expect(result.resources).toEqual([expect.objectContaining({id:count.id,name:'Psionic Energy Dice',mode:'both',total:4,note:'D6'})]);
+      expect(result.resources).toEqual([expect.objectContaining({id:count.id,name:'Psionic Energy Dice',mode:'both',total:{ kind: 'fixed', value: 4 },note:'D6'})]);
     }
   });
   it('prefers the counter name if both resources have custom names and preserves an active reminder tracker',()=>{
@@ -147,7 +147,7 @@ describe('Explicit resource imports',()=>{
     const first=mergeWizardPrefill(f.sheet,f.state,wizardResourceValues(f.sheet,f.state,f.columns)).sheet;
     const count=f.columns.find(column=>column.name==='Number')!, die=f.columns.find(column=>column.name==='Die Size')!;
     Object.assign(first.resources!.find(resource=>resource.id===count.id)!,{name:'Counter name'});
-    Object.assign(first.resources!.find(resource=>resource.id===die.id)!,{name:'Reminder name',mode:'both',total:4,used:1});
+    Object.assign(first.resources!.find(resource=>resource.id===die.id)!,{name:'Reminder name',mode:'both',total:{ kind: 'fixed', value: 4 },used:1});
     const state=structuredClone(first.creatorWizard!);seedResourceImports(first,state,f.columns);
     state.resourceImports![count.id].reminderId=die.id;
     const result=mergeWizardPrefill(first,state,wizardResourceValues(first,state,f.columns)).sheet;
@@ -161,12 +161,12 @@ describe('Explicit resource imports',()=>{
     const next=fixture(5);combined(next);
     seedResourceImports(first,next.state,next.columns);
     const result=mergeWizardPrefill(first,next.state,wizardResourceValues(first,next.state,next.columns)).sheet;
-    expect(result.resources![0]).toMatchObject({name:'My Psi Dice',recovery:'SHORT_REST',features:false,spells:true,used:2,total:6,note:'D8'});
+    expect(result.resources![0]).toMatchObject({name:'My Psi Dice',recovery:'SHORT_REST',features:false,spells:true,used:2,total:{ kind: 'fixed', value: 6 },note:'D8'});
     expect(result.features).toEqual(first.features);
-    result.resources![0].total=9;
+    result.resources![0].total = { kind: 'fixed', value: 9 };
     const advanced=fixture(11);combined(advanced);
     seedResourceImports(result,advanced.state,advanced.columns);
-    expect(mergeWizardPrefill(result,advanced.state,wizardResourceValues(result,advanced.state,advanced.columns)).sheet.resources![0].total).toBe(6);
+    expect(mergeWizardPrefill(result,advanced.state,wizardResourceValues(result,advanced.state,advanced.columns)).sheet.resources![0].total).toEqual({ kind: 'fixed', value: 6 });
   });
   it('restores selected resources after deletion and keeps referenced pools when their import is deselected',()=>{
     const f=fixture(), values=combined(f);
@@ -186,7 +186,7 @@ describe('Explicit resource imports',()=>{
     const state=structuredClone(first.creatorWizard!);
     state.resourceImports![resource.id]={enabled:true,name:'New chosen name',reminderId:''};
     const result=mergeWizardPrefill(first,state,wizardResourceValues(first,state,f.columns)).sheet.resources![0];
-    expect(result).toMatchObject({name:'New chosen name',mode:'counter',note:'',recovery:'LONG_REST',total:4,used:2});
+    expect(result).toMatchObject({name:'New chosen name',mode:'counter',note:'',recovery:'LONG_REST',total:{ kind: 'fixed', value: 4 },used:2});
   });
   it('round-trips mappings and replaces selected resources with old history too',()=>{
     const f=fixture();combined(f);
@@ -210,7 +210,7 @@ describe('Explicit resource imports',()=>{
     const next=fixture(5);combined(next);
     seedResourceImports(first,next.state,next.columns);
     const result=mergeWizardPrefill(first,next.state,wizardResourceValues(first,next.state,next.columns)).sheet;
-    expect(result.resources![0]).toMatchObject({name:'Legacy custom name',total:6,note:'D8'});
+    expect(result.resources![0]).toMatchObject({name:'Legacy custom name',total:{ kind: 'fixed', value: 6 },note:'D8'});
     expect(result.creatorWizard!.baseline[0].fieldFingerprints).toBeDefined();
   });
 });

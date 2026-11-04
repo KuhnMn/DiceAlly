@@ -17,22 +17,33 @@ import { CatalogResultRowComponent } from './catalog-result-row.component';
   </app-entry-annotations-editor>`,
 })
 class VisibilityToolsHost {
-  entry: AnnotatedEntry = { uses: [{ totalFreeUses: 5, usedFreeUses: 2 }], notes: [{ tag: 'Keep', notes: ['Reminder'] }] };
+  entry: AnnotatedEntry = { uses: [{ total: { kind: 'fixed', value: 5 }, used: 2 }], notes: [{ tag: 'Keep', notes: ['Reminder'] }] };
   edits = 0;
 }
 
 describe('Compact entry tools', () => {
   it('edits explicit uses calculations and retains the fixed total and spent count', async () => {
     const fixture = TestBed.createComponent(EntryAnnotationsComponent);
-    const entry: AnnotatedEntry = { uses: [{ totalFreeUses: 7, usedFreeUses: 3 }] };
+    const entry: AnnotatedEntry = { uses: [{ total: { kind: 'fixed', value: 7 }, used: 3 }] };
     fixture.componentRef.setInput('entry', entry); await fixture.whenStable();
     const panel = fixture.nativeElement.querySelector('[aria-label="Uses editor"]') as HTMLElement;
     const select = panel.querySelector('select') as HTMLSelectElement;
-    for (const [value, calculation] of [['proficiency-bonus', { kind: 'proficiency-bonus' }],
-      ['wisdom', { kind: 'ability-modifier', ability: 'wisdom' }], ['fixed', { kind: 'fixed' }]] as const) {
+    for (const [value, calculation] of [['proficiency-bonus', { kind: 'proficiency-bonus', multiplier: 1 }],
+      ['ability-modifier', { kind: 'ability-modifier', ability: 'strength' }], ['fixed', { kind: 'fixed', value: 7 }]] as const) {
       select.value = value; select.dispatchEvent(new Event('change')); await fixture.whenStable();
-      expect(entry.uses![0]).toEqual({ totalFreeUses: 7, usedFreeUses: 3, totalCalculation: calculation });
+      expect(entry.uses![0]).toEqual({ total: calculation, used: 3 });
       expect(!!panel.querySelector('input[type="number"]')).toBe(value === 'fixed');
+      if (value === 'proficiency-bonus') {
+        const multiplier = panel.querySelectorAll('select')[1];
+        multiplier.value = [...multiplier.options].find(option => option.textContent === '×0.5')!.value;
+        multiplier.dispatchEvent(new Event('change')); await fixture.whenStable();
+        expect(entry.uses![0].total).toEqual({ kind: value, multiplier: 0.5 });
+      }
+      if (value === 'ability-modifier') {
+        const stat = panel.querySelectorAll('select')[1];
+        stat.value = 'wisdom'; stat.dispatchEvent(new Event('change')); await fixture.whenStable();
+        expect(entry.uses![0].total).toEqual({ kind: value, ability: 'wisdom' });
+      }
     }
     fixture.destroy();
   });
@@ -64,7 +75,7 @@ describe('Compact entry tools', () => {
   it('opens one annotation panel at a time, retains drafts and preserves the existing used count', () => {
     const fixture = TestBed.createComponent(EntryAnnotationsComponent);
     const render = () => { fixture.changeDetectorRef.markForCheck(); fixture.detectChanges(); };
-    const entry: AnnotatedEntry = { notes: [{ tag: 'Reminder', notes: ['Original'] }], uses: [{ tag: 'Charges', totalFreeUses: 5, usedFreeUses: 3, freeUsesRegainCondition: 'LONG_REST' }] };
+    const entry: AnnotatedEntry = { notes: [{ tag: 'Reminder', notes: ['Original'] }], uses: [{ tag: 'Charges', total: { kind: 'fixed', value: 5 }, used: 3, freeUsesRegainCondition: 'LONG_REST' }] };
     fixture.componentRef.setInput('entry', entry); render();
     const tools = fixture.componentInstance;
     const panel = (label: string) => fixture.nativeElement.querySelector(`[aria-label="${label} editor"]`) as HTMLElement;
@@ -72,10 +83,10 @@ describe('Compact entry tools', () => {
     fixture.nativeElement.querySelector('[aria-controls^="uses-panel-"]').click(); render();
     expect(panel('Uses').hidden).toBe(false); expect(panel('Notes').hidden).toBe(true);
     fixture.nativeElement.querySelector('[aria-label="Add use tracker"]').click(); render();
-    expect(entry.uses).toHaveLength(2); expect(entry.uses![0].usedFreeUses).toBe(3);
+    expect(entry.uses).toHaveLength(2); expect(entry.uses![0].used).toBe(3);
     const total = panel('Uses').querySelector<HTMLInputElement>('input[type="number"]')!;
     total.value = '1'; total.dispatchEvent(new Event('input')); render();
-    expect(entry.uses![0].totalFreeUses).toBe(1); expect(entry.uses![0].usedFreeUses).toBe(3);
+    expect(entry.uses![0].total).toEqual({ kind: 'fixed', value: 1 }); expect(entry.uses![0].used).toBe(3);
     fixture.nativeElement.querySelector('[aria-controls^="notes-panel-"]').click(); render();
     expect(panel('Uses').hidden).toBe(true); expect(panel('Notes').hidden).toBe(false);
     tools.editNoteEntry(entry.notes![0], 0); tools.noteDraft = 'Keep this draft'; render();
@@ -83,7 +94,7 @@ describe('Compact entry tools', () => {
     expect(tools.noteDraft || entry.notes![0].notes[0]).toBe('Keep this draft');
     tools.noteKeydown(new KeyboardEvent('keydown', { key: 'Enter' })); render();
     expect(entry.notes![0].notes).toEqual(['Keep this draft']);
-    expect(entry.uses![0].usedFreeUses).toBe(3);
+    expect(entry.uses![0].used).toBe(3);
   });
 
   it('allows resource linking before preparation while leaving Uses and Notes gated', () => {

@@ -78,7 +78,7 @@ export class FeatureUsesComponent {
   readonly checkboxNoun = input<'use' | 'slot'>('use');
   uses = input<FeatureUses | undefined>(undefined);
   readonly character = input<CharacterData | null | undefined>(undefined);
-  usesUpdated = output<{ usedFreeUses: number; tag?: string }>();
+  usesUpdated = output<{ used: number; tag?: string }>();
 
   // Local state to track used count - updates immediately for better UX
   private localUsedCount = signal(0);
@@ -96,7 +96,7 @@ export class FeatureUsesComponent {
     effect(() => {
       const uses = this.uses();
       if (uses) {
-        this.localUsedCount.set(uses.usedFreeUses ?? 0);
+        this.localUsedCount.set(uses.used ?? 0);
       }
     });
   }
@@ -134,7 +134,7 @@ export class FeatureUsesComponent {
     this.localUsedCount.set(newUsedCount);
 
     this.usesUpdated.emit({
-      usedFreeUses: newUsedCount,
+      used: newUsedCount,
       tag: uses.tag,
     });
   }

@@ -72,7 +72,7 @@ describe('Canonical monster migration', () => {
     expect(monster.hpEnabled).toBe(false); expect(monster.monsterMaxHP).toBeUndefined();
     setMonsterMaxHp(monster, 25); monster.monsterCurrentHP = 7; monster.monsterTempHP = 3;
     monster.notes = [{ tag: 'Notes', notes: ['Retain note'] }];
-    monster.uses = [{ tag: 'Uses', totalFreeUses: 3, usedFreeUses: 2, freeUsesRegainCondition: 'LONG_REST' }];
+    monster.uses = [{ tag: 'Uses', total: { kind: 'fixed', value: 3 }, used: 2, freeUsesRegainCondition: 'LONG_REST' }];
     const sheet = emptyBasicCharacter(); sheet.monsters = [monster];
     const document = newCharacter(f.revision); const parent = f.rows.find(r => r.kind === 'class')!;
     document.creation.classes.selections = [{ selectionId: 'fighter', classKey: parent.key, level: 1 }];

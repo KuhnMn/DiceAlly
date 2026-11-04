@@ -64,7 +64,7 @@ try {
     c.sheet.spells.filter(spell=>spell.name==='Arcane Spark').forEach(spell=>{spell.entity.meta={ritual:true};spell.entity.duration=[{type:'timed',duration:{amount:1,type:'minute'},concentration:true}];});
     c.sheet.features=[{name:'Arcane Recovery',featureSourceName:'Wizard',editorId:'feature-1',featureType:'CLASS_FEATURE',featureEntity:{name:'Arcane Recovery',level:1,className:'Wizard',classSource:'TEST',source:'TEST',entries:['Synthetic feature reference.']}}];
     c.sheet.features[0].source='TEST';c.sheet.features[0].notes=[{tag:'Reminders',notes:['Apply this manually at the table.'],isEditable:true},{tag:'Table notes',notes:['A second note group.'],isEditable:false}];
-    c.sheet.features[0].uses=[1,2,3].map(number=>({tag:'Counter '+number,totalFreeUses:5,usedFreeUses:1,freeUsesRegainCondition:'LONG_REST'}));
+    c.sheet.features[0].uses=[1,2,3].map(number=>({tag:'Counter '+number,total:{kind:'fixed',value:5},used:1,freeUsesRegainCondition:'LONG_REST'}));
     c.sheet.combatActions=[{editorId:'feature-action',name:'Arcane Recovery',actionType:'OTHER',damageOrHeal:'Synthetic reminder.',linkedResourceType:'CLASS_FEATURE',linkedResource:{editorId:'feature-1',name:'Arcane Recovery',source:'TEST'}}];
     c.sheet.species={name:'Elf',source:'TEST',entity:{name:'Elf',source:'TEST',entries:['Synthetic species reference.']},notes:[],uses:[]};
     c.sheet.background={name:'Sage',source:'TEST',entity:{entries:['Synthetic background reference.']}};

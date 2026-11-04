@@ -25,7 +25,7 @@ export function summarizeRest(before: ExportedCharacter, after: ExportedCharacte
   }
   const uses = (label: string, oldUses: FeatureUses[] = [], newUses: FeatureUses[] = []) => {
     oldUses.forEach((use, index) => restored(`${label}${use.tag ? ` (${use.tag})` : ''} uses`,
-      use.usedFreeUses, newUses[index]?.usedFreeUses));
+      use.used, newUses[index]?.used));
   };
   // Rest only changes counters; entries retain their order and identity.
   for (const category of ['features', 'spells', 'monsters', 'objects', 'inventory'] as const) {

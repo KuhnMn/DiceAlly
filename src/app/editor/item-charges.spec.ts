@@ -23,13 +23,13 @@ describe('Preconfigured item charges', () => {
     const cache = { get: async () => undefined };
     const first = await createInventoryEntry(cache, record, revision);
     const second = await createInventoryEntry(cache, record, revision);
-    expect(first.uses).toEqual([{ tag: 'Charges', totalFreeUses: 7, usedFreeUses: 0, freeUsesRegainCondition: 'MANUAL', userAdded: false }]);
-    first.uses![0].usedFreeUses = 4;
+    expect(first.uses).toEqual([{ tag: 'Charges', total: { kind: 'fixed', value: 7 }, used: 0, freeUsesRegainCondition: 'MANUAL', userAdded: false }]);
+    first.uses![0].used = 4;
     const sheet = emptyBasicCharacter(); sheet.inventory = [first, second];
     const rest = TestBed.inject(RestService);
     rest.performShortRest(sheet); rest.performLongRest(sheet);
-    expect(first.uses![0].usedFreeUses).toBe(4);
-    expect(second.uses![0].usedFreeUses).toBe(0);
+    expect(first.uses![0].used).toBe(4);
+    expect(second.uses![0].used).toBe(0);
     expect(first.editorId).not.toBe(second.editorId);
     expect(first.entity?.item).toMatchObject({ charges: 7, recharge: 'dawn', rechargeAmount: '{@dice 1d6 + 1}' });
   });
@@ -48,7 +48,7 @@ describe('Preconfigured item charges', () => {
   it('persists charges and refreshes only definitions, preserving spent charges and manual edits', async () => {
     const record = chargeItem(), cache = { get: async (_revision: string, key: string) => key === record.key ? record : undefined };
     const sheet = emptyBasicCharacter(); const item = await createInventoryEntry(cache, record, revision); sheet.inventory = [item];
-    item.uses![0].usedFreeUses = 3; item.uses![0].totalFreeUses = 9; item.uses![0].freeUsesRegainCondition = 'SHORT_REST_ONE';
+    item.uses![0].used = 3; item.uses![0].total = { kind: 'fixed', value: 9 }; item.uses![0].freeUsesRegainCondition = 'SHORT_REST_ONE';
     const refreshed = await refreshCharacterDescriptions(sheet, cache, revision);
     expect(refreshed.sheet.inventory![0].uses).toEqual(item.uses);
     const repository = new IndexedDbCharacterRepository(`charge-state-${crypto.randomUUID()}`);

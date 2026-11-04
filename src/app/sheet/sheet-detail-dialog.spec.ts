@@ -28,7 +28,7 @@ describe('Sheet detail overlays', () => {
   it('opens one feature at a time and dismisses without losing notes or spent uses', () => {
     const fixture = TestBed.createComponent(FeaturesPageComponent);
     const features = [
-      { editorId: 'first', name: 'First', uses: [{ totalFreeUses: 6, usedFreeUses: 0 }], notes: [{ tag: 'Reminder', notes: ['Keep this'], isEditable: true }] },
+      { editorId: 'first', name: 'First', uses: [{ total: { kind: 'fixed', value: 6 }, used: 0 }], notes: [{ tag: 'Reminder', notes: ['Keep this'], isEditable: true }] },
       { editorId: 'second', name: 'Second' },
     ];
     fixture.componentRef.setInput('characterData', { character: {}, features });
@@ -39,7 +39,7 @@ describe('Sheet detail overlays', () => {
     expect(dialog.textContent).toContain('Keep this');
     dialog.querySelector<HTMLButtonElement>('button[aria-label="Use one Uses"]')!.click();
     fixture.detectChanges();
-    expect(features[0].uses![0].usedFreeUses).toBe(1);
+    expect(features[0].uses![0].used).toBe(1);
     dialog.dispatchEvent(new Event('close')); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('dialog')).toBeNull();
     expect(features[0].notes![0].notes).toEqual(['Keep this']);

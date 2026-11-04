@@ -37,7 +37,7 @@ describe('Sheet layouts preserve navigation and character state', () => {
     sheet.species = { name: 'Elf' };
     sheet.character!.spellSlots = { Wizard: [{ level: 1, total: 4, used: 0 }], Sorcerer: [{ level: 1, total: 2, used: 0 }] };
     sheet.resources = ['wizard', 'sorcerer'].map(sourceId => ({
-      id: sourceId, sourceId, name: 'Focus', mode: 'counter' as const, note: '', total: 5, used: 0,
+      id: sourceId, sourceId, name: 'Focus', mode: 'counter' as const, note: '', total: { kind: 'fixed', value: 5 }, used: 0,
       recovery: 'LONG_REST' as const, features: true, spells: true,
     }));
     const before = structuredClone(sheet);
@@ -48,8 +48,8 @@ describe('Sheet layouts preserve navigation and character state', () => {
     expect(header.querySelector('app-sheet-list-layout')).not.toBeNull();
     const headings = [...fixture.nativeElement.querySelectorAll('h2, h3')].map((heading: unknown) => (heading as HTMLElement).textContent?.trim());
     const expected = component === FeaturesPageComponent
-      ? ['Features & Traits', 'Resources', 'Species', 'Elf', 'Features']
-      : ['Spellcasting', 'Spell Slots', 'Resources', 'Prepared Spells'];
+      ? ['Features & Traits', 'Resources & Reminders', 'Species', 'Elf', 'Features']
+      : ['Spellcasting', 'Spell Slots', 'Resources & Reminders', 'Prepared Spells'];
     expect(headings.slice(0, expected.length)).toEqual(expected);
     const selector = fixture.debugElement.query(By.directive(SheetListLayoutComponent));
     const layout = selector.componentInstance as SheetListLayoutComponent;

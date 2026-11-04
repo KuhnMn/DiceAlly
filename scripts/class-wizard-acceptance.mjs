@@ -161,12 +161,12 @@ try {
     await evaluate(session,`m.catalogOpen=false;m.expanded.add(c.sheet.monsters[0]);ng.applyChanges(m);
       const field=document.querySelector('app-editor-monsters input[type=number]');field.value='25';field.dispatchEvent(new Event('input',{bubbles:true}));
       c.sheet.monsters[0].notes=[{tag:'Commands',notes:['Guard','Follow'],isEditable:true}];
-      c.sheet.monsters[0].uses=[{tag:'Summon',totalFreeUses:3,usedFreeUses:1,freeUsesRegainCondition:'SHORT_REST_ONE'}];ng.applyChanges(m);await c.save();`);
+      c.sheet.monsters[0].uses=[{tag:'Summon',total:{kind:'fixed',value:3},used:1,freeUsesRegainCondition:'SHORT_REST_ONE'}];ng.applyChanges(m);await c.save();`);
     assert.equal(await evaluate(session,"c.error()"),'');
     await evaluate(session,"c.open(await c.library.get(c.character.characterUuid));c.setPage(5);ng.applyChanges(c)");
     assert.equal(await evaluate(session,"c.sheet.monsters[0].monsterMaxHP"),25);
     assert.equal(await evaluate(session,"c.sheet.monsters[0].notes[0].notes.length"),2);
-    assert.equal(await evaluate(session,"c.sheet.monsters[0].uses[0].usedFreeUses"),1);
+    assert.equal(await evaluate(session,"c.sheet.monsters[0].uses[0].used"),1);
     for(const width of [320,390,1100]){
       await send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500},session);
       await evaluate(session,"globalThis.m=ng.getComponent(document.querySelector('app-editor-monsters'));m.expanded.add(c.sheet.monsters[0]);ng.applyChanges(m)");

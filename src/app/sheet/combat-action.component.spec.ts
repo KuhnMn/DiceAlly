@@ -68,7 +68,7 @@ describe('Combat action descriptions', () => {
 
   it('reuses the spell dialog with source tags, uses and notes, without consuming a tab navigation target', () => {
     const sheet = sheetWithSpell();
-    sheet.spells![0].uses = [{ totalFreeUses: 3, usedFreeUses: 1 }];
+    sheet.spells![0].uses = [{ total: { kind: 'fixed', value: 3 }, used: 1 }];
     sheet.spells![0].notes = [{ notes: ['Spell note.'], isEditable: true }];
     const store = TestBed.inject(CharacterStore);
     store.setFeatureScrollTarget('spell-unrelated');

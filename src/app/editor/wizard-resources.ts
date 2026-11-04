@@ -106,7 +106,7 @@ export function wizardResourceValues(sheet: ExportedCharacter, state: WizardStat
       id: column.id, sourceId: existing?.sourceId ?? column.sourceId, name: resourceImportName(sheet, state, column, columns),
       mode: kind === 'counter' ? reminder ? 'both' : 'counter' : 'note',
       note: String(reminder?.value ?? (kind === 'note' ? column.value : '')),
-      total: kind === 'counter' ? Number(column.value) : 0, used: 0,
+      total: { kind: 'fixed', value: kind === 'counter' ? Number(column.value) : 0 }, used: 0,
       recovery: setting.recovery ?? 'NONE',
       features: existing?.features ?? previousReminder?.features ?? placement.features,
       spells: existing?.spells ?? previousReminder?.spells ?? placement.spells,

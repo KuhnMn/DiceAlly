@@ -7,10 +7,12 @@ import { validateObjectCompanions } from '../models/companions';
 import { validateSourceAbilities } from '../models/feature-source-abilities';
 import { applyAbilityBonuses, validateAbilityBonusState } from '../models/ability-score-bonuses';
 import { validateUsesTotal } from '../models/uses-total';
+import { migrateCharacterUses } from '../models/uses-migration';
 
 /** Android's installation identity has no role in account-owned characters. Never persist or export it. */
 export function portableCharacter(input: ExportedCharacter): ExportedCharacter {
   const sheet = structuredClone(input);
+  migrateCharacterUses(sheet);
   if (sheet.character) {
     const previous: unknown = sheet.character.speeds;
     sheet.character.speeds = decodeCharacterSpeeds(previous);
@@ -33,7 +35,7 @@ export function portableCharacter(input: ExportedCharacter): ExportedCharacter {
   validateResources(sheet);
   for (const entry of [...sheet.features ?? [], ...sheet.spells ?? [], ...sheet.inventory ?? [],
     ...sheet.monsters ?? [], ...sheet.objects ?? [], ...(sheet.species ? [sheet.species] : [])]) {
-    for (const uses of entry.uses ?? []) validateUsesTotal(uses.totalCalculation);
+    for (const uses of entry.uses ?? []) validateUsesTotal(uses.total);
   }
   validateAbilityBonusState(sheet);
   applyAbilityBonuses(sheet);

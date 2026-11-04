@@ -123,7 +123,7 @@ describe('Offline species snapshots', () => {
     document.session = { ...document.session, currentHp: 7, tempHp: 3, resources: { orphan: { used: 2 } }, annotations: { 'stable-instance': ['Retained note'] } };
     const sheet = emptyBasicCharacter();
     sheet.species = { name: snapshot.name, source: snapshot.publication, notes: [{ tag: 'Notes', notes: ['Keep me'] }],
-      uses: [{ tag: 'Uses', totalFreeUses: 3, usedFreeUses: 2, freeUsesRegainCondition: 'LONG_REST' }] };
+      uses: [{ tag: 'Uses', total: { kind: 'fixed', value: 3 }, used: 2, freeUsesRegainCondition: 'LONG_REST' }] };
     document.presentation['sheet'] = sheet;
     return document;
   }
@@ -143,7 +143,7 @@ describe('Offline species snapshots', () => {
     expect(projected.species?.entity?.definition?.version).toBe(1);
     expect(projected.species?.entity?.speed).toEqual({ walk: 30 });
     expect(projected.species?.notes?.[0].notes).toEqual(['Keep me']);
-    expect(projected.species?.uses?.[0].usedFreeUses).toBe(2);
+    expect(projected.species?.uses?.[0].used).toBe(2);
   });
 
   it('exports manual scores even when a saved document contains old automated scores', () => {

@@ -169,7 +169,7 @@ describe('Usability state protection', () => {
   it('does not mutate health, dice, or uses while previewing a rest', () => {
     const sheet = emptyBasicCharacter();
     Object.assign(sheet.character!, { currentHp: 3, maxHp: 20, hitDice: [{ dieType: 'd8', total: 4, used: 3 }] });
-    sheet.features = [{ name: 'Ability', uses: [{ totalFreeUses: 2, usedFreeUses: 2, freeUsesRegainCondition: 'LONG_REST' }] }];
+    sheet.features = [{ name: 'Ability', uses: [{ total: { kind: 'fixed', value: 2 }, used: 2, freeUsesRegainCondition: 'LONG_REST' }] }];
     const before = structuredClone(sheet);
     const rest = TestBed.inject(RestService);
     expect(rest.previewRest(sheet, 'long')).toContain('HP: 17 restored');

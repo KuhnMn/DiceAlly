@@ -82,16 +82,16 @@ try {
     const feature = ng.getComponent(document.querySelector('app-editor-features'));
     feature.customName='AFeatureWithAVeryLongNameWithoutAnySpacesToTestWrapping'; feature.addCustom();
     c.sheet.features[0].notes=[{tag:'Notes',notes:['ALongNoteEntryWithoutAnySpacesThatShouldWrapInsideItsCard'],isEditable:true}];
-    c.sheet.features[0].uses=[{tag:'Uses',totalFreeUses:3,usedFreeUses:0,freeUsesRegainCondition:'LONG_REST'}];
+    c.sheet.features[0].uses=[{tag:'Uses',total:{kind:'fixed',value:3},used:0,freeUsesRegainCondition:'LONG_REST'}];
     const species = ng.getComponent(document.querySelector('app-editor-species'));
     species.customName='ASpeciesWithAVeryLongNameWithoutSpacesToTestWrapping'; species.addCustom();
     c.sheet.species.notes=[{tag:'Traits',notes:['ALongSpeciesNoteWithoutSpacesThatShouldWrap'],isEditable:true}];
-    c.sheet.species.uses=[{tag:'Trait',totalFreeUses:3,usedFreeUses:0,freeUsesRegainCondition:'SHORT_REST_ONE'}];
+    c.sheet.species.uses=[{tag:'Trait',total:{kind:'fixed',value:3},used:0,freeUsesRegainCondition:'SHORT_REST_ONE'}];
     const spell = ng.getComponent(document.querySelector('app-editor-spells'));
     spell.customName='ASpellWithAVeryLongNameWithoutAnySpacesToTestWrapping'; spell.addCustom();
     spell.addToList(c.sheet.spells[0],'PREPARED'); spell.list='PREPARED'; spell.toggle(c.sheet.spells[1]);
     c.sheet.spells[1].notes=[{tag:'Notes',notes:['ALongSpellNoteWithoutSpacesThatShouldWrap'],isEditable:true}];
-    c.sheet.spells[1].uses=[{tag:'Daily',totalFreeUses:1,usedFreeUses:0,freeUsesRegainCondition:'LONG_REST'}];
+    c.sheet.spells[1].uses=[{tag:'Daily',total:{kind:'fixed',value:1},used:0,freeUsesRegainCondition:'LONG_REST'}];
     ng.applyChanges(c);`);
   for (const width of [320, 390, 768, 1100]) {
     await send('Emulation.setDeviceMetricsOverride', {width,height:900,deviceScaleFactor:1,mobile:width<500}, session);

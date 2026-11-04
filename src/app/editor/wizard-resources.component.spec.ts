@@ -26,15 +26,15 @@ describe('Wizard resource mapping', () => {
     const reminder=fixture.nativeElement.querySelector('[aria-label="Reminder for Number"]') as HTMLSelectElement;
     expect([...reminder.options].map(option=>option.value)).toEqual(['','bonus']);
     await change(reminder,'bonus');
-    expect(wizardResourceValues(sheet,state,columns)[0].value).toMatchObject({mode:'both',total:4,note:'2'});
+    expect(wizardResourceValues(sheet,state,columns)[0].value).toMatchObject({mode:'both',total:{ kind: 'fixed', value: 4 },note:'2'});
     expect(fixture.nativeElement.querySelector('[aria-label="Import Class: Bonus"]').disabled).toBe(true);
     await change(type('Bonus'),'counter');
     expect(fixture.nativeElement.querySelector('[aria-label="Import Class: Bonus"]').disabled).toBe(false);
-    expect(wizardResourceValues(sheet,state,columns)[0].value).toMatchObject({mode:'counter',total:4,note:''});
+    expect(wizardResourceValues(sheet,state,columns)[0].value).toMatchObject({mode:'counter',total:{ kind: 'fixed', value: 4 },note:''});
     await change(type('Number'),'note');
     expect(fixture.nativeElement.querySelector('[aria-label="Recovery for Number"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[aria-label="Reminder for Number"]')).toBeNull();
-    expect(wizardResourceValues(sheet,state,columns)[0].value).toMatchObject({mode:'note',total:0,note:'4'});
+    expect(wizardResourceValues(sheet,state,columns)[0].value).toMatchObject({mode:'note',total:{ kind: 'fixed', value: 0 },note:'4'});
     fixture.destroy();
     const reopened=await open();
     expect(reopened.nativeElement.querySelector('[aria-label="Entry type for Number"]').value).toBe('note');
@@ -51,7 +51,7 @@ describe('Wizard resource mapping', () => {
     await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('[aria-label="Recovery for Prepared Spells"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[aria-label="Reminder for Prepared Spells"]')).toBeNull();
-    expect(wizardResourceValues(sheet,state,columns)[0].value).toMatchObject({mode:'note',note:'5',total:0});
+    expect(wizardResourceValues(sheet,state,columns)[0].value).toMatchObject({mode:'note',note:'5',total:{ kind: 'fixed', value: 0 }});
     fixture.destroy();
   });
   it('selects a counter and explicitly joins its dice reminder without importing unrelated columns', async () => {
@@ -84,14 +84,14 @@ describe('Wizard resource mapping', () => {
     recovery.value='SHORT_REST';recovery.dispatchEvent(new Event('change'));await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('[aria-label="Import Soulknife: Die Size"]').disabled).toBe(true);
     expect(wizardResourceValues(sheet,state,columns).map(entry=>entry.value)).toEqual([
-      expect.objectContaining({id:'count',name:'Psionic Energy',total:4,note:'D6',mode:'both',recovery:'SHORT_REST'}),
+      expect.objectContaining({id:'count',name:'Psionic Energy',total:{ kind: 'fixed', value: 4 },note:'D6',mode:'both',recovery:'SHORT_REST'}),
     ]);
     fixture.destroy();
   });
   it('prefills current editor settings on reopen and keeps changes made inside the wizard', async () => {
     const sheet=emptyBasicCharacter();
     const columns: WizardResourceColumn[]=[{id:'count',sourceId:'rogue',owner:'Rogue',table:'Resources',name:'Number',kind:'counter',value:6}];
-    sheet.resources=[{id:'count',sourceId:'rogue',name:'Editor name',mode:'counter',note:'',total:4,used:2,recovery:'SHORT_REST',features:true,spells:false}];
+    sheet.resources=[{id:'count',sourceId:'rogue',name:'Editor name',mode:'counter',note:'',total:{ kind: 'fixed', value: 4 },used:2,recovery:'SHORT_REST',features:true,spells:false}];
     sheet.creatorWizard={revisionId:'test',classes:[],answers:{},options:{resourceReminders:true},baseline:[],protectedPaths:[],
       resourceImports:{count:{enabled:true,name:'Previous wizard name',recovery:'LONG_REST'}}};
     const state=structuredClone(sheet.creatorWizard);
@@ -105,7 +105,7 @@ describe('Wizard resource mapping', () => {
     recovery.value='LONG_REST';recovery.dispatchEvent(new Event('change'));await fixture.whenStable();
     expect(recovery.value).toBe('LONG_REST');expect(state.resourceImports!['count'].recovery).toBe('LONG_REST');
     const next=wizardResourceValues(sheet,state,columns)[0].value;
-    expect(next).toMatchObject({name:'Editor name',total:6,recovery:'LONG_REST'});
+    expect(next).toMatchObject({name:'Editor name',total:{kind:'fixed',value:6},recovery:'LONG_REST'});
     expect(sheet.resources[0].recovery).toBe('SHORT_REST');
     fixture.destroy();
   });

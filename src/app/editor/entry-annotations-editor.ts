@@ -1,8 +1,9 @@
+import { UsesTotalEditor } from './uses-total-editor';
 import { Directive, ElementRef, ViewChild } from '@angular/core';
 import { FeatureNotes, FeatureUses } from '../models/character.model';
 import { RECOVERY_OPTIONS } from './recovery-options';
 import type { ViewerEntryVisibility } from '../models/entry-visibility';
-import { USES_TOTAL_OPTIONS, usesTotalSelection, usesTotalFromSelection } from '../models/uses-total';
+import { USES_TOTAL_OPTIONS, USES_ABILITY_OPTIONS, USES_PB_MULTIPLIERS, usesTotalSelection, setUsesAbility, setUsesMultiplier } from '../models/uses-total';
 export interface AnnotatedEntry extends ViewerEntryVisibility {
   notes?: FeatureNotes[];
   uses?: FeatureUses[];
@@ -12,10 +13,15 @@ export interface AnnotatedEntry extends ViewerEntryVisibility {
 @Directive()
 export abstract class EntryAnnotationsEditor {
   readonly recoveryOptions = RECOVERY_OPTIONS;
+  private readonly totals = new UsesTotalEditor();
   readonly totalOptions = USES_TOTAL_OPTIONS;
+  readonly abilityOptions = USES_ABILITY_OPTIONS;
+  readonly multipliers = USES_PB_MULTIPLIERS;
+  readonly setAbility = setUsesAbility;
+  readonly setMultiplier = setUsesMultiplier;
   readonly totalSelection = usesTotalSelection;
   setTotalCalculation(uses: FeatureUses, value: string) {
-    uses.totalCalculation = usesTotalFromSelection(value);
+    this.totals.select(uses, value);
     this.change();
   }
   abstract change(): void;
@@ -83,7 +89,7 @@ export abstract class EntryAnnotationsEditor {
 
   addUses(entry: AnnotatedEntry) {
     (entry.uses ??= []).push({
-      tag: 'Uses', totalFreeUses: 1, usedFreeUses: 0,
+      tag: 'Uses', total: { kind: 'fixed', value: 1 }, used: 0,
       freeUsesRegainCondition: 'LONG_REST', userAdded: true,
     });
     this.change();

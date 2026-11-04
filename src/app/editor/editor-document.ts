@@ -9,6 +9,7 @@ import { speciesSpeedEntries } from '../content/species-speed-projection';
 import { speciesDefinition } from '../content/species-adapter';
 import { decodeCharacterSpeeds } from '../models/character-speed';
 import { projectSpeciesEntity } from '../content/species-compatibility';
+import { migrateCharacterUses } from '../models/uses-migration';
 
 export function bindingFor(revision: ImportRevision): CharacterDocument['contentBindings'][number] {
   return { sourceIdentity: revision.sourceIdentity, revisionId: revision.id, commit: revision.commit,
@@ -81,7 +82,7 @@ export function projectSheet(document: CharacterDocument): ExportedCharacter {
   for (const spell of sheet.spells) {
     const instance = document.instances.spells.find(s => s.id === spell.notes?.[0]?.tag)!;
     spell.uses = document.instances.pools.filter(p => p.kind === 'feature-uses' && p.origins.includes(instance.id)).map(p => ({
-      tag: p.id, totalFreeUses: p.total, usedFreeUses: document.session.resources[p.id]?.used ?? 0, freeUsesRegainCondition: p.regain, userAdded: p.manual }));
+      tag: p.id, total: { kind: 'fixed', value: p.total }, used: document.session.resources[p.id]?.used ?? 0, freeUsesRegainCondition: p.regain, userAdded: p.manual }));
   }
   sheet.spells.push(...structuredClone(document.compatibility['legacySpells'] ?? []) as NonNullable<ExportedCharacter['spells']>);
   if (document.instances.species) {
@@ -123,6 +124,7 @@ export function projectSheet(document: CharacterDocument): ExportedCharacter {
     if (authored?.resourceLinks) entry.resourceLinks = structuredClone(authored.resourceLinks);
     if (authored?.hidden !== undefined) entry.hidden = authored.hidden;
   }
+  migrateCharacterUses(sheet);
   return sheet;
 }
 
@@ -176,7 +178,7 @@ export function captureSheet(document: CharacterDocument, sheet: ExportedCharact
   for (const entry of [...sheet.features ?? [], ...sheet.spells ?? [], ...(sheet.species ? [sheet.species] : [])]) {
     for (const note of entry.notes ?? []) if (note.tag) next.session.annotations[note.tag] = [...note.notes];
     for (const usage of entry.uses ?? []) if (usage.tag && next.instances.pools.some(p => p.id === usage.tag)) {
-      next.session.resources[usage.tag] = { used: usage.usedFreeUses ?? 0 };
+      next.session.resources[usage.tag] = { used: usage.used ?? 0 };
     }
   }
   const featureIds = new Set(next.instances.features.map(f => f.id));

@@ -44,7 +44,7 @@ describe('Monster creator', () => {
     expect(second.editorId).not.toBe(sheet.monsters![0].editorId);
     const monster = sheet.monsters![0]; editor.setMaxHp(monster, 25);
     monster.notes = [{ tag: 'Commands', notes: ['Guard', 'Follow'], isEditable: true }];
-    monster.uses = [{ tag: 'Summon', totalFreeUses: 2, usedFreeUses: 1, freeUsesRegainCondition: 'SHORT_REST_ONE' }];
+    monster.uses = [{ tag: 'Summon', total: { kind: 'fixed', value: 2 }, used: 1, freeUsesRegainCondition: 'SHORT_REST_ONE' }];
     expect(second.notes).toEqual([]); expect(second.uses).toEqual([]);
     expect(second.monsterMaxHP).toBeUndefined();
     monster.entity!.name = 'First wolf'; expect(second.entity!.name).toBe('Wolf');
@@ -58,10 +58,10 @@ describe('Monster creator', () => {
   it('uses the normal rest conditions for monster trackers', () => {
     const sheet = emptyBasicCharacter(); const monster = createMonsterEntry(record(), revision()); sheet.monsters = [monster];
     monster.uses = ['SHORT_REST', 'SHORT_REST_ONE', 'LONG_REST', 'MANUAL'].map(freeUsesRegainCondition => ({
-      tag: freeUsesRegainCondition, totalFreeUses: 5, usedFreeUses: 3, freeUsesRegainCondition,
+      tag: freeUsesRegainCondition, total: { kind: 'fixed', value: 5 }, used: 3, freeUsesRegainCondition,
     }));
     const rest = TestBed.inject(RestService); rest.performShortRest(sheet);
-    expect(monster.uses.map(use => use.usedFreeUses)).toEqual([0, 2, 3, 3]);
-    rest.performLongRest(sheet); expect(monster.uses.map(use => use.usedFreeUses)).toEqual([0, 1, 0, 3]);
+    expect(monster.uses.map(use => use.used)).toEqual([0, 2, 3, 3]);
+    rest.performLongRest(sheet); expect(monster.uses.map(use => use.used)).toEqual([0, 1, 0, 3]);
   });
 });

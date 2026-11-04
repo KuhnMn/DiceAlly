@@ -7,8 +7,8 @@ import { ResourceCost } from '../models/source-resources';
 function setup(links: ResourceCost[]) {
   const sheet=emptyBasicCharacter();
   sheet.resources=[
-    {id:'focus',sourceId:'source',name:'Focus',mode:'counter',note:'',total:8,used:3,recovery:'SHORT_REST',features:true,spells:false},
-    {id:'psi',sourceId:'source',name:'Psionic Energy',mode:'both',note:'d6',total:6,used:0,recovery:'LONG_REST',features:true,spells:false},
+    {id:'focus',sourceId:'source',name:'Focus',mode:'counter',note:'',total:{ kind: 'fixed', value: 8 },used:3,recovery:'SHORT_REST',features:true,spells:false},
+    {id:'psi',sourceId:'source',name:'Psionic Energy',mode:'both',note:'d6',total:{ kind: 'fixed', value: 6 },used:0,recovery:'LONG_REST',features:true,spells:false},
   ];
   const store=TestBed.inject(CharacterStore);store.setCharacter(sheet);
   const fixture=TestBed.createComponent(ResourceUseComponent);

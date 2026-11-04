@@ -24,7 +24,7 @@ describe('Local creator persistence and sheet integration', () => {
   it('keeps manual resource pools and links when projecting and capturing native documents', () => {
     const f=fixture(); const document=acceptDocumentPreview(f.document,previewDocument(f.document,f.index));
     const sheet=projectSheet(document), feature=sheet.features![0];
-    sheet.resources=[{id:'pool',sourceId:'source',name:'Pool',mode:'counter',note:'',total:6,used:2,recovery:'LONG_REST',features:true,spells:true,casting:false,defaultCost:1}];
+    sheet.resources=[{id:'pool',sourceId:'source',name:'Pool',mode:'counter',note:'',total:{ kind: 'fixed', value: 6 },used:2,recovery:'LONG_REST',features:true,spells:true,casting:false,defaultCost:1}];
     feature.resourceLinks=[{resourceId:'pool',amount:2}];
     const reopened=projectSheet(captureSheet(document,sheet));
     expect(reopened.resources).toEqual(sheet.resources);

@@ -1,10 +1,11 @@
+import { UsesTotalEditor } from './uses-total-editor';
 import { Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ExportedCharacter } from '../models/character.model';
 import { RESOURCE_RECOVERY_OPTIONS, resourcePlacement, SourceResource } from '../models/source-resources';
 import { UiIconComponent } from '../ui-icon.component';
 import { RESOURCE_MODE_LABELS } from '../models/source-resource-labels';
-import { USES_TOTAL_OPTIONS, usesTotalSelection, usesTotalFromSelection } from '../models/uses-total';
+import { USES_TOTAL_OPTIONS, USES_ABILITY_OPTIONS, USES_PB_MULTIPLIERS, usesTotalSelection, setUsesAbility, setUsesMultiplier } from '../models/uses-total';
 @Component({
   selector: 'app-source-resources-editor',
   imports: [FormsModule, UiIconComponent],
@@ -93,13 +94,13 @@ import { USES_TOTAL_OPTIONS, usesTotalSelection, usesTotalFromSelection } from '
             @if (resource.mode !== 'note') {
               <label class="block">
                 <span class="field-label">Total Uses Based On</span>
-                <select class="editor-input" [ngModel]="totalSelection(resource.totalCalculation)"
+                <select class="editor-input" [ngModel]="totalSelection(resource.total)"
                   (ngModelChange)="setTotalCalculation(resource, $event)" [ngModelOptions]="{ standalone: true }">
                   @for (option of totalOptions; track option.value) { <option [value]="option.value">{{ option.label }}</option> }
                 </select>
               </label>
               <div class="grid grid-cols-2 gap-2">
-                @if (!resource.totalCalculation || resource.totalCalculation.kind === 'fixed') {
+                @if (resource.total.kind === 'fixed') {
                 <label
                   ><span class="field-label">Total Uses</span
                   ><input
@@ -107,11 +108,27 @@ import { USES_TOTAL_OPTIONS, usesTotalSelection, usesTotalFromSelection } from '
                     type="number"
                     min="0"
                     step="1"
-                    [ngModel]="resource.total"
+                    [ngModel]="resource.total.value"
                     (ngModelChange)="setTotal(resource, $event)"
                     [ngModelOptions]="{ standalone: true }"
                 /></label>
-                } @else { <p class="text-xs text-on-surface-variant self-center">Total follows the current character value (Minimum: 0).</p> }
+                } @else if (resource.total.kind === 'ability-modifier') {
+                <label class="min-w-0">
+                  <span class="field-label">Stat</span>
+                  <select class="editor-input" [ngModel]="resource.total.ability"
+                    (ngModelChange)="setAbility(resource.total, $event); change()" [ngModelOptions]="{ standalone: true }">
+                    @for (ability of abilityOptions; track ability.field) { <option [value]="ability.field">{{ ability.label }}</option> }
+                  </select>
+                </label>
+                } @else {
+                <label class="min-w-0">
+                  <span class="field-label">PB Multiplier</span>
+                  <select class="editor-input" [ngModel]="resource.total.multiplier"
+                    (ngModelChange)="setMultiplier(resource.total, $event); change()" [ngModelOptions]="{ standalone: true }">
+                    @for (multiplier of multipliers; track multiplier) { <option [ngValue]="multiplier">×{{ multiplier }}</option> }
+                  </select>
+                </label>
+                }
                 <label
                   ><span class="field-label">Resource Recovery</span
                   ><select
@@ -163,10 +180,15 @@ import { USES_TOTAL_OPTIONS, usesTotalSelection, usesTotalFromSelection } from '
   </section>`,
 })
 export class SourceResourcesEditorComponent {
+  private readonly totals = new UsesTotalEditor();
   readonly totalOptions = USES_TOTAL_OPTIONS;
+  readonly abilityOptions = USES_ABILITY_OPTIONS;
+  readonly multipliers = USES_PB_MULTIPLIERS;
+  readonly setAbility = setUsesAbility;
+  readonly setMultiplier = setUsesMultiplier;
   readonly totalSelection = usesTotalSelection;
   setTotalCalculation(resource: SourceResource, value: string) {
-    resource.totalCalculation = usesTotalFromSelection(value);
+    this.totals.select(resource, value);
     this.change();
   }
   readonly modes = RESOURCE_MODE_LABELS;
@@ -196,7 +218,7 @@ export class SourceResourcesEditorComponent {
       name: 'New Resource',
       mode: 'counter',
       note: '',
-      total: 1,
+      total: { kind: 'fixed', value: 1 },
       used: 0,
       recovery: 'NONE',
       ...resourcePlacement(source),
@@ -207,7 +229,7 @@ export class SourceResourcesEditorComponent {
   }
   setTotal(resource: SourceResource, total: number) {
     if (!Number.isSafeInteger(total) || total < 0) return;
-    resource.total = total;
+    resource.total = { kind: 'fixed', value: total };
     this.change();
   }
   setSource(resource: SourceResource, id: string) {

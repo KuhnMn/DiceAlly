@@ -112,7 +112,7 @@ import { referenceDescription } from '../models/character-references';
                     @for (use of species()?.uses ?? []; track use) {
                                         <app-feature-uses [character]="characterData()?.character" tone="species"
                                           [uses]="use"
-                                          (usesUpdated)="use.usedFreeUses = $event.usedFreeUses"
+                                          (usesUpdated)="use.used = $event.used"
                                         />
                                       }
                   </div>
@@ -154,7 +154,7 @@ import { referenceDescription } from '../models/character-references';
                           @for (use of feature.uses; track use) {
                                                     <app-feature-uses [character]="characterData()?.character" tone="features"
                                                       [uses]="use"
-                                                      (usesUpdated)="use.usedFreeUses = $event.usedFreeUses"
+                                                      (usesUpdated)="use.used = $event.used"
                                                     />
                                                   }
                         </div>
@@ -225,7 +225,7 @@ import { referenceDescription } from '../models/character-references';
           @if (!isExpanded('species')) {
                   <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
                     @for (use of species()?.uses ?? []; track use) {
-                                        <app-feature-uses [character]="characterData()?.character" tone="species" [uses]="use" (usesUpdated)="use.usedFreeUses = $event.usedFreeUses" />
+                                        <app-feature-uses [character]="characterData()?.character" tone="species" [uses]="use" (usesUpdated)="use.used = $event.used" />
                                       }
                   </div>
                 }
@@ -311,7 +311,7 @@ import { referenceDescription } from '../models/character-references';
                 @if (!isExpanded(featureAnchorId(feature) ?? 'feature')) {
                   <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
                     @for (use of feature.uses ?? []; track use) {
-                                        <app-feature-uses [character]="characterData()?.character" tone="features" [uses]="use" (usesUpdated)="use.usedFreeUses = $event.usedFreeUses" />
+                                        <app-feature-uses [character]="characterData()?.character" tone="features" [uses]="use" (usesUpdated)="use.used = $event.used" />
                                       }
                   </div>
                 }
@@ -472,22 +472,22 @@ export class FeaturesPageComponent {
     return this.expandedItems().has(id);
   }
 
-  updateFeatureUses(feature: any, event: { usedFreeUses: number; tag?: string }) {
+  updateFeatureUses(feature: any, event: { used: number; tag?: string }) {
     // Find the matching use entry and update it
     if (feature.uses) {
       const useEntry = feature.uses.find((u: any) => u.tag === event.tag);
       if (useEntry) {
-        useEntry.usedFreeUses = event.usedFreeUses;
+        useEntry.used = event.used;
       }
     }
   }
 
-  updateSpeciesUses(event: { usedFreeUses: number; tag?: string }) {
+  updateSpeciesUses(event: { used: number; tag?: string }) {
     const species = this.species();
     if (!species?.uses) return;
     const useEntry = species.uses.find((u: any) => u.tag === event.tag);
     if (useEntry) {
-      useEntry.usedFreeUses = event.usedFreeUses;
+      useEntry.used = event.used;
     }
   }
 

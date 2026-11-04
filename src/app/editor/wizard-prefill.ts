@@ -103,7 +103,7 @@ function collisions(sheet: ExportedCharacter, entry: PrefillValue): { editorId?:
 }
 function hasAnnotations(value: unknown): boolean {
   const entry = value as FeatureEntryFull | undefined;
-  return !!((value as { used?: number } | undefined)?.used || entry?.hidden || entry?.notes?.length || entry?.resourceLinks?.length || entry?.uses?.some(use => (use.usedFreeUses ?? 0) > 0));
+  return !!((value as { used?: number } | undefined)?.used || entry?.hidden || entry?.notes?.length || entry?.resourceLinks?.length || entry?.uses?.some(use => use.used > 0));
 }
 
 /** Detached, repeatable prefill. Selected resources replace definitions; other manual edits stay protected. */
@@ -144,7 +144,7 @@ export function mergeWizardPrefill(original: ExportedCharacter, state: WizardSta
       let proposed = structuredClone(entry.value);
       if (current && typeof current === 'object' && proposed && typeof proposed === 'object') {
         const next = proposed as MutableObject; const existing = current as MutableObject;
-        for (const counter of ['used', 'usedFreeUses', 'overrideFeet']) if (existing[counter] !== undefined) next[counter] = existing[counter];
+        for (const counter of ['used', 'overrideFeet']) if (existing[counter] !== undefined) next[counter] = existing[counter];
         if (['features', 'spells', 'species'].includes(entry.path[0])) {
           next['resourceLinks'] = structuredClone(existing['resourceLinks']);
           if (existing['hidden'] !== undefined) next['hidden'] = existing['hidden'];

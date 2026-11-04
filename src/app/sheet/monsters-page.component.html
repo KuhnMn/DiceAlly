@@ -11,7 +11,7 @@
 <ng-template #companionDetail let-monster>
 <ng-template #dialogTags><ng-container [ngTemplateOutlet]="monsterDetailTags" [ngTemplateOutletContext]="{ $implicit: monster }" /></ng-template>
 <app-sheet-detail-dialog [reference]="monster.contentReference" [title]="monster.name || 'Unnamed creature'" [tags]="dialogTags" (closed)="closeDetail(monsterKey(monster))">
-        @if (monster.uses?.length) { <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">@for (use of monster.uses; track use) { <app-feature-uses [character]="characterData()?.character" tone="companions" [uses]="use" (usesUpdated)="use.usedFreeUses = $event.usedFreeUses" /> }</div> }
+        @if (monster.uses?.length) { <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">@for (use of monster.uses; track use) { <app-feature-uses [character]="characterData()?.character" tone="companions" [uses]="use" (usesUpdated)="use.used = $event.used" /> }</div> }
         @if (health(monster).enabled) {
           <div class="my-2 flex flex-wrap items-stretch gap-2">
             <label class="flex min-h-11 min-w-0 flex-auto items-center gap-2 rounded-lg border-2 border-primary bg-primary-container px-3 py-2 text-sm font-semibold text-on-primary-container">HP <input type="number" inputmode="numeric" min="0" [max]="getEffectiveMonsterMaxHP(monster)" [value]="health(monster).current ?? getEffectiveMonsterMaxHP(monster)" (input)="updateMonsterHP(monster, $any($event.target).value)" [attr.aria-label]="monster.name + ' current HP'" class="min-h-11 w-16 rounded border border-outline-variant bg-surface px-2 text-base text-on-surface" /><span class="whitespace-nowrap">/ {{ getEffectiveMonsterMaxHP(monster) }}</span></label>
@@ -95,7 +95,7 @@
           <app-object-stat-block [value]="object" [summaryOnly]="true" [showHitPoints]="!health(monster).enabled" />
         }
         @if (!isExpanded(monsterKey(monster))) {
-        @if (monster.uses?.length) { <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">@for (use of monster.uses; track use) { <app-feature-uses [character]="characterData()?.character" tone="companions" [uses]="use" (usesUpdated)="use.usedFreeUses = $event.usedFreeUses" /> }</div> }
+        @if (monster.uses?.length) { <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">@for (use of monster.uses; track use) { <app-feature-uses [character]="characterData()?.character" tone="companions" [uses]="use" (usesUpdated)="use.used = $event.used" /> }</div> }
         }
         <app-feature-notes [notes]="monster.notes" (notesChanged)="monster.notes = $event" />
         @if (isExpanded(monsterKey(monster))) {

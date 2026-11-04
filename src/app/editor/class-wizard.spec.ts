@@ -264,7 +264,7 @@ describe('Subclass-granted spell prefill', () => {
       expect(result.warnings).toEqual([]);
       expect(result.sheet.spells!.some(spell => spell.name === 'Spark')).toBe(true);
       expect(result.sheet.spells!.find(spell => spell.name === 'Shield' && spell.uses?.length)?.uses![0])
-        .toMatchObject({ totalFreeUses: expected, freeUsesRegainCondition: 'LONG_REST' });
+        .toMatchObject({ total: { kind: 'fixed', value: expected }, freeUsesRegainCondition: 'LONG_REST' });
     }
     f.state.classes[0].level = 8;
     expect(previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet.spells!.some(spell => spell.name === 'Shield' && spell.uses?.length)).toBe(false);
@@ -277,7 +277,7 @@ describe('Subclass-granted spell prefill', () => {
     f.state.resourceImports=Object.fromEntries(previewClassWizard(f.sheet,f.state,f.revision,f.index).resourceColumns.map(column=>[column.id,{enabled:true}]));
     const first=previewClassWizard(f.sheet,f.state,f.revision,f.index).sheet;
     expect(first.resources!.filter(resource=>resource.name==='Psi Dice')[0].note).toBe('2d6');
-    expect(first.resources!.find(resource=>resource.name==='Uses')).toMatchObject({mode:'counter',total:3,note:'',recovery:'NONE'});
+    expect(first.resources!.find(resource=>resource.name==='Uses')).toMatchObject({mode:'counter',total:{ kind: 'fixed', value: 3 },note:'',recovery:'NONE'});
     expect(first.resources!.every(resource=>!resource.casting&&resource.recovery==='NONE')).toBe(true);
     expect(first.resources!.every(resource=>resource.features && resource.spells)).toBe(true);
     const resource=first.resources![0];resource.note='Personal note';
@@ -308,8 +308,8 @@ describe('Subclass-granted spell prefill', () => {
       const result = previewClassWizard(f.sheet, state, f.revision, index).sheet;
       const sourceId = result.character!.featureSources!.find(source => source.name === 'Soulknife (XPHB)')!.editorId;
       expect(result.resources).toEqual([
-        expect.objectContaining({ name: 'Die Size', note: die, sourceId, mode: 'note', total: 0, used: 0, recovery: 'NONE' }),
-        expect.objectContaining({ name: 'Number', note: '', sourceId, mode: 'counter', total: Number(count), used: 0, recovery: 'NONE' }),
+        expect.objectContaining({ name: 'Die Size', note: die, sourceId, mode: 'note', total: { kind: 'fixed', value: 0 }, used: 0, recovery: 'NONE' }),
+        expect.objectContaining({ name: 'Number', note: '', sourceId, mode: 'counter', total: { kind: 'fixed', value: Number(count) }, used: 0, recovery: 'NONE' }),
       ]);
     }
   });
@@ -389,7 +389,7 @@ describe('Subclass-granted spell prefill', () => {
     expect(first.sheet.spells).toContainEqual(expect.objectContaining({ name: 'Shield', listType: 'SPELLBOOK', castingSourceName: 'Mage (TEST)' }));
     expect(first.sheet.spells).not.toContainEqual(expect.objectContaining({ name: 'Shield', listType: 'PREPARED', castingSourceName: 'Mage (TEST)' }));
     expect(first.sheet.spells).toContainEqual(expect.objectContaining({ name: 'Spark', listType: 'PREPARED', castingSourceName: 'School (TEST)' }));
-    expect(first.sheet.spells).toContainEqual(expect.objectContaining({ name: 'Shield', listType: 'PREPARED', castingSourceName: 'School (TEST)', uses: [expect.objectContaining({ totalFreeUses: 1 })] }));
+    expect(first.sheet.spells).toContainEqual(expect.objectContaining({ name: 'Shield', listType: 'PREPARED', castingSourceName: 'School (TEST)', uses: [expect.objectContaining({ total: { kind: 'fixed', value: 1 } })] }));
     expect(previewClassWizard(first.sheet, first.sheet.creatorWizard!, f.revision, f.index).sheet.spells).toEqual(first.sheet.spells);
     f.state.classes[0].useSpellbook = false;
     const normal = previewClassWizard(f.sheet, f.state, f.revision, f.index);
@@ -550,7 +550,7 @@ describe('Optional class wizard prefill', () => {
     const column=previewClassWizard(f.sheet,f.state,f.revision,f.index).resourceColumns[0];
     f.state.resourceImports={[column.id]:{enabled:true,name:'Previous name',recovery:'LONG_REST'}};
     const sheet=previewClassWizard(f.sheet,f.state,f.revision,f.index).sheet;
-    Object.assign(sheet.resources![0],{name:'Editor name',recovery:'SHORT_REST',total:99,used:2});
+    Object.assign(sheet.resources![0],{name:'Editor name',recovery:'SHORT_REST',total:{kind:'fixed',value:99},used:2});
     const cache=new IndexedDbContentCache();
     await cache.stage({...f.revision,status:'staging'});await cache.put(f.revision.id,f.records);await cache.activate(f.revision);
     await cache.saveSource('development-local',f.revision.source);
@@ -562,8 +562,8 @@ describe('Optional class wizard prefill', () => {
     expect(wizard.state.resourceImports![column.id]).toMatchObject({name:'Editor name',recovery:'SHORT_REST'});
     Object.assign(wizard.state.resourceImports![column.id],{name:'Wizard name',recovery:'SHORT_REST_ONE'});
     wizard.state.classes[0].level=5;wizard.rebuild();wizard.rebuild();
-    expect(wizard.proposal()!.sheet.resources![0]).toMatchObject({name:'Wizard name',recovery:'SHORT_REST_ONE',total:5,used:2});
-    expect(sheet.resources![0]).toMatchObject({name:'Editor name',recovery:'SHORT_REST',total:99});
+    expect(wizard.proposal()!.sheet.resources![0]).toMatchObject({name:'Wizard name',recovery:'SHORT_REST_ONE',total:{kind:'fixed',value:5},used:2});
+    expect(sheet.resources![0]).toMatchObject({name:'Editor name',recovery:'SHORT_REST',total:{kind:'fixed',value:99}});
     component.destroy();
   });
 
@@ -821,7 +821,7 @@ describe('Optional class wizard prefill', () => {
     const first = previewClassWizard(f.sheet, f.state, f.revision, f.index).sheet;
     expect(first.character!.featureSources!.find(source => source.name === 'Elf (TEST)')).toMatchObject({ isGeneralFeatureSource: false, isSpellcastingSource: true, usesWisdom: true });
     first.species!.notes = [{ tag: 'Traits', notes: ['Keep the trait note'], isEditable: false }];
-    first.species!.uses = [{ tag: 'Trait', totalFreeUses: 2, usedFreeUses: 1, freeUsesRegainCondition: 'SHORT_REST_ONE' }];
+    first.species!.uses = [{ tag: 'Trait', total: { kind: 'fixed', value: 2 }, used: 1, freeUsesRegainCondition: 'SHORT_REST_ONE' }];
     const next = previewClassWizard(first, first.creatorWizard!, f.revision, f.index).sheet;
     expect(next.species!.notes).toContainEqual(first.species!.notes[0]);
     expect(next.species!.notes!.find(group => group.tag === 'Choices')!.notes).toEqual(['Casting ability: Wisdom']);

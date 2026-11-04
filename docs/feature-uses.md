@@ -1,40 +1,51 @@
 # Feature uses
 
-`FeatureUsesComponent` in `src/app/sheet/feature-uses.component.ts` displays one
-`FeatureUses` tracker from the portable character model. Sheet and editor callers
-reuse it for features, spells and equipment.
+FeatureUsesComponent displays a portable FeatureUses tracker. Features, species,
+spells, equipment and companions reuse the same component and model.
+
+## Data model
+
+Feature trackers and source resources both store a complete total: UsesTotal
+and a separate used: number counter:
+
+```ts
+{ total: { kind: 'fixed', value: 7 }, used: 2 }
+{ total: { kind: 'ability-modifier', ability: 'wisdom' }, used: 2 }
+{ total: { kind: 'proficiency-bonus', multiplier: 0.5 }, used: 1 }
+```
+
+The fixed value and PB multiplier are required in their respective variants.
+ProficiencyMultiplier permits 0.5 through 4 in steps of 0.5. PB products are
+rounded down. Ability modifiers use the owning character's current ability score,
+with a minimum of zero; PB uses the current character level.
+
+Both editors offer Fixed Value, Proficiency Bonus and Ability Modifier. The Total
+field becomes a Stat or PB Multiplier selector as appropriate. Switching kinds
+preserves spent uses; inactive choices are remembered only during that editing
+session, keeping the saved definition self-contained.
+
+## Compatibility
+
+portableCharacter converts old totalFreeUses, usedFreeUses, numeric resource
+totals and separate totalCalculation objects on a detached copy before validation.
+Missing legacy feature totals default to one, missing consumption to zero, and
+legacy PB calculations without a multiplier to one. Saved and exported documents
+contain only the canonical fields. Migration is idempotent and preserves resource
+wizard fingerprints when the generated definition has not been manually edited.
+Native document projections use the same conversion for retained legacy entries.
 
 ## Inputs and updates
 
-- `uses`: A `FeatureUses` value, or `undefined` for the empty state.
-- `usesUpdated`: Emits `{ usedFreeUses: number; tag?: string }`. The parent applies
-  this update to the corresponding tracker and handles persistence.
+- uses: A FeatureUses value, or undefined for the empty state.
+- character: The owning character for dynamic totals.
+- usesUpdated: Emits { used: number; tag?: string }. The parent applies the
+  update and handles persistence.
 
-`totalFreeUses` defaults to one and `usedFreeUses` defaults to zero. Totals
-can instead follow `totalCalculation`: `{ kind: 'proficiency-bonus' }` or
-`{ kind: 'ability-modifier', ability: 'wisdom' }` (any of the six full ability names).
-`{ kind: 'fixed' }` or an omitted calculation uses the numeric total, preserving
-older documents. The same calculation is available on source resources alongside
-their numeric `total`. Both editors expose these choices explicitly. Calculated
-totals follow the current character level or ability score, with a minimum of zero;
-spent counts and the previous fixed total are preserved when changing the calculation.
-The tracker receives the owning character through its `character` input.
-
-Displayed use counts and emitted updates are bounded between zero and the total. Trackers with
-up to five uses show checkboxes; clicking one marks or clears the contiguous range
-through that slot. Larger trackers show remaining-use controls. The progress bar
-shows consumed uses.
+Displayed counts and emitted updates are bounded between zero and the resolved
+total. Trackers with up to four uses show checkboxes; clicking one marks or clears
+the contiguous range through that slot. Larger trackers show remaining-use
+controls. The progress bar shows consumed uses. A reduced maximum never resets
+the stored consumption. Zero-total trackers display an empty-state message.
 
 The tracker uses the shared recovery indicator and theme tokens. An omitted regain
-condition displays Long Rest, matching the rest service's existing recovery policy.
-Zero-total trackers display an empty-state message.
-
-## Related code
-
-- `src/app/models/character.model.ts`: Persisted `FeatureUses` shape.
-- `src/app/sheet/feature-uses.spec.ts`: Interaction and rendering coverage.
-- `src/app/recovery-indicator.component.ts`: Shared recovery presentation.
-- `src/app/services/rest.service.ts`: Recovery behavior.
-
-Keep visual examples and field definitions in the implementation and tests; this
-guide replaces the older separate usage and visual-reference documents.
+condition displays Long Rest, matching the rest service's recovery policy.

@@ -12,8 +12,7 @@ export interface SourceResource {
   name: string;
   mode: 'counter' | 'note' | 'both';
   note: string;
-  total: number;
-  totalCalculation?: UsesTotal;
+  total: UsesTotal;
   used: number;
   recovery: string;
   features: boolean;
@@ -30,7 +29,7 @@ export interface ResourceCost {
   amount: number;
 }
 export function resourceTotal(resource: SourceResource, sheet?: ExportedCharacter): number {
-  return resolveUsesTotal(resource.totalCalculation, resource.total, sheet?.character);
+  return resolveUsesTotal(resource.total, sheet?.character);
 }
 export function remainingResource(resource: SourceResource, sheet?: ExportedCharacter): number {
   return Math.max(0, resourceTotal(resource, sheet) - resource.used);
@@ -63,7 +62,7 @@ export function spendResource(
     cost.amount <= 0 ||
     !Number.isSafeInteger(pool.used) ||
     pool.used < 0 ||
-    !Number.isSafeInteger(pool.total) ||
+    !Number.isSafeInteger(resourceTotal(pool, sheet)) ||
     remainingResource(pool, sheet) < cost.amount
   )
     return null;
@@ -98,7 +97,7 @@ export function validateResources(sheet: ExportedCharacter): void {
     throw new Error('Invalid resources.');
   const ids = new Set<string>();
   for (const resource of sheet.resources ?? []) {
-    validateUsesTotal(resource?.totalCalculation);
+    validateUsesTotal(resource?.total);
     if (
       !resource ||
       typeof resource.id !== 'string' ||
@@ -109,8 +108,6 @@ export function validateResources(sheet: ExportedCharacter): void {
       !resource.name.trim() ||
       !['counter', 'note', 'both'].includes(resource.mode) ||
       typeof resource.note !== 'string' ||
-      !Number.isSafeInteger(resource.total) ||
-      resource.total < 0 ||
       !Number.isSafeInteger(resource.used) ||
       resource.used < 0 ||
       !RESOURCE_RECOVERY_OPTIONS.some(option => option.value === resource.recovery) ||

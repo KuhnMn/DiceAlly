@@ -310,11 +310,11 @@ export class EquipmentPageComponent {
     );
   }
 
-  updateItemUses(item: any, event: { usedFreeUses: number; tag?: string }) {
+  updateItemUses(item: any, event: { used: number; tag?: string }) {
     if (item.uses) {
       const useEntry = item.uses.find((u: any) => u.tag === event.tag);
       if (useEntry) {
-        useEntry.usedFreeUses = event.usedFreeUses;
+        useEntry.used = event.used;
       }
     }
   }

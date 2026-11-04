@@ -34,7 +34,7 @@ describe('Attached equipment spell snapshots', () => {
       expect(entry.entity?.attachedSpells![0]).toMatchObject({ name: 'Light', source: 'XPHB',
         usageNotes: ['2/day each', '3 charges', 'At will', 'Ritual'], spell: { entries: ['Saved spell description'] } });
       expect(entry.entity?.spellcastingAbilityDescription).toBe('Choose Intelligence or Charisma');
-      entry.notes = [{ notes: ['Keep my note'] }]; entry.uses = [{ totalFreeUses: 3, usedFreeUses: 2 }]; entry.isAttuned = true;
+      entry.notes = [{ notes: ['Keep my note'] }]; entry.uses = [{ total: { kind: 'fixed', value: 3 }, used: 2 }]; entry.isAttuned = true;
       const sheet = emptyBasicCharacter(); sheet.inventory = [entry];
       const repository = new IndexedDbCharacterRepository(); await repository.save(sheet, 0);
       const restored = (await repository.get(sheet.character!.characterUuid!))!.sheet;

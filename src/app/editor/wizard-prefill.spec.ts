@@ -75,7 +75,7 @@ describe('Wizard manual edit override', () => {
   it('replaces a matching manually added feature without duplication and keeps annotations and combat links', () => {
     const original = emptyBasicCharacter();
     original.features = [{ editorId: 'manual', name: 'Gift', source: 'TEST', featureSourceName: 'Mage',
-      notes: [{ tag: 'Notes', notes: ['Keep me'] }], uses: [{ totalFreeUses: 3, usedFreeUses: 2 }] }];
+      notes: [{ tag: 'Notes', notes: ['Keep me'] }], uses: [{ total: { kind: 'fixed', value: 3 }, used: 2 }] }];
     original.combatActions = [{ name: 'Gift action', actionType: 'ACTION', linkedResourceType: 'CLASS_FEATURE', linkedResource: { editorId: 'manual', name: 'Gift' } }];
     const value: PrefillValue = { path: ['features', 'generated'], scope: 'features', label: 'Gift',
       value: { editorId: 'generated', name: 'Gift', source: 'TEST', featureSourceName: 'Mage', userAdded: false } };

@@ -103,7 +103,7 @@ type SpellLevelFilter = 'ALL' | number;
                               @for (use of spell.uses; track $index) {
                                                             <app-feature-uses [character]="characterData()?.character" tone="spells"
                                                               [uses]="use"
-                                                              (usesUpdated)="use.usedFreeUses = $event.usedFreeUses"
+                                                              (usesUpdated)="use.used = $event.used"
                                                             />
                                                           }
                             </div>
@@ -153,8 +153,8 @@ type SpellLevelFilter = 'ALL' | number;
                 <div appHorizontalRow class="grid gap-2 sm:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))]">
                   @for (slot of group.slots; track slot.level) {
                     <app-feature-uses [character]="characterData()?.character" tone="spells" class="max-sm:w-44 only:w-full only:col-span-full" [poolLayout]="true" checkboxNoun="slot" [controlLabel]="group.source + ' level ' + slot.level"
-                      [uses]="{tag:'Level ' + slot.level,totalFreeUses:slot.total,usedFreeUses:spellSlotUsed(group.source,slot),freeUsesRegainCondition:slot.regainCondition}"
-                      (usesUpdated)="setSlotUsed(group.source,slot,$event.usedFreeUses)" />
+                      [uses]="{tag:'Level ' + slot.level,total:{kind:'fixed',value:slot.total},used:spellSlotUsed(group.source,slot),freeUsesRegainCondition:slot.regainCondition}"
+                      (usesUpdated)="setSlotUsed(group.source,slot,$event.used)" />
                   }
                 </div>
               </div>
@@ -314,7 +314,7 @@ type SpellLevelFilter = 'ALL' | number;
                     @if (!isExpanded(spellExpansionId(spell)) && spellView() === 'PREPARED') {
                       <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">
                         @for (use of spell.uses ?? []; track $index) {
-                                                <app-feature-uses [character]="characterData()?.character" tone="spells" [uses]="use" (usesUpdated)="use.usedFreeUses = $event.usedFreeUses" />
+                                                <app-feature-uses [character]="characterData()?.character" tone="spells" [uses]="use" (usesUpdated)="use.used = $event.used" />
                                               }
                       </div>
                     }
@@ -721,12 +721,12 @@ export class SpellsPageComponent {
     return this.expandedItems().has(id);
   }
 
-  updateSpellUses(spell: any, event: { usedFreeUses: number; tag?: string }) {
+  updateSpellUses(spell: any, event: { used: number; tag?: string }) {
     // Find the matching use entry and update it
     if (spell.uses) {
       const useEntry = spell.uses.find((u: any) => u.tag === event.tag);
       if (useEntry) {
-        useEntry.usedFreeUses = event.usedFreeUses;
+        useEntry.used = event.used;
       }
     }
   }

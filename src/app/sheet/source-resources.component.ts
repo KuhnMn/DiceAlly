@@ -24,9 +24,9 @@ import { HorizontalRowDirective } from './horizontal-row.directive';
                   @for (resource of group.resources; track resource.id) {
                     <app-feature-uses [character]="sheet().character" class="max-sm:w-44 only:w-full only:col-span-full" [poolLayout]="true" [tone]="page()" [trackUses]="resource.mode !== 'note'"
                       [note]="resource.mode !== 'counter' ? resource.note : ''"
-                      [uses]="{tag:resource.name,totalFreeUses:resource.total,totalCalculation:resource.totalCalculation,usedFreeUses:resource.used,
+                      [uses]="{tag:resource.name,total:resource.total,used:resource.used,
                         freeUsesRegainCondition:resource.recovery === 'NONE' ? 'MANUAL' : resource.recovery}"
-                      (usesUpdated)="update(resource.id, $event.usedFreeUses)" />
+                      (usesUpdated)="update(resource.id, $event.used)" />
                   }
                 </div>
               </div>

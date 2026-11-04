@@ -47,8 +47,8 @@ export function spellUseTrackers(grants: readonly SpellGrant[], modifiers: Reado
     if (frequency !== 'daily' && frequency !== 'rest') return [];
     return [{
       tag: 'Free Uses',
-      totalFreeUses: resolveSpellUsageCount(String(grant.usage['count']), modifiers),
-      usedFreeUses: 0,
+      total: { kind: 'fixed', value: resolveSpellUsageCount(String(grant.usage['count']), modifiers) },
+      used: 0,
       freeUsesRegainCondition: frequency === 'rest' ? 'SHORT_REST' : 'LONG_REST',
       userAdded: false,
     }];

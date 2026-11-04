@@ -264,13 +264,13 @@ describe('Feature editor', () => {
     notes.addNoteEntry(feature.notes![0]); notes.setNoteEntry(feature.notes![0], 1, 'Second note');
     for (const recovery of ['SHORT_REST', 'SHORT_REST_ONE', 'LONG_REST', 'MANUAL']) {
       notes.addUses(feature); const use = feature.uses!.at(-1)!;
-      use.totalFreeUses = 3; use.usedFreeUses = 2; use.freeUsesRegainCondition = recovery;
+      use.total = { kind: 'fixed', value: 3 }; use.used = 2; use.freeUsesRegainCondition = recovery;
     }
-    feature.uses![0].totalFreeUses = 1;
+    feature.uses![0].total = { kind: 'fixed', value: 1 };
     const repository = new IndexedDbCharacterRepository(); await repository.save(sheet, 0);
     const saved = (await repository.list()).find(entry => entry.id === sheet.character!.characterUuid)!.sheet;
     expect(saved.features![0].notes![0].notes).toEqual(['Remember this', 'Second note']);
-    expect(saved.features![0].uses![0].usedFreeUses).toBe(2);
+    expect(saved.features![0].uses![0].used).toBe(2);
     expect(saved.features![0].featureEntity!.entries).toEqual(['Selected description']);
     editor.revision.set(null); fixture.componentRef.setInput('sheet', saved); await fixture.whenStable();
     expect(editor.selected[0].notes![0].notes[0]).toBe('Remember this');
@@ -285,11 +285,11 @@ describe('Feature editor', () => {
     const editor = fixture.componentInstance; const notes = annotationEditor(editor); editor.selectedSource = 'General'; editor.selectedType = 'FEAT';
     editor.customName = 'Custom feat'; editor.customDescription = 'Private description'; editor.addCustom();
     const feature = sheet.features![0]; expect(feature.featureSourceName).toBe('General');
-    notes.addUses(feature); feature.uses![0].totalFreeUses = 3; feature.uses![0].usedFreeUses = 3;
+    notes.addUses(feature); feature.uses![0].total = { kind: 'fixed', value: 3 }; feature.uses![0].used = 3;
     feature.uses![0].freeUsesRegainCondition = 'SHORT_REST_ONE';
-    TestBed.inject(RestService).performShortRest(sheet); expect(feature.uses![0].usedFreeUses).toBe(2);
+    TestBed.inject(RestService).performShortRest(sheet); expect(feature.uses![0].used).toBe(2);
     feature.uses![0].freeUsesRegainCondition = 'MANUAL';
-    TestBed.inject(RestService).performLongRest(sheet); expect(feature.uses![0].usedFreeUses).toBe(2);
+    TestBed.inject(RestService).performLongRest(sheet); expect(feature.uses![0].used).toBe(2);
     expect(editor.entries(feature)).toEqual([{ text: 'Private description' }]);
   });
 });

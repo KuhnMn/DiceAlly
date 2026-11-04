@@ -6,14 +6,14 @@ import { RestService } from './rest.service';
 describe('Rest reports', () => {
   const sheet = () => ({ character: { characterUuid: 'rest-test', currentHp: 3, maxHp: 10, tempHp: 2,
     spellSlots: { Wizard: [{ level: 1, total: 2, used: 2, regainCondition: 'LONG_REST' }] } },
-    monsters: [{ name: 'Companion', uses: [{ tag: 'Summon', totalFreeUses: 3, usedFreeUses: 2,
+    monsters: [{ name: 'Companion', uses: [{ tag: 'Summon', total: { kind: 'fixed', value: 3 }, used: 2,
       freeUsesRegainCondition: 'SHORT_REST_ONE' }] }],
-    features: [{ name: 'Manual', uses: [{ totalFreeUses: 1, usedFreeUses: 1, freeUsesRegainCondition: 'MANUAL' }] }],
+    features: [{ name: 'Manual', uses: [{ total: { kind: 'fixed', value: 1 }, used: 1, freeUsesRegainCondition: 'MANUAL' }] }],
   }) as ExportedCharacter;
 
   it('restores source resources, reports them and retains manual and reminder pools', () => {
     const character=sheet();
-    character.resources=['SHORT_REST','LONG_REST','NONE'].map((recovery,index)=>({id:String(index),sourceId:'s',name:recovery,mode:'counter' as const,note:'',total:10,used:3,recovery,features:true,spells:false,casting:false,defaultCost:1}));
+    character.resources=['SHORT_REST','LONG_REST','NONE'].map((recovery,index)=>({id:String(index),sourceId:'s',name:recovery,mode:'counter' as const,note:'',total:{ kind: 'fixed', value: 10 },used:3,recovery,features:true,spells:false,casting:false,defaultCost:1}));
     const service=TestBed.inject(RestService);service.performShortRest(character);
     expect(character.resources.map(pool=>pool.used)).toEqual([0,3,3]);expect(service.report()!.changes).toContain('SHORT_REST: 3 restored');
     service.performLongRest(character);expect(character.resources.map(pool=>pool.used)).toEqual([0,0,3]);

@@ -167,12 +167,12 @@ describe('Items creator', () => {
     editor.setCount(item, 3);
     item.isEquipped = true;
     item.notes = [{ tag: 'Contents', notes: ['Rope', 'Chalk'], isEditable: true }];
-    item.uses = [{ tag: 'Charges', totalFreeUses: 4, usedFreeUses: 2, freeUsesRegainCondition: 'SHORT_REST_ONE' }];
+    item.uses = [{ tag: 'Charges', total: { kind: 'fixed', value: 4 }, used: 2, freeUsesRegainCondition: 'SHORT_REST_ONE' }];
     const library = TestBed.inject(CharacterLibraryService);
     await library.save(sheet, 0);
     expect((await library.get(sheet.character!.characterUuid!))!.sheet.inventory).toEqual(sheet.inventory);
     TestBed.inject(RestService).performShortRest(sheet);
-    expect(item.uses[0].usedFreeUses).toBe(1);
+    expect(item.uses[0].used).toBe(1);
     editor.remove(item);
     expect(editor.pendingRemoval).toBe(item);
     expect(sheet.inventory).toHaveLength(1);

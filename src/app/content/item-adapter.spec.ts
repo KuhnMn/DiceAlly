@@ -79,7 +79,7 @@ describe('Canonical item migration', () => {
     const entry = await createInventoryEntry({ get: async (_revision, key) => rows.get(key) }, item, f.revision);
     entry.count = 2; entry.isEquipped = true; entry.isAttuned = true;
     entry.notes = [{ tag: 'Notes', notes: ['Keep this note'] }];
-    entry.uses = [{ tag: 'Uses', totalFreeUses: 3, usedFreeUses: 2, freeUsesRegainCondition: 'LONG_REST' }];
+    entry.uses = [{ tag: 'Uses', total: { kind: 'fixed', value: 3 }, used: 2, freeUsesRegainCondition: 'LONG_REST' }];
     const sheet = emptyBasicCharacter(); sheet.inventory = [entry];
     const document = newCharacter(f.revision); const parent = f.rows.find(r => r.kind === 'class')!;
     document.creation.classes.selections = [{ selectionId: 'fighter', classKey: parent.key, level: 1 }];

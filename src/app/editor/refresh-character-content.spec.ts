@@ -36,7 +36,7 @@ function fixtureData() {
   const monster = record('monster', 'Wolf', { entries: ['Updated wolf'], hp: { average: 12, formula: '2d8+3' }, action: [{ name: 'Bite', entries: ['Updated bite'] }] });
   const reference = (value: ContentRecord) => ({ ...contentReference(value, revision), revisionId: 'old', commit: 'a'.repeat(40) });
   const notes = [{ tag: 'Player note', notes: ['Keep this'], isEditable: true }];
-  const uses = [{ tag: 'Charges', totalFreeUses: 3, usedFreeUses: 2 }];
+  const uses = [{ tag: 'Charges', total: { kind: 'fixed' as const, value: 3 }, used: 2 }];
   const sheet: ExportedCharacter = { ...emptyBasicCharacter(),
     spells: ['KNOWN', 'PREPARED'].map(listType => ({ name: spell.name, source: 'TEST', editorId: listType, listType,
       castingSourceName: 'Wizard', contentReference: reference(spell), notes, uses })),

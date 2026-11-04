@@ -173,7 +173,7 @@ describe('Spell controls', () => {
   it('marks tracked spells as locked without offering an unprepare action', () => {
     const fixture = TestBed.createComponent(SpellsPageComponent);
     fixture.componentRef.setInput('characterData', { character: {}, spells: [
-      { editorId: 'tracked', name: 'Light', listType: 'PREPARED', uses: [{ totalFreeUses: 1, usedFreeUses: 0 }] },
+      { editorId: 'tracked', name: 'Light', listType: 'PREPARED', uses: [{ total: { kind: 'fixed', value: 1 }, used: 0 }] },
     ] });
     fixture.detectChanges();
     const locked = fixture.nativeElement.querySelector('button[aria-label*="cannot be unprepared"]') as HTMLButtonElement;

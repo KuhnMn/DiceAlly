@@ -14,7 +14,7 @@ describe('Linked resource costs in collapsed lists', () => {
 
   it('resolves links by ID in feature and all spell lists and follows edits without spending resources', () => {
     const sheet = emptyBasicCharacter();
-    sheet.resources = [{ id: 'psi', sourceId: 'source', name: 'Psionic Energy', mode: 'counter', note: '', total: 8, used: 2, recovery: 'SHORT_REST', features: true, spells: true }];
+    sheet.resources = [{ id: 'psi', sourceId: 'source', name: 'Psionic Energy', mode: 'counter', note: '', total: { kind: 'fixed', value: 8 }, used: 2, recovery: 'SHORT_REST', features: true, spells: true }];
     const resourceLinks = [{ resourceId: 'psi', amount: 2 }];
     sheet.features = [{ editorId: 'feature', name: 'Psychic Attack', featureType: 'FEAT', source: 'TEST', resourceLinks }];
     sheet.spells = ['PREPARED', 'KNOWN', 'SPELLBOOK'].map(listType => ({ name: 'Psychic Spell', listType, resourceLinks,

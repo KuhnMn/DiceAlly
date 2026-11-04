@@ -37,7 +37,7 @@ describe('Single species editor', () => {
     annotations.setNoteEntry(group, 0, 'First trait'); annotations.setNoteEntry(group, 1, 'Second trait');
     for (const recovery of ['SHORT_REST', 'SHORT_REST_ONE', 'LONG_REST', 'MANUAL']) {
       annotations.addUses(sheet.species!); const use = sheet.species!.uses!.at(-1)!;
-      use.totalFreeUses = 3; use.usedFreeUses = 2; use.freeUsesRegainCondition = recovery;
+      use.total = { kind: 'fixed', value: 3 }; use.used = 2; use.freeUsesRegainCondition = recovery;
     }
     const repository = new IndexedDbCharacterRepository(); await repository.save(sheet, 0);
     const saved = (await repository.list()).find(entry => entry.id === sheet.character!.characterUuid)!.sheet;
@@ -45,9 +45,9 @@ describe('Single species editor', () => {
     fixture.componentRef.setInput('sheet', saved); editor.revision.set(null); editor.results.set([]); fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('First trait'); expect(fixture.nativeElement.textContent).toContain('Species Abilities');
     const rest = TestBed.inject(RestService); rest.performShortRest(saved);
-    expect(saved.species!.uses!.map(use => use.usedFreeUses)).toEqual([0, 1, 2, 2]);
-    rest.performLongRest(saved); expect(saved.species!.uses!.map(use => use.usedFreeUses)).toEqual([0, 0, 0, 2]);
-    saved.species!.uses![0].totalFreeUses = -1; expect(() => validateBasicInfo(saved)).toThrow();
+    expect(saved.species!.uses!.map(use => use.used)).toEqual([0, 1, 2, 2]);
+    rest.performLongRest(saved); expect(saved.species!.uses!.map(use => use.used)).toEqual([0, 0, 0, 2]);
+    saved.species!.uses![0].total = { kind: 'fixed', value: -1 }; expect(() => validateBasicInfo(saved)).toThrow();
   });
 
   it('filters source books and confirms replacement of annotated species without adding extra species', async () => {

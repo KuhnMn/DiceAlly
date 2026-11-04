@@ -108,7 +108,7 @@ export class RestService {
           feature.uses.forEach((use) => {
             const useCondition = use.freeUsesRegainCondition || 'LONG_REST';
             if (useCondition === condition) {
-              use.usedFreeUses = 0;
+              use.used = 0;
             }
           });
         }
@@ -120,7 +120,7 @@ export class RestService {
       character.species.uses.forEach((use) => {
         const useCondition = use.freeUsesRegainCondition || 'LONG_REST';
         if (useCondition === condition) {
-          use.usedFreeUses = 0;
+          use.used = 0;
         }
       });
     }
@@ -132,7 +132,7 @@ export class RestService {
           item.uses.forEach((use) => {
             const useCondition = use.freeUsesRegainCondition || 'LONG_REST';
             if (useCondition === condition) {
-              use.usedFreeUses = 0;
+              use.used = 0;
             }
           });
         }
@@ -152,8 +152,8 @@ export class RestService {
           feature.uses.forEach((use) => {
             if (use.freeUsesRegainCondition === condition) {
               // Restore only 1, not all
-              if (use.usedFreeUses && use.usedFreeUses > 0) {
-                use.usedFreeUses = Math.max(0, (use.usedFreeUses || 0) - 1);
+              if (use.used && use.used > 0) {
+                use.used = Math.max(0, (use.used || 0) - 1);
               }
             }
           });
@@ -165,8 +165,8 @@ export class RestService {
     if (character.species?.uses) {
       character.species.uses.forEach((use) => {
         if (use.freeUsesRegainCondition === condition) {
-          if (use.usedFreeUses && use.usedFreeUses > 0) {
-            use.usedFreeUses = Math.max(0, (use.usedFreeUses || 0) - 1);
+          if (use.used && use.used > 0) {
+            use.used = Math.max(0, (use.used || 0) - 1);
           }
         }
       });
@@ -178,8 +178,8 @@ export class RestService {
         if (item.uses) {
           item.uses.forEach((use) => {
             if (use.freeUsesRegainCondition === condition) {
-              if (use.usedFreeUses && use.usedFreeUses > 0) {
-                use.usedFreeUses = Math.max(0, (use.usedFreeUses || 0) - 1);
+              if (use.used && use.used > 0) {
+                use.used = Math.max(0, (use.used || 0) - 1);
               }
             }
           });
@@ -199,7 +199,7 @@ export class RestService {
           spell.uses.forEach((use) => {
             const useCondition = use.freeUsesRegainCondition || 'LONG_REST';
             if (useCondition === condition) {
-              use.usedFreeUses = 0;
+              use.used = 0;
             }
           });
         }
@@ -217,8 +217,8 @@ export class RestService {
         if (spell.uses) {
           spell.uses.forEach((use) => {
             if (use.freeUsesRegainCondition === condition) {
-              if (use.usedFreeUses && use.usedFreeUses > 0) {
-                use.usedFreeUses = Math.max(0, (use.usedFreeUses || 0) - 1);
+              if (use.used && use.used > 0) {
+                use.used = Math.max(0, (use.used || 0) - 1);
               }
             }
           });
