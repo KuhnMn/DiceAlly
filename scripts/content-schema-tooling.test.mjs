@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { build } from 'esbuild';
 import ts from 'typescript';
 import standaloneCode from 'ajv/dist/standalone/index.js';
-import { createSchemaValidator, validationSchema } from './content-schema-validator.mjs';
+import { createSchemaValidator, validationSchema, compatibleSourceSchema } from './content-schema-validator.mjs';
 import { generateSourceTypes } from './content-schema-types.mjs';
 import { schemaFiles } from './content-schema-config.mjs';
 import * as site from '../src/app/content/generated/site-validators.mjs';
@@ -20,6 +20,19 @@ test('all vendored schema bytes match their reviewed manifest', async () => {
     const bytes = await readFile(`schemas/5etools/${profile}/${file}`);
     assert.equal(createHash('sha256').update(bytes).digest('hex'), info.sha256, `${profile}/${file}`);
   }
+});
+
+test('descriptive prerequisite compatibility preserves snapshots and unrelated enums', async () => {
+  const source = JSON.parse(await readFile('schemas/5etools/site/util.json', 'utf8'));
+  const before = structuredClone(source);
+  const compatible = compatibleSourceSchema(source, 'util.json');
+  const properties = compatible.$defs.prerequisite.items.properties;
+  assert.equal(properties.campaign.items.type, 'string');
+  assert.equal(properties.campaign.items.enum, undefined);
+  assert.equal(properties.membership.items.enum, undefined);
+  assert.deepEqual(properties.proficiency, source.$defs.prerequisite.items.properties.proficiency);
+  assert.deepEqual(source, before);
+  assert.equal(compatibleSourceSchema(source, 'other.json'), source);
 });
 
 test('synthetic pipeline fixtures satisfy each full source schema', () => {

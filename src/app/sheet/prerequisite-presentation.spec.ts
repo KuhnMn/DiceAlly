@@ -1,6 +1,12 @@
 import { preparePrerequisites } from './prerequisite-presentation';
 
 describe('Prerequisite reference display', () => {
+  it('displays unfamiliar campaign and membership values verbatim', () => {
+    const result = preparePrerequisites([{ campaign: ['Future Campaign'], membership: ['Future Order'] }]);
+    expect(result.detailText).toBe('Campaign: Future Campaign AND Member of: Future Order');
+    expect(result.summaryText).toBe(result.detailText);
+  });
+
   it('supports XPHB numeric levels and factors common requirements across alternatives', () => {
     expect(preparePrerequisites([{ level: 4, ability: [{ cha: 13 }] }]).detailText).toBe('Level 4+ AND Charisma 13+');
     expect(preparePrerequisites([{ level: 4, ability: [{ str: 13 }] }, { level: 4, ability: [{ dex: 13 }] }]).detailText)

@@ -15,6 +15,31 @@ describe('Pinned source schema boundary', () => {
     expect(() => coreSchemaName('other/spells.json')).toThrow('No pinned content schema');
   });
 
+  it('accepts future campaign and membership strings unchanged in both profiles', async () => {
+    for (const file of ['feats.json', 'backgrounds.json', 'optionalfeatures.json']) {
+      const value = coreDocumentFixture(file);
+      const kind = Object.keys(value)[0];
+      const records = value[kind] as Record<string, unknown>[];
+      records[0]['prerequisite'] = [{ campaign: ['Forgotten Realms', 'Future Campaign'], membership: ['Future Order'] }];
+      const before = structuredClone(value);
+      await expect(validateCoreDocument(value, file)).resolves.toEqual([]);
+      await expect(validateHomebrewDocument(homebrewDocumentFixture(value), 'future-brew.json')).resolves.toEqual([]);
+      expect(value).toEqual(before);
+    }
+  });
+
+  it('still rejects malformed descriptive prerequisites and invalid mechanics', async () => {
+    for (const field of ['campaign', 'membership']) {
+      for (const invalid of ['Future', [], ['Future', 42], ['Future', 'Future']]) {
+        const value = coreDocumentFixture('feats.json', { feat: [{ name: 'Invalid', source: 'TEST', prerequisite: [{ [field]: invalid }] }] });
+        await expect(validateCoreDocument(value, 'feats.json')).rejects.toThrow('Content validation failed');
+        await expect(validateHomebrewDocument(homebrewDocumentFixture(value), 'invalid-brew.json')).rejects.toThrow('Content validation failed');
+      }
+    }
+    const value = coreDocumentFixture('feats.json', { feat: [{ name: 'Invalid', source: 'TEST', prerequisite: [{ campaign: ['Future'], level: 'four' }] }] });
+    await expect(validateCoreDocument(value, 'feats.json')).rejects.toThrow('Content validation failed');
+  });
+
   it('accepts current spell targeting tags and warns on future optional metadata', async () => {
     const value = coreDocumentFixture('spells/spells-aag.json', { spell: [{ name: 'Air Bubble', source: 'AAG', miscTags: ['SGT', 'WLT', 'ALT'] }] });
     const before = structuredClone(value);

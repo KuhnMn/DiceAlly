@@ -3,6 +3,23 @@ import addFormats from 'ajv-formats';
 import { _ } from 'ajv/dist/compile/codegen/index.js';
 import NP from 'number-precision';
 
+/** Descriptive prerequisites are displayed verbatim, never interpreted as mechanics. */
+export const RAW_PREREQUISITE_FIELDS = ['campaign', 'membership'];
+
+/** Apply the same compatibility policy to source types and every compiled profile.
+ * Keep the vendored bytes intact and retain array shape, uniqueness and item types.
+ */
+export function compatibleSourceSchema(schema, uri) {
+  if (uri.split('/').at(-1) !== 'util.json') return schema;
+  const copy = structuredClone(schema);
+  const properties = copy.$defs?.prerequisite?.items?.properties;
+  for (const field of RAW_PREREQUISITE_FIELDS) {
+    const items = properties?.[field]?.items;
+    if (items?.type === 'string') delete items.enum;
+  }
+  return copy;
+}
+
 /** Equivalent to upstream UtilAjv, including a standalone-compatible multipleOf. */
 export function createSchemaValidator() {
   const ajv = new Ajv2020({ allowUnionTypes: true, inlineRefs: false, loopRequired: 5, loopEnum: 5,

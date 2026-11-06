@@ -3,7 +3,7 @@ import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import standaloneCode from 'ajv/dist/standalone/index.js';
 import { build } from 'esbuild';
-import { createSchemaValidator, validationSchema } from './content-schema-validator.mjs';
+import { createSchemaValidator, validationSchema, compatibleSourceSchema, RAW_PREREQUISITE_FIELDS } from './content-schema-validator.mjs';
 import { generateSourceTypes } from './content-schema-types.mjs';
 import { schemaFiles, kindSchemas, referenceSchemas, snapshotDirectory, generatedDirectory } from './content-schema-config.mjs';
 
@@ -38,7 +38,7 @@ for (const profile of ['site', 'brew']) {
   for (const [file, info] of Object.entries(manifest.profiles[profile])) {
     const bytes = await readFile(path.join(directory, file));
     if (createHash('sha256').update(bytes).digest('hex') !== info.sha256) throw new Error(`Schema checksum mismatch: ${profile}/${file}`);
-    const schema = JSON.parse(bytes);
+    const schema = compatibleSourceSchema(JSON.parse(bytes), info.uri ?? file);
     schemas.set(info.uri ?? file, schema);
     ajv.addSchema(validationSchema(schema, info.uri ?? file), info.uri ?? file);
   }
@@ -69,7 +69,7 @@ await emit('species-validators.d.mts', `import type { SchemaValidator } from './
 // Canonical class/option fields reuse upstream contracts and share their reachable validators.
 const classAjv = createSchemaValidator();
 for (const [file, info] of Object.entries(manifest.profiles.brew)) {
-  const schema = JSON.parse(await readFile(path.join(snapshotDirectory, 'brew', file), 'utf8'));
+  const schema = compatibleSourceSchema(JSON.parse(await readFile(path.join(snapshotDirectory, 'brew', file), 'utf8')), info.uri ?? file);
   const uri = new URL(info.uri ?? file, 'https://ally.local/5etools/brew/').href;
   const qualify = value => {
     if (!value || typeof value !== 'object') return;
@@ -136,7 +136,7 @@ for (const [name, schema] of Object.entries(sharedContracts)) {
 }
 await emitDefaultValidator('monster', monsterContract,
   'schemas/content/monster.json and pinned upstream fields', 'validateMonster');
-const snapshotId = createHash('sha256').update(JSON.stringify({ manifest, referenceSchemas, generatedTables, speciesContract, classContract, characterOptionContract, spellContract, itemContract, monsterContract })).digest('hex');
+const snapshotId = createHash('sha256').update(JSON.stringify({ manifest, rawPrerequisiteFields: RAW_PREREQUISITE_FIELDS, referenceSchemas, generatedTables, speciesContract, classContract, characterOptionContract, spellContract, itemContract, monsterContract })).digest('hex');
 await emit('schema-version.ts', `// Generated from the pinned schema manifest.\nexport const CONTENT_SCHEMA_COMMIT = '${manifest.commit}';\nexport const CONTENT_SCHEMA_PACKAGE_VERSION = '${manifest.packageVersion}';\nexport const CONTENT_SCHEMA_ID = '${snapshotId}';\n`);
 const fileValidators = Object.fromEntries(schemaFiles.map(file => [file, file.replace(/\.json$/, '').replaceAll(/[-/]/g, '_')]));
 Object.assign(fileValidators, { 'generated/gendata-variantrules.json': 'variantrules', 'generated/gendata-tables.json': 'generated_tables' });

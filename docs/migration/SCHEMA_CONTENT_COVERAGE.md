@@ -21,6 +21,14 @@ one externally referenced Plutonium schema, independently pinned in the manifest
 preserve recursive references, unions, requiredness, and schema-permitted open maps.
 Runtime validators enforce constraints TypeScript cannot express.
 
+The snapshot was refreshed to `5etools-utils` 0.17.34, commit
+`64e8ab38231972d8cc1572520978ccea92f17ecb`. A shared compiler policy accepts
+prerequisite `campaign` and `membership` items as raw strings, including future
+names. It applies to site/brew imports, generated types and canonical option
+validation. Values survive storage, export and display unchanged; array shape,
+nonempty/unique requirements and mechanical constraints remain validated. Vendored
+schema files remain verbatim and checksummed.
+
 Large validator `.mjs` files are reproducible build outputs and are ignored by Git.
 Their reviewed hashes and source declarations are checked in. Start/build/watch/test
 hooks generate them from the local snapshot; `schemas:check` verifies both the

@@ -3,7 +3,7 @@
 	"$id": "util.json",
 	"title": "Util",
 	"description": "Utility definitions to be used in other schemas.",
-	"version": "1.19.7",
+	"version": "1.19.11",
 	"$defs": {
 		"metaDependenciesArray": {
 			"type": "array",
@@ -2344,6 +2344,21 @@
 											"uniqueItems": true
 										}
 									]
+								},
+								"tool": {
+									"oneOf": [
+										{
+											"const": true
+										},
+										{
+											"type": "array",
+											"items": {
+												"$ref": "#/$defs/toolNameLower"
+											},
+											"minItems": 1,
+											"uniqueItems": true
+										}
+									]
 								}
 							},
 							"additionalProperties": false
@@ -2385,7 +2400,8 @@
 								"Dragonlance",
 								"Planescape",
 								"Eberron",
-								"Ravenloft"
+								"Ravenloft",
+								"World of Warcraft"
 							]
 						},
 						"uniqueItems": true,
@@ -2470,7 +2486,8 @@
 				"ooze",
 				"plant",
 				"undead",
-				"vehicle"
+				"vehicle",
+				"special"
 			]
 		},
 		"alignment": {
@@ -3081,7 +3098,9 @@
 				"Wild Shape",
 				"Sorcery Point",
 				"Arcane Shot",
-				"Focus Point"
+				"Focus Point",
+				"Rage",
+				"Soul Fragment"
 			]
 		},
 		"_consumesObjectBase": {

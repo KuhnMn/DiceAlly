@@ -1,7 +1,7 @@
 {
   "repository": "git+https://github.com/TheGiddyLimit/5etools-utils.git",
-  "commit": "f2d995e92069a64f4e617b64e48e55d40f64a157",
-  "packageVersion": "0.17.24",
+  "commit": "64e8ab38231972d8cc1572520978ccea92f17ecb",
+  "packageVersion": "0.17.34",
   "license": "MIT",
   "profiles": {
     "site": {
@@ -18,8 +18,8 @@
         "sha256": "18e40e53ee604211ca79b6d8b6dd209ee26fe899742ae1b1dc15c8a8de0abb3e"
       },
       "bestiary/bestiary.json": {
-        "version": "1.21.63",
-        "sha256": "a839162a36b312e4bb868acc2ca93222196435835851159a492de5e97b79cc74"
+        "version": "1.21.67",
+        "sha256": "315abf3309150e20a0c5a2128e56ad921f668c94b19f0f0453eb511a69e4ebd3"
       },
       "bestiary/index.json": {
         "version": "1.0.0",
@@ -38,8 +38,8 @@
         "sha256": "fd042739fc57e2d3c2d958a69489bb80b54c785df388ae66fcf41e43125e90ea"
       },
       "class/class.json": {
-        "version": "2.13.2",
-        "sha256": "06bc839dcc0adf402f675e6219f0e32ad1930202fecb6536b0e325430f9109ea"
+        "version": "2.13.5",
+        "sha256": "7dc8c4ed54840560a778a645c0ac543c8dcd1d3904c270d12e1ba392ac868c52"
       },
       "class/index.json": {
         "version": "1.0.0",
@@ -126,8 +126,8 @@
         "sha256": "db4d251e087e43ca0717d8c93d241c3dd9b7c8809551003c34029cb2fe0ecc9e"
       },
       "spells/sources.json": {
-        "version": "1.0.1",
-        "sha256": "c25e30dac18545581291edd7ec6aa11ea1df42122816c2cdea47d959f7b3b786"
+        "version": "1.0.2",
+        "sha256": "bc97909d84bd01892962da487e5b91980d451b9d0d4efa42233d72b7f1e2a807"
       },
       "spells/spells.json": {
         "version": "1.9.29",
@@ -154,8 +154,8 @@
         "sha256": "81f3bb1baa20e0ae44f47e15f849ee99e059719bd50623a76a3f0facc3607763"
       },
       "util-foundry.json": {
-        "version": "1.2.1",
-        "sha256": "70f4e9c0f22f1cda40d28634647abf447520363c4d97b23b03232fd7571bbc95"
+        "version": "1.3.1",
+        "sha256": "7520e274eed1a516ab4f76c8b8081673b725ab66fd766c695dab20eee0613640"
       },
       "util-meta.json": {
         "version": "1.0.0",
@@ -170,8 +170,8 @@
         "sha256": "f7848d2570eda5b5f2a8e855f8fd32f7f817cdb80796eaa2ad4cc747c378d271"
       },
       "util.json": {
-        "version": "1.19.7",
-        "sha256": "c5b3dcd219b2914d7e3f30f98f7a7c09fd72806a5beed908f5625a0f6a0409c2"
+        "version": "1.19.11",
+        "sha256": "b701ddda2c5d1519ac1af608ca3010c455bd8f552547277a2afbfc28c0db3939"
       },
       "variantrules.json": {
         "version": "1.2.0",
@@ -179,7 +179,7 @@
       },
       "vehicles.json": {
         "version": "1.10.2",
-        "sha256": "7e7031a60b9d91d995607073e3865bdc29136cb85ee694b90a3650edc42f5de6"
+        "sha256": "385aa147cd2b452494728a79586482ad8ecec0d17e813410f70195df2d6313db"
       }
     },
     "brew": {
@@ -188,8 +188,8 @@
         "sha256": "94bbe124ef77139d199dfeafb5f4a9cddc13b1fcff2044fb172e4ac4f33f07f6"
       },
       "adventures.json": {
-        "version": "1.10.37",
-        "sha256": "9c7d44e98c9d26bef5e125e73bbe2eb98cf1cd088062bbad0525b7602d5a3ba4"
+        "version": "1.10.38",
+        "sha256": "8ea2b6aa2f37f936d26cecb8d0ace7e30f5f84a84fdbdee906b6c521ad439f66"
       },
       "backgrounds.json": {
         "version": "1.3.15",
@@ -200,8 +200,8 @@
         "sha256": "2d9d18728404b90877e1f7a417da38856cff06a811100596b21d764bfe883e0a"
       },
       "bestiary/bestiary.json": {
-        "version": "1.21.63",
-        "sha256": "4c5453fc0bcd33751fb4c8bfc117bcd8706705c4341391eef10f96c6ca24d0fa"
+        "version": "1.21.67",
+        "sha256": "0bbe3dcab008316418b399945950c764e175fa1d3282cd001152788519870611"
       },
       "bestiary/fluff-bestiary.json": {
         "version": "2.0.0",
@@ -236,8 +236,8 @@
         "sha256": "5a484f5f850b8560db7452da9318240773a2567ffd49ccf5b01e801087f36f0b"
       },
       "class/class.json": {
-        "version": "2.13.2",
-        "sha256": "047fe10a5b5419cb33dbf3be96bda0ef958ce3274716b9f9ad486246b20d14ce"
+        "version": "2.13.5",
+        "sha256": "e4777a9dd7d2059b5859ba65fe0f393891369cbfe9eb408b5e105277e92aa51e"
       },
       "class/fluff-class.json": {
         "version": "1.0.2",
@@ -495,8 +495,8 @@
         "sha256": "173c3dd313cfdbdc3ee2b3dc9aeb3a36917e2fe025050075de248a1927f7388b"
       },
       "spells/sources.json": {
-        "version": "1.0.1",
-        "sha256": "c25e30dac18545581291edd7ec6aa11ea1df42122816c2cdea47d959f7b3b786"
+        "version": "1.0.2",
+        "sha256": "bc97909d84bd01892962da487e5b91980d451b9d0d4efa42233d72b7f1e2a807"
       },
       "spells/spells.json": {
         "version": "1.9.29",
@@ -523,8 +523,8 @@
         "sha256": "81f3bb1baa20e0ae44f47e15f849ee99e059719bd50623a76a3f0facc3607763"
       },
       "util-foundry.json": {
-        "version": "1.2.1",
-        "sha256": "80bc0066620a743c9d2da77e2255f602ebfca42ab1a12bd45d5775518788d8fd"
+        "version": "1.3.1",
+        "sha256": "25befc8e6b3a14446279109e9b62486b58e6e0e3dc7fc72ed9fea4855ae9afd9"
       },
       "util-meta.json": {
         "version": "1.0.0",
@@ -539,8 +539,8 @@
         "sha256": "d25a12019ee6e64da7861fda762f2876c284736e1822e6d544d6358434d6c46c"
       },
       "util.json": {
-        "version": "1.19.7",
-        "sha256": "c3f1d4c43cc8291a64e47fc6bc2e7e0fb1a479a3ebef2e596d7be72b8cf027e0"
+        "version": "1.19.11",
+        "sha256": "f0b9d5e576ab8f50220c53286d3af0e119de6e8ff957d70242bafec0a3893625"
       },
       "variantrules.json": {
         "version": "1.2.0",
@@ -548,7 +548,7 @@
       },
       "vehicles.json": {
         "version": "1.10.2",
-        "sha256": "ab01c58b21f1cdba202572945dbc7499f18994406c6068d1ef715b113fd620ed"
+        "sha256": "4f9e003485e9e5476982b385b0e186a64519c5b9ec953d56be7f43bb36376c1b"
       }
     }
   }

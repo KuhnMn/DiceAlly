@@ -1,6 +1,6 @@
 {
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
-	"version": "2.13.2",
+	"version": "2.13.5",
 	"$id": "class.json",
 	"type": "object",
 	"$defs": {
@@ -899,6 +899,9 @@
 						"additionalSpells": {
 							"$ref": "../util-additionalspells.json#/$defs/additionalSpellsArray"
 						},
+						"_versions": {
+							"$ref": "../util-copy.json#/$defs/versionsArray"
+						},
 						"hasFluff": {
 							"const": true
 						},
@@ -1112,6 +1115,9 @@
 						},
 						"additionalSpells": {
 							"$ref": "../util-additionalspells.json#/$defs/additionalSpellsArray"
+						},
+						"_versions": {
+							"$ref": "../util-copy.json#/$defs/versionsArray"
 						},
 						"hasFluff": {
 							"const": true
@@ -1327,6 +1333,9 @@
 				"additionalSpells": {
 					"$ref": "../util-additionalspells.json#/$defs/additionalSpellsArray"
 				},
+				"_versions": {
+					"$ref": "../util-copy.json#/$defs/versionsArray"
+				},
 				"hasFluff": {
 					"const": true
 				},
@@ -1525,6 +1534,18 @@
 						"reprintedAs": {
 							"$ref": "../util.json#/$defs/reprintedAs"
 						},
+						"reskinOf": {
+							"$ref": "../util.json#/$defs/reprintedAs"
+						},
+						"includeSubclassesFrom": {
+							"type": "array",
+							"items": {
+								"type": "string",
+								"minLength": 1
+							},
+							"minItems": 1,
+							"uniqueItems": true
+						},
 						"classGroup": {
 							"type": "array",
 							"items": {
@@ -1538,6 +1559,9 @@
 							}
 						},
 						"isSidekick": {
+							"const": true
+						},
+						"isHero": {
 							"const": true
 						},
 						"hd": {
@@ -1729,6 +1753,9 @@
 						},
 						"additionalSpells": {
 							"$ref": "../util-additionalspells.json#/$defs/additionalSpellsArray"
+						},
+						"_versions": {
+							"$ref": "../util-copy.json#/$defs/versionsArray"
 						},
 						"hasFluff": {
 							"const": true
@@ -1803,6 +1830,18 @@
 						"reprintedAs": {
 							"$ref": "../util.json#/$defs/reprintedAs"
 						},
+						"reskinOf": {
+							"$ref": "../util.json#/$defs/reprintedAs"
+						},
+						"includeSubclassesFrom": {
+							"type": "array",
+							"items": {
+								"type": "string",
+								"minLength": 1
+							},
+							"minItems": 1,
+							"uniqueItems": true
+						},
 						"classGroup": {
 							"type": "array",
 							"items": {
@@ -1816,6 +1855,9 @@
 							}
 						},
 						"isSidekick": {
+							"const": true
+						},
+						"isHero": {
 							"const": true
 						},
 						"hd": {
@@ -2007,6 +2049,9 @@
 						},
 						"additionalSpells": {
 							"$ref": "../util-additionalspells.json#/$defs/additionalSpellsArray"
+						},
+						"_versions": {
+							"$ref": "../util-copy.json#/$defs/versionsArray"
 						},
 						"hasFluff": {
 							"const": true
@@ -2084,6 +2129,18 @@
 				"reprintedAs": {
 					"$ref": "../util.json#/$defs/reprintedAs"
 				},
+				"reskinOf": {
+					"$ref": "../util.json#/$defs/reprintedAs"
+				},
+				"includeSubclassesFrom": {
+					"type": "array",
+					"items": {
+						"type": "string",
+						"minLength": 1
+					},
+					"minItems": 1,
+					"uniqueItems": true
+				},
 				"classGroup": {
 					"type": "array",
 					"items": {
@@ -2097,6 +2154,9 @@
 					}
 				},
 				"isSidekick": {
+					"const": true
+				},
+				"isHero": {
 					"const": true
 				},
 				"hd": {
@@ -2288,6 +2348,9 @@
 				},
 				"additionalSpells": {
 					"$ref": "../util-additionalspells.json#/$defs/additionalSpellsArray"
+				},
+				"_versions": {
+					"$ref": "../util-copy.json#/$defs/versionsArray"
 				},
 				"hasFluff": {
 					"const": true

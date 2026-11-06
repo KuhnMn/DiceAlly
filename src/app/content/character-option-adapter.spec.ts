@@ -34,6 +34,15 @@ function fixture() {
 }
 
 describe('Character option migration', () => {
+  it('retains unfamiliar descriptive prerequisites through canonical storage and export', () => {
+    const prerequisite = [{ campaign: ['Future Campaign'], membership: ['Future Order'] }];
+    const source = mapContent({ feat: [{ name: 'Future Feat', source: 'TEST', entries: [], prerequisite }] }, 'feats.json').records[0];
+    const canonical = canonicalCharacterOption(source);
+    expect(canonical.characterOption.prerequisites).toEqual(prerequisite);
+    expect(characterOptionSourceData(canonical)['prerequisite']).toEqual(prerequisite);
+    expect(source.data['prerequisite']).toEqual(prerequisite);
+  });
+
   it('moves existing selection fields without duplicating them or changing ability metadata and descriptions', () => {
     const f = fixture(); const source = f.raw.find(r => r.kind === 'feat')!;
     expect(f.feat.characterOption).toMatchObject({ version: 1, kind: 'feat', category: 'G', prerequisites: source.data['prerequisite'] });

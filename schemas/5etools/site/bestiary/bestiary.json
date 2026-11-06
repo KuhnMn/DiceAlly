@@ -1,6 +1,6 @@
 {
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
-	"version": "1.21.63",
+	"version": "1.21.67",
 	"title": "Bestiary Schema",
 	"$id": "bestiary.json",
 	"type": "object",
@@ -176,6 +176,9 @@
 										}
 									]
 								},
+								"typeHidden": {
+									"const": true
+								},
 								"swarmSize": {
 									"$ref": "../util.json#/$defs/size",
 									"description": "Size of the individual creatures that make up the swarm.",
@@ -266,6 +269,9 @@
 						}
 					]
 				},
+				"typeNote": {
+					"type": "string"
+				},
 				"source": {
 					"$ref": "../util.json#/$defs/source"
 				},
@@ -311,6 +317,9 @@
 								},
 								"formula": {
 									"type": "string"
+								},
+								"isTemporary": {
+									"const": true
 								}
 							},
 							"required": [
@@ -324,6 +333,9 @@
 							"properties": {
 								"special": {
 									"type": "string"
+								},
+								"isTemporary": {
+									"const": true
 								}
 							},
 							"required": [
@@ -529,6 +541,9 @@
 									}
 								}
 							}
+						},
+						"special": {
+							"$ref": "../entry.json"
 						}
 					},
 					"additionalProperties": false,
@@ -1171,7 +1186,9 @@
 							"planar, pandemonium",
 							"planar, limbo",
 							"planar, mechanus",
-							"planar, outlands"
+							"planar, outlands",
+							"planar, emerald dream",
+							"planar, twisting nether"
 						]
 					}
 				},
@@ -1566,6 +1583,9 @@
 												}
 											]
 										},
+										"typeHidden": {
+											"const": true
+										},
 										"swarmSize": {
 											"$ref": "../util.json#/$defs/size",
 											"description": "Size of the individual creatures that make up the swarm.",
@@ -1656,6 +1676,9 @@
 								}
 							]
 						},
+						"typeNote": {
+							"type": "string"
+						},
 						"source": {
 							"$ref": "../util.json#/$defs/source"
 						},
@@ -1701,6 +1724,9 @@
 										},
 										"formula": {
 											"type": "string"
+										},
+										"isTemporary": {
+											"const": true
 										}
 									},
 									"required": [
@@ -1714,6 +1740,9 @@
 									"properties": {
 										"special": {
 											"type": "string"
+										},
+										"isTemporary": {
+											"const": true
 										}
 									},
 									"required": [
@@ -1919,6 +1948,9 @@
 											}
 										}
 									}
+								},
+								"special": {
+									"$ref": "../entry.json"
 								}
 							},
 							"additionalProperties": false,
@@ -2561,7 +2593,9 @@
 									"planar, pandemonium",
 									"planar, limbo",
 									"planar, mechanus",
-									"planar, outlands"
+									"planar, outlands",
+									"planar, emerald dream",
+									"planar, twisting nether"
 								]
 							}
 						},
@@ -2961,6 +2995,9 @@
 												}
 											]
 										},
+										"typeHidden": {
+											"const": true
+										},
 										"swarmSize": {
 											"$ref": "../util.json#/$defs/size",
 											"description": "Size of the individual creatures that make up the swarm.",
@@ -3051,6 +3088,9 @@
 								}
 							]
 						},
+						"typeNote": {
+							"type": "string"
+						},
 						"source": {
 							"$ref": "../util.json#/$defs/source"
 						},
@@ -3096,6 +3136,9 @@
 										},
 										"formula": {
 											"type": "string"
+										},
+										"isTemporary": {
+											"const": true
 										}
 									},
 									"required": [
@@ -3109,6 +3152,9 @@
 									"properties": {
 										"special": {
 											"type": "string"
+										},
+										"isTemporary": {
+											"const": true
 										}
 									},
 									"required": [
@@ -3314,6 +3360,9 @@
 											}
 										}
 									}
+								},
+								"special": {
+									"$ref": "../entry.json"
 								}
 							},
 							"additionalProperties": false,
@@ -3956,7 +4005,9 @@
 									"planar, pandemonium",
 									"planar, limbo",
 									"planar, mechanus",
-									"planar, outlands"
+									"planar, outlands",
+									"planar, emerald dream",
+									"planar, twisting nether"
 								]
 							}
 						},
