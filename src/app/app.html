@@ -17,6 +17,10 @@
     <app-sync-status [compact]="sheetOpen()" (signOut)="signOut()" />
   }
 
+  @if (contentImports.busy()) {
+    <app-content-import-status class="global-import-status" />
+  }
+
   @if (navigation.loading()) {
     <p class="mx-3 mb-3 rounded-lg bg-surface-container px-3 py-2 text-sm text-on-surface-variant" role="status" aria-live="polite">Loading page…</p>
   }

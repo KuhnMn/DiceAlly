@@ -1,3 +1,5 @@
+import { ContentImportService } from './content/content-import.service';
+import { ContentImportStatusComponent } from './content/content-import-status.component';
 import { NavigationLoadingService } from './loading/navigation-loading.service';
 import { AppDialogComponent } from './app-dialog.component';
 import { AppDialogService } from './services/app-dialog.service';
@@ -16,7 +18,7 @@ import { version as appVersion } from '../../package.json';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, NgOptimizedImage, AppDialogComponent, SyncStatusComponent],
+  imports: [ContentImportStatusComponent, RouterOutlet, NgOptimizedImage, AppDialogComponent, SyncStatusComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,6 +26,7 @@ import { version as appVersion } from '../../package.json';
 })
 export class App {
   readonly version = appVersion;
+  readonly contentImports = inject(ContentImportService);
   readonly navigation = inject(NavigationLoadingService);
   readonly account = inject(AccountService);
   readonly sync = inject(CharacterSyncService);

@@ -92,3 +92,12 @@
 	outline-offset: 2px;
 	border-radius: 4px;
 }
+
+.global-import-status {
+  position: sticky;
+  top: .5rem;
+  z-index: 30;
+  width: calc(100% - 1.5rem);
+  max-width: 968px;
+  margin: .75rem auto 0;
+}

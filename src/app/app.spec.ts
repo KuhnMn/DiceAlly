@@ -1,3 +1,6 @@
+import { ContentImportComponent } from './content/content-import.component';
+import { IndexedDbContentCache } from './content/content-cache';
+import { DEFAULT_CONTENT_SOURCE } from './content/content.model';
 import { TestBed } from '@angular/core/testing';
 import { App } from './app';
 import { provideRouter } from '@angular/router';
@@ -52,4 +55,73 @@ describe('App', () => {
     await fixture.componentInstance.signOut();
     expect(signOut).not.toHaveBeenCalled();
   });
+  it('keeps importing and displaying live progress across routes, including returning to Game Data', async () => {
+    class FakeWorker {
+      static instances: FakeWorker[] = [];
+      postMessage = vi.fn();
+      terminate = vi.fn();
+      onmessage: ((event: MessageEvent) => void) | null = null;
+      onerror: (() => void) | null = null;
+      constructor() { FakeWorker.instances.push(this); }
+      receive(data: unknown) { this.onmessage?.({ data } as MessageEvent); }
+    }
+    vi.stubGlobal('Worker', FakeWorker);
+    vi.stubGlobal('indexedDB', {});
+    vi.spyOn(IndexedDbContentCache.prototype, 'savedSource').mockResolvedValue(DEFAULT_CONTENT_SOURCE);
+    vi.spyOn(IndexedDbContentCache.prototype, 'saveSource').mockResolvedValue();
+    const recover = vi.spyOn(IndexedDbContentCache.prototype, 'recover').mockResolvedValue(0);
+    vi.spyOn(IndexedDbContentCache.prototype, 'active').mockResolvedValue(undefined);
+    vi.spyOn(IndexedDbContentCache.prototype, 'revisions').mockResolvedValue([]);
+    try {
+      const fixture = TestBed.createComponent(App);
+      const router = TestBed.inject(Router);
+      router.resetConfig([
+        { path: 'content', component: ContentImportComponent },
+        { path: '**', component: RoutePlaceholder },
+      ]);
+      fixture.detectChanges();
+      await router.navigateByUrl('/content');
+      await fixture.whenStable();
+      const state = fixture.componentInstance.contentImports;
+      await state.start();
+      const worker = FakeWorker.instances[0];
+      expect(state.importing()).toBe(true);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelectorAll('[aria-label="Import status"]')).toHaveLength(1);
+      for (const route of ['/compendium', '/characters/hero', '/content']) {
+        await router.navigateByUrl(route);
+        worker.receive({ type: 'progress', progress: { phase: 'download', completed: 3, total: 10, records: 42, bytes: 1048576, file: 'spells/test.json' } });
+        fixture.detectChanges();
+        const header = fixture.nativeElement.querySelector('.global-import-status');
+        expect(header.textContent).toContain('Downloading Files');
+        expect(header.textContent).toContain('3 / 10');
+        expect(header.textContent).toContain('42 records');
+        expect(header.querySelector('progress').value).toBe(3);
+        expect(worker.terminate).not.toHaveBeenCalled();
+        expect(worker.postMessage).toHaveBeenCalledTimes(1);
+        expect(state.busy()).toBe(true);
+      }
+      expect(recover).toHaveBeenCalledTimes(1);
+      expect(FakeWorker.instances).toHaveLength(1);
+      // Cancellation remains an explicit action in the persistent header.
+      await router.navigateByUrl('/compendium');
+      fixture.detectChanges();
+      fixture.nativeElement.querySelector('.global-import-status button').click();
+      expect(worker.postMessage).toHaveBeenLastCalledWith({ action: 'cancel' });
+      worker.receive({ type: 'error', message: 'Import cancelled.' });
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(state.busy()).toBe(false);
+      expect(state.importing()).toBe(false);
+      expect(worker.terminate).toHaveBeenCalledOnce();
+      expect(fixture.nativeElement.querySelector('.global-import-status')).toBeNull();
+      await router.navigateByUrl('/content');
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Import cancelled.');
+    } finally {
+      vi.restoreAllMocks();
+      vi.unstubAllGlobals();
+    }
+  });
+
 });

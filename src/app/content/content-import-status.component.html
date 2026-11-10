@@ -1,0 +1,20 @@
+<section class="import-status-bar mb-4" aria-label="Import status" [attr.aria-busy]="state.importing()">
+    <div class="flex items-center gap-3">
+      <span class="status-indicator shrink-0" [class.status-indicator-active]="state.busy()" aria-hidden="true"></span>
+      <div class="min-w-0 grow">
+        <p role="status" aria-live="polite" class="text-sm font-medium">{{ state.importing() ? 'Importing Game Data' : state.busy() ? 'Checking Game Data...' : state.message() || (state.revision() ? 'Game data is ready.' : 'Ready to import game data.') }}</p>
+        @if (state.importing() && state.progress(); as p) {
+          <p class="text-xs text-on-surface-variant mt-1">{{ state.phaseLabel(p.phase) }}@if (p.total > 0) { &middot; {{ p.completed }} / {{ p.total }} } &middot; {{ p.records }} records &middot; {{ state.mb(p.bytes) }} MB</p>
+          @if (p.file) { <p class="text-xs text-on-surface-variant truncate mt-1" [title]="p.file">{{ p.file }}</p> }
+        }
+      </div>
+      @if (state.importing()) { <button type="button" (click)="state.cancel()" class="secondary-button shrink-0">Cancel</button> }
+    </div>
+    @if (state.importing()) {
+      @if (state.progress(); as p) {
+        <progress class="import-progress" [attr.value]="p.total > 0 ? p.completed : null" [attr.max]="p.total > 0 ? p.total : 1" aria-label="Current import phase"></progress>
+      } @else {
+        <progress class="import-progress" aria-label="Starting import"></progress>
+      }
+    }
+  </section>
