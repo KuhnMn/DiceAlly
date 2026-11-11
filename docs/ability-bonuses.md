@@ -46,7 +46,9 @@ content cannot immediately reapply; content-free sources retain no bonus entry.
 Re-enabling from the owning feature/background starts a fresh configuration.
 Definition overrides are authored state,
 not edits to cached library content. The source editor offers +2 to one ability,
-+1 to two abilities, or fixed custom changes and a maximum. Every feature can
++1 to two abilities, or fixed custom changes. Every manual configuration has a
+compact maximum score input (1–30) beside Bonus Type; content maxima remain read-only.
+Every feature can
 be configured manually. Only sources with structured content
 bonuses start with an active content suggestion; content-free sources start at
 No bonus, including class ASI entries and feats named Ability Score Improvement.
@@ -75,8 +77,9 @@ Uses and Notes, without another Configure Bonus disclosure. A compact plus icon
 beside the feature name indicates configured bonuses, with details in its tooltip,
 rather than showing bonus values among the source tags. Feature detail dialogs
 place applied bonus cards after the description so separators divide content.
-Backgrounds additionally offer +1 to three distinct abilities and +2 / +1 to two
-distinct abilities, storing explicit uniform or weighted definitions.
+Backgrounds offer only +1 to three distinct abilities and +2 / +1 to two
+distinct abilities as manual distributions, storing explicit uniform or weighted
+definitions. No bonus and From Content remain available where applicable.
 Backgrounds use the same Stat Bonuses tool and panel as features, with the
 Bonus Type selector shown directly; custom sources omit From Content,
 and No bonus hides all allocation fields. Incomplete-choice prompts are omitted.

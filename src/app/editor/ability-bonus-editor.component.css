@@ -48,11 +48,19 @@
   gap: .375rem;
 }
 .bonus-maximum {
+  width: 4.5rem;
+}
+.bonus-configuration {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: end;
   gap: .5rem;
-  font-size: .75rem;
+}
+.bonus-configuration .bonus-config-field {
+  flex: 1;
+  min-width: 0;
+}
+.bonus-configuration .bonus-maximum {
+  flex-shrink: 0;
 }
 .bonus-note {
   font-size: .75rem;

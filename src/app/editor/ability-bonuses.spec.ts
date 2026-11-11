@@ -82,6 +82,7 @@ describe('Ability bonuses in editor, viewer and saved characters', () => {
     const background = fixture.debugElement.queryAll(By.directive(AbilityBonusEditorComponent)).find(entry =>
       entry.componentInstance.sourceId() === backgroundBonusSourceId(host.sheet.background!))!;
     const selects = background.nativeElement.querySelectorAll('[aria-label="Ability allocation"] select') as NodeListOf<HTMLSelectElement>;
+    expect(background.nativeElement.querySelector('.bonus-maximum')).toBeNull();
     selects[0].value = 'wis'; selects[0].dispatchEvent(new Event('change')); await fixture.whenStable();
     expect(host.sheet.character!.abilityScores!.wisdom).toBe(10);
     expect(selects[1].querySelector<HTMLOptionElement>('option[value="wis"]')!.disabled).toBe(true);
@@ -174,7 +175,8 @@ describe('Ability bonuses in editor, viewer and saved characters', () => {
     expect(type.value).toBe('none');
     expect(type.querySelector('option[value="content"]')).toBeNull();
     expect(root.textContent).not.toContain('Add Stat Bonus');
-    type.value = 'two'; type.dispatchEvent(new Event('change')); await fixture.whenStable();
+    expect([...type.options].map(option => option.value)).toEqual(['none', 'three', 'two-one']);
+    type.value = 'two-one'; type.dispatchEvent(new Event('change')); await fixture.whenStable();
     expect(root.querySelector('[aria-label="Ability allocation"]')).not.toBeNull();
     type.value = 'none'; type.dispatchEvent(new Event('change')); await fixture.whenStable();
     expect(root.querySelector('[aria-label="Ability allocation"]')).toBeNull();
@@ -184,6 +186,59 @@ describe('Ability bonuses in editor, viewer and saved characters', () => {
     expect(sheet.abilityBonuses!.choices[id]).toBeUndefined();
     fixture.destroy();
   });
+
+  for (const preset of ['one', 'two', 'fixed', 'three', 'two-one']) {
+    it(`edits and retains the maximum for the ${preset} manual bonus`, async () => {
+      const sheet = emptyBasicCharacter();
+      const isBackground = preset === 'three' || preset === 'two-one';
+      sheet.background = { name: 'Custom background' };
+      sheet.features = [{ editorId: 'custom', name: 'Custom feature' }];
+      sheet.abilityBonuses!.base.strength = 20;
+      const sourceId = isBackground ? backgroundBonusSourceId(sheet.background) : featureBonusSourceId(sheet.features[0]);
+      const fixture = TestBed.createComponent(AbilityBonusEditorComponent);
+      fixture.componentRef.setInput('sheet', sheet);
+      fixture.componentRef.setInput('sourceId', sourceId);
+      fixture.componentRef.setInput('inlineConfiguration', true);
+      fixture.componentInstance.edited.subscribe(() => applyAbilityBonuses(fixture.componentInstance.sheet()));
+      await fixture.whenStable();
+      const root = fixture.nativeElement as HTMLElement;
+      const type = root.querySelector<HTMLSelectElement>('.bonus-config-field select')!;
+      type.value = preset; type.dispatchEvent(new Event('change')); await fixture.whenStable();
+      if (preset === 'fixed') {
+        const strength = root.querySelector<HTMLInputElement>('[aria-label="Fixed ability bonuses"] input')!;
+        strength.value = '2'; strength.dispatchEvent(new Event('input')); await fixture.whenStable();
+      } else {
+        const choices = root.querySelectorAll<HTMLSelectElement>('[aria-label="Ability allocation"] select');
+        for (const [index, choice] of [...choices].entries()) {
+          choice.value = ['str', 'dex', 'con'][index]; choice.dispatchEvent(new Event('change')); await fixture.whenStable();
+        }
+      }
+      expect(sheet.character!.abilityScores!.strength).toBe(20);
+      const maximum = root.querySelector<HTMLInputElement>('.bonus-maximum input')!;
+      maximum.value = '24'; maximum.dispatchEvent(new Event('input')); await fixture.whenStable();
+      const expected = preset === 'two' || preset === 'three' ? 21 : 22;
+      expect(sheet.character!.abilityScores!.strength).toBe(expected);
+      for (const invalid of ['0', '31', '22.5']) {
+        maximum.value = invalid; maximum.dispatchEvent(new Event('input')); await fixture.whenStable();
+        expect(sheet.abilityBonuses!.custom[sourceId][0].maximum).toBe(24);
+        expect(sheet.character!.abilityScores!.strength).toBe(expected);
+      }
+      fixture.destroy();
+      const restored = structuredClone(sheet);
+      const reloaded = TestBed.createComponent(AbilityBonusEditorComponent);
+      reloaded.componentRef.setInput('sheet', restored);
+      reloaded.componentRef.setInput('sourceId', sourceId);
+      reloaded.componentRef.setInput('inlineConfiguration', true);
+      reloaded.componentInstance.edited.subscribe(() => applyAbilityBonuses(restored));
+      await reloaded.whenStable();
+      const restoredMaximum = reloaded.nativeElement.querySelector('.bonus-maximum input') as HTMLInputElement;
+      expect(restoredMaximum.value).toBe('24');
+      expect(reloaded.componentInstance.preset).toBe(preset);
+      restoredMaximum.value = '21'; restoredMaximum.dispatchEvent(new Event('input')); await reloaded.whenStable();
+      expect(restored.character!.abilityScores!.strength).toBe(21);
+      reloaded.destroy();
+    });
+  }
 
   for (const allocation of [
     { preset: 'three', abilities: ['str', 'dex', 'con'], expected: { strength: 11, dexterity: 11, constitution: 11 } },

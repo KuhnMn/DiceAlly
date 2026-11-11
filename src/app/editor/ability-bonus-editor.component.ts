@@ -24,20 +24,29 @@ import { AbilityBonusSelection, abilityBonusSources, resolveAbilityBonus, abilit
           </header>
         }
         <ng-template #configuration>
-          <label class="bonus-config-field" [class.bonus-config-inline]="inlineConfiguration()">
-            <span class="field-label">Bonus Type</span>
-            <select class="editor-input" [ngModel]="preset" [ngModelOptions]="{standalone: true}" (ngModelChange)="setPreset($event)">
-              <option value="none">No bonus</option>
-              @if (value.hasContent) { <option value="content">From Content</option> }
-              <option value="one">+2 to one ability</option>
-              <option value="two">+1 to two abilities</option>
-              @if (value.kind === 'Background') {
-                <option value="three">+1 to three abilities</option>
-                <option value="two-one">+2 and +1 to two abilities</option>
-              }
-              <option value="fixed">Custom fixed bonuses</option>
-            </select>
-          </label>
+          <div class="bonus-configuration">
+            <label class="bonus-config-field" [class.bonus-config-inline]="inlineConfiguration()">
+              <span class="field-label">Bonus Type</span>
+              <select class="editor-input" [ngModel]="preset" [ngModelOptions]="{standalone: true}" (ngModelChange)="setPreset($event)">
+                <option value="none">No bonus</option>
+                @if (value.hasContent) { <option value="content">From Content</option> }
+                @if (value.kind === 'Background') {
+                  <option value="three">+1 to three abilities</option>
+                  <option value="two-one">+2 and +1 to two abilities</option>
+                } @else {
+                  <option value="one">+2 to one ability</option>
+                  <option value="two">+1 to two abilities</option>
+                  <option value="fixed">Custom fixed bonuses</option>
+                }
+              </select>
+            </label>
+            @if (value.custom && preset !== 'none' && value.options.length === 1) {
+              <label class="bonus-maximum">
+                <span class="field-label">Max<span class="sr-only">imum Score</span></span>
+                <input type="number" min="1" max="30" step="1" class="editor-input" [ngModel]="value.options[0].maximum" [ngModelOptions]="{standalone: true}" (ngModelChange)="setMaximum($event)" />
+              </label>
+            }
+          </div>
         </ng-template>
         <div class="bonus-controls">
           @if (inlineConfiguration()) { <ng-container [ngTemplateOutlet]="configuration" /> }
@@ -50,7 +59,7 @@ import { AbilityBonusSelection, abilityBonusSources, resolveAbilityBonus, abilit
                     @for (option of value.options; track $index) { <option [ngValue]="$index">{{ optionLabel(option) }}</option> }
                   </select>
                 </label>
-              } @else if (value.options.length === 1) { <p class="bonus-note">{{ optionLabel(value.options[0]) }}</p> }
+              } @else if (value.options.length === 1 && !value.custom) { <p class="bonus-note">{{ optionLabel(value.options[0]) }}</p> }
               @if (choiceDefinition; as choice) {
                   <div class="bonus-allocation" role="group" aria-label="Ability allocation">
                     @for (amount of choiceWeights; track $index; let position = $index) {
@@ -71,7 +80,6 @@ import { AbilityBonusSelection, abilityBonusSources, resolveAbilityBonus, abilit
                     <label><span class="field-label">{{ ability.key.toUpperCase() }}</span><input type="number" min="-30" max="30" step="1" class="editor-input" [ngModel]="value.options[0].fixed[ability.key] ?? 0" [ngModelOptions]="{standalone: true}" (ngModelChange)="setFixed(ability.key, $event)" /></label>
                   }
                 </div>
-                <label class="bonus-maximum"><span class="font-semibold">Maximum Score</span><input type="number" min="1" max="30" step="1" class="editor-input !w-20" [ngModel]="value.options[0].maximum" [ngModelOptions]="{standalone: true}" (ngModelChange)="setMaximum($event)" /></label>
               }
               @if (!resolved.ready && !resolved.status.startsWith('Choose ')) { <p role="status" class="bonus-note">{{ resolved.status }}</p> }
             </div>
