@@ -36,8 +36,8 @@ import { AbilityBonusSelection, abilityBonusSources, resolveAbilityBonus, abilit
                 } @else {
                   <option value="one">+2 to one ability</option>
                   <option value="two">+1 to two abilities</option>
-                  <option value="fixed">Custom fixed bonuses</option>
                 }
+                <option value="fixed">Custom fixed bonuses</option>
               </select>
             </label>
             @if (value.custom && preset !== 'none' && value.options.length === 1) {

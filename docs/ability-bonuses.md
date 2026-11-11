@@ -77,9 +77,10 @@ Uses and Notes, without another Configure Bonus disclosure. A compact plus icon
 beside the feature name indicates configured bonuses, with details in its tooltip,
 rather than showing bonus values among the source tags. Feature detail dialogs
 place applied bonus cards after the description so separators divide content.
-Backgrounds offer only +1 to three distinct abilities and +2 / +1 to two
-distinct abilities as manual distributions, storing explicit uniform or weighted
-definitions. No bonus and From Content remain available where applicable.
+Backgrounds offer +1 to three distinct abilities and +2 / +1 to two
+distinct abilities as distribution presets, storing explicit uniform or weighted
+definitions. Custom fixed bonuses remain available with a configurable maximum.
+No bonus and From Content remain available where applicable.
 Backgrounds use the same Stat Bonuses tool and panel as features, with the
 Bonus Type selector shown directly; custom sources omit From Content,
 and No bonus hides all allocation fields. Incomplete-choice prompts are omitted.

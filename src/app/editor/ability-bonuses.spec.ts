@@ -175,7 +175,7 @@ describe('Ability bonuses in editor, viewer and saved characters', () => {
     expect(type.value).toBe('none');
     expect(type.querySelector('option[value="content"]')).toBeNull();
     expect(root.textContent).not.toContain('Add Stat Bonus');
-    expect([...type.options].map(option => option.value)).toEqual(['none', 'three', 'two-one']);
+    expect([...type.options].map(option => option.value)).toEqual(['none', 'three', 'two-one', 'fixed']);
     type.value = 'two-one'; type.dispatchEvent(new Event('change')); await fixture.whenStable();
     expect(root.querySelector('[aria-label="Ability allocation"]')).not.toBeNull();
     type.value = 'none'; type.dispatchEvent(new Event('change')); await fixture.whenStable();
@@ -187,10 +187,11 @@ describe('Ability bonuses in editor, viewer and saved characters', () => {
     fixture.destroy();
   });
 
-  for (const preset of ['one', 'two', 'fixed', 'three', 'two-one']) {
-    it(`edits and retains the maximum for the ${preset} manual bonus`, async () => {
+  for (const variant of ['one', 'two', 'fixed', 'three', 'two-one', 'background-fixed']) {
+    it(`edits and retains the maximum for the ${variant} manual bonus`, async () => {
+      const preset = variant === 'background-fixed' ? 'fixed' : variant;
       const sheet = emptyBasicCharacter();
-      const isBackground = preset === 'three' || preset === 'two-one';
+      const isBackground = preset === 'three' || preset === 'two-one' || variant === 'background-fixed';
       sheet.background = { name: 'Custom background' };
       sheet.features = [{ editorId: 'custom', name: 'Custom feature' }];
       sheet.abilityBonuses!.base.strength = 20;
