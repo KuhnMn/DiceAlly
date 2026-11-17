@@ -42,6 +42,7 @@ describe('Source book titles', () => {
     expect(names.fullName('mybrew')).toBe('My Homebrew Collection');
     expect(names.fullName('XUATEST')).toBe('Unearthed Arcana: Test Options');
     expect(names.fullName('XMM')).toBe('Monster Manual (2025)');
+    expect(names.fullName('TftYP')).toBe('Tales from the Yawning Portal');
     const fixture = TestBed.createComponent(SourceBookOptionComponent);
     fixture.componentRef.setInput('book', 'UNKNOWN'); fixture.detectChanges();
     expect(fixture.nativeElement.textContent.trim()).toBe('UNKNOWN');

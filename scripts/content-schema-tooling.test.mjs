@@ -23,6 +23,15 @@ test('all vendored schema bytes match their reviewed manifest', async () => {
   }
 });
 
+test('publication titles cover every pinned official source, including collections and supplements', async () => {
+  const output = await build({ entryPoints: ['src/app/content/source-publication-names.ts'], bundle: true, write: false, format: 'esm', platform: 'node' });
+  const { SOURCE_PUBLICATION_NAMES: names } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].text).toString('base64')}`);
+  const schema = JSON.parse(await readFile('schemas/5etools/brew/sources-5etools.json', 'utf8'));
+  assert.deepEqual(schema.$defs.sources.enum.filter(source => !names[source.toLowerCase()]?.trim()), []);
+  assert.equal(names.tftyp, 'Tales from the Yawning Portal');
+  assert.equal(names['tftyp-tsc'], 'Tales from the Yawning Portal: The Sunless Citadel');
+});
+
 test('descriptive prerequisite compatibility preserves snapshots and unrelated enums', async () => {
   const source = JSON.parse(await readFile('schemas/5etools/site/util.json', 'utf8'));
   const before = structuredClone(source);
