@@ -136,7 +136,7 @@ describe('Spell preparation views and casting times', () => {
     fixture.componentRef.setInput('characterData', data);
     const page = fixture.componentInstance;
     page.spellView.set(view); fixture.detectChanges();
-    const ritual = () => fixture.nativeElement.querySelector('[aria-label="Only ritual spells"]') as HTMLButtonElement;
+    const ritual = () => fixture.nativeElement.querySelector('button[aria-label^="Ritual filter:"]') as HTMLButtonElement;
     expect(ritual().closest('app-list-controls')).not.toBeNull();
     ritual().click(); fixture.detectChanges();
     expect(page.spells().map(spell => spell.name)).toEqual(['Action spell']);
@@ -147,7 +147,26 @@ describe('Spell preparation views and casting times', () => {
     expect(page.spellCastingSourceFilter()).toBe('Wizard'); expect(page.activeFilterCount()).toBe(1);
     page.clearFilters(); fixture.detectChanges();
     expect(ritual().getAttribute('aria-pressed')).toBe('false'); expect(page.spells()).toHaveLength(4);
-    ritual().click(); ritual().click(); fixture.detectChanges(); expect(page.spellRitualFilter()).toBe('ALL');
+    ritual().click(); fixture.detectChanges();
+    ritual().click(); fixture.detectChanges();
+    expect(page.spellRitualFilter()).toBe('NON_RITUAL');
+    expect(page.spells()).toHaveLength(3);
+    expect(page.spells().some(spell => spell.name === 'Action spell')).toBe(false);
+    expect(page.activeFilterCount()).toBe(1);
+    expect(ritual().textContent).toContain('No rituals');
+    expect(ritual().classList.contains('bg-rose-container')).toBe(true);
+    expect(ritual().getAttribute('aria-pressed')).toBe('true');
+    const advancedRitual = () => fixture.nativeElement.querySelector('button.rounded-full[aria-label^="Ritual filter:"]') as HTMLButtonElement;
+    advancedRitual().click(); fixture.detectChanges();
+    expect(page.spellRitualFilter()).toBe('ALL');
+    expect(ritual().getAttribute('aria-pressed')).toBe('false');
+    expect(page.spells()).toHaveLength(4);
+    advancedRitual().click(); fixture.detectChanges();
+    expect(ritual().textContent).toContain('Only rituals');
+    expect(page.spells().map(spell => spell.name)).toEqual(['Action spell']);
+    ritual().click(); fixture.detectChanges();
+    ritual().click(); fixture.detectChanges();
+    expect(page.spellRitualFilter()).toBe('ALL');
     expect(JSON.stringify(data)).toBe(before);
   });
 

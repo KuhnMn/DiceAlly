@@ -181,13 +181,15 @@ type SpellLevelFilter = 'ALL' | number;
       <app-list-controls label="Search spells" [query]="searchQuery()" (queryChange)="searchQuery.set($event)" [allowHiddenEntries]="true" [(showHidden)]="showHidden"
         [filterCount]="activeFilterCount()" (cleared)="clearFilters()">
       <ng-container list-toolbar-action>
-          <button type="button" aria-label="Only ritual spells" title="Only ritual spells" [attr.aria-pressed]="spellRitualFilter() === 'RITUAL'"
-            (click)="spellRitualFilter.set(spellRitualFilter() === 'RITUAL' ? 'ALL' : 'RITUAL')"
+          <button type="button" [attr.aria-label]="'Ritual filter: ' + spellRitualFilterLabel()" [title]="'Ritual filter: ' + spellRitualFilterLabel()" [attr.aria-pressed]="spellRitualFilter() !== 'ALL'"
+            (click)="cycleSpellRitualFilter()"
             [class.bg-green-container]="spellRitualFilter() === 'RITUAL'" [class.text-on-green-container]="spellRitualFilter() === 'RITUAL'"
-            [class.border-green]="spellRitualFilter() === 'RITUAL'" [class.border-outline]="spellRitualFilter() !== 'RITUAL'"
-            [class.bg-surface-container]="spellRitualFilter() !== 'RITUAL'"
+            [class.border-green]="spellRitualFilter() === 'RITUAL'" [class.border-outline]="spellRitualFilter() === 'ALL'"
+            [class.bg-surface-container]="spellRitualFilter() === 'ALL'"
+            [class.bg-rose-container]="spellRitualFilter() === 'NON_RITUAL'" [class.text-on-rose-container]="spellRitualFilter() === 'NON_RITUAL'"
+            [class.border-rose]="spellRitualFilter() === 'NON_RITUAL'"
             class="inline-flex min-h-11 shrink-0 items-center justify-center gap-1 rounded-lg border-2 px-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-primary">
-            <app-ui-icon name="candle" /><span>Ritual</span>
+            <app-ui-icon name="candle" /><span>{{ spellRitualFilter() === 'ALL' ? 'Ritual' : spellRitualFilterLabel() }}</span>
           </button>
       </ng-container>
       <div appHorizontalRow class="mb-2 flex flex-wrap items-center gap-2">
@@ -216,6 +218,7 @@ type SpellLevelFilter = 'ALL' | number;
         <span class="text-sm font-semibold text-on-surface">Rituals:</span>
         <button
           type="button"
+          [attr.aria-label]="'Ritual filter: ' + spellRitualFilterLabel()"
           class="min-h-11 px-3 py-1 text-sm border rounded-full transition-colors"
           [class.bg-green-container]="spellRitualFilter() === 'RITUAL'"
           [class.text-on-green-container]="spellRitualFilter() === 'RITUAL'"
