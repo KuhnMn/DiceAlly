@@ -16,7 +16,8 @@
     </div>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-1 max-h-48 overflow-y-auto">
       @for (book of visibleBooks; track book) {
-        <label class="flex items-center gap-2 min-w-0 rounded border border-outline-variant px-2 py-1.5 text-xs cursor-pointer" [class.bg-secondary-container]="filter.selected().includes(book)"><input type="checkbox" [checked]="filter.selected().includes(book)" (change)="filter.toggle(book)" /><span class="min-w-0 break-all">{{ book }}</span></label>
+        <app-source-book-option class="rounded border border-outline-variant text-xs" [class.bg-secondary-container]="filter.selected().includes(book)"
+          [book]="book" [selected]="filter.selected().includes(book)" (selectedChange)="filter.toggle(book)" />
       } @empty { <p class="col-span-full text-xs text-on-surface-variant">{{ loading() ? 'Loading books…' : 'No matching source books in the current import.' }}</p> }
     </div>
     @if (error()) { <p role="status" class="text-xs text-error">{{ error() }}</p> }

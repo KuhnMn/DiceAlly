@@ -1,11 +1,13 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { UiIconComponent } from '../ui-icon.component';
 import { relevantSources } from './compendium-sources';
+import { SourceBookNamesService } from '../editor/source-book-names.service';
+import { SourceBookOptionComponent } from '../editor/source-book-option.component';
 
 /** Controlled selection: a list owns its copy and never writes shared defaults. */
 @Component({
   selector: 'app-compendium-source-filter',
-  imports: [UiIconComponent],
+  imports: [UiIconComponent, SourceBookOptionComponent],
   host: { class: 'block min-w-0' },
   template: `
     <details class="min-w-0 rounded-lg border border-outline-variant bg-surface-container">
@@ -21,10 +23,8 @@ import { relevantSources } from './compendium-sources';
         </div>
         <div class="max-h-52 overflow-y-auto" role="group" [attr.aria-label]="label()">
           @for (book of visibleBooks(); track book) {
-            <label class="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 text-sm hover:bg-surface-container-high">
-              <input type="checkbox" class="h-4 w-4 shrink-0 accent-[var(--md-sys-color-primary)]" [checked]="selected().includes(book)" (change)="toggle(book)" />
-              <span class="[overflow-wrap:anywhere]">{{ book }}</span>
-            </label>
+            <app-source-book-option class="rounded text-sm hover:bg-surface-container-high" [book]="book"
+              [selected]="selected().includes(book)" (selectedChange)="toggle(book)" />
           } @empty { <p class="px-2 py-3 text-sm text-on-surface-variant">No matching source books.</p> }
         </div>
       </div>
@@ -32,7 +32,9 @@ import { relevantSources } from './compendium-sources';
   `,
   styleUrl: './compendium.component.css',
 })
-export class CompendiumSourceFilterComponent {
+export class CompendiumSourceFilterComponent implements OnInit {
+  readonly names = inject(SourceBookNamesService);
+  ngOnInit() { void this.names.refresh(); }
   readonly books = input.required<readonly string[]>();
   readonly selected = input.required<readonly string[]>();
   readonly defaults = input.required<readonly string[]>();
@@ -41,7 +43,7 @@ export class CompendiumSourceFilterComponent {
   readonly query = signal('');
   readonly selectedBooks = computed(() => relevantSources(this.selected(), this.books()));
   readonly visibleBooks = computed(() => [...new Set(this.books())]
-    .sort().filter(book => book.toLowerCase().includes(this.query().trim().toLowerCase())));
+    .sort().filter(book => this.names.searchText(book).toLowerCase().includes(this.query().trim().toLowerCase())));
   useDefaults() { this.selectedChange.emit([...this.defaults()]); }
   toggle(book: string) {
     const selected = this.selectedBooks();

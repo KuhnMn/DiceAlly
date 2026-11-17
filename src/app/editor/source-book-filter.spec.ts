@@ -19,6 +19,25 @@ describe('Shared creator Source Books filter', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
   });
 
+  it('finds full publication titles and expands them without changing the shared book selection', async () => {
+    const fixture = TestBed.createComponent(SourceBookFilterComponent);
+    await fixture.whenStable(); await fixture.componentInstance.refresh();
+    const component = fixture.componentInstance;
+    component.books.set(['XPHB', 'TCE']);
+    component.filter.setSelection(['XPHB']);
+    component.search = 'handbook'; fixture.detectChanges();
+    expect(component.visibleBooks).toEqual(['XPHB']);
+    const option = fixture.nativeElement.querySelector('app-source-book-option') as HTMLElement;
+    option.querySelector('button')!.click(); fixture.detectChanges();
+    expect(option.textContent).toContain("Player's Handbook (2024)");
+    expect(component.filter.selected()).toEqual(['XPHB']);
+    const search = fixture.nativeElement.querySelector('input[placeholder]') as HTMLInputElement;
+    search.value = 'tce'; search.dispatchEvent(new Event('input'));
+    await fixture.whenStable(); fixture.detectChanges();
+    expect(component.visibleBooks).toEqual(['TCE']);
+    fixture.destroy();
+  });
+
   it('persists the shared reprint switch without changing books or removing existing character entries', async () => {
     const source = { ...DEFAULT_CONTENT_SOURCE, owner: `reprints-${crypto.randomUUID()}` };
     const revision: ImportRevision = { id: crypto.randomUUID(), namespace: 'development-local', source, sourceIdentity: sourceIdentity(source),
