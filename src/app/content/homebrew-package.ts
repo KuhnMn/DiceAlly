@@ -1,7 +1,7 @@
 import { ContentCache } from './content-cache';
 import { mapContent } from './content-adapter';
-import { ContentRecord, HomebrewFile, ImportRevision, JsonObject, object, string } from './content.model';
-import { validateHomebrewDocument } from './content-schema';
+import { ContentRecord, HomebrewFile, ImportRevision, JsonObject, SupplementProfile, object, string } from './content.model';
+import { validateHomebrewDocument, validatePrereleaseDocument } from './content-schema';
 
 export const MAX_HOMEBREW_BYTES = 32 * 1024 * 1024;
 
@@ -11,21 +11,25 @@ async function digest(text: string): Promise<string> {
 }
 
 /** File identity is stable across updates; the separate digest identifies the selected contents. */
-export async function readHomebrewFile(value: unknown, name: string, url?: string): Promise<HomebrewFile> {
+export async function readHomebrewFile(value: unknown, name: string, url?: string, profile: SupplementProfile = 'brew'): Promise<HomebrewFile> {
   const document = object(value);
   if (!document) throw new Error('Homebrew JSON must contain an object.');
   const serialized = JSON.stringify(document);
   if (new TextEncoder().encode(serialized).byteLength > MAX_HOMEBREW_BYTES) throw new Error('Homebrew files must be 32 MB or smaller.');
-  await validateHomebrewDocument(document, name);
+  await validateSupplementDocument(document, name, profile);
   const definitions = object(document['_meta'])?.['sources'];
   if (definitions !== undefined && !Array.isArray(definitions)) throw new Error('_meta.sources must be an array.');
   const sources = (definitions as unknown[] | undefined ?? []).map(source => string(object(source)?.['json']));
   if (sources.some(source => !source)) throw new Error('Every source in _meta.sources needs a json identifier.');
   if (new Set(sources).size !== sources.length) throw new Error('Duplicate source identifiers in _meta.sources.');
   return {
-    id: await digest(url ?? name), name, url, sources,
+    id: await digest(url ?? name), name, url, sources, profile,
     digest: await digest(serialized), importedAt: new Date().toISOString(), document,
   };
+}
+
+function validateSupplementDocument(value: unknown, name: string, profile: SupplementProfile = 'brew') {
+  return profile === 'ua' ? validatePrereleaseDocument(value, name) : validateHomebrewDocument(value, name);
 }
 
 /** Collections sometimes repeat an entity with supplementary metadata. Never guess between conflicting rules. */
@@ -48,8 +52,8 @@ export async function stageHomebrewFiles(cache: ContentCache, revision: ImportRe
   revision.homebrewFiles = structuredClone(files);
   for (const file of files) {
     signal?.throwIfAborted();
-    const path = `homebrew/${file.id}.json`;
-    revision.diagnostics.push(...await validateHomebrewDocument(file.document, file.name));
+    const path = `homebrew/${file.profile === 'ua' ? 'ua/' : ''}${file.id}.json`;
+    revision.diagnostics.push(...await validateSupplementDocument(file.document, file.name, file.profile));
     const mapped = mapContent(file.document, path);
     if (!mapped.records.length) throw new Error(`${file.name}: no supported content found.`);
     revision.diagnostics.push(...mapped.diagnostics);

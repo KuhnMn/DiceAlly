@@ -550,6 +550,368 @@
         "version": "1.10.2",
         "sha256": "4f9e003485e9e5476982b385b0e186a64519c5b9ec953d56be7f43bb36376c1b"
       }
+    },
+    "ua": {
+      "actions.json": {
+        "version": "1.2.9",
+        "sha256": "d2c112d75799898d1b83f70508af8b1ecbd9a4c367c900fd3acf9f8c892eee05"
+      },
+      "adventures.json": {
+        "version": "1.10.38",
+        "sha256": "bb146d65b060d9caee3bf569b6aab28505061a3bb6f5338d193c82d50c36ca19"
+      },
+      "backgrounds.json": {
+        "version": "1.3.15",
+        "sha256": "81a8bd4dc3e2d906b5dffc7f51b9a5965faadf7edcac5c2ca373d76d89375dfe"
+      },
+      "bastions.json": {
+        "version": "1.0.4",
+        "sha256": "c09cea5b9a4e1fc911bf8b3b556a6e2b7da91664ba810e29d2b8411ff202916d"
+      },
+      "bestiary/bestiary.json": {
+        "version": "1.21.67",
+        "sha256": "dd2e39ccb852624d858ae6fddabc5d1c50a89ed8167eab8ed1d0ca71a70d71be"
+      },
+      "bestiary/fluff-bestiary.json": {
+        "version": "2.0.0",
+        "sha256": "b882ee5081a4f93a0a02228a06667d61b95c6e4e990c48f72d731ba15e585cba"
+      },
+      "bestiary/foundry.json": {
+        "version": "1.0.2",
+        "sha256": "fc1e94a6384bc929d23b9df8d6c73d81597a53853168acfb6b67b0b4866c30fe"
+      },
+      "bestiary/index.json": {
+        "version": "1.0.0",
+        "sha256": "db4d251e087e43ca0717d8c93d241c3dd9b7c8809551003c34029cb2fe0ecc9e"
+      },
+      "bestiary/legendarygroups.json": {
+        "version": "1.2.4",
+        "sha256": "5a23cba651a520d6ed95bb59e27f38c73cf3eabd6252114fce0ac087ac1167df"
+      },
+      "bestiary/template.json": {
+        "version": "2.0.2",
+        "sha256": "d08d67f4f52f84eaba52df03beca34decf3112008618d92120e429cf1cae250a"
+      },
+      "books.json": {
+        "version": "1.2.21",
+        "sha256": "b06c84d600454caad1b637b9be615bd657478efd04ed0c8d93e15e20d221e3f7"
+      },
+      "charcreationoptions.json": {
+        "version": "1.3.1",
+        "sha256": "a36814c1633d9f69d104f4b8a69aa058bbf61526278e2b22a2ce14e8bfe90758"
+      },
+      "citations.json": {
+        "version": "1.0.0",
+        "sha256": "5a484f5f850b8560db7452da9318240773a2567ffd49ccf5b01e801087f36f0b"
+      },
+      "class/class.json": {
+        "version": "2.13.5",
+        "sha256": "973396955a962561230fff7821614e0cb3fee2d97e3f0587d9ae74b245d1d1ee"
+      },
+      "class/fluff-class.json": {
+        "version": "1.0.2",
+        "sha256": "e9a043f6d6522df8860ecf224526b1e3bcdef1ad12bb53d92ea674678e0a8ecb"
+      },
+      "class/foundry.json": {
+        "version": "1.5.1",
+        "sha256": "1b2d58f8612f5593f90dd1b85ea741c194468056eff5506e1d1488c884fe69c6"
+      },
+      "class/index.json": {
+        "version": "1.0.0",
+        "sha256": "db4d251e087e43ca0717d8c93d241c3dd9b7c8809551003c34029cb2fe0ecc9e"
+      },
+      "conditionsdiseases.json": {
+        "version": "1.2.13",
+        "sha256": "984e2445223c4b8b2982df574615a39fb77cd444b303e867589449f2a51b56ad"
+      },
+      "corpus-shared.json": {
+        "version": "1.0.5",
+        "sha256": "c310c6a7f6be1496ea335b4ec2588a8b6e7932e7220636bea887d2d8e96acd5f"
+      },
+      "cultsboons.json": {
+        "version": "1.4.0",
+        "sha256": "06d9f8fe5cb1fbb8970f8fbd893655ad6f56fd2dc8ed7e60d04aa74b966e7407"
+      },
+      "decks.json": {
+        "version": "1.1.0",
+        "sha256": "83930e56688b15eb8542b7f582eadd26c88d0e7f35889bf9791316c97e377d35"
+      },
+      "deities.json": {
+        "version": "1.2.14",
+        "sha256": "bf2f261690938a772c7b9d93af00f1e0bfdc597b9c1748163bb81fce198bff0a"
+      },
+      "encounterbuilder.json": {
+        "version": "1.1.0",
+        "sha256": "a2720dff4e65094fb032720ba968acd1b7e859da2784880c6a92c31ca149df23"
+      },
+      "encounters.json": {
+        "version": "1.3.4",
+        "sha256": "d24c2fb13b0650676854f3e97f5b488a666b51f0001ea4b9d81c3db6451c716a"
+      },
+      "entry.json": {
+        "version": "1.12.0",
+        "sha256": "c98df05fb0dbdd34c905a37d843eae551b2459abbbc79d214cc4402ebc5356b4"
+      },
+      "feats.json": {
+        "version": "1.7.15",
+        "sha256": "25cae9fe6a91d1f9a123cbb36654ef6af7becc753bf51562423f822a903194bb"
+      },
+      "fluff-backgrounds.json": {
+        "version": "1.3.0",
+        "sha256": "f6c3bf9acbbe032d0cf9779722cd9709471c7daeac494e69f13efb6878f97fc6"
+      },
+      "fluff-bastions.json": {
+        "version": "1.0.0",
+        "sha256": "45b3ec7b5ce41ed4a030eca93a86d755cf5e3768449b182978c38205f38d6956"
+      },
+      "fluff-charcreationoptions.json": {
+        "version": "1.1.0",
+        "sha256": "4f54b2a71fa5711156b12eee3a0a3b8410b0e213b4651d692a0a4c1a51c396cb"
+      },
+      "fluff-conditionsdiseases.json": {
+        "version": "1.3.0",
+        "sha256": "cd4ec19f874607d9d297fd34a063bec3ded8521de46e9f6816179b8ba08702c7"
+      },
+      "fluff-feats.json": {
+        "version": "1.0.0",
+        "sha256": "8b12816b3a553f073c1ee202d8d3213d8624e45ffcf191e7848ca68184d4ef11"
+      },
+      "fluff-homecrafts.json": {
+        "version": "1.0.0",
+        "sha256": "aba39be84bd756696ee3ba98ee8a3dfa4db323412b4b2f75f31cccdc832b85be"
+      },
+      "fluff-items.json": {
+        "version": "1.2.0",
+        "sha256": "4a21b77858a35e689d9c8d96e47fb5eb5fbf85b56d7edbff0090648683e68f9a"
+      },
+      "fluff-languages.json": {
+        "version": "1.2.0",
+        "sha256": "e331ec65c1494e7357af61be0dfaa2807d5e9ce9cae75a800aa603026f619314"
+      },
+      "fluff-objects.json": {
+        "version": "1.0.0",
+        "sha256": "36a90d81f448d25d50bae2b008ade51051fb608d97bf047e48d232cae27b37ea"
+      },
+      "fluff-optionalfeatures.json": {
+        "version": "1.0.0",
+        "sha256": "2d4bcfe68693e21885715cce15dfab448997c750eca5d05af5ef66104c5e40bc"
+      },
+      "fluff-races.json": {
+        "version": "2.4.0",
+        "sha256": "0c02bdb4ac419ff22aa2e0597dcb79f4769aad455c1f2aab0b6eb020368e6608"
+      },
+      "fluff-recipes.json": {
+        "version": "1.2.0",
+        "sha256": "0261debefb1c88e574355482634ad94566678364d53249cc08680a6ec1cc58e1"
+      },
+      "fluff-rewards.json": {
+        "version": "1.1.1",
+        "sha256": "2b260d27753006f5db16bbfd0916d38a80a2a7028d7357d83f3dc6881fea039d"
+      },
+      "fluff-trapshazards.json": {
+        "version": "1.0.0",
+        "sha256": "b86d46efa284080434f58206e0c459e2f93c71df2b5e84b5e064a0ce53876ddb"
+      },
+      "fluff-vehicles.json": {
+        "version": "1.4.0",
+        "sha256": "cdcb791806c4a87995e9e825ed3d66756fb12601ca9cd14921f2a98f4edda7b9"
+      },
+      "foundry-actions.json": {
+        "version": "1.0.0",
+        "sha256": "8eca3c18d3ed79e92e3bd6fb5502788350481c3ccfec34e0065b76d2df7a38fe"
+      },
+      "foundry-backgrounds.json": {
+        "version": "1.1.1",
+        "sha256": "844d1f4e2a3fb5d8d1f2a256f71bc6d677e4cb64e9d20de7740e9d298fe76841"
+      },
+      "foundry-feats.json": {
+        "version": "1.0.0",
+        "sha256": "d248fddd2934884068204c4cb78e0d9e2f17c64a66702e326d292f0760295737"
+      },
+      "foundry-items.json": {
+        "version": "1.2.3",
+        "sha256": "81bb0bb2025daa60bfcb9ec34fdd4c0649369f83f6f49dd2ab7b280159a32f15"
+      },
+      "foundry-optionalfeatures.json": {
+        "version": "1.0.0",
+        "sha256": "ebe93186ace3c39d7e5cfddb004486263a7d73e8dab57ac6d4c2c4c4ef3018c0"
+      },
+      "foundry-psionics.json": {
+        "version": "1.1.1",
+        "sha256": "bd097da6c0f4d98da4a90fafa9aeae26791700709870b50aee998df5371bf4d7"
+      },
+      "foundry-races.json": {
+        "version": "1.2.0",
+        "sha256": "cb7b1293e96bd63655f9fea0c3de3e1b5f35fe9b495e3660bcb39e77e449633b"
+      },
+      "foundry-rewards.json": {
+        "version": "1.0.1",
+        "sha256": "9a27aab96d53959a2df9093dbe36c292ff0c879c791923e414a582be9da7ddf6"
+      },
+      "foundry-vehicles.json": {
+        "version": "1.0.1",
+        "sha256": "f69442d5262eb5efab733ea99d0a7bad0e9b33ed06f2c6191cb5e3aa880c20bd"
+      },
+      "homebrew.json": {
+        "version": "1.15.1",
+        "sha256": "d0637347c4e28e0fc66cc8675768fa3f35316a0b71963a790f2496c1c2f92d9c"
+      },
+      "homecrafts.json": {
+        "version": "1.0.0",
+        "sha256": "d9db8f6e4b75e1aa3731c599c7e75ae62cf3c36bb6d8100e913e08e7de62f506"
+      },
+      "items-base.json": {
+        "version": "1.7.0",
+        "sha256": "83003060dfa39fe685970a080bf747a7abbd0fbee427552246257051304fff3b"
+      },
+      "items-shared.json": {
+        "version": "1.2.2",
+        "sha256": "be187ce1bf1e3341b50ef2e3c8d7a8b269bbc4fa180115fba4f4a94f28015804"
+      },
+      "items.json": {
+        "version": "1.14.30",
+        "sha256": "92d372f78bb610d4fe3a8b81588ffcf7075c2499dec1454e05fe9dc4c42b44fd"
+      },
+      "languages.json": {
+        "version": "1.2.0",
+        "sha256": "fcc2f2889b2a34dd19df9759650d981d6df2a93ae83f3834fccc6075b828cfe1"
+      },
+      "magicvariants.json": {
+        "version": "1.9.21",
+        "sha256": "a50ebaaa71f89475f922b36bcb2bd22cbe2280790f76aa46815e1fb019e79e5d"
+      },
+      "makebrew-creature.json": {
+        "version": "1.2.0",
+        "sha256": "a295d8c11a2c0712e24ef0dc179094a6fb44a0af0d7a5116774206a1efe32be5"
+      },
+      "makecards.json": {
+        "version": "1.1.0",
+        "sha256": "5f6cacb4bbd525e4fbc1e82db02993b12b2265889ee3d64def93802b0b2e1724"
+      },
+      "monsterfeatures.json": {
+        "version": "1.1.1",
+        "sha256": "2713e82e1f316c13a74a73f078746ce6c27d107c5b55db265a5b67009ff4a753"
+      },
+      "names.json": {
+        "version": "1.3.2",
+        "sha256": "f408ee13702159d1ecbbbb84bc2cb3c2e19c7df3feacdaf783ad0d3a36b740f4"
+      },
+      "objects.json": {
+        "version": "1.4.0",
+        "sha256": "fef14bd3fc0f289c6100ccf2b485b25960fab5993cacb1b45a3bae756b175516"
+      },
+      "optionalfeatures.json": {
+        "version": "1.12.12",
+        "sha256": "89267f3a0ed26d50c915b957795e773b4ddaa30e8a53d79e39569c47b02686ae"
+      },
+      "psionics.json": {
+        "version": "1.3.0",
+        "sha256": "885375eb8ff0fc25ddce498ad5f1457addc4dfed357e488a88fb4b4e5bd68514"
+      },
+      "races.json": {
+        "version": "1.12.17",
+        "sha256": "e9db029b38916be53c2d622db2d506ec482394464b9526219723b573e5c28588"
+      },
+      "recipes.json": {
+        "version": "1.5.12",
+        "sha256": "8a6647926b7b9ddb7fb5eb718b4430e008e662187f9637cfd8aeb230b81e00dc"
+      },
+      "renderdemo.json": {
+        "version": "1.1.0",
+        "sha256": "61b8b92a97e06c3714c098a2579245cb60d93eef22005b99243b3b45e25d5744"
+      },
+      "rewards.json": {
+        "version": "1.4.0",
+        "sha256": "90c200654ff1bb87a7a3b0c4029d05b24270670282157ff676fc30b639233468"
+      },
+      "senses.json": {
+        "version": "1.1.0",
+        "sha256": "2f1e0dbacc3a2358f55a12e639c328be2bd7b2c43fa0fad683e3e05aeaa7da70"
+      },
+      "skills.json": {
+        "version": "1.1.0",
+        "sha256": "046248b5ee441d687538c9a8379388de15fa74552e48cdfce6da8c42b5af2fa8"
+      },
+      "sources-5etools.json": {
+        "version": "0.0.0",
+        "sha256": "bcc526c277dd6f866c5ffe741bb0165284f3ade651acc437c4720eebc2d3a7fb"
+      },
+      "sources-homebrew-legacy.json": {
+        "version": "2.0.0",
+        "sha256": "492511e80cc2fafc9369d56014b959043772afa6a19e872a231a3f7c2a2d9444"
+      },
+      "spells/fluff-spells.json": {
+        "version": "1.0.0",
+        "sha256": "cf0534ace5fe7ca76d8a5908879b1638d4527de534efbfb6a312b7178dd60250"
+      },
+      "spells/foundry.json": {
+        "version": "1.0.0",
+        "sha256": "5a9831dd542e9d0425f953dbcd2bab5c3a9b7f35a9ca4f2c71e43a43ebc70330"
+      },
+      "spells/index.json": {
+        "version": "1.0.0",
+        "sha256": "db4d251e087e43ca0717d8c93d241c3dd9b7c8809551003c34029cb2fe0ecc9e"
+      },
+      "spells/roll20.json": {
+        "version": "1.0.4",
+        "sha256": "173c3dd313cfdbdc3ee2b3dc9aeb3a36917e2fe025050075de248a1927f7388b"
+      },
+      "spells/sources.json": {
+        "version": "1.0.2",
+        "sha256": "bc97909d84bd01892962da487e5b91980d451b9d0d4efa42233d72b7f1e2a807"
+      },
+      "spells/spells.json": {
+        "version": "1.9.29",
+        "sha256": "b50a6b9db246515f975e80673b1c0cf22acdd1a479606808c40c772bc84e86b9"
+      },
+      "tables.json": {
+        "version": "1.2.0",
+        "sha256": "beac2e3bba92fe52ffd0b57ee133561eba78dd79805c7fc9e38b699b2742d7a5"
+      },
+      "trapshazards.json": {
+        "version": "1.5.0",
+        "sha256": "71d7b779ad3a2ea922cf6f7865ebd42c5792f08efe23081445fb4e7571898caa"
+      },
+      "util-additionalspells.json": {
+        "version": "1.0.5",
+        "sha256": "544368b5de21781e42a338f7436c927df8d2fb32e4d4a4a42cc08f485f2acef6"
+      },
+      "util-copy.json": {
+        "version": "1.1.4",
+        "sha256": "6b144c669a438739818c578dacfe41e87ef7493c33e72c628c22dd06b9b5dd19"
+      },
+      "util-edition.json": {
+        "version": "1.0.1",
+        "sha256": "81f3bb1baa20e0ae44f47e15f849ee99e059719bd50623a76a3f0facc3607763"
+      },
+      "util-foundry.json": {
+        "version": "1.3.1",
+        "sha256": "7520e274eed1a516ab4f76c8b8081673b725ab66fd766c695dab20eee0613640"
+      },
+      "util-meta.json": {
+        "version": "1.0.0",
+        "sha256": "5dabd148c443c8b2ef8cd94cc98aac0323115f5251a3183950afd260acf5d20a"
+      },
+      "util-time.json": {
+        "version": "1.0.5",
+        "sha256": "2e12667895fd6545eac925713d7895596ff862cf4a5981ca5a90e3db05752a78"
+      },
+      "util-token.json": {
+        "version": "1.0.3",
+        "sha256": "f7848d2570eda5b5f2a8e855f8fd32f7f817cdb80796eaa2ad4cc747c378d271"
+      },
+      "util.json": {
+        "version": "1.19.11",
+        "sha256": "bd7bb485e23b2d13d456f0cc0e0a5f8b876205156bd1dcc22a70ae0607847dfd"
+      },
+      "variantrules.json": {
+        "version": "1.2.0",
+        "sha256": "eb55ad4645eb6fe0105835cf60fb83012ec2490b897aea7ea80eaede70cbdb22"
+      },
+      "vehicles.json": {
+        "version": "1.10.2",
+        "sha256": "bdbca73a86816c95afcbefe578ae4cb60bfafb8fc49ef878694d8f7af0ea6626"
+      }
     }
   }
 }

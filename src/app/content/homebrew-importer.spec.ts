@@ -43,6 +43,26 @@ function document(name = 'Homebrew Spell') {
 
 describe('Explicit single-file homebrew imports', () => {
   beforeAll(async () => validateHomebrewDocument(homebrewDocumentFixture({}), 'fixture.json'), 30000);
+  it('installs prerelease alongside homebrew, replays its schema and removes only the selected file', async () => {
+    const f = await fixture();
+    const prerelease = await parseHomebrewFile(homebrewDocumentFixture({
+      _meta: { sources: [{ json: 'XUATESTPlaytest' }] },
+      race: [{ name: 'Playtest Species', source: 'XUATESTPlaytest', speed: 30, entries: ['Playtest trait.'] }],
+      action: [{ name: 'Playtest Action', source: 'XUATESTPlaytest', page: 1, entries: ['Playtest action.'] }],
+    }), 'playtest.json', undefined, 'ua');
+    const installed = await importHomebrew(f.cache, { ...f, file: prerelease, bytes: 1 });
+    expect(installed.homebrewFiles?.[0].profile).toBe('ua');
+    expect((await f.cache.category(installed.id, 'species')).find(record => record.name === 'Playtest Species')?.species).toBeDefined();
+    expect((await f.cache.category(installed.id, 'action'))[0].referenceDefinition).toBeDefined();
+    const brew = await readHomebrewFile(document(), 'brew.json');
+    const replay = await importHomebrew(f.cache, { ...f, base: installed, file: brew, bytes: 1 });
+    expect(replay.homebrewFiles).toHaveLength(2);
+    expect((await f.cache.category(replay.id, 'race')).some(record => record.name === 'Playtest Species')).toBe(true);
+    const removed = await importHomebrew(f.cache, { ...f, base: replay, removeFileId: prerelease.id, bytes: 0 });
+    expect(removed.homebrewFiles?.map(file => file.id)).toEqual([brew.id]);
+    expect((await f.cache.category(removed.id, 'race')).map(record => record.name)).toEqual(expect.arrayContaining(['Core Human', 'Homebrew Species']));
+    expect((await f.cache.category(removed.id, 'race')).some(record => record.name === 'Playtest Species')).toBe(false);
+  });
   it('installs future spell metadata with visible warnings and preserves it when replaying homebrew', async () => {
     const f = await fixture();
     const file = await readHomebrewFile({spell: [{name: 'Future Spell', source: 'TESTBREW', miscTags: ['HL', 'FUTURE_TAG']}]}, 'future-tags.json');

@@ -1,0 +1,15 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "fluff-races.json",
+	"version": "2.4.0",
+	"type": "object",
+	"properties": {
+		"_meta": {
+			"$ref": "util.json#/$defs/metaBlock"
+		},
+		"raceFluff": {
+			"$ref": "util.json#/$defs/genericFluffArray"
+		}
+	},
+	"additionalProperties": false
+}

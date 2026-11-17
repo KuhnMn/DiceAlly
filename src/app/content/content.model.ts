@@ -73,7 +73,10 @@ export interface ImportRevision {
   /** Only explicitly selected files; raw definitions are retained for safe reimport/materialization. */
   homebrewFiles?: HomebrewFile[];
 }
+export type SupplementProfile = 'brew' | 'ua';
 export interface HomebrewFile {
+  /** Absent on older installed files, which use the homebrew schema. */
+  profile?: SupplementProfile;
   id: string;
   name: string;
   url?: string;

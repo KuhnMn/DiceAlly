@@ -14,8 +14,8 @@ const pkg = JSON.parse(await readFile(path.join(upstream, 'package.json'), 'utf8
 const manifest = { repository: pkg.repository.url, commit, packageVersion: pkg.version,
   license: pkg.license, profiles: {} };
 
-for (const profile of ['site', 'brew']) {
-  const queue = [...schemaFiles, ...(profile === 'brew' ? ['homebrew.json'] : [])];
+for (const profile of ['site', 'brew', 'ua']) {
+  const queue = [...schemaFiles, ...(profile !== 'site' ? ['homebrew.json'] : [])];
   const files = new Map();
   for (let i = 0; i < queue.length; i++) {
     const file = queue[i];

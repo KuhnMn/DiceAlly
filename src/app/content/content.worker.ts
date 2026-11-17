@@ -44,10 +44,10 @@ addEventListener('message', async ({ data }: MessageEvent<ContentImportRequest>)
         signal.throwIfAborted();
         value = JSON.parse(text); bytes = data.file.size;
       } else {
-        const { file, bytes } = await downloadHomebrewUrl(data.url ?? '', signal);
+        const { file, bytes } = await downloadHomebrewUrl(data.url ?? '', signal, undefined, data.profile);
         return importHomebrew(cache, { namespace: data.namespace, source: data.source, base, file, bytes, signal, progress });
       }
-      const file = await readHomebrewFile(value, name);
+      const file = await readHomebrewFile(value, name, undefined, data.profile);
       return importHomebrew(cache, { namespace: data.namespace, source: data.source, base, file, bytes, signal, progress });
     });
     postMessage({ type: 'complete', revision });

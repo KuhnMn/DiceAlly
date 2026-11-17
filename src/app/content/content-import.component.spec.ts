@@ -87,6 +87,23 @@ describe('Inactive revision cleanup feedback', () => {
     result.fixture.detectChanges();
     return { ...result, base, file };
   }
+  it('routes prerelease uploads and URLs with their profile and groups installed files separately', async () => {
+    const { fixture, component, base, file } = await installedHomebrew();
+    vi.spyOn(IndexedDbContentCache.prototype, 'saveSource').mockResolvedValue(undefined);
+    component.revision.set({ ...base, homebrewFiles: [...base.homebrewFiles!, { ...file, id: 'ua', name: 'playtest.json', profile: 'ua' }] });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#prerelease-library').textContent).toContain('playtest.json');
+    expect(fixture.nativeElement.querySelector('#homebrew-library').textContent).not.toContain('playtest.json');
+    const upload = new File(['{}'], 'playtest.json', { type: 'application/json' });
+    component.chooseHomebrew({ target: { files: [upload] } } as unknown as Event, 'ua');
+    expect(component.homebrewFile).toBeUndefined();
+    await component.startHomebrew('file', 'ua');
+    expect(FakeWorker.instances.at(-1)?.postMessage).toHaveBeenCalledWith(expect.objectContaining({ action: 'homebrew', profile: 'ua', file: upload }));
+    FakeWorker.instances.at(-1)!.receive({ type: 'complete', revision: base });
+    component.supplementInputs.ua.url = 'https://example.org/playtest.json';
+    await component.startHomebrew('url', 'ua');
+    expect(FakeWorker.instances.at(-1)?.postMessage).toHaveBeenCalledWith(expect.objectContaining({ profile: 'ua', url: 'https://example.org/playtest.json' }));
+  });
   it('offers update and check only for saved URLs and explains local uploads', async () => {
     const { fixture } = await installedHomebrew();
     expect(fixture.nativeElement.querySelector('button[aria-label="Update brew.json"]')).not.toBeNull();

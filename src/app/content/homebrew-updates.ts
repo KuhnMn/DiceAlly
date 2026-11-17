@@ -1,4 +1,4 @@
-import { HomebrewFile, ImportRevision } from './content.model';
+import { HomebrewFile, ImportRevision, SupplementProfile } from './content.model';
 import { FetchContent, fetchContent } from './github-source';
 import { MAX_HOMEBREW_BYTES, readHomebrewFile } from './homebrew-package';
 
@@ -6,7 +6,7 @@ export type HomebrewUpdateState = 'current' | 'available';
 
 /** Share URL validation, fresh downloads and schema validation between import, update and check. */
 export async function downloadHomebrewUrl(url: string, signal?: AbortSignal,
-  fetcher: FetchContent = (address, abort) => fetchContent(address, abort, 'no-cache')) {
+  fetcher: FetchContent = (address, abort) => fetchContent(address, abort, 'no-cache'), profile: SupplementProfile = 'brew') {
   const address = new URL(url);
   if (address.protocol !== 'https:' || address.username || address.password) throw new Error('Enter an HTTPS URL for one JSON file.');
   const name = decodeURIComponent(address.pathname.split('/').at(-1) ?? '');
@@ -14,7 +14,7 @@ export async function downloadHomebrewUrl(url: string, signal?: AbortSignal,
   const downloaded = await fetcher(address.href, signal);
   signal?.throwIfAborted();
   if (downloaded.bytes > MAX_HOMEBREW_BYTES) throw new Error('Homebrew files must be 32 MB or smaller.');
-  const file = await readHomebrewFile(downloaded.value, name, address.href);
+  const file = await readHomebrewFile(downloaded.value, name, address.href, profile);
   signal?.throwIfAborted();
   return { file, bytes: downloaded.bytes };
 }
@@ -25,7 +25,7 @@ export async function downloadHomebrewUpdate(base: ImportRevision | undefined, f
   const installed = base?.homebrewFiles?.find(file => file.id === fileId);
   if (!installed) throw new Error('That homebrew file is no longer installed.');
   if (!installed.url) throw new Error('This file was uploaded from your device. Select the JSON file again to update it.');
-  const downloaded = await downloadHomebrewUrl(installed.url, signal, fetcher);
+  const downloaded = await downloadHomebrewUrl(installed.url, signal, fetcher, installed.profile);
   return { ...downloaded, file: { ...downloaded.file, id: installed.id },
     state: downloaded.file.digest === installed.digest ? 'current' : 'available' };
 }

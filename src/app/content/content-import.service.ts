@@ -1,6 +1,6 @@
 import { Injectable, OnDestroy, computed, signal } from '@angular/core';
 import { IndexedDbContentCache, RevisionRemovalProgress } from './content-cache';
-import { DEFAULT_CONTENT_SOURCE, ImportDiagnostic, ImportProgress, ImportRevision, validateSource } from './content.model';
+import { DEFAULT_CONTENT_SOURCE, ImportDiagnostic, ImportProgress, ImportRevision, SupplementProfile, validateSource } from './content.model';
 import { ContentImportRequest } from './content-import-request';
 import { resolveCommit } from './github-source';
 import { requiresContentReimport } from './content-compatibility';
@@ -14,8 +14,13 @@ export class ContentImportService implements OnDestroy {
   }
 
   source = { ...DEFAULT_CONTENT_SOURCE };
-  homebrewUrl = '';
-  homebrewFile?: File;
+  readonly supplementInputs: Record<SupplementProfile, { url: string; file?: File }> = {
+    brew: { url: '' }, ua: { url: '' },
+  };
+  get homebrewUrl() { return this.supplementInputs.brew.url; }
+  set homebrewUrl(value: string) { this.supplementInputs.brew.url = value; }
+  get homebrewFile() { return this.supplementInputs.brew.file; }
+  set homebrewFile(value: File | undefined) { this.supplementInputs.brew.file = value; }
   readonly busy = signal(false);
   readonly importing = signal(false);
   phaseLabel(phase: ImportProgress['phase']): string {
@@ -92,8 +97,8 @@ export class ContentImportService implements OnDestroy {
       await this.runImport({ action: 'import', namespace: this.namespace, source });
     } catch (error) { this.busy.set(false); this.message.set(String(error)); }
   }
-  chooseHomebrew(event: Event) {
-    this.homebrewFile = (event.target as HTMLInputElement).files?.[0];
+  chooseHomebrew(event: Event, profile: SupplementProfile = 'brew') {
+    this.supplementInputs[profile].file = (event.target as HTMLInputElement).files?.[0];
   }
   async removeHomebrew(fileId: string) {
     if (this.busy()) return;
@@ -127,7 +132,7 @@ export class ContentImportService implements OnDestroy {
         if (data.type === 'progress') return;
         if (data.type === 'homebrew-checked' && data.fileId === fileId) {
           finish(data.revisionId && data.revisionId !== revision.id ? 'The library changed. Refresh this page and check again.'
-            : data.state === 'current' ? 'Installed homebrew is current.' : 'Updated content is available. Choose Update to install it.');
+            : data.state === 'current' ? `Installed ${file.profile === 'ua' ? 'prerelease' : 'homebrew'} is current.` : 'Updated content is available. Choose Update to install it.');
         } else finish(data.message ?? 'The update check did not return a result. Please try again.');
       };
       worker.onerror = () => finish('The update check stopped unexpectedly. Please try again.');
@@ -161,17 +166,18 @@ export class ContentImportService implements OnDestroy {
     }
     this.homebrewChecks.clear(); this.checkingHomebrewFiles.set(new Set());
   }
-  async startHomebrew(from: 'url' | 'file') {
+  async startHomebrew(from: 'url' | 'file', profile: SupplementProfile = 'brew') {
+    const input = this.supplementInputs[profile];
     if (this.busy()) return;
-    if (from === 'file' && !this.homebrewFile) return;
-    if (from === 'url' && !this.homebrewUrl.trim()) return;
+    if (from === 'file' && !input.file) return;
+    if (from === 'url' && !input.url.trim()) return;
     this.busy.set(true);
     try {
       // Add to the installed source rather than any unsaved edits to the repository form.
       const source = validateSource(await this.cache.savedSource(this.namespace) ?? this.source);
       await this.cache.saveSource(this.namespace, source);
-      await this.runImport({ action: 'homebrew', namespace: this.namespace, source,
-        ...(from === 'url' ? { url: this.homebrewUrl.trim() } : { file: this.homebrewFile }) });
+      await this.runImport({ action: 'homebrew', namespace: this.namespace, source, profile,
+        ...(from === 'url' ? { url: input.url.trim() } : { file: input.file }) });
     } catch (error) { this.busy.set(false); this.message.set(String(error)); }
   }
   private async runImport(request: Exclude<ContentImportRequest, { action: 'cancel' | 'check-homebrew' }>) {
@@ -194,11 +200,11 @@ export class ContentImportService implements OnDestroy {
         this.diagnostics.set(data.diagnostics ?? data.revision?.diagnostics ?? []);
         if (data.type === 'complete') {
           this.homebrewMessages.set({});
-          if (request.action === 'update-homebrew') this.homebrewMessages.set({ [request.fileId]: 'Homebrew updated to the latest contents at its URL.' });
+          if (request.action === 'update-homebrew') this.homebrewMessages.set({ [request.fileId]: 'File updated to the latest contents at its URL.' });
           this.revision.set(data.revision);
-          this.message.set(request.action === 'remove-homebrew' ? 'Homebrew file removed. Saved characters were not changed.'
-            : request.action === 'update-homebrew' ? 'Homebrew file updated. Saved characters were not changed.'
-            : request.action === 'homebrew' ? 'Homebrew file imported. Saved characters were not changed.' : 'Content imported. Saved characters were not changed.');
+          this.message.set(request.action === 'remove-homebrew' ? 'Selected file removed. Saved characters were not changed.'
+            : request.action === 'update-homebrew' ? 'Selected file updated. Saved characters were not changed.'
+            : request.action === 'homebrew' ? `${request.profile === 'ua' ? 'Prerelease' : 'Homebrew'} file imported. Saved characters were not changed.` : 'Content imported. Saved characters were not changed.');
         } else {
           this.message.set(data.message);
           if (request.action === 'update-homebrew') {

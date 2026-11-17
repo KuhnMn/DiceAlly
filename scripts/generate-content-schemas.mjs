@@ -31,7 +31,7 @@ const emit = async (name, contents) => {
   } else await writeFile(target, contents);
 };
 
-for (const profile of ['site', 'brew']) {
+for (const profile of ['site', 'brew', 'ua']) {
   const ajv = createSchemaValidator();
   const schemas = new Map();
   const directory = path.resolve(snapshotDirectory, profile);
@@ -42,7 +42,7 @@ for (const profile of ['site', 'brew']) {
     schemas.set(info.uri ?? file, schema);
     ajv.addSchema(validationSchema(schema, info.uri ?? file), info.uri ?? file);
   }
-  const roots = [...schemaFiles, ...(profile === 'brew' ? ['homebrew.json'] : [])];
+  const roots = [...schemaFiles, ...(profile !== 'site' ? ['homebrew.json'] : [])];
   const validators = Object.fromEntries(roots.map(file => [file.replace(/\.json$/, '').replaceAll(/[-/]/g, '_'), file]));
   for (const [kind, schema] of Object.entries(referenceSchemas)) validators[`reference_${kind}`] = schema;
   if (profile === 'site') {
@@ -56,7 +56,7 @@ for (const profile of ['site', 'brew']) {
   await emit(`${profile}-validators.mjs`, `// Generated from the pinned schemas. Do not edit.\n${bundled.outputFiles[0].text}`);
   await emit(`${profile}-validators.d.mts`, `import type { ErrorObject } from 'ajv';\nexport interface SchemaValidator { (data: unknown): boolean; errors?: ErrorObject[] | null; }\n${Object.keys(validators).map(name => `export const ${name}: SchemaValidator;`).join('\n')}\n`);
 
-  const types = generateSourceTypes(schemas, kindSchemas, `${profile === 'site' ? 'Site' : 'Brew'}SourceByKind`);
+  const types = generateSourceTypes(schemas, kindSchemas, `${{ site: 'Site', brew: 'Brew', ua: 'Prerelease' }[profile]}SourceByKind`);
   await emit(`${profile}-source.d.ts`, types);
   console.log(`${profile}: ${Object.keys(validators).length} validators; ${bundled.outputFiles[0].contents.length} validator bytes; ${types.length} type characters`);
 }

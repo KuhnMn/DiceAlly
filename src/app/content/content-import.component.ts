@@ -5,6 +5,7 @@ import { UiIconComponent } from '../ui-icon.component';
 import { LibraryNavigationComponent } from '../library-navigation.component';
 import { ContentImportService } from './content-import.service';
 import { ContentImportStatusComponent } from './content-import-status.component';
+import { SupplementProfile } from './content.model';
 
 @Component({
   selector: 'app-content-import',
@@ -14,6 +15,14 @@ import { ContentImportStatusComponent } from './content-import-status.component'
 })
 export class ContentImportComponent implements OnInit, OnDestroy {
   private readonly imports = inject(ContentImportService);
+  readonly supplementInputs = this.imports.supplementInputs;
+  readonly supplementSections: { profile: SupplementProfile; id: string; title: string; description: string }[] = [
+    { profile: 'brew', id: 'homebrew-library', title: 'Homebrew', description: 'Add individual 5etools homebrew JSON files from your device or a URL.' },
+    { profile: 'ua', id: 'prerelease-library', title: 'Prerelease', description: 'Add 5etools playtest JSON files, including Unearthed Arcana, from your device or a URL.' },
+  ];
+  installedFiles(profile: SupplementProfile) {
+    return (this.revision()?.homebrewFiles ?? []).filter(file => (file.profile ?? 'brew') === profile);
+  }
 
   readonly busy = this.imports.busy;
   readonly importing = this.imports.importing;

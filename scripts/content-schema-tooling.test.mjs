@@ -10,6 +10,7 @@ import { generateSourceTypes } from './content-schema-types.mjs';
 import { schemaFiles } from './content-schema-config.mjs';
 import * as site from '../src/app/content/generated/site-validators.mjs';
 import * as brew from '../src/app/content/generated/brew-validators.mjs';
+import * as ua from '../src/app/content/generated/ua-validators.mjs';
 
 const output = await build({ entryPoints: ['src/app/content/content-fixtures.testing.ts'], bundle: true, write: false, format: 'esm', platform: 'node' });
 const { coreDocumentFixture, homebrewDocumentFixture } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].text).toString('base64')}`);
@@ -42,6 +43,10 @@ test('synthetic pipeline fixtures satisfy each full source schema', () => {
     assert.equal(validate(value), true, `${file}: ${JSON.stringify(validate.errors)}`);
   }
   assert.equal(brew.homebrew(homebrewDocumentFixture({ spell: [{ name: 'Synthetic', source: 'TESTBREW' }] })), true);
+  assert.equal(ua.homebrew(homebrewDocumentFixture({
+    _meta: { sources: [{ json: 'XUATESTPlaytest' }] },
+    spell: [{ name: 'Synthetic Playtest', source: 'XUATESTPlaytest' }],
+  })), true);
 });
 
 test('standalone custom checks retain upstream decimal and date behavior', async () => {

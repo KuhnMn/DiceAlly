@@ -17,6 +17,23 @@ async function installed() {
 describe('Homebrew URL updates', () => {
   beforeAll(async () => readHomebrewFile(document(), 'warmup.json'), 30000);
   afterEach(() => vi.restoreAllMocks());
+  it('keeps the prerelease profile for downloads and update checks and rejects malformed rules', async () => {
+    const value = homebrewDocumentFixture({
+      _meta: { sources: [{ json: 'XUATESTPlaytest' }] },
+      feat: [{ name: 'Playtest Feat', source: 'XUATESTPlaytest', entries: [] }],
+    });
+    await expect(readHomebrewFile(value, 'playtest.json')).rejects.toThrow('Content validation failed');
+    const { base } = await installed();
+    const fetcher = vi.fn().mockResolvedValue({ value, bytes: 100 });
+    const { file } = await downloadHomebrewUrl(url, undefined, fetcher, 'ua');
+    base.homebrewFiles = [file];
+    const checked = await downloadHomebrewUpdate(base, file.id, undefined, fetcher);
+    expect(checked.state).toBe('current');
+    expect(checked.file.profile).toBe('ua');
+    fetcher.mockResolvedValue({ value: { ...value, feat: [{ name: 42, source: 'XUATESTPlaytest' }] }, bytes: 100 });
+    await expect(downloadHomebrewUpdate(base, file.id, undefined, fetcher)).rejects.toThrow('Content validation failed');
+    expect(base.homebrewFiles[0]).toBe(file);
+  });
   it('checks the saved URL and compares content without mutating the installed revision', async () => {
     const { base, file } = await installed(), before = structuredClone(base);
     const fetcher = vi.fn().mockResolvedValue({ value: document(), bytes: 100 });

@@ -8,7 +8,7 @@ import { CORE_FILE_VALIDATORS } from './generated/schema-registry';
 import { metadataWarningCandidate } from './content-metadata-warnings';
 
 export type SourceKind = keyof SiteSourceByKind;
-export type SchemaProfile = 'site' | 'brew';
+export type SchemaProfile = 'site' | 'brew' | 'ua';
 
 /** Static routes, never a list of validators to try until one accepts the data. */
 const CORE_SCHEMAS: Readonly<Record<string, string>> = CORE_FILE_VALIDATORS;
@@ -25,9 +25,10 @@ export function coreSchemaName(file: string): string {
 type Validators = Record<string, SchemaValidator>;
 const profiles: Partial<Record<SchemaProfile, Promise<Validators>>> = {};
 async function validators(profile: SchemaProfile): Promise<Validators> {
-  // The schema compiler is build-time only. Load brew code only for brew input.
+  // The schema compiler is build-time only; load only the selected profile.
   return profiles[profile] ??= loadWithRetry<Validators>(() => profile === 'site'
-    ? import('./generated/site-validators.mjs') : import('./generated/brew-validators.mjs'),
+    ? import('./generated/site-validators.mjs') : profile === 'ua'
+      ? import('./generated/ua-validators.mjs') : import('./generated/brew-validators.mjs'),
     profile === 'site' ? 'generated_tables' : 'homebrew')
     .catch(error => { delete profiles[profile]; throw error; });
 }
@@ -66,7 +67,12 @@ export async function validateHomebrewDocument(value: unknown, file: string): Pr
   return validate(value, file, 'brew', 'homebrew');
 }
 
+export async function validatePrereleaseDocument(value: unknown, file: string): Promise<ImportDiagnostic[]> {
+  return validate(value, file, 'ua', 'homebrew');
+}
+
 /** Validate a complete record after inheritance against its exact pinned source profile. */
 export async function validateReferenceSource(kind: ReferenceKind, value: unknown, file: string): Promise<void> {
-  await validate(value, file, file.startsWith('homebrew/') ? 'brew' : 'site', REFERENCE_VALIDATORS[kind]);
+  await validate(value, file, file.startsWith('homebrew/ua/') ? 'ua'
+    : file.startsWith('homebrew/') ? 'brew' : 'site', REFERENCE_VALIDATORS[kind]);
 }

@@ -11,7 +11,7 @@
 
   @if (revision(); as installed) {
     <section class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-outline-variant bg-secondary-container p-4 text-on-secondary-container" aria-label="Installed library">
-      <div><h2 class="font-semibold">Your Library Is Installed</h2><p class="mt-1 text-sm">{{ installed.metrics.records }} entries · {{ installed.homebrewFiles?.length || 0 }} homebrew files</p></div>
+      <div><h2 class="font-semibold">Your Library Is Installed</h2><p class="mt-1 text-sm">{{ installed.metrics.records }} entries · {{ installed.homebrewFiles?.length || 0 }} additional files</p></div>
       <a routerLink="/compendium" class="secondary-button">Browse Your Library <app-ui-icon name="right" /></a>
     </section>
   }
@@ -19,7 +19,7 @@
   @if (!busy()) { <app-content-import-status /> }
 
   <div class="mb-4 grid md:grid-cols-2 gap-4 items-start">
-    <section id="rules-library" class="editor-card scroll-mt-24" [attr.aria-busy]="checkingRules()">
+    <section id="rules-library" class="editor-card scroll-mt-24 md:col-span-2" [attr.aria-busy]="checkingRules()">
       <h2>Rules Library</h2>
       <p class="text-sm text-on-surface-variant">Import the main game data or update your installed library.</p>
       <form (ngSubmit)="start()">
@@ -43,27 +43,28 @@
       </form>
     </section>
 
-    <section id="homebrew-library" class="editor-card scroll-mt-24">
-      <h2>Homebrew Files</h2>
-      <p class="text-sm text-on-surface-variant mb-3">Add individual 5etools JSON files from your device or a URL.</p>
+    @for (section of supplementSections; track section.profile) {
+    <section [id]="section.id" class="editor-card scroll-mt-24">
+      <h2>{{ section.title }} Files</h2>
+      <p class="text-sm text-on-surface-variant mb-3">{{ section.description }}</p>
       <fieldset [disabled]="busy()" class="min-w-0 space-y-3">
         <label class="block"><span class="field-label">JSON File URL</span>
-          <input class="editor-input" type="url" name="homebrew-url" [(ngModel)]="homebrewUrl" placeholder="https://raw.githubusercontent.com/…/file.json" />
+          <input class="editor-input" type="url" [name]="section.profile + '-url'" [(ngModel)]="supplementInputs[section.profile].url" placeholder="https://raw.githubusercontent.com/…/file.json" />
         </label>
-        <button type="button" class="action-button" [disabled]="!homebrewUrl.trim()" (click)="startHomebrew('url')">Import URL</button>
+        <button type="button" class="action-button" [disabled]="!supplementInputs[section.profile].url.trim()" (click)="startHomebrew('url', section.profile)">Import URL</button>
         <div class="border-t border-outline-variant pt-3">
-          <input #homebrewUpload id="homebrew-upload" type="file" class="hidden" accept=".json,application/json" (change)="chooseHomebrew($event)" />
+          <input #homebrewUpload [id]="section.profile + '-upload'" type="file" class="hidden" accept=".json,application/json" (change)="chooseHomebrew($event, section.profile)" />
           <div class="flex flex-wrap items-center gap-2">
             <button type="button" class="secondary-button" (click)="homebrewUpload.click()">Choose JSON File</button>
-            <button type="button" class="action-button" [disabled]="!homebrewFile" (click)="startHomebrew('file')">Import File</button>
+            <button type="button" class="action-button" [disabled]="!supplementInputs[section.profile].file" (click)="startHomebrew('file', section.profile)">Import File</button>
           </div>
-          @if (homebrewFile; as file) { <p class="text-xs text-on-surface-variant mt-2">{{ file.name }} · {{ mb(file.size) }} MB</p> }
+          @if (supplementInputs[section.profile].file; as file) { <p class="text-xs text-on-surface-variant mt-2">{{ file.name }} · {{ mb(file.size) }} MB</p> }
         </div>
       </fieldset>
-      @if (revision()?.homebrewFiles?.length) {
+      @if (installedFiles(section.profile).length) {
         <div class="rounded-lg bg-surface-container-low p-3 mt-3">
-          <h3 class="text-sm font-semibold mb-2">Installed Homebrew</h3>
-          @for (file of revision()?.homebrewFiles ?? []; track file.id) {
+          <h3 class="text-sm font-semibold mb-2">Installed {{ section.title }}</h3>
+          @for (file of installedFiles(section.profile); track file.id) {
             <div class="homebrew-entry min-w-0 border-t border-outline-variant py-3 first:border-t-0 first:pt-0 last:pb-0" [attr.aria-busy]="checkingHomebrewFiles().has(file.id)">
               <div class="flex items-start gap-2">
                 <div class="min-w-0 grow">
@@ -89,8 +90,9 @@
         </div>
         <p class="text-xs text-on-surface-variant mt-2">Removing a file removes its content from the creator. Saved characters keep their existing snapshots.</p>
       }
-      <p class="text-xs text-on-surface-variant mt-3">Update checks compare the contents at the saved URL without installing them. Dependencies are not downloaded automatically. Reimporting a file updates it; library updates retain your homebrew.</p>
+      <p class="text-xs text-on-surface-variant mt-3">Update checks compare the contents at the saved URL without installing them. Dependencies are not downloaded automatically. Reimporting a file updates it; library updates retain your additional files.</p>
     </section>
+    }
   </div>
 
   @if (revision(); as r) {

@@ -11,6 +11,10 @@ Update deliberately with `npm run schemas:snapshot -- <5etools-utils checkout>`,
 review the schema changes and coverage inventory, then run `npm run schemas:generate`.
 Normal builds use only this snapshot. Imports never download schemas.
 
+The `ua` profile is the upstream prerelease/Unearthed Arcana profile. Its full
+dependency graph is pinned to the same package version and commit as site/brew.
+Its external scene schemas use the same reviewed dependency pin described below.
+
 The brew entry schema also references `plutonium-scenes/test/schema/shared.json`
 by TheGiddyLimit. That external dependency is stored under `brew/external` with
 its original reference URL, exact download URL/commit, and checksum in the
