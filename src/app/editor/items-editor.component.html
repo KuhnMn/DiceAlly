@@ -20,11 +20,7 @@
           <div class="space-y-3">
 
 
-            <div class="flex flex-wrap items-end gap-3">
-              @if (item.isDummy) { <label class="flex-1 min-w-36"><span class="field-label">Name</span><input class="editor-input" [(ngModel)]="item.name" (ngModelChange)="change()" [name]="'item-name-' + i" /></label> }
-              <label class="flex items-center gap-2 py-2"><input type="checkbox" [ngModel]="item.allowMultiples ?? false" (ngModelChange)="setStackable(item, $event)" [name]="'item-stackable-' + i" /> Stackable</label>
-              @if (item.allowMultiples) { <label><span class="field-label">Quantity</span><input class="editor-input !w-24" type="number" min="0" step="1" [ngModel]="item.count ?? 1" (ngModelChange)="setCount(item, $event)" [name]="'item-count-' + i" /></label> }
-            </div>
+            @if (item.isDummy) { <label class="block"><span class="field-label">Name</span><input class="editor-input" [(ngModel)]="item.name" (ngModelChange)="change()" [name]="'item-name-' + i" /></label> }
             @if (item.isDummy) { <label class="block"><span class="field-label">Description</span><textarea class="editor-input" rows="3" [name]="'item-description-' + i" [ngModel]="description(item)" (ngModelChange)="setDescription(item, $event)" placeholder="Describe this item…"></textarea></label> }
 
             @if (item.isDummy) {
@@ -42,6 +38,11 @@
             }
             <app-entry-annotations-editor [entry]="item" (edited)="change()">
               <app-combat-bookmark annotation-combat [sheet]="sheet()" [resource]="item" type="ITEM" (edited)="change()" />
+              <ng-container annotation-options>
+                <button type="button" class="annotation-button" [class.bg-secondary-container]="item.allowMultiples" [class.text-on-secondary-container]="item.allowMultiples"
+                  [attr.aria-pressed]="item.allowMultiples ?? false" title="Enable or disable item stacking" (click)="setStackable(item, !item.allowMultiples)"><app-ui-icon name="stack" /> Stackable</button>
+                @if (item.allowMultiples) { <label class="flex items-center gap-1 text-xs"><span>Quantity</span><input class="editor-input !w-20 !min-h-8 !px-2 !py-1 !text-xs" type="number" min="0" step="1" [ngModel]="item.count ?? 1" (ngModelChange)="setCount(item, $event)" [name]="'item-count-' + i" /></label> }
+              </ng-container>
               <ng-container annotation-description>@if (descriptionEntries(item).length || hasVehicleStatistics(item)) { <app-description-dialog annotation-description [dense]="true" [title]="item.name" [label]="item.isDummy ? 'Description Preview' : 'Description'"><div class="space-y-3 p-2"><app-vehicle-item-details [item]="item.entity?.item" /><app-entry-renderer [entries]="descriptionEntries(item)" /></div></app-description-dialog> }</ng-container>
             </app-entry-annotations-editor>
           </div>

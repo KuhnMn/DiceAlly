@@ -26,7 +26,7 @@ import { SourceBookFilterService } from './source-book-filter.service';
   providers: [EditorCombatIndex],
   selector: 'app-editor-items',
   imports: [VehicleItemDetailsComponent, EditorEntryRowComponent, ListControlsComponent, DescriptionDialogComponent, CombatBookmarkComponent, FormsModule, EntryAnnotationsComponent, RemoveEntryDialogComponent, EntryRendererComponent, UiIconComponent, ItemCatalogComponent],
-  templateUrl: './items-editor.component.html', styleUrls: ['./editor.css', './editor-feature-fields.css'],
+  templateUrl: './items-editor.component.html', styleUrls: ['./editor.css', './editor-feature-fields.css', './editor-annotations.css'],
 })
 export class ItemsEditorComponent implements DoCheck, OnInit, OnDestroy {
   itemTypes: ContentRecord[] = [];

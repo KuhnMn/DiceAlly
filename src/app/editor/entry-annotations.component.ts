@@ -17,7 +17,6 @@ import type { ViewerEntryVisibility } from '../models/entry-visibility';
     .annotation-panel { border: 1px solid var(--md-sys-color-outline-variant); border-radius: .5rem; padding: .5rem; margin-top: .5rem; }
     .annotation-panel .editor-input { min-height: 2rem; padding: .25rem .5rem; font-size: .8125rem; }
     .annotation-panel .field-label { margin-bottom: .125rem; font-size: .6875rem; }
-    .annotation-button { display: inline-flex; align-items: center; justify-content: center; gap: .25rem; min-height: 2rem; padding: .25rem .5rem; border: 1px solid var(--md-sys-color-outline-variant); border-radius: .375rem; font-size: .75rem; }
     .annotation-remove { display: inline-flex; align-items: center; justify-content: center; width: 2rem; min-height: 2rem; flex-shrink: 0; border-radius: .375rem; }
   `],
 })

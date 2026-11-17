@@ -12,6 +12,7 @@
     }
     @if (showResources()) { <button type="button" class="annotation-button" [attr.aria-pressed]="activePanel === 'resources'" [attr.aria-controls]="'resource-panel-' + i" [attr.aria-expanded]="activePanel === 'resources'" (click)="togglePanel('resources')"><app-ui-icon name="link" /> Resources</button> }
     <ng-content select="[annotation-combat]" />
+    <ng-content select="[annotation-options]" />
     @if (showVisibility()) { <button appEntryVisibility class="annotation-button" [entries]="visibilityEntries() ?? [entry()]" (edited)="change()"></button> }
   </div>
   <section class="annotation-panel" [hidden]="!showResources() || activePanel !== 'resources'" [id]="'resource-panel-' + i" aria-label="Resource links editor">
