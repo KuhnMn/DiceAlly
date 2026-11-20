@@ -1,3 +1,4 @@
+import { setContainer } from '../models/inventory-layout';
 import { contentEntries } from '../content/content-entries';
 import { ItemVehicleDefinition, itemTypeUid } from '../content/item.model';
 import { VehicleItemDetailsComponent } from '../sheet/vehicle-item-details.component';
@@ -51,6 +52,7 @@ export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
     return this.customValue == null || (Number.isSafeInteger(this.customValue) && this.customValue >= 0);
   }
   stackable = false;
+  asContainer = false;
   quantity = 1;
   error = '';
   adding = false;
@@ -117,6 +119,7 @@ export class ItemCatalogComponent implements OnInit, OnDestroy, DoCheck {
     item.allowMultiples = this.stackable;
     item.count = this.stackable && Number.isFinite(this.quantity) ? Math.max(0, Math.floor(this.quantity)) : 1;
     (sheet.inventory ??= []).push(item);
+    if (this.asContainer) setContainer(sheet, item, true);
     this.catalogAdded++;
     this.view.markForCheck();
     this.edited.emit();

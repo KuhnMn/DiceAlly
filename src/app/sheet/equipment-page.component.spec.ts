@@ -94,8 +94,10 @@ describe('Equipment details', () => {
     const component = fixture.componentInstance;
     component.toggleExpanded(component.itemKey(coin)); fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
-    const select = root.querySelector<HTMLSelectElement>('select[aria-label="Move Coin to container"]')!;
-    select.value = 'bag'; select.dispatchEvent(new Event('change')); fixture.detectChanges();
+    const controls = root.querySelector('[aria-label="Coin controls"]')!;
+    expect(root.querySelector('app-item-container-controls button[title="Use this item as a container"]')).toBeNull();
+    controls.querySelector<HTMLButtonElement>('button[aria-label="Move Coin"]')!.click(); fixture.detectChanges();
+    root.querySelector<HTMLButtonElement>('button[aria-label="Move to Backpack"]')!.click(); fixture.detectChanges();
     expect(sheet.inventoryLayout.parentByItemId['coin']).toBe('bag');
     expect(root.querySelector('[aria-label="Backpack contents"] #item-coin')).not.toBeNull();
     component.toggleExpanded(component.itemKey(coin)); fixture.detectChanges();

@@ -1,11 +1,6 @@
 <ng-template #inventoryBranch let-node>
   @let item = node.item;
       <article class="min-w-0 rounded-lg border border-green bg-surface-container px-3 py-1.5 sm:py-2" [id]="itemKey(item)" [class.flash-highlight]="highlightedId() === itemKey(item)">
-          @if (isContainer(item)) {
-            <button type="button" class="flex min-h-11 items-center gap-2 rounded text-sm text-green focus-visible:outline-2 focus-visible:outline-primary" (click)="toggleContainer(item)" [attr.aria-expanded]="!collapsedContainers().has(item)" [attr.aria-label]="(collapsedContainers().has(item) ? 'Expand ' : 'Collapse ') + item.name">
-              <app-ui-icon name="chevron" [class.rotate-90]="!collapsedContainers().has(item)" /> Container ({{ node.children.length }})
-            </button>
-          }
           <h3 class="min-w-0"><button type="button" (click)="toggleExpanded(itemKey(item))" aria-haspopup="dialog" [attr.aria-expanded]="isExpanded(itemKey(item))" [attr.aria-controls]="itemKey(item) + '-details'" class="flex min-h-8 w-full items-center justify-between gap-2 rounded text-left text-base font-bold sm:gap-3 text-green sm:text-xl focus-visible:outline-2 focus-visible:outline-primary"><span class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1"><span class="min-w-0 max-w-full truncate" [title]="item.name">{{ item.name }}</span><ng-container [ngTemplateOutlet]="itemTypeTag" [ngTemplateOutletContext]="{ $implicit: item }" /></span>
           <app-ui-icon class="shrink-0" name="chevron" /></button></h3>
 
@@ -39,6 +34,7 @@
             </div>
           }
           <div class="ml-auto flex shrink-0 items-center gap-1" role="group" [attr.aria-label]="item.name + ' controls'">
+            <app-item-container-controls [sheet]="characterData()!" [item]="item" (edited)="inventoryChanged()" />
             <button type="button" (click)="toggleEquipped(item)" [attr.aria-pressed]="item.isEquipped ?? false" [attr.aria-label]="(item.isEquipped ? 'Unequip ' : 'Equip ') + item.name" [title]="item.isEquipped ? 'Equipped: click to unequip' : 'Equip item'" class="flex h-8 w-8 items-center justify-center rounded text-xl text-green hover:bg-green-container focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="backpack" [filled]="item.isEquipped ?? false" /></button>
             @if ((requiresAttunement(item) || item.isAttuned)) {
               <button type="button" (click)="toggleAttuned(item)" [attr.aria-pressed]="item.isAttuned ?? false" [attr.aria-label]="(item.isAttuned ? 'Unattune ' : 'Attune ') + item.name" [title]="item.isAttuned ? 'Attuned: click to unattune' : 'Attune item'" class="flex h-8 w-8 items-center justify-center rounded text-xl text-purple hover:bg-purple-container focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="flame" [filled]="item.isAttuned ?? false" /></button>
@@ -54,6 +50,11 @@
           <ng-container [ngTemplateOutlet]="itemDetail" [ngTemplateOutletContext]="{ $implicit: item }" />
         }
 
+          @if (isContainer(item)) {
+            <button type="button" class="mt-2 flex min-h-11 w-full items-center gap-2 border-t border-outline-variant pt-1 text-left text-xs text-green sm:min-h-8 focus-visible:outline-2 focus-visible:outline-primary" (click)="toggleContainer(item)" [attr.aria-expanded]="!collapsedContainers().has(item)" [attr.aria-label]="(collapsedContainers().has(item) ? 'Expand ' : 'Collapse ') + item.name">
+              <app-ui-icon name="chevron" [class.rotate-90]="!collapsedContainers().has(item)" /> Container ({{ node.children.length }})
+            </button>
+          }
       </article>
 
   @if (!collapsedContainers().has(item) && node.children.length) {

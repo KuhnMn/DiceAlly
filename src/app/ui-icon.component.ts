@@ -25,6 +25,7 @@ const ICON_PATHS: Record<string, string | undefined> = {
   'chevron-down': 'm5 9 7 7 7-7',
   link: 'M10 13a5 5 0 0 0 7 .5l4-4a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7-.5l-4 4a5 5 0 0 0 7 7l2-2',
   copy: 'M9 9h12v12H9ZM15 5V3H3v12h2',
+  box: 'm12 3 9 5v10l-9 5-9-5V8ZM3 8l9 5 9-5M12 13v10M7.5 5.5l9 5',
   stack: 'm12 3 10 5-10 5L2 8ZM2 12l10 5 10-5M2 16l10 5 10-5',
   'layout-list': 'M3 3h18v7H3ZM3 14h18v7H3Z',
   'layout-columns': 'M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h7v7h-7Z',

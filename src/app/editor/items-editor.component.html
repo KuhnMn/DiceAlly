@@ -36,13 +36,13 @@
               @if (itemTypes.length && !filteredItemTypes.length) { <p class="text-xs text-on-surface-variant">No item types match the selected sources.</p> }
               @if (typesMessage) { <p class="text-xs text-on-surface-variant">{{ typesMessage }}</p> }
             }
-            <app-item-container-controls [sheet]="sheet()" [item]="item" (edited)="change()" />
             <app-entry-annotations-editor [entry]="item" (edited)="change()">
               <app-combat-bookmark annotation-combat [sheet]="sheet()" [resource]="item" type="ITEM" (edited)="change()" />
               <ng-container annotation-options>
                 <button type="button" class="annotation-button" [class.bg-secondary-container]="item.allowMultiples" [class.text-on-secondary-container]="item.allowMultiples"
                   [attr.aria-pressed]="item.allowMultiples ?? false" title="Enable or disable item stacking" (click)="setStackable(item, !item.allowMultiples)"><app-ui-icon name="stack" /> Stackable</button>
                 @if (item.allowMultiples) { <label class="flex items-center gap-1 text-xs"><span>Quantity</span><input class="editor-input !w-20 !min-h-8 !px-2 !py-1 !text-xs" type="number" min="0" step="1" [ngModel]="item.count ?? 1" (ngModelChange)="setCount(item, $event)" [name]="'item-count-' + i" /></label> }
+                <app-item-container-controls [editing]="true" [sheet]="sheet()" [item]="item" (edited)="change()" />
               </ng-container>
               <ng-container annotation-description>@if (descriptionEntries(item).length || hasVehicleStatistics(item)) { <app-description-dialog annotation-description [dense]="true" [title]="item.name" [label]="item.isDummy ? 'Description Preview' : 'Description'"><div class="space-y-3 p-2"><app-vehicle-item-details [item]="item.entity?.item" /><app-entry-renderer [entries]="descriptionEntries(item)" /></div></app-description-dialog> }</ng-container>
             </app-entry-annotations-editor>

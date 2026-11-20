@@ -205,9 +205,10 @@ describe('Items creator', () => {
     const catalog = fixture.debugElement.query(By.directive(ItemCatalogComponent)).componentInstance as ItemCatalogComponent;
     expect(fixture.nativeElement.querySelector('app-source-book-filter')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('app-entry-annotations-editor')).toBeNull();
-    catalog.stackable = true; catalog.quantity = 5;
+    catalog.stackable = true; catalog.quantity = 5; catalog.asContainer = true;
     catalog.customName = 'Arrows'; catalog.customDescription = 'A bundle of arrows'; catalog.addCustom();
     expect(store.characterData()!.inventory![0]).toMatchObject({ name: 'Arrows', allowMultiples: true, count: 5, uses: [], notes: [] });
+    expect(store.characterData()!.inventoryLayout!.containerIds).toContain(store.characterData()!.inventory![0].editorId);
     expect(store.characterData()).not.toBe(sheet);
     // Parent input follows the updated store in the sheet.
     fixture.componentRef.setInput('characterData', store.characterData()); await fixture.whenStable();
@@ -215,5 +216,6 @@ describe('Items creator', () => {
     await catalog.add({ ...record, links: [] });
     expect(store.characterData()!.inventory![1].entity!.item.bonusWeapon).toBe('+1');
     expect(store.characterData()!.inventory![1].isDummy).not.toBe(true);
+    expect(store.characterData()!.inventoryLayout!.containerIds).toContain(store.characterData()!.inventory![1].editorId);
   });
 });
