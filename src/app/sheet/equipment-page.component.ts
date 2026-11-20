@@ -76,6 +76,7 @@ import { CharacterStore } from '../stores/character.store';
     }
     
   `],
+  styleUrls: ['./item-actions.css'],
   templateUrl: './equipment-page.component.html',
 })
 export class EquipmentPageComponent {

@@ -7,7 +7,7 @@ import { containerTargets, isContainer, moveInventoryItem, setContainer } from '
 @Component({
   selector: 'app-item-container-controls',
   imports: [SheetDetailDialogComponent, UiIconComponent],
-  styleUrls: ['./editor-annotations.css'],
+  styleUrls: ['./editor-annotations.css', '../sheet/item-actions.css'],
   host: { class: 'inline-flex min-w-0 max-w-full flex-wrap items-center gap-1.5 align-middle' },
   template: `
     @if (editing()) {
@@ -18,9 +18,9 @@ import { containerTargets, isContainer, moveInventoryItem, setContainer } from '
       </button>
     }
     @if (targets().length || parent()) {
-      <button type="button" [class]="editing() ? 'annotation-button' : 'flex h-8 w-8 items-center justify-center rounded text-xl text-green hover:bg-green-container focus-visible:outline-2 focus-visible:outline-primary'"
+      <button type="button" [class]="editing() ? 'annotation-button' : labelled() ? 'item-action text-green hover:bg-green-container focus-visible:outline-2 focus-visible:outline-primary' : 'flex h-8 w-8 items-center justify-center rounded text-xl text-green hover:bg-green-container focus-visible:outline-2 focus-visible:outline-primary'"
         [attr.aria-label]="'Move ' + item().name" [title]="moveTitle()" aria-haspopup="dialog" [attr.aria-expanded]="open()" (click)="open.set(true)">
-        <app-ui-icon name="right" /> @if (editing()) { Move }
+        <app-ui-icon name="right" /> @if (editing() || labelled()) { <span>Move</span> }
       </button>
     }
     @if (open()) {
@@ -50,6 +50,7 @@ export class ItemContainerControlsComponent {
   readonly item = input.required<InventoryItem>();
   readonly edited = output<void>();
   readonly editing = input(false);
+  readonly labelled = input(false);
   readonly open = signal(false);
   container() { return isContainer(this.sheet(), this.item()); }
   targets() { return containerTargets(this.sheet(), this.item()); }

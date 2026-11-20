@@ -99,9 +99,23 @@
           @if (getItemProp(item, 'range')) { <span>{{ getItemProp(item, 'range') }} ft.</span> }
         </div>
         }
-        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-          <label class="flex min-h-11 cursor-pointer items-center gap-2"><input type="checkbox" [checked]="item.isEquipped ?? false" (change)="toggleEquipped(item)" class="h-5 w-5 accent-green" /> Equipped</label>
-          @if ((requiresAttunement(item) || item.isAttuned)) { <label class="flex min-h-11 cursor-pointer items-center gap-2 text-purple"><input type="checkbox" [checked]="item.isAttuned ?? false" (change)="toggleAttuned(item)" class="h-5 w-5 accent-purple" /> Attuned</label> }
+        <div class="item-actions" role="group" aria-label="Item actions">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" class="item-action text-green hover:bg-green-container focus-visible:outline-2 focus-visible:outline-primary"
+            [class.bg-green-container]="item.isEquipped" [attr.aria-pressed]="item.isEquipped ?? false"
+            [attr.aria-label]="(item.isEquipped ? 'Unequip ' : 'Equip ') + item.name" title="Equipped" (click)="toggleEquipped(item)">
+            <app-ui-icon name="backpack" [filled]="item.isEquipped ?? false" />
+            <span class="item-action-label">Equipped</span><abbr class="item-action-short" title="Equipped">Eq.</abbr>
+          </button>
+          @if ((requiresAttunement(item) || item.isAttuned)) {
+            <button type="button" class="item-action text-purple hover:bg-purple-container focus-visible:outline-2 focus-visible:outline-primary"
+              [class.bg-purple-container]="item.isAttuned" [attr.aria-pressed]="item.isAttuned ?? false"
+              [attr.aria-label]="(item.isAttuned ? 'Unattune ' : 'Attune ') + item.name" title="Attuned" (click)="toggleAttuned(item)">
+              <app-ui-icon name="flame" [filled]="item.isAttuned ?? false" />
+              <span class="item-action-label">Attuned</span><abbr class="item-action-short" title="Attuned">Att.</abbr>
+            </button>
+          }
+          <app-item-container-controls [labelled]="true" [sheet]="characterData()!" [item]="item" (edited)="inventoryChanged()" />
           @if (item.allowMultiples) {
             <div class="inline-flex items-center gap-1" role="group" [attr.aria-label]="item.name + ' quantity'">
               <span class="mr-1 text-sm">Qty</span>
@@ -111,8 +125,7 @@
             </div>
           }
         </div>
-
-        <app-item-container-controls [sheet]="characterData()!" [item]="item" (edited)="inventoryChanged()" />
+        </div>
         @if (item.uses?.length) { <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">@for (use of item.uses; track use) { <app-feature-uses [character]="characterData()?.character" tone="items" [uses]="use" (usesUpdated)="updateItemUses(item, $event)" /> }</div> }
           <div [id]="itemKey(item) + '-details'" class="space-y-3 border-t border-outline-variant pt-3">
             <app-equipment-details [entity]="item.entity" />

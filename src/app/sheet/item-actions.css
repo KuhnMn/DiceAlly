@@ -1,0 +1,19 @@
+.item-actions { container: item-actions / inline-size; }
+.item-action {
+  display: inline-flex;
+  min-height: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: .375rem;
+  padding: .375rem .5rem;
+  border-radius: .375rem;
+  font-size: .8125rem;
+  line-height: 1.25rem;
+}
+.item-action app-ui-icon { font-size: 1.125rem; }
+.item-action-short { display: none; text-decoration: none; }
+@container item-actions (max-width: 22rem) {
+  .item-action-label { display: none; }
+  .item-action-short { display: inline; }
+}
