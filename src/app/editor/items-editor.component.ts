@@ -1,3 +1,5 @@
+import { ItemContainerControlsComponent } from './item-container-controls.component';
+import { removeInventoryLayoutItem } from '../models/inventory-layout';
 import { itemTypeUid } from '../content/item.model';
 import { VehicleItemDetailsComponent } from '../sheet/vehicle-item-details.component';
 import { vehicleItemStatistics } from '../sheet/vehicle-item-presentation';
@@ -25,7 +27,7 @@ import { SourceBookFilterService } from './source-book-filter.service';
 @Component({
   providers: [EditorCombatIndex],
   selector: 'app-editor-items',
-  imports: [VehicleItemDetailsComponent, EditorEntryRowComponent, ListControlsComponent, DescriptionDialogComponent, CombatBookmarkComponent, FormsModule, EntryAnnotationsComponent, RemoveEntryDialogComponent, EntryRendererComponent, UiIconComponent, ItemCatalogComponent],
+  imports: [ItemContainerControlsComponent, VehicleItemDetailsComponent, EditorEntryRowComponent, ListControlsComponent, DescriptionDialogComponent, CombatBookmarkComponent, FormsModule, EntryAnnotationsComponent, RemoveEntryDialogComponent, EntryRendererComponent, UiIconComponent, ItemCatalogComponent],
   templateUrl: './items-editor.component.html', styleUrls: ['./editor.css', './editor-feature-fields.css', './editor-annotations.css'],
 })
 export class ItemsEditorComponent implements DoCheck, OnInit, OnDestroy {
@@ -112,6 +114,7 @@ export class ItemsEditorComponent implements DoCheck, OnInit, OnDestroy {
   confirmRemoval() { const item = this.pendingRemoval; this.pendingRemoval = undefined; if (item) this.deleteItem(item); }
   private deleteItem(item: InventoryItem) {
     const index = this.items.indexOf(item); if (index < 0) return;
+    removeInventoryLayoutItem(this.sheet(), item);
     this.sheet().inventory!.splice(index, 1); this.expanded.delete(item); this.change();
   }
 }

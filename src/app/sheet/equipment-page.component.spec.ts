@@ -82,3 +82,29 @@ describe('Equipment details', () => {
     expect(component.formatGold(Infinity)).toBe('—');
   });
 });
+
+  it('moves items through the detail controls and keeps hidden-container contents visible', () => {
+    const fixture = TestBed.createComponent(EquipmentPageComponent);
+    const bag = { editorId: 'bag', name: 'Backpack' };
+    const coin = { editorId: 'coin', name: 'Coin' };
+    const sheet = { character: {}, inventory: [bag, coin], inventoryLayout: {
+      containerIds: ['bag'], parentByItemId: {} as Record<string, string>,
+    } };
+    fixture.componentRef.setInput('characterData', sheet); fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.toggleExpanded(component.itemKey(coin)); fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const select = root.querySelector<HTMLSelectElement>('select[aria-label="Move Coin to container"]')!;
+    select.value = 'bag'; select.dispatchEvent(new Event('change')); fixture.detectChanges();
+    expect(sheet.inventoryLayout.parentByItemId['coin']).toBe('bag');
+    expect(root.querySelector('[aria-label="Backpack contents"] #item-coin')).not.toBeNull();
+    component.toggleExpanded(component.itemKey(coin)); fixture.detectChanges();
+    root.querySelector<HTMLButtonElement>('button[aria-label="Collapse Backpack"]')!.click(); fixture.detectChanges();
+    expect(root.querySelector('#item-coin')).toBeNull();
+    fixture.componentRef.setInput('characterData', { ...sheet, inventory: [{ ...bag, hidden: true }, coin] });
+    fixture.detectChanges();
+    expect(root.querySelector('#item-bag')).toBeNull();
+    expect(root.querySelector('#item-coin')).not.toBeNull();
+    expect(sheet.inventoryLayout.parentByItemId['coin']).toBe('bag');
+    fixture.destroy();
+  });

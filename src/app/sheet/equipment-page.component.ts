@@ -1,3 +1,5 @@
+import { ItemContainerControlsComponent } from '../editor/item-container-controls.component';
+import { InventoryNode, inventoryTree, isContainer, removeInventoryLayoutItem } from '../models/inventory-layout';
 import { compareSearchMatches, rankSearchResults } from '../search-ranking';
 import { visibleInViewer } from '../models/entry-visibility';
 import { ListControlsComponent } from '../list-controls.component';
@@ -20,7 +22,7 @@ import { CharacterStore } from '../stores/character.store';
 
 @Component({
   selector: 'app-equipment-page',
-  imports: [ListControlsComponent, SheetListLayoutComponent, ItemRuleTagComponent, SheetDetailDialogComponent, HorizontalRowDirective, EquipmentDetailsComponent, ItemCatalogComponent, UiIconComponent, CommonModule, FormsModule, FeatureUsesComponent, FeatureNotesComponent],
+  imports: [ItemContainerControlsComponent, ListControlsComponent, SheetListLayoutComponent, ItemRuleTagComponent, SheetDetailDialogComponent, HorizontalRowDirective, EquipmentDetailsComponent, ItemCatalogComponent, UiIconComponent, CommonModule, FormsModule, FeatureUsesComponent, FeatureNotesComponent],
   styles: [`
     /* Theme colors are plain CSS utilities, not Tailwind responsive utilities. */
     @media (min-width: 768px) {
@@ -108,16 +110,26 @@ export class EquipmentPageComponent {
     return rankSearchResults(this.inventory().filter(entry => this.showHidden() || visibleInViewer(entry)).filter(item => item.name.toLowerCase().includes(query) && (filter === 'all' || filter === 'equipped' && item.isEquipped || filter === 'attuned' && item.isAttuned)), query, item => item.name);
   });
   readonly inventoryGroups = computed(() => {
-    const groups = new Map<string, InventoryItem[]>();
-    for (const item of this.visibleInventory()) {
+    const groups = new Map<string, InventoryNode[]>();
+    for (const node of inventoryTree(this.characterData() ?? {}, this.visibleInventory())) {
+      const item = node.item;
       const label = item.entity?.itemType?.trim() || (item.isDummy ? 'Custom Items' : 'Other Items');
       const entries = groups.get(label) ?? [];
-      entries.push(item);
+      entries.push(node);
       groups.set(label, entries);
     }
-    return [...groups].map(([label, items]) => ({ label, items }))
+    return [...groups].map(([label, nodes]) => ({ label, items: nodes.map(node => node.item), nodes }))
       .sort((a, b) => compareSearchMatches(a.items[0].name, b.items[0].name, this.searchQuery()) || a.label.localeCompare(b.label));
   });
+  readonly collapsedContainers = signal(new Set<InventoryItem>());
+  isContainer(item: InventoryItem) { return isContainer(this.characterData() ?? {}, item); }
+  toggleContainer(item: InventoryItem) {
+    this.collapsedContainers.update(current => {
+      const next = new Set(current);
+      if (next.has(item)) next.delete(item); else next.add(item);
+      return next;
+    });
+  }
   itemKey(item: InventoryItem) { return 'item-' + (item.editorId ?? this.helpers.sourceId(item.name + '-' + (item.source ?? ''))); }
   private readonly dialogs = inject(AppDialogService);
   characterData = input.required<ExportedCharacter | null>();
@@ -156,7 +168,7 @@ export class EquipmentPageComponent {
       const targetId = this.store.featureScrollTarget();
       if (!targetId || (!targetId.startsWith('item-'))) return;
       const target = this.characterData()?.inventory?.find(item => `item-${item.editorId ?? this.helpers.sourceId(item.name + '-' + (item.source ?? ''))}` === targetId);
-      if (target) { this.searchQuery.set(''); this.inventoryFilter.set('all'); this.expandedItems.set(new Set([this.itemKey(target)])); }
+      if (target) { this.collapsedContainers.set(new Set()); this.searchQuery.set(''); this.inventoryFilter.set('all'); this.expandedItems.set(new Set([this.itemKey(target)])); }
       if (typeof document === 'undefined') return;
       setTimeout(() => {
         const el = document.getElementById(targetId);
@@ -349,6 +361,7 @@ export class EquipmentPageComponent {
 
     const index = charData.inventory.indexOf(item);
     if (index > -1) {
+      removeInventoryLayoutItem(charData, item);
       charData.inventory.splice(index, 1);
       this.inventoryChanged();
     }

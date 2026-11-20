@@ -1,3 +1,70 @@
+<ng-template #inventoryBranch let-node>
+  @let item = node.item;
+      <article class="min-w-0 rounded-lg border border-green bg-surface-container px-3 py-1.5 sm:py-2" [id]="itemKey(item)" [class.flash-highlight]="highlightedId() === itemKey(item)">
+          @if (isContainer(item)) {
+            <button type="button" class="flex min-h-11 items-center gap-2 rounded text-sm text-green focus-visible:outline-2 focus-visible:outline-primary" (click)="toggleContainer(item)" [attr.aria-expanded]="!collapsedContainers().has(item)" [attr.aria-label]="(collapsedContainers().has(item) ? 'Expand ' : 'Collapse ') + item.name">
+              <app-ui-icon name="chevron" [class.rotate-90]="!collapsedContainers().has(item)" /> Container ({{ node.children.length }})
+            </button>
+          }
+          <h3 class="min-w-0"><button type="button" (click)="toggleExpanded(itemKey(item))" aria-haspopup="dialog" [attr.aria-expanded]="isExpanded(itemKey(item))" [attr.aria-controls]="itemKey(item) + '-details'" class="flex min-h-8 w-full items-center justify-between gap-2 rounded text-left text-base font-bold sm:gap-3 text-green sm:text-xl focus-visible:outline-2 focus-visible:outline-primary"><span class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1"><span class="min-w-0 max-w-full truncate" [title]="item.name">{{ item.name }}</span><ng-container [ngTemplateOutlet]="itemTypeTag" [ngTemplateOutletContext]="{ $implicit: item }" /></span>
+          <app-ui-icon class="shrink-0" name="chevron" /></button></h3>
+
+
+        @if (getItemProp(item, 'weaponCategory') || getItemTypeTags(item).length || (getItemProp(item, 'rarity') && getItemProp(item, 'rarity') !== 'none') || item.entity?.properties?.length || item.entity?.masteries?.length) {
+        <div class="mt-2 flex flex-wrap items-center gap-1.5">
+          <ng-container [ngTemplateOutlet]="itemTags" [ngTemplateOutletContext]="{ $implicit: item }" />
+          @for (property of item.entity?.properties; track property.name) { <app-item-rule-tag [label]="property.name" [entry]="property.entry" [notes]="property.notes" /> }
+          @for (mastery of item.entity?.masteries; track mastery.name) { <app-item-rule-tag [label]="mastery.name" [entry]="mastery.entry" [notes]="mastery.notes" [mastery]="true" /> }
+        </div>
+        }
+        @if (hasItemStatistics(item)) {
+        <div data-horizontal-row class="relative flex min-w-0 max-w-full flex-nowrap items-center gap-3 overflow-x-auto overscroll-x-contain py-1 text-sm mt-2 [scrollbar-width:thin] [&>*]:shrink-0 [&>*]:whitespace-nowrap" aria-label="Item statistics">
+          @if (getItemProp(item, 'dmg1')) { <span>{{ getItemProp(item, 'dmg1') }} {{ getItemProp(item, 'dmgType') }}@if (getItemProp(item, 'dmg2')) { · {{ getItemProp(item, 'dmg2') }} versatile}</span> }
+          @if (getItemProp(item, 'ac') ?? item.entity?.ac) { <span>AC {{ getItemProp(item, 'ac') ?? item.entity?.ac }}</span> }
+          @if (getItemProp(item, 'range')) { <span>{{ getItemProp(item, 'range') }} ft.</span> }
+          @if (getItemProp(item, 'weight') != null) { <span>Weight: {{ getItemProp(item, 'weight') }} lb.</span> }
+          @if (getItemProp(item, 'value') != null) { <span>Value: {{ formatGold(getItemProp(item, 'value')) }}</span> }
+          @if (getItemProp(item, 'scfType')) { <span>Focus: {{ getItemProp(item, 'scfType') }}</span> }
+        </div>
+        }
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm mt-2 sm:gap-x-4 sm:gap-y-1">
+          @if (item.source) { <span class="rounded bg-surface-container-high px-2 py-0.5 text-xs">{{ item.source }}</span> }
+          @if (item.isDummy) { <span role="img" aria-label="Created in-app" title="Created in-app" class="inline-flex items-center rounded bg-surface-container-high px-1.5 py-1 text-sm"><app-ui-icon name="wand" /></span> }
+          @if (item.allowMultiples) {
+            <div class="inline-flex items-center gap-1" role="group" [attr.aria-label]="item.name + ' quantity'">
+              <span class="mr-1 text-sm">Qty</span>
+              <button type="button" (click)="updateItemCount(item, '' + ((item.count ?? 1) - 1))" [disabled]="(item.count ?? 1) <= 0" [attr.aria-label]="'Decrease quantity of ' + item.name" class="flex h-8 w-8 items-center justify-center rounded border border-outline-variant bg-surface-container-high disabled:opacity-35"><app-ui-icon name="minus" /></button>
+              <input type="number" inputmode="numeric" min="0" [attr.aria-label]="'Quantity of ' + item.name" [value]="item.count ?? 1" (input)="updateItemCount(item, $any($event.target).value)" class="h-8 w-12 rounded border border-outline-variant bg-surface px-1 text-center text-base [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
+              <button type="button" (click)="updateItemCount(item, '' + ((item.count ?? 1) + 1))" [attr.aria-label]="'Increase quantity of ' + item.name" class="flex h-8 w-8 items-center justify-center rounded border border-outline-variant bg-surface-container-high"><app-ui-icon name="plus" /></button>
+            </div>
+          }
+          <div class="ml-auto flex shrink-0 items-center gap-1" role="group" [attr.aria-label]="item.name + ' controls'">
+            <button type="button" (click)="toggleEquipped(item)" [attr.aria-pressed]="item.isEquipped ?? false" [attr.aria-label]="(item.isEquipped ? 'Unequip ' : 'Equip ') + item.name" [title]="item.isEquipped ? 'Equipped: click to unequip' : 'Equip item'" class="flex h-8 w-8 items-center justify-center rounded text-xl text-green hover:bg-green-container focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="backpack" [filled]="item.isEquipped ?? false" /></button>
+            @if ((requiresAttunement(item) || item.isAttuned)) {
+              <button type="button" (click)="toggleAttuned(item)" [attr.aria-pressed]="item.isAttuned ?? false" [attr.aria-label]="(item.isAttuned ? 'Unattune ' : 'Attune ') + item.name" [title]="item.isAttuned ? 'Attuned: click to unattune' : 'Attune item'" class="flex h-8 w-8 items-center justify-center rounded text-xl text-purple hover:bg-purple-container focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="flame" [filled]="item.isAttuned ?? false" /></button>
+            }
+          <button type="button" (click)="deleteItem(item)" [attr.aria-label]="'Delete ' + item.name" [title]="'Delete ' + item.name" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm text-on-surface-variant transition-colors hover:bg-error-container hover:text-on-error-container focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="trash" /></button>
+          </div>
+        </div>
+        @if (!isExpanded(itemKey(item))) {
+        @if (item.uses?.length) { <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">@for (use of item.uses; track use) { <app-feature-uses [character]="characterData()?.character" tone="items" [uses]="use" (usesUpdated)="updateItemUses(item, $event)" /> }</div> }
+        }
+        <app-feature-notes [notes]="item.notes" (notesChanged)="updateItemNotes(item, $event)" />
+        @if (isExpanded(itemKey(item))) {
+          <ng-container [ngTemplateOutlet]="itemDetail" [ngTemplateOutletContext]="{ $implicit: item }" />
+        }
+
+      </article>
+
+  @if (!collapsedContainers().has(item) && node.children.length) {
+    <div class="ml-2 min-w-0 space-y-2 border-l-2 border-outline-variant pl-2 sm:ml-4 sm:pl-3" [attr.aria-label]="item.name + ' contents'">
+      @for (child of node.children; track child.item.editorId ?? child.item) {
+        <ng-container [ngTemplateOutlet]="inventoryBranch" [ngTemplateOutletContext]="{ $implicit: child }" />
+      }
+    </div>
+  }
+</ng-template>
+
 <ng-template #itemTypeTag let-item>
           @if (item.entity?.itemType) { <span class="inline-block max-w-full rounded bg-green-container px-2 py-0.5 text-xs font-normal text-on-green-container [overflow-wrap:anywhere]">{{ item.entity?.itemType }}</span> }
         </ng-template>
@@ -44,6 +111,7 @@
           }
         </div>
 
+        <app-item-container-controls [sheet]="characterData()!" [item]="item" (edited)="inventoryChanged()" />
         @if (item.uses?.length) { <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">@for (use of item.uses; track use) { <app-feature-uses [character]="characterData()?.character" tone="items" [uses]="use" (usesUpdated)="updateItemUses(item, $event)" /> }</div> }
           <div [id]="itemKey(item) + '-details'" class="space-y-3 border-t border-outline-variant pt-3">
             <app-equipment-details [entity]="item.entity" />
@@ -110,57 +178,10 @@
       <section>
         <h4 class="mb-2 border-b-2 border-green pb-1 text-lg font-bold text-green">{{ group.label }}</h4>
         <div class="sheet-entry-list" [class.sheet-entry-list-two-columns]="listLayout.displayColumns() === 2" [class.sheet-entry-list-three-columns]="listLayout.displayColumns() === 3">
-    @for (item of group.items; track item.editorId ?? item) {
-      <article class="min-w-0 rounded-lg border border-green bg-surface-container px-3 py-1.5 sm:py-2" [id]="itemKey(item)" [class.flash-highlight]="highlightedId() === itemKey(item)">
-          <h3 class="min-w-0"><button type="button" (click)="toggleExpanded(itemKey(item))" aria-haspopup="dialog" [attr.aria-expanded]="isExpanded(itemKey(item))" [attr.aria-controls]="itemKey(item) + '-details'" class="flex min-h-8 w-full items-center justify-between gap-2 rounded text-left text-base font-bold sm:gap-3 text-green sm:text-xl focus-visible:outline-2 focus-visible:outline-primary"><span class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1"><span class="min-w-0 max-w-full truncate" [title]="item.name">{{ item.name }}</span><ng-container [ngTemplateOutlet]="itemTypeTag" [ngTemplateOutletContext]="{ $implicit: item }" /></span>
-          <app-ui-icon class="shrink-0" name="chevron" /></button></h3>
-
-
-        @if (getItemProp(item, 'weaponCategory') || getItemTypeTags(item).length || (getItemProp(item, 'rarity') && getItemProp(item, 'rarity') !== 'none') || item.entity?.properties?.length || item.entity?.masteries?.length) {
-        <div class="mt-2 flex flex-wrap items-center gap-1.5">
-          <ng-container [ngTemplateOutlet]="itemTags" [ngTemplateOutletContext]="{ $implicit: item }" />
-          @for (property of item.entity?.properties; track property.name) { <app-item-rule-tag [label]="property.name" [entry]="property.entry" [notes]="property.notes" /> }
-          @for (mastery of item.entity?.masteries; track mastery.name) { <app-item-rule-tag [label]="mastery.name" [entry]="mastery.entry" [notes]="mastery.notes" [mastery]="true" /> }
-        </div>
-        }
-        @if (hasItemStatistics(item)) {
-        <div data-horizontal-row class="relative flex min-w-0 max-w-full flex-nowrap items-center gap-3 overflow-x-auto overscroll-x-contain py-1 text-sm mt-2 [scrollbar-width:thin] [&>*]:shrink-0 [&>*]:whitespace-nowrap" aria-label="Item statistics">
-          @if (getItemProp(item, 'dmg1')) { <span>{{ getItemProp(item, 'dmg1') }} {{ getItemProp(item, 'dmgType') }}@if (getItemProp(item, 'dmg2')) { · {{ getItemProp(item, 'dmg2') }} versatile}</span> }
-          @if (getItemProp(item, 'ac') ?? item.entity?.ac) { <span>AC {{ getItemProp(item, 'ac') ?? item.entity?.ac }}</span> }
-          @if (getItemProp(item, 'range')) { <span>{{ getItemProp(item, 'range') }} ft.</span> }
-          @if (getItemProp(item, 'weight') != null) { <span>Weight: {{ getItemProp(item, 'weight') }} lb.</span> }
-          @if (getItemProp(item, 'value') != null) { <span>Value: {{ formatGold(getItemProp(item, 'value')) }}</span> }
-          @if (getItemProp(item, 'scfType')) { <span>Focus: {{ getItemProp(item, 'scfType') }}</span> }
-        </div>
-        }
-        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm mt-2 sm:gap-x-4 sm:gap-y-1">
-          @if (item.source) { <span class="rounded bg-surface-container-high px-2 py-0.5 text-xs">{{ item.source }}</span> }
-          @if (item.isDummy) { <span role="img" aria-label="Created in-app" title="Created in-app" class="inline-flex items-center rounded bg-surface-container-high px-1.5 py-1 text-sm"><app-ui-icon name="wand" /></span> }
-          @if (item.allowMultiples) {
-            <div class="inline-flex items-center gap-1" role="group" [attr.aria-label]="item.name + ' quantity'">
-              <span class="mr-1 text-sm">Qty</span>
-              <button type="button" (click)="updateItemCount(item, '' + ((item.count ?? 1) - 1))" [disabled]="(item.count ?? 1) <= 0" [attr.aria-label]="'Decrease quantity of ' + item.name" class="flex h-8 w-8 items-center justify-center rounded border border-outline-variant bg-surface-container-high disabled:opacity-35"><app-ui-icon name="minus" /></button>
-              <input type="number" inputmode="numeric" min="0" [attr.aria-label]="'Quantity of ' + item.name" [value]="item.count ?? 1" (input)="updateItemCount(item, $any($event.target).value)" class="h-8 w-12 rounded border border-outline-variant bg-surface px-1 text-center text-base [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
-              <button type="button" (click)="updateItemCount(item, '' + ((item.count ?? 1) + 1))" [attr.aria-label]="'Increase quantity of ' + item.name" class="flex h-8 w-8 items-center justify-center rounded border border-outline-variant bg-surface-container-high"><app-ui-icon name="plus" /></button>
-            </div>
-          }
-          <div class="ml-auto flex shrink-0 items-center gap-1" role="group" [attr.aria-label]="item.name + ' controls'">
-            <button type="button" (click)="toggleEquipped(item)" [attr.aria-pressed]="item.isEquipped ?? false" [attr.aria-label]="(item.isEquipped ? 'Unequip ' : 'Equip ') + item.name" [title]="item.isEquipped ? 'Equipped: click to unequip' : 'Equip item'" class="flex h-8 w-8 items-center justify-center rounded text-xl text-green hover:bg-green-container focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="backpack" [filled]="item.isEquipped ?? false" /></button>
-            @if ((requiresAttunement(item) || item.isAttuned)) {
-              <button type="button" (click)="toggleAttuned(item)" [attr.aria-pressed]="item.isAttuned ?? false" [attr.aria-label]="(item.isAttuned ? 'Unattune ' : 'Attune ') + item.name" [title]="item.isAttuned ? 'Attuned: click to unattune' : 'Attune item'" class="flex h-8 w-8 items-center justify-center rounded text-xl text-purple hover:bg-purple-container focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="flame" [filled]="item.isAttuned ?? false" /></button>
-            }
-          <button type="button" (click)="deleteItem(item)" [attr.aria-label]="'Delete ' + item.name" [title]="'Delete ' + item.name" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm text-on-surface-variant transition-colors hover:bg-error-container hover:text-on-error-container focus-visible:outline-2 focus-visible:outline-primary"><app-ui-icon name="trash" /></button>
-          </div>
-        </div>
-        @if (!isExpanded(itemKey(item))) {
-        @if (item.uses?.length) { <div class="feature-uses-row" data-horizontal-row role="region" aria-label="Use trackers" tabindex="0">@for (use of item.uses; track use) { <app-feature-uses [character]="characterData()?.character" tone="items" [uses]="use" (usesUpdated)="updateItemUses(item, $event)" /> }</div> }
-        }
-        <app-feature-notes [notes]="item.notes" (notesChanged)="updateItemNotes(item, $event)" />
-        @if (isExpanded(itemKey(item))) {
-          <ng-container [ngTemplateOutlet]="itemDetail" [ngTemplateOutletContext]="{ $implicit: item }" />
-        }
-
-      </article>
+    @for (node of group.nodes; track node.item.editorId ?? node.item) {
+      <div class="min-w-0 space-y-2">
+        <ng-container [ngTemplateOutlet]="inventoryBranch" [ngTemplateOutletContext]="{ $implicit: node }" />
+      </div>
     }
         </div>
       </section>

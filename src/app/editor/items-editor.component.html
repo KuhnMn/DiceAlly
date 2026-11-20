@@ -36,6 +36,7 @@
               @if (itemTypes.length && !filteredItemTypes.length) { <p class="text-xs text-on-surface-variant">No item types match the selected sources.</p> }
               @if (typesMessage) { <p class="text-xs text-on-surface-variant">{{ typesMessage }}</p> }
             }
+            <app-item-container-controls [sheet]="sheet()" [item]="item" (edited)="change()" />
             <app-entry-annotations-editor [entry]="item" (edited)="change()">
               <app-combat-bookmark annotation-combat [sheet]="sheet()" [resource]="item" type="ITEM" (edited)="change()" />
               <ng-container annotation-options>

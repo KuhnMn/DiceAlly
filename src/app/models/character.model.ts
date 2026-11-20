@@ -910,6 +910,7 @@ export interface ExportedCharacter {
   spells?: SpellEntryFull[];
   features?: FeatureEntryFull[];
   inventory?: InventoryItem[];
+  inventoryLayout?: import('./inventory-layout').InventoryLayout;
   combatActions?: CombatAction[];
   conditions?: ConditionName[];
   monsters?: Monster[];
