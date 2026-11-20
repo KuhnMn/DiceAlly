@@ -1,5 +1,5 @@
 import { ItemContainerControlsComponent } from './item-container-controls.component';
-import { removeInventoryLayoutItem } from '../models/inventory-layout';
+import { isContainer, removeInventoryLayoutItem } from '../models/inventory-layout';
 import { itemTypeUid } from '../content/item.model';
 import { VehicleItemDetailsComponent } from '../sheet/vehicle-item-details.component';
 import { vehicleItemStatistics } from '../sheet/vehicle-item-presentation';
@@ -80,6 +80,7 @@ export class ItemsEditorComponent implements DoCheck, OnInit, OnDestroy {
   listVisible = true;
   listSearch = '';
   pendingRemoval?: InventoryItem;
+  isContainer(item: InventoryItem) { return isContainer(this.sheet(), item); }
   get items() { return this.sheet().inventory ?? []; }
   get filteredItems() { return rankSearchResults(this.items.filter(item => item.name.toLowerCase().includes(this.listSearch.trim().toLowerCase())), this.listSearch, item => item.name); }
   change() { this.combatIndex.clear(); this.view.markForCheck(); this.edited.emit(); }

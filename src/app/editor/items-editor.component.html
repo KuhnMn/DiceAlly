@@ -12,6 +12,9 @@
     <div class="rounded-lg bg-surface-container">
     @for (item of filteredItems; track item.editorId ?? $index; let i = $index) {
       <app-editor-entry-row [sheet]="sheet()" [resource]="item" [name]="item.name" [expanded]="expanded.has(item)" (detailsRequested)="toggle(item)" (removeRequested)="remove(item)" [notesCount]="item.notes?.length || 0" [usesCount]="item.uses?.length || 0">
+        <ng-container entry-indicator>
+          @if (isContainer(item)) { <span role="img" aria-label="Container" title="Container" class="inline-flex items-center text-on-surface-variant"><app-ui-icon name="box" /></span> }
+        </ng-container>
         <ng-container entry-metadata>
           @if (item.allowMultiples) { <span class="shrink-0 rounded bg-secondary-container px-1 text-on-secondary-container" [attr.aria-label]="'Quantity ' + (item.count ?? 1)">&times; {{ item.count ?? 1 }}</span> }
           @if (item.source) { <span class="min-w-0 truncate rounded bg-surface-container-highest px-1 text-on-surface" [title]="item.source">{{ item.source }}</span> }
